@@ -1,2 +1,2 @@
-# sredlist-server
+# sRedList-API
 Plumber R application
