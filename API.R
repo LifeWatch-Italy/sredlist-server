@@ -19,7 +19,7 @@ function(res) {
 
 
 #* Find Species
-#* @get api/species
+#* @get api/species/search
 #* @serializer json
 #* @param scientific_name:str Digit Scientific Name (min. 3 characters)
 #* @tag RL-Platform
