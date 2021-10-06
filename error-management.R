@@ -10,7 +10,6 @@ error_handler <- function(req, res, err) {
   if (!inherits(err, "api_error")) {
     res$status <- 500
     res$body <- "{\"status\":500,\"message\":\"Internal server error.\"}"
-    
     # Print the internal error so we can see it from the server side. A more
     # robust implementation would use proper logging.
     log_error(err$message)
@@ -20,7 +19,7 @@ error_handler <- function(req, res, err) {
     res$body <- sprintf(
       "{\"status\":%d,\"message\":\"%s\"}", err$status, err$message
     )
-    log_error('{req$PATH_INFO} : {err$message}')
+    log_error('{req$PATH_INFO} : {err$message}') # nolint
   }
   return(res)
 }
@@ -34,5 +33,10 @@ missing_params <- function(message = "Missing required parameters.") {
 }
 
 invalid_params <- function(message = "Invalid parameter value(s).") {
+  api_error(message = message, status = 400)
+}
+
+invalid_extension <- function(file) {
+  message=paste0("The following file has an invalid format: ", file)
   api_error(message = message, status = 400)
 }

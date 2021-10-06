@@ -4,4 +4,4 @@ firstup <- function(x) {
   x
 }
 
-`%not in%` <- function (x, table) is.na(match(x, table, nomatch=NA_integer_))
+`%not in%` <- function (x, table) is.na(match(x, table, nomatch=NA_integer_)) # nolint

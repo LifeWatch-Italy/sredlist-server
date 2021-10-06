@@ -40,3 +40,6 @@ vignettes/*.pdf
 
 # Logs
 logs/*.log
+
+# Distributions
+Distributions/*
