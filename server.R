@@ -6,7 +6,10 @@ library(glue)
 
 library(urltools)
 
-library(Rook) ; library(ggplot2) ; library(raster) ; library(dplyr) ; library(sf) ; library(rgdal) ; library(plyr) ; library(ncdf4) ; library(ggalluvial) ; library(rredlist) ;  library(tools) # nolint
+library(Rook) ; library(ggplot2) ; library(raster) ; library(plyr) ;library(dplyr) ; library(sf) ; library(rgdal) ;  library(ncdf4) ; library(ggalluvial) ; library(rredlist) ;  library(tools) # nolint
+
+#GBIF
+library(rgbif) ; library(CoordinateCleaner) ; library(rCAT) ; library(maps) # nolint
 
 # Config
 config <- config::get()
@@ -33,7 +36,13 @@ convert_empty <- function(string) {
 
 
 pr <- pr("API.R")
+#pr <- pr()
 
+redlist <- Plumber$new("redlist.R")
+pr$mount("api/redlist", redlist)$setErrorHandler(error_handler)
+
+sredlist <- Plumber$new("sredlist.R")
+pr$mount("api/sredlist", sredlist)$setErrorHandler(error_handler)
 
 pr$registerHooks(
   list(
@@ -50,6 +59,6 @@ pr$registerHooks(
   )
 )
 
-pr$setErrorHandler(error_handler)
-
+#bytes = 10MB
+options_plumber(maxRequestSize = 10000000)
 pr %>% pr_run(port = 8000)
