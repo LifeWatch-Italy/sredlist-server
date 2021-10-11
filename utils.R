@@ -27,3 +27,8 @@ read_distribution <- function(scientific_name) {
 
   return(distributions)
 }
+
+read_map_countries <- function() {
+  countries <- st_read("Distributions/Map countries/Admin_dissolved_by.country.shp") # nolint
+  return(countries)
+}
