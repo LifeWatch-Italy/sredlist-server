@@ -9,7 +9,7 @@ library(urltools)
 library(Rook) ; library(ggplot2) ; library(raster) ; library(plyr) ;library(dplyr) ; library(sf) ; library(rgdal) ;  library(ncdf4) ; library(ggalluvial) ; library(rredlist) ;  library(tools) # nolint
 
 #GBIF
-library(rgbif) ; library(CoordinateCleaner) ; library(rCAT) ; library(maps) # nolint
+library(rgbif) ; library(CoordinateCleaner) ; library(rCAT) ; library(maps) ; library(countrycode); library(rnaturalearthdata); # nolint
 
 # Config
 config <- config::get()
@@ -61,4 +61,4 @@ pr$registerHooks(
 
 #bytes = 10MB
 options_plumber(maxRequestSize = 10000000)
-pr %>% pr_run(port = 8000)
+pr %>% pr_run(port = 8000, host = "0.0.0.0")
