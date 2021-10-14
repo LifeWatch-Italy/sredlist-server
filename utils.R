@@ -32,3 +32,32 @@ read_map_countries <- function() {
   countries <- st_read("Distributions/Map countries/Admin_dissolved_by.country.shp") # nolint
   return(countries)
 }
+
+createDataGBIF <- function(scientific_name) { # nolint
+    #Download data
+    dat <- occ_search(scientificName = scientific_name, hasCoordinate = T)$data
+    #Select columns of interest
+    dat <- dat %>%
+    dplyr::select(species, decimalLongitude, decimalLatitude, countryCode, individualCount, # nolint
+                gbifID, family, taxonRank, coordinateUncertaintyInMeters, year,
+                basisOfRecord, institutionCode, datasetName)
+
+    print(head(as.data.frame(dat)))
+
+    #Remove records with no spatial coordinates
+    dat <- dat %>% filter(!is.na(decimalLongitude)) %>% filter(!is.na(decimalLatitude)) # nolint
+
+    return(dat)
+}
+
+cleanDataGBIF <- function(data) { # nolint
+  flags <- clean_coordinates(x = data,
+                           lon = "decimalLongitude",
+                           lat = "decimalLatitude",
+                           countries = "countryCode",
+                           species = "species",
+                           tests = c("capitals", "centroids", "equal","gbif", "institutions", # nolint
+                                     "zeros", "countries"))
+  return(flags)
+
+}
