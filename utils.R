@@ -61,3 +61,17 @@ cleanDataGBIF <- function(data) { # nolint
   return(flags)
 
 }
+
+# Save EOO distribution from GBIF procedure
+saveEooDistribution <- function(scientific_name, EOO) {
+  # Create a file path
+  filePath <- paste0("Distributions/", scientific_name, "/") # nolint
+  if (dir.exists(filePath)) {
+    print("The direcoty exists")
+  } else {
+  # create the "my_new_folder
+    dir.create(filePath)
+  }
+  path <- paste0(filePath, scientific_name, ".shp")
+  st_write(EOO, path, append = FALSE)
+}

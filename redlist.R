@@ -1,5 +1,5 @@
 #Load species information from RL - updated in 27-09-2021
-speciesRL <- read.csv("Species/species-all-page.csv") # nolint # nolint
+speciesRL <- read.csv("Species/species-all-page.csv") # nolint
 
 #* Find Species
 #* @get species/search
@@ -77,4 +77,29 @@ function(scientific_name) {
     theme_void() +
     ggtitle("Distribution")))
 
+}
+
+
+#* Species habitat preferences
+#* @get species/<scientific_name>/habitat-preferences
+#* @param scientific_name:string Scientific Name
+#* @serializer json
+#* @tag RedList-API
+function(scientific_name) {
+  #Filter param
+  scientific_name <- url_decode(scientific_name)
+  hab_pref <- rl_habitats(scientific_name, key = config$red_list_token)#$result
+  return(hab_pref)
+}
+
+#* Species altitude preferences
+#* @get species/<scientific_name>/altitude-preferences
+#* @param scientific_name:string Scientific Name
+#* @serializer unboxedJSON
+#* @tag RedList-API
+function(scientific_name) {
+  #Filter param
+  scientific_name <- url_decode(scientific_name)
+  alt_pref <- rl_search(scientific_name, key = config$red_list_token)#$result
+  return(alt_pref)
 }
