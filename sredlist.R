@@ -3,6 +3,12 @@ extensions <- list("shp", "shx", "prj", "dbf", "cpg")
 
 #Load general altitude raster
 alt <- raster("Raster/alt_Nesoenas.mayeri.tif")
+cci1 <- raster("Raster/CCI_2010_Nesoenas.mayeri.tif")
+cci2 <- raster("Raster/CCI_2020_Nesoenas.mayeri.tif")
+
+#Load Crosswalk CSV
+crosswalk <- read.csv("Species/Crosswalk_CCI_IUCN.csv")
+cci_classes <- data.frame(Classes = c(levels(as.factor(crosswalk$esa_code)), 220)) # nolint
 
 
 #* Upload Distribution species
@@ -250,5 +256,112 @@ function(scientific_name, presences = list(), seasons = list() , origins = list(
         eoo_km2 = EOO_km2,
         plot_eoo = plot3
         ));
+
+}
+
+
+#* Estimate the Area of Habitat (AOH)
+#* @get species/<scientific_name>/analysis/aoh
+#* @param scientific_name:string Scientific Name
+#* @param presences:[int] presences (1, 2, 3)
+#* @param seasons:[int] seasons (1, 2)
+#* @param origins:[int] origins (1, 2)
+#* @param habitats_pref:[str] habitats_pref
+#* @param altitudes_pref:[int] origins altitudes_pref
+#* @serializer unboxedJSON
+#* @tag sRedList
+function(scientific_name, presences = list(), seasons = list() , origins = list(), habitats_pref= list(), altitudes_pref= list()) { # nolint    
+    #Filter param
+  scientific_name <- url_decode(scientific_name)
+  if (length(presences) != 0) presences <- as.character(presences);
+  if (length(seasons) != 0) seasons <- as.character(seasons);
+  if (length(origins) != 0) origins <- as.character(origins);
+
+  habitats_pref <- as.character(habitats_pref)
+  altitudes_pref <- as.integer(altitudes_pref)
+  print(presences)
+  print(seasons)
+  print(origins)
+  print(habitats_pref)
+  print(altitudes_pref)
+  
+  #Load Distribution Species
+  distributions <- read_distribution(scientific_name)
+
+  distSP_full <- subset(distributions, distributions$binomial == scientific_name) # nolint    
+  choice_presence <- c(presences)
+  choice_season <- c(seasons)
+  choice_origin <- c(origins)
+
+  distSP <- subset(distSP_full, # nolint
+    distSP_full$presence %in% choice_presence &
+    distSP_full$seasonal %in% choice_season &
+    distSP_full$origin %in% choice_origin)
+
+  # Combine polygons in a single shapefile, that will be used in analyses
+  distSP <- distSP %>% dplyr::group_by(binomial) %>% dplyr::summarise(N = n())
+  range <- st_transform(distSP, crs(alt))
+
+  #species habitat preferences
+  crosswalk$species_pref <- as.numeric(crosswalk$iucn_code %in% habitats_pref)
+
+  print("ok1")
+
+  #Restrict to land cover categories that are in species habitat preferences (takes all ESA categories that are named against the habitat preferences of the species)
+  cci_classes$SP <- cci_classes$Classes %in% crosswalk$esa_code[crosswalk$species_pref == 1] %>% as.numeric(.) # nolint 
+
+  cci_classes$Classes <- as.numeric(as.character(cci_classes$Classes))
+  cci_classes$SP <- as.numeric(as.character(cci_classes$SP))
+
+  cci2_sp <- crop(cci2, extent(distSP)) # nolint 
+
+  cci2_sp <- reclassify(cci2_sp, as.matrix(cci_classes)) # nolint
+
+  print("ok2")
+
+  #Restrict by species altitude preferences (if they are known). We downscale altitude data to fit with the resolution of Land Cover. # nolint
+
+  if (is.na(altitudes_pref[1])) {
+    altitudes_pref[1] <- (-10)
+    } # If there are no minimal value provided, we consider -10 so that every altitude is higher # nolint
+  if (is.na(altitudes_pref[2])) {
+    altitudes_pref[2] <- (10000)
+    } # If there are no maximal value provided, we consider 10000 so that every altitude is higher # nolint
+
+  print("ok3")
+
+  alt_mat <- matrix(c(-11, altitudes_pref[1], 0, altitudes_pref[1], altitudes_pref[2], 1, altitudes_pref[2], 10001, 0), byrow=T, ncol=3)
+
+  print("ok4")
+
+  alt_sp <- crop(alt, extent(range))
+
+  alt_sp <- reclassify(alt_sp, alt_mat)
+
+  print("ok5")
+
+  alt_spPROJ <- projectRaster(alt_sp, cci2_sp)>0 # Becomes a 1 wherever there was suitable altitude
+
+  #Map AOH (reproject altitude raster, overlap with distribution and sum)
+
+  AOH0 <- (cci2_sp + alt_spPROJ) == 2
+
+  AOH <- mask(AOH0, distSP)
+
+  #Plot AOH
+  # log_info("START - Plot EOO")
+  # ggsave("aoh.png", plot(plot(AOH, col=c("gray60", "#80cdc1"), main="Area of Habitat"))) # nolint
+  # print("ok6")
+  # plot3 <- base64enc::dataURI(file = "aoh.png", mime = "image/png") # nolint
+  # file.remove(paste0(scientific_name, ".png"))
+  # log_info("END - Plot EOO")
+
+  AOH_km2 <- 0.09*exactextractr::exact_extract(AOH, range, fun="sum") # This is an approximation (resolution in degree), will have to be improved at some point
+
+  return(list(
+        aoh_km2 = AOH_km2
+        # plot_aoh = plot3
+        ));
+
 
 }
