@@ -11,6 +11,9 @@ library(Rook) ; library(ggplot2) ; library(raster) ; library(plyr) ;library(dply
 #GBIF
 library(rgbif) ; library(CoordinateCleaner) ; library(rCAT) ; library(maps) ; library(countrycode); library(rnaturalearthdata); # nolint
 
+#AOH
+library(exactextractr)
+
 # Config
 config <- config::get()
 
