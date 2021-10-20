@@ -1,7 +1,7 @@
 FROM rocker/geospatial
 LABEL version="1.0"
 
-RUN R -e "install.packages(c('plumber', 'config', 'tictoc', 'logger','glue', 'urltools', 'Rook', 'ggplot2' , 'plyr', 'dplyr', 'ggalluvial', 'rredlist', 'tools', 'rgbif', 'CoordinateCleaner', 'rCAT', 'maps', 'countrycode', 'rnaturalearthdata', 'exactextractr'))"
+RUN R -e "install.packages(c('plumber', 'config', 'tictoc', 'logger','glue', 'urltools', 'Rook', 'ggplot2' , 'plyr', 'dplyr', 'ggalluvial', 'rredlist', 'tools', 'rgbif', 'CoordinateCleaner', 'rCAT', 'maps', 'countrycode', 'rnaturalearthdata', 'exactextractr', 'rasterVis'))"
 
 # copy everything from the current directory into the container
 COPY / /

@@ -13,6 +13,7 @@ library(rgbif) ; library(CoordinateCleaner) ; library(rCAT) ; library(maps) ; li
 
 #AOH
 library(exactextractr)
+library(rasterVis)
 
 # Config
 config <- config::get()

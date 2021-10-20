@@ -6,7 +6,8 @@ alt <- raster("Raster/alt_Nesoenas.mayeri.tif")
 cci1 <- raster("Raster/CCI_2010_Nesoenas.mayeri.tif")
 cci2 <- raster("Raster/CCI_2020_Nesoenas.mayeri.tif")
 
-#Load Crosswalk CSV
+#Load Crosswalk CSV and Density CSV
+density<-read.csv("Species/Density.table.csv", sep=",") ; names(density)[1]<-"Species" ; # nolint
 crosswalk <- read.csv("Species/Crosswalk_CCI_IUCN.csv")
 cci_classes <- data.frame(Classes = c(levels(as.factor(crosswalk$esa_code)), 220)) # nolint
 
@@ -260,6 +261,19 @@ function(scientific_name, presences = list(), seasons = list() , origins = list(
 }
 
 
+#* Species density preferences
+#* @get species/<scientific_name>/density-preferences
+#* @param scientific_name:string Scientific Name
+#* @serializer json
+#* @tag sRedList
+function(scientific_name) {
+  #Filter param
+  scientific_name <- url_decode(scientific_name)
+  return(list(
+        density = density$Density[density$Species == scientific_name]
+        ));
+}
+
 #* Estimate the Area of Habitat (AOH)
 #* @get species/<scientific_name>/analysis/aoh
 #* @param scientific_name:string Scientific Name
@@ -267,10 +281,11 @@ function(scientific_name, presences = list(), seasons = list() , origins = list(
 #* @param seasons:[int] seasons (1, 2)
 #* @param origins:[int] origins (1, 2)
 #* @param habitats_pref:[str] habitats_pref
-#* @param altitudes_pref:[int] origins altitudes_pref
+#* @param altitudes_pref:[int] altitudes_pref
+#* @param density_pref:int density_pref
 #* @serializer unboxedJSON
 #* @tag sRedList
-function(scientific_name, presences = list(), seasons = list() , origins = list(), habitats_pref= list(), altitudes_pref= list()) { # nolint    
+function(scientific_name, presences = list(), seasons = list() , origins = list(), habitats_pref= list(), altitudes_pref= list(), density_pref= -1) { # nolint    
     #Filter param
   scientific_name <- url_decode(scientific_name)
   if (length(presences) != 0) presences <- as.character(presences);
@@ -279,11 +294,14 @@ function(scientific_name, presences = list(), seasons = list() , origins = list(
 
   habitats_pref <- as.character(habitats_pref)
   altitudes_pref <- as.integer(altitudes_pref)
+  density_pref <- as.integer(density_pref)
+
   print(presences)
   print(seasons)
   print(origins)
   print(habitats_pref)
   print(altitudes_pref)
+  print(density_pref)
   
   #Load Distribution Species
   distributions <- read_distribution(scientific_name)
@@ -340,7 +358,7 @@ function(scientific_name, presences = list(), seasons = list() , origins = list(
 
   print("ok5")
 
-  alt_spPROJ <- projectRaster(alt_sp, cci2_sp)>0 # Becomes a 1 wherever there was suitable altitude
+  alt_spPROJ <- projectRaster(alt_sp, cci2_sp) > 0 # Becomes a 1 wherever there was suitable altitude
 
   #Map AOH (reproject altitude raster, overlap with distribution and sum)
 
@@ -348,19 +366,57 @@ function(scientific_name, presences = list(), seasons = list() , origins = list(
 
   AOH <- mask(AOH0, distSP)
 
-  #Plot AOH
-  # log_info("START - Plot EOO")
-  # ggsave("aoh.png", plot(plot(AOH, col=c("gray60", "#80cdc1"), main="Area of Habitat"))) # nolint
-  # print("ok6")
-  # plot3 <- base64enc::dataURI(file = "aoh.png", mime = "image/png") # nolint
-  # file.remove(paste0(scientific_name, ".png"))
-  # log_info("END - Plot EOO")
+  log_info("START - Plot EOO")
+
+  plot1 <- gplot(AOH) + 
+  geom_tile(aes(fill = as.factor(value))) +
+  scale_fill_manual(values=c("#dfc27d", "#018571", "white"), labels=c("Unsuitable", "Suitable", ""), name="") +
+  ggtitle("Area of Habitat") +
+  theme_void() %+replace%   theme(plot.title=element_text(hjust=0.5, size=14, face="bold"))
+
+  ggsave(filename = "aoh.png", plot = plot(plot1))
+  
+  plot1 <- base64enc::dataURI(file = "aoh.png", mime = "image/png", encoding = "base64") # nolint
+  file.remove("aoh.png")
+  log_info("END - Plot EOO")
 
   AOH_km2 <- 0.09*exactextractr::exact_extract(AOH, range, fun="sum") # This is an approximation (resolution in degree), will have to be improved at some point
+  
+  #Calculate Area of Habitat in a resolution of 2x2km (as is the map of altitude provided), in order to use it as an upper bound of species Area of Occupancy under criterion B2 (each cell covers 4km2)
+
+  AOO <- projectRaster(AOH, alt_sp) > 0
+
+  plot2 <- gplot(AOO) + 
+  geom_tile(aes(fill = as.factor(value))) +
+  scale_fill_manual(values=c("#dfc27d", "#018571"), labels=c("Unsuitable", "Suitable", ""), name="") +
+  ggtitle("Area of Habitat (2x2km)") +
+  theme_void() %+replace%   theme(plot.title=element_text(hjust=0.5, size=14, face="bold"))
+
+  ggsave(filename = "aoo.png", plot = plot(plot2))
+  plot2 <- base64enc::dataURI(file = "aoo.png", mime = "image/png", encoding = "base64") # nolint
+  file.remove("aoo.png")
+
+  AOO_km2<-4*exactextractr::exact_extract(AOO, range, fun="sum")
+
+  #Calculate population size
+  if (density_pref != -1) {
+    #TODO: If not present in CSV calculate populution size
+    density_sp <- density$Density[density$Species == scientific_name]
+    pop_size <- AOH_km2 * density_sp
+    return(list(
+        aoh_km2 = AOH_km2,
+        aoo_km2 = AOO_km2,
+        plot_aoh = plot1,
+        plot_aoh_2x2 = plot2,
+        pop_size = pop_size
+        ));
+  }
 
   return(list(
-        aoh_km2 = AOH_km2
-        # plot_aoh = plot3
+        aoh_km2 = AOH_km2,
+        aoo_km2 = AOO_km2,
+        plot_aoh = plot1,
+        plot_aoh_2x2 = plot2
         ));
 
 
