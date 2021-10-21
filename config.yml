@@ -1,4 +1,3 @@
 default:
-  #log_dir2: !expr here::here("logs")
   log_dir: "logs"
-  red_list_token: 9bb4facb6d23f48efbf424bb05c0c1ef1cf6f468393bc745d42179ac4aca5fee
+  red_list_token: "9bb4facb6d23f48efbf424bb05c0c1ef1cf6f468393bc745d42179ac4aca5fee"
