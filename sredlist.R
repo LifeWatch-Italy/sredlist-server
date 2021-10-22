@@ -176,6 +176,9 @@ function(scientific_name) {
     #Plot EOO
     log_info("START - Plot EOO")
     EOO <- st_convex_hull(st_combine(st_as_sf(dat_proj))) # nolint
+    EOO<-st_as_sf(st_convex_hull(st_combine(st_as_sf(dat_proj))))
+    #EOO$binomial <- "Papilio sosia"
+    EOO$binomial <- as.character(scientific_name)
     #Save EOO distribution: Utils.R
     saveEooDistribution(scientific_name, EOO)
     ggsave("eoo.png", plot(ggplot() + geom_sf(data = EOO) + geom_sf(data = st_as_sf(dat_proj)) + ggtitle(paste0("EOO of ", scientific_name)))) # nolint
@@ -266,9 +269,11 @@ function(scientific_name) {
 #* @param habitats_pref:[str] habitats_pref
 #* @param altitudes_pref:[int] altitudes_pref
 #* @param density_pref:int density_pref
+#* @param density_pref:int density_pref
+#* @param isGbifDistribution:boolean isGbifDistribution
 #* @serializer unboxedJSON
 #* @tag sRedList
-function(scientific_name, presences = list(), seasons = list() , origins = list(), habitats_pref= list(), altitudes_pref= list(), density_pref= -1) { # nolint    
+function(scientific_name, presences = list(), seasons = list() , origins = list(), habitats_pref= list(), altitudes_pref= list(), density_pref= -1, isGbifDistribution = FALSE) { # nolint    
   #Filter param
   scientific_name <- url_decode(scientific_name)
   if (length(presences) != 0) presences <- as.character(presences);
@@ -285,6 +290,7 @@ function(scientific_name, presences = list(), seasons = list() , origins = list(
   print(habitats_pref)
   print(altitudes_pref)
   print(density_pref)
+  print(isGbifDistribution)
   
   #Load Distribution Species
   distributions <- read_distribution(scientific_name)
@@ -294,11 +300,15 @@ function(scientific_name, presences = list(), seasons = list() , origins = list(
   choice_season <- c(seasons)
   choice_origin <- c(origins)
 
+  isGbifDistribution <- TRUE
+  if (isGbifDistribution == FALSE) {
   distSP <- subset(distSP_full, # nolint
     distSP_full$presence %in% choice_presence &
     distSP_full$seasonal %in% choice_season &
     distSP_full$origin %in% choice_origin)
-
+  }else {
+    distSP <- st_transform(distSP_full, crs(cci2))
+  }
   # Combine polygons in a single shapefile, that will be used in analyses
   distSP <- distSP %>% dplyr::group_by(binomial) %>% dplyr::summarise(N = n())
   range <- st_transform(distSP, crs(alt))
@@ -311,11 +321,13 @@ function(scientific_name, presences = list(), seasons = list() , origins = list(
   #Restrict to land cover categories that are in species habitat preferences (takes all ESA categories that are named against the habitat preferences of the species)
   cci_classes$SP <- cci_classes$Classes %in% crosswalk$esa_code[crosswalk$species_pref == 1] %>% as.numeric(.) # nolint 
 
+  print("ok1.1")
   cci_classes$Classes <- as.numeric(as.character(cci_classes$Classes))
+  print("ok1.2")
   cci_classes$SP <- as.numeric(as.character(cci_classes$SP))
-
+  print("ok1.3")
   cci2_sp <- crop(cci2, extent(distSP)) # nolint 
-
+  print("ok1.4")
   cci2_sp <- reclassify(cci2_sp, as.matrix(cci_classes)) # nolint
 
   print("ok2")
@@ -535,10 +547,10 @@ function(scientific_name, presences = list(), seasons = list() , origins = list(
 function(scientific_name, aoh_lost, eoo_km2, aoo_km2, pop_size ) {
   #Filter param
   scientific_name <- url_decode(scientific_name)
-  AOH_lost <- as.integer(aoh_lost)
-  EOO_km2 <- as.integer(eoo_km2)
-  AOO_km2 <- as.integer(aoo_km2)
-  Pop_size <- as.integer(pop_size)
+  AOH_lost <- round(as.numeric(aoh_lost), 3) 
+  EOO_km2 <-  round(as.numeric(eoo_km2))
+  AOO_km2 <-  round(as.numeric(aoo_km2))
+  Pop_size <-  round(as.numeric(pop_size))
   if (Pop_size == -1) {
     Pop_size <- as.integer(NaN)
   }
@@ -571,13 +583,14 @@ function(scientific_name, aoh_lost, eoo_km2, aoo_km2, pop_size ) {
 #* @param pop_size:int Pop_size
 #* @serializer csv
 #* @tag sRedList
-function(scientific_name, aoh_lost, eoo_km2, aoo_km2, pop_size) {
-    #Filter param
+function(scientific_name, aoh_lost, eoo_km2, aoo_km2, pop_size, res) {
+  #Filter param
   scientific_name <- url_decode(scientific_name)
-  AOH_lost <- as.integer(aoh_lost)
-  EOO_km2 <- as.integer(eoo_km2)
-  AOO_km2 <- as.integer(aoo_km2)
-  Pop_size <- as.integer(pop_size)
+  AOH_lost <- round(as.numeric(aoh_lost), 3) 
+  print(AOH_lost)
+  EOO_km2 <-  round(as.numeric(eoo_km2))
+  AOO_km2 <-  round(as.numeric(aoo_km2))
+  Pop_size <-  round(as.numeric(pop_size))
   if (Pop_size == -1) {
     Pop_size <- as.integer(NaN)
   }
@@ -606,11 +619,7 @@ function(scientific_name, aoh_lost, eoo_km2, aoo_km2, pop_size) {
   pathToSaveAssessment <- paste0("Assessments/", filename)
 
   write.csv(df, pathToSaveAssessment, row.names = F)
-
-  csv_file <- tempfile(fileext = ".csv")
-  on.exit(unlink(csv_file), add = TRUE)
-  write.csv(df, file = csv_file)
-  return(readLines(csv_file))
+  return(df)
 }
 
 #* Download .json Red List category

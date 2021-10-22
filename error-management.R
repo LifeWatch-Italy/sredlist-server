@@ -8,8 +8,13 @@ api_error <- function(message, status) {
 
 error_handler <- function(req, res, err) {
   if (!inherits(err, "api_error")) {
+    # Read Error Message in Response Object
     res$status <- 500
-    res$body <- "{\"status\":500,\"message\":\"Internal server error.\"}"
+    messageBody <- paste0("Internal server error: ", err$message) # nolint
+    #res$body <- "{\"status\":500,\"message\":\"Internal server error.\"}"
+    res$body <- sprintf(
+      "{\"status\":%d,\"message\":\"%s\"}", 500, messageBody
+    )
     # Print the internal error so we can see it from the server side. A more
     # robust implementation would use proper logging.
     log_error(err$message)

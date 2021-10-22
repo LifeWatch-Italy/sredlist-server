@@ -66,20 +66,6 @@ pr$registerHooks(
   )
 )
 
-serializer_csv <- function() {
-  function(val, req, res, errorHandler){
-    tryCatch({
-      res$setHeader("Content-Type", "text/plain")
-      res$setHeader("Content-Disposition", 'attachment; filename="assessment.csv"')
-      res$body <- paste0(val, collapse="\n")
-      return(res$toResponse())
-    }, error=function(e){
-      errorHandler(req, res, e)
-    })
-  }
-}
-
-plumber::register_serializer("csv", serializer_csv)
 #bytes = 10MB
 options_plumber(maxRequestSize = 10000000)
 pr %>% pr_run(port = 8000, host = "0.0.0.0")
