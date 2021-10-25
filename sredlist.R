@@ -466,11 +466,6 @@ function(scientific_name, presences = list(), seasons = list() , origins = list(
     distSP <- st_transform(distSP_full, crs(cci2))
   }
 
-  # distSP <- subset(distSP_full, # nolint
-  #   distSP_full$presence %in% choice_presence &
-  #   distSP_full$seasonal %in% choice_season &
-  #   distSP_full$origin %in% choice_origin)
-
   # Combine polygons in a single shapefile, that will be used in analyses
   distSP <- distSP %>% dplyr::group_by(binomial) %>% dplyr::summarise(N = n())
   range <- st_transform(distSP, crs(alt))
@@ -578,7 +573,7 @@ function(scientific_name, aoh_lost, eoo_km2, aoo_km2, pop_size ) {
 
   return(plot(ggplot(criteria) +
     geom_point(aes(x = Value, y = Crit, col = Value), size = 10, show.legend=F) +
-    scale_x_discrete(drop = F) +
+    scale_x_discrete(drop = F) + scale_y_discrete(drop=F) +
     scale_colour_manual(drop = F, values=c("#60c659ff", "#f9e814ff", "#fc7f3fff", "#d81e05ff"))))
 
 }
@@ -600,32 +595,37 @@ function(scientific_name, aoh_lost, eoo_km2, aoo_km2, pop_size, res) {
   AOH_lost <- round(as.numeric(aoh_lost), 3)
   EOO_km2 <-  round(as.numeric(eoo_km2))
   AOO_km2 <-  round(as.numeric(aoo_km2))
-  Pop_size <-  round(as.numeric(pop_size))
-  if (Pop_size == -1) {
-    Pop_size <- as.numeric(NaN)
-  }
 
   criteria <- data.frame(Crit=c("A2", "B1", "B2", "C1", "D"), Value=NA) ; criteria$Value=factor(criteria$Value, c("LC/NT", "VU", "EN", "CR")) # nolint
   criteria$Value[criteria$Crit=="A2"] <- cut(AOH_lost, breaks=c(-Inf, 0.3, 0.5, 0.8, 1), labels=c("LC/NT", "VU", "EN", "CR")) # nolint
   criteria$Value[criteria$Crit=="B1"] <- cut(EOO_km2, breaks=c(0, 100, 5000, 20000, Inf), labels=rev(c("LC/NT", "VU", "EN", "CR"))) # nolint
   criteria$Value[criteria$Crit=="B2"] <- cut(AOO_km2, breaks=c(0, 10, 500, 2000, Inf), labels=rev(c("LC/NT", "VU", "EN", "CR"))) # nolint
+
+
+  Pop_size <-  round(as.numeric(pop_size))
+
+  if (Pop_size == -1) {
+    Pop_size <- as.numeric(NaN)
+    criteria$Value[criteria$Crit=="C1"] <- NA # Note for later, the timeframe applied here for CR and EN species is not in line with guidelines)  # nolint
+    criteria$Value[criteria$Crit=="D"]<- NA  # nolint
+  } else{
   criteria$Value[criteria$Crit=="C1"] <- min(
     as.numeric(cut(Pop_size, breaks=c(0, 250, 2500, 10000, Inf), labels=rev(c(1,2,3,4)))),  # nolint
     as.numeric(cut(AOH_lost, breaks=c(-Inf, 0.1, 0.2, 0.25, 1), labels=rev(c(1,2,3,4))))) %>% as.character(.) %>% revalue(., c("1"="LC/NT", "2"="VU", "3"="EN", "4"="CR")) # Note for later, the timeframe applied here for CR and EN species is not in line with guidelines)  # nolint
-  criteria$Value[criteria$Crit=="D"]<-cut(Pop_size, breaks=c(0, 50, 250, 1000, Inf), labels=rev(c("LC/NT", "VU", "EN", "CR")))  # nolint
-  
-  #TODO: Error when Pop_size == NaN
+  criteria$Value[criteria$Crit=="D"]<-cut(Pop_size, breaks=c(0, 50, 250, 1000, Inf), labels=rev(c("LC/NT", "VU", "EN", "CR")))  # nolint  #TODO: Error when Pop_size == NaN
+  }
+
   df <- data.frame(
-      Species = scientific_name,
-      Date_processed = Sys.time(),
-      EOO = EOO_km2,
-      AOO = AOO_km2,
-      Trends = AOH_lost,
-      Pop.size = Pop_size,
-      Criterias = paste0(criteria$Value, " (", criteria$Crit, ")") %>% paste(., collapse="; "),
-      Highest_category = criteria$Value[which(as.numeric(criteria$Value)==max(as.numeric(criteria$Value)))] %>% unique()
+    Species = scientific_name,
+    Date_processed = Sys.time(),
+    EOO = EOO_km2,
+    AOO = AOO_km2,
+    Trends = AOH_lost,
+    Pop.size = Pop_size,
+    Criterias = paste0(criteria$Value, " (", criteria$Crit, ")") %>% paste(., collapse="; "),
+    Highest_category = criteria$Value[which(as.numeric(criteria$Value)==max(as.numeric(criteria$Value), na.rm=T))] %>% unique()
   )
-  
+
   filename <- paste0('assessment-', scientific_name, '-', Sys.Date(), '.csv') 
   pathToSaveAssessment <- paste0("Assessments/", filename)
 
@@ -643,25 +643,30 @@ function(scientific_name, aoh_lost, eoo_km2, aoo_km2, pop_size, res) {
 #* @serializer unboxedJSON
 #* @tag sRedList
 function(scientific_name, aoh_lost, eoo_km2, aoo_km2, pop_size) {
-    #Filter param
+  #Filter param
   scientific_name <- url_decode(scientific_name)
-  AOH_lost <- as.integer(aoh_lost)
-  EOO_km2 <- as.integer(eoo_km2)
-  AOO_km2 <- as.integer(aoo_km2)
-  Pop_size <- as.integer(pop_size)
-  if (Pop_size == -1) {
-    Pop_size <- as.integer(NaN)
-  }
+  AOH_lost <- round(as.numeric(aoh_lost), 3)
+  EOO_km2 <-  round(as.numeric(eoo_km2))
+  AOO_km2 <-  round(as.numeric(aoo_km2))
 
   criteria <- data.frame(Crit=c("A2", "B1", "B2", "C1", "D"), Value=NA) ; criteria$Value=factor(criteria$Value, c("LC/NT", "VU", "EN", "CR")) # nolint
   criteria$Value[criteria$Crit=="A2"] <- cut(AOH_lost, breaks=c(-Inf, 0.3, 0.5, 0.8, 1), labels=c("LC/NT", "VU", "EN", "CR")) # nolint
   criteria$Value[criteria$Crit=="B1"] <- cut(EOO_km2, breaks=c(0, 100, 5000, 20000, Inf), labels=rev(c("LC/NT", "VU", "EN", "CR"))) # nolint
   criteria$Value[criteria$Crit=="B2"] <- cut(AOO_km2, breaks=c(0, 10, 500, 2000, Inf), labels=rev(c("LC/NT", "VU", "EN", "CR"))) # nolint
+
+
+  Pop_size <-  round(as.numeric(pop_size))
+
+  if (Pop_size == -1) {
+    Pop_size <- as.numeric(NaN)
+    criteria$Value[criteria$Crit=="C1"] <- NA # Note for later, the timeframe applied here for CR and EN species is not in line with guidelines)  # nolint
+    criteria$Value[criteria$Crit=="D"]<- NA  # nolint
+  } else{
   criteria$Value[criteria$Crit=="C1"] <- min(
     as.numeric(cut(Pop_size, breaks=c(0, 250, 2500, 10000, Inf), labels=rev(c(1,2,3,4)))),  # nolint
     as.numeric(cut(AOH_lost, breaks=c(-Inf, 0.1, 0.2, 0.25, 1), labels=rev(c(1,2,3,4))))) %>% as.character(.) %>% revalue(., c("1"="LC/NT", "2"="VU", "3"="EN", "4"="CR")) # Note for later, the timeframe applied here for CR and EN species is not in line with guidelines)  # nolint
-  criteria$Value[criteria$Crit=="D"]<-cut(Pop_size, breaks=c(0, 50, 250, 1000, Inf), labels=rev(c("LC/NT", "VU", "EN", "CR")))  # nolint
-
+  criteria$Value[criteria$Crit=="D"]<-cut(Pop_size, breaks=c(0, 50, 250, 1000, Inf), labels=rev(c("LC/NT", "VU", "EN", "CR")))  # nolint  #TODO: Error when Pop_size == NaN
+  }
   json <- list(
     Species = scientific_name,
     Date_processed = Sys.time(),
@@ -670,8 +675,58 @@ function(scientific_name, aoh_lost, eoo_km2, aoo_km2, pop_size) {
     Trends = AOH_lost,
     Pop.size = Pop_size,
     Criterias = paste0(criteria$Value, " (", criteria$Crit, ")") %>% paste(., collapse="; "),
-    Highest_category = criteria$Value[which(as.numeric(criteria$Value)==max(as.numeric(criteria$Value)))] %>% unique()
+    Highest_category = criteria$Value[which(as.numeric(criteria$Value)==max(as.numeric(criteria$Value), na.rm=T))] %>% unique()
   )
 
   return(json);
+}
+
+
+#* All species distributions on the platform
+#* @get distributions
+#* @serializer unboxedJSON
+#* @tag sRedList
+function() {
+  # File size in bytes
+  distributions <- list()
+  for (directoryName in list.files("Distributions")) {
+    files <- list()
+    for( fileName in list.files(paste0("Distributions/", directoryName))) {
+        files <- append(files, list(list(data = list(
+          name = fileName,
+          size = file.info(paste0("Distributions/", directoryName, "/", fileName))$size, # nolint
+          type = "file"
+        ))))
+    }
+    distributions <- append(distributions, list(
+      list(
+        data = list(
+          name = directoryName,
+          size = file.info(paste0("Distributions/", directoryName))$size,
+          type = "folder"),
+        children = files
+        )));
+  }
+  return(distributions)
+}
+
+#* Delete distribution from sRedList platform
+#* @delete species/<scientific_name>/distribution
+#* @param scientific_name:string Scientific Name
+#* @param file_name:string file_name
+#* @serializer unboxedJSON
+#* @tag sRedList
+function(scientific_name, file_name = "") {
+  scientific_name <- url_decode(scientific_name)
+  file_name <- url_decode(file_name)
+  print(scientific_name)
+  if (scientific_name %in% list.files("Distributions")) {
+        if (file_name == "") {
+          return(list(response = unlink(paste0("Distributions/", scientific_name), recursive = TRUE))) # nolint
+        }else {
+          return(list(response = unlink(paste0("Distributions/", scientific_name, "/", file_name)))) # nolint
+        }
+    }else {
+       not_found("Species distribution not exist!") # nolint
+    }
 }

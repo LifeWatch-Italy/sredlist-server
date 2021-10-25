@@ -29,13 +29,18 @@ read_distribution <- function(scientific_name) {
 }
 
 read_map_countries <- function() {
-  countries <- st_read("Distributions/Map countries/Admin_dissolved_by.country.shp") # nolint
+  countries <- st_read("Species/Map countries/Admin_dissolved_by.country.shp") # nolint
   return(countries)
 }
 
 createDataGBIF <- function(scientific_name) { # nolint
     #Download data
     dat <- occ_search(scientificName = scientific_name, hasCoordinate = T)$data
+    print(dat)
+    if (is.null(dat)) {
+      print("sono qui")
+      not_found("GBIF occurrences of the species could not be found! Check whether the scientific name of the species has been typed correctly!")
+    }
     #Select columns of interest
     dat <- dat %>%
     dplyr::select(species, decimalLongitude, decimalLatitude, countryCode, individualCount, # nolint
@@ -67,7 +72,7 @@ saveEooDistribution <- function(scientific_name, EOO) {
   # Create a file path
   filePath <- paste0("Distributions/", scientific_name, "/") # nolint
   if (dir.exists(filePath)) {
-    print("The direcoty exists")
+    print("The directory exists")
   } else {
   # create the "my_new_folder
     dir.create(filePath)
