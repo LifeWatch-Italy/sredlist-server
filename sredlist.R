@@ -107,7 +107,7 @@ function(scientific_name, presences = list(), seasons = list() , origins = list(
 
   if (nrow(distSP) > 0) { 
     distSP$cols <- NA
-    distSP$cols <- revalue(as.character(distSP$presence), c("1"=NA, "2"=NA, "3"=NA, "4"="brown2", "5"="brown4", "6"="gray70")) # nolint    if (nrow(distSP) > 0) {
+    distSP$cols <- revalue(as.character(distSP$presence), c("1"=NA, "2"=NA, "3"=NA, "4"="mistyrose1", "5"="brown4", "6"="gray70")) # nolint    if (nrow(distSP) > 0) {
     for (i in which(is.na(distSP$cols))) {
         if (distSP$origin[i] == "1") {
           if(distSP$seasonal[i] == "1"){ distSP$cols[i] <- revalue(as.character(distSP$presence[i]), c("1"="#d95f02", "2"="#fc8d62", "3"="#fc8d62"))} # nolint
@@ -238,7 +238,7 @@ function(scientific_name, presences = list(), seasons = list() , origins = list(
   plot3 <- base64enc::dataURI(file = paste0(scientific_name, ".png"), mime = "image/png") # nolint
   log_info("END - Plot EOO")
   file.remove(paste0(scientific_name, ".png"))
-  EOO_km2 <- as.numeric(st_area(EOO))/1000000
+  EOO_km2 <- round(as.numeric(st_area(EOO))/1000000)
   return(list(
         eoo_km2 = EOO_km2,
         plot_eoo = plot3
@@ -300,7 +300,7 @@ function(scientific_name, presences = list(), seasons = list() , origins = list(
   choice_season <- c(seasons)
   choice_origin <- c(origins)
 
-  isGbifDistribution <- TRUE
+  # isGbifDistribution <- TRUE
   if (isGbifDistribution == FALSE) {
   distSP <- subset(distSP_full, # nolint
     distSP_full$presence %in% choice_presence &
@@ -429,9 +429,10 @@ function(scientific_name, presences = list(), seasons = list() , origins = list(
 #* @param origins:[int] origins (1, 2)
 #* @param habitats_pref:[str] habitats_pref
 #* @param altitudes_pref:[int] altitudes_pref
+#* @param isGbifDistribution:boolean isGbifDistribution
 #* @serializer unboxedJSON
 #* @tag sRedList
-function(scientific_name, presences = list(), seasons = list() , origins = list(), habitats_pref= list(), altitudes_pref= list()) { # nolint
+function(scientific_name, presences = list(), seasons = list() , origins = list(), habitats_pref= list(), altitudes_pref= list(), isGbifDistribution = FALSE) { # nolint
   #Filter param
   scientific_name <- url_decode(scientific_name)
   if (length(presences) != 0) presences <- as.character(presences);
@@ -455,10 +456,20 @@ function(scientific_name, presences = list(), seasons = list() , origins = list(
   choice_season <- c(seasons)
   choice_origin <- c(origins)
 
+  #isGbifDistribution <- TRUE
+  if (isGbifDistribution == FALSE) {
   distSP <- subset(distSP_full, # nolint
     distSP_full$presence %in% choice_presence &
     distSP_full$seasonal %in% choice_season &
     distSP_full$origin %in% choice_origin)
+  }else {
+    distSP <- st_transform(distSP_full, crs(cci2))
+  }
+
+  # distSP <- subset(distSP_full, # nolint
+  #   distSP_full$presence %in% choice_presence &
+  #   distSP_full$seasonal %in% choice_season &
+  #   distSP_full$origin %in% choice_origin)
 
   # Combine polygons in a single shapefile, that will be used in analyses
   distSP <- distSP %>% dplyr::group_by(binomial) %>% dplyr::summarise(N = n())
@@ -547,14 +558,14 @@ function(scientific_name, presences = list(), seasons = list() , origins = list(
 function(scientific_name, aoh_lost, eoo_km2, aoo_km2, pop_size ) {
   #Filter param
   scientific_name <- url_decode(scientific_name)
-  AOH_lost <- round(as.numeric(aoh_lost), 3) 
+  AOH_lost <- round(as.numeric(aoh_lost), 3)
   EOO_km2 <-  round(as.numeric(eoo_km2))
   AOO_km2 <-  round(as.numeric(aoo_km2))
   Pop_size <-  round(as.numeric(pop_size))
   if (Pop_size == -1) {
-    Pop_size <- as.integer(NaN)
+    Pop_size <- as.numeric(NaN)
   }
-  print(Pop_size)
+  log_info("AOH_lost", AOH_lost, "EOO_km2", EOO_km2, "AOO_km2", AOO_km2, "Pop_size", Pop_size)
 
   criteria <- data.frame(Crit=c("A2", "B1", "B2", "C1", "D"), Value=NA) ; criteria$Value=factor(criteria$Value, c("LC/NT", "VU", "EN", "CR")) # nolint
   criteria$Value[criteria$Crit=="A2"] <- cut(AOH_lost, breaks=c(-Inf, 0.3, 0.5, 0.8, 1), labels=c("LC/NT", "VU", "EN", "CR")) # nolint
@@ -586,13 +597,12 @@ function(scientific_name, aoh_lost, eoo_km2, aoo_km2, pop_size ) {
 function(scientific_name, aoh_lost, eoo_km2, aoo_km2, pop_size, res) {
   #Filter param
   scientific_name <- url_decode(scientific_name)
-  AOH_lost <- round(as.numeric(aoh_lost), 3) 
-  print(AOH_lost)
+  AOH_lost <- round(as.numeric(aoh_lost), 3)
   EOO_km2 <-  round(as.numeric(eoo_km2))
   AOO_km2 <-  round(as.numeric(aoo_km2))
   Pop_size <-  round(as.numeric(pop_size))
   if (Pop_size == -1) {
-    Pop_size <- as.integer(NaN)
+    Pop_size <- as.numeric(NaN)
   }
 
   criteria <- data.frame(Crit=c("A2", "B1", "B2", "C1", "D"), Value=NA) ; criteria$Value=factor(criteria$Value, c("LC/NT", "VU", "EN", "CR")) # nolint
@@ -603,18 +613,19 @@ function(scientific_name, aoh_lost, eoo_km2, aoo_km2, pop_size, res) {
     as.numeric(cut(Pop_size, breaks=c(0, 250, 2500, 10000, Inf), labels=rev(c(1,2,3,4)))),  # nolint
     as.numeric(cut(AOH_lost, breaks=c(-Inf, 0.1, 0.2, 0.25, 1), labels=rev(c(1,2,3,4))))) %>% as.character(.) %>% revalue(., c("1"="LC/NT", "2"="VU", "3"="EN", "4"="CR")) # Note for later, the timeframe applied here for CR and EN species is not in line with guidelines)  # nolint
   criteria$Value[criteria$Crit=="D"]<-cut(Pop_size, breaks=c(0, 50, 250, 1000, Inf), labels=rev(c("LC/NT", "VU", "EN", "CR")))  # nolint
-
+  
+  #TODO: Error when Pop_size == NaN
   df <- data.frame(
-    Species = scientific_name,
-    Date_processed = Sys.time(),
-    EOO = EOO_km2,
-    AOO = AOO_km2,
-    Trends = AOH_lost,
-    Pop.size = pop_size,
-    Criterias = paste0(criteria$Value, " (", criteria$Crit, ")") %>% paste(., collapse="; "),
-    Highest_category = criteria$Value[which(as.numeric(criteria$Value)==max(as.numeric(criteria$Value)))] %>% unique()
+      Species = scientific_name,
+      Date_processed = Sys.time(),
+      EOO = EOO_km2,
+      AOO = AOO_km2,
+      Trends = AOH_lost,
+      Pop.size = Pop_size,
+      Criterias = paste0(criteria$Value, " (", criteria$Crit, ")") %>% paste(., collapse="; "),
+      Highest_category = criteria$Value[which(as.numeric(criteria$Value)==max(as.numeric(criteria$Value)))] %>% unique()
   )
-
+  
   filename <- paste0('assessment-', scientific_name, '-', Sys.Date(), '.csv') 
   pathToSaveAssessment <- paste0("Assessments/", filename)
 
@@ -657,7 +668,7 @@ function(scientific_name, aoh_lost, eoo_km2, aoo_km2, pop_size) {
     EOO = EOO_km2,
     AOO = AOO_km2,
     Trends = AOH_lost,
-    Pop.size = pop_size,
+    Pop.size = Pop_size,
     Criterias = paste0(criteria$Value, " (", criteria$Crit, ")") %>% paste(., collapse="; "),
     Highest_category = criteria$Value[which(as.numeric(criteria$Value)==max(as.numeric(criteria$Value)))] %>% unique()
   )
