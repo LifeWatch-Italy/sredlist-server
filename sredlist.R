@@ -1,10 +1,10 @@
 #Extensions File Distribution
 extensions <- list("shp", "shx", "prj", "dbf", "cpg")
 
-#Load general altitude raster
-alt <- raster("Raster/alt_Nesoenas.mayeri.tif")
-cci1 <- raster("Raster/CCI_2010_Nesoenas.mayeri.tif")
-cci2 <- raster("Raster/CCI_2020_Nesoenas.mayeri.tif")
+#Load ESA land cover data (in 2010 and 2020) and altitude data
+alt <- raster(config$alt_raster_path)
+cci1 <- raster(config$cci1_raster_path)
+cci2 <- raster(config$cci2_raster_path)
 
 #Load Crosswalk CSV and Density CSV
 density<-read.csv("Species/Density.table.csv", sep=",") ; names(density)[1]<-"Species" ; # nolint

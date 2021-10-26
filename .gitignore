@@ -42,4 +42,7 @@ vignettes/*.pdf
 logs/*.log
 
 # Distributions
-Distributions/*
+#Distributions/*
+
+# Assessments
+Assessments/*
