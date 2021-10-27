@@ -693,7 +693,7 @@ function() {
     files <- list()
     directorySize <- 0
     for( fileName in list.files(paste0("Distributions/", directoryName))) {
-        fileSize <- file.info(paste0("Distributions/", directoryName, "/", fileName))$size # nolint 
+        fileSize <- (file.info(paste0("Distributions/", directoryName, "/", fileName))$size) / 1024 # nolint 
         files <- append(files, list(list(data = list(
           name = fileName,
           size = fileSize, # nolint
