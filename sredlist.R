@@ -691,18 +691,21 @@ function() {
   distributions <- list()
   for (directoryName in list.files("Distributions")) {
     files <- list()
+    directorySize <- 0
     for( fileName in list.files(paste0("Distributions/", directoryName))) {
+        fileSize <- file.info(paste0("Distributions/", directoryName, "/", fileName))$size # nolint 
         files <- append(files, list(list(data = list(
           name = fileName,
-          size = file.info(paste0("Distributions/", directoryName, "/", fileName))$size, # nolint
+          size = fileSize, # nolint
           type = "file"
         ))))
+        directorySize <- directorySize + fileSize
     }
     distributions <- append(distributions, list(
       list(
         data = list(
           name = directoryName,
-          size = file.info(paste0("Distributions/", directoryName))$size,
+          size = directorySize,
           type = "folder"),
         children = files
         )));
