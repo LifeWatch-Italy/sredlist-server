@@ -7,7 +7,12 @@ RUN R -e "install.packages(c('plumber', 'config', 'tictoc', 'logger','glue', 'ur
 RUN R -e "devtools::install_github('ropensci/CoordinateCleaner')"
 
 # copy everything from the current directory into the container
+#COPY sredlist-server-develop /
 COPY / /
+#COPY / /sredlist/
+
+# copy data full raster into the container
+#COPY data /data/
 
 # open port 8000 to traffic
 EXPOSE 8000
