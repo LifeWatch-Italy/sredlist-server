@@ -2,11 +2,31 @@
 Plumber R application:
 To run the server you must:
 1)Install the following libraries in R:
-library(plumber)
-library(logger)
-library(glue)
-library(urltools)
-library(Rook) ; library(ggplot2) ; library(raster) ; library(dplyr) ; library(sf) ; library(rgdal) ; library(plyr) ; library(ncdf4) ; library(ggalluvial) ; library(rredlist)
+- library (plumber)
+- library (logger)
+- library (glue)
+- library (urltools)
+- library (Rook)
+- library (ggplot2)
+- library (raster)
+- library (plyr)
+- library (dplyr)
+- library (sf) 
+- library (rgdal) 
+- library (ncdf4)
+- library (ggalluvial)
+- library (rredlist) 
+- library (tools)
+- library (rgbif);
+- library (CoordinateCleaner)
+- library (rCAT); 
+- library (maps) 
+- library (countrycode)
+- library (rnaturalearthdata)
+- library (exactextractr)
+- library (rasterVis)
+- library (readr)
+
 2)run the script inside the R env:
 source(".server.R")
 
