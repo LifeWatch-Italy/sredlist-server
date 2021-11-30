@@ -143,8 +143,10 @@ function(scientific_name, presences = list(), seasons = list() , origins = list(
 #* @serializer unboxedJSON
 #* @tag sRedList
 function(scientific_name) {
+    #Clean-string from user
     scientific_name <- url_decode(scientific_name)
-
+    scientific_name <- trim(gsub("[[:punct:]]", " ", scientific_name))
+    print(scientific_name)
     #GBIF procedure createDataGBIF, cleanDataGBIF in utils.R
     log_info("START - Create data")
     dat <- createDataGBIF(scientific_name)

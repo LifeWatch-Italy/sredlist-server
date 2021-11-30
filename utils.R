@@ -36,10 +36,9 @@ read_map_countries <- function() {
 createDataGBIF <- function(scientific_name) { # nolint
     #Download data
     dat <- occ_search(scientificName = scientific_name, hasCoordinate = T)$data
-    print(dat)
+    #print(dat)
     if (is.null(dat)) {
-      print("sono qui")
-      not_found("GBIF occurrences of the species could not be found! Check whether the scientific name of the species has been typed correctly!")
+      not_found("GBIF occurrences of the species could not be found! Check whether the scientific name of the species has been typed correctly!") # nolint
     }
     #Select columns of interest
     dat <- dat %>%
@@ -47,7 +46,7 @@ createDataGBIF <- function(scientific_name) { # nolint
                 gbifID, family, taxonRank, coordinateUncertaintyInMeters, year,
                 basisOfRecord, institutionCode, datasetName)
 
-    print(head(as.data.frame(dat)))
+    #print(head(as.data.frame(dat)))
 
     #Remove records with no spatial coordinates
     dat <- dat %>% filter(!is.na(decimalLongitude)) %>% filter(!is.na(decimalLatitude)) # nolint
