@@ -17,10 +17,11 @@ cci_classes <- data.frame(Classes = c(levels(as.factor(crosswalk$esa_code)), 220
 #* @param req:file Distribution file (shp,.shx,.prj,.dbf,.cpg)
 #* @param scientific_name:str Insert Species Name
 #* @serializer unboxedJSON
-#* @parser multi 
+#* @parser multi
 #* @tag sRedList
 function(scientific_name, req) {
   scientific_name <- url_decode(scientific_name)
+  scientific_name <- R.utils::capitalize(trim(gsub("[[:punct:]]", " ", scientific_name))) # nolint
 
   # Required for multiple file uploads
   names(req)
@@ -39,20 +40,23 @@ function(scientific_name, req) {
   # The file is downloaded in a temporary folder
   tmpfile <- fileInfo$formContents$req$tempfile
   #print(fileInfo) # nolint
-
-  # Create a file path
-  filePath <- paste0("Distributions/", scientific_name, "/") # nolint
+  upload_folder_scientific_name <- R.utils::capitalize(paste0(stringr::str_replace(scientific_name, " ", "_"), format(Sys.time(), "_%Y%m%d"))) # nolint
+  # Create a file path E.g: Distributions/Nile tilapia/Nile_tilapia_20211207/
+  filePath <- paste0("Distributions/", scientific_name, "/", upload_folder_scientific_name, "/") # nolint
   if (dir.exists(filePath)) {
-    print("The direcoty exists")
+    print("The directory exists")
   } else {
   # create the "my_new_folder
-    dir.create(filePath)
+    dir.create(filePath, showWarnings = TRUE, recursive = TRUE)
   }
-  fn <- paste0(filePath, file_name, sepp = "")
+  print(file_name)
+  new_file_name2 = paste0(upload_folder_scientific_name, ".", file_ext(file_name)) # nolint
+  fn <- paste0(filePath, new_file_name2, sepp = "")
   print(fn)
 
   #Copies the file into the designated folder
   file.copy(tmpfile, fn)
+  #file.rename(fn , fn)
 
 
   print(paste0("Your file is now stored in ", fn))
@@ -62,11 +66,12 @@ function(scientific_name, req) {
 #* Info distribution species from sRedList platform
 #* @get species/<scientific_name>/distribution/info
 #* @param scientific_name:string Scientific Name
-#* @serializer json
+#* @param path:string Distribution Folder default RedList
 #* @tag sRedList
-function(scientific_name) {
+function(scientific_name, path = "") {
   scientific_name <- url_decode(scientific_name)
-  distributions <- read_distribution(scientific_name)
+  path <- ifelse(path == "", paste0(R.utils::capitalize(trim(gsub(" ", "_", scientific_name))), '_RL'), path ) # nolint
+  distributions <- read_distribution(scientific_name, path)
   distSP <- subset(distributions, distributions$binomial == scientific_name) # nolint
   return(list(
     presences = union(c(1, 2, 3), unique(distSP$presence)),
@@ -81,11 +86,13 @@ function(scientific_name) {
 #* @param presences:[int] presences (1, 2, 3)
 #* @param seasons:[int] seasons (1, 2)
 #* @param origins:[int] origins (1, 2)
+#* @param path:string Distribution Folder default RedList
 #* @serializer png list(width = 800, height = 600)
 #* @tag sRedList
-function(scientific_name, presences = list(), seasons = list() , origins = list()) { # nolint
+function(scientific_name, presences = list(), seasons = list() , origins = list(), path = "") { # nolint
   #Filter param
   scientific_name <- url_decode(scientific_name)
+  path <- ifelse(path == "", paste0(R.utils::capitalize(trim(gsub(" ", "_", scientific_name))), '_RL'), path ) # nolint
   if (length(presences) != 0) presences <- as.character(presences);
   if (length(seasons) != 0) seasons <- as.character(seasons);
   if (length(origins) != 0) origins <- as.character(origins);
@@ -93,7 +100,7 @@ function(scientific_name, presences = list(), seasons = list() , origins = list(
   #Load Map countries
   distCountries <- read_map_countries()
   #Load Distribution Species
-  distributions <- read_distribution(scientific_name)
+  distributions <- read_distribution(scientific_name, path)
 
   distSP_full <- subset(distributions, distributions$binomial == scientific_name) # nolint    
   choice_presence <- c(presences)
@@ -145,7 +152,7 @@ function(scientific_name, presences = list(), seasons = list() , origins = list(
 function(scientific_name) {
     #Clean-string from user
     scientific_name <- url_decode(scientific_name)
-    scientific_name <- trim(gsub("[[:punct:]]", " ", scientific_name))
+    scientific_name <- R.utils::capitalize(trim(gsub("[[:punct:]]", " ", scientific_name))) # nolint
     print(scientific_name)
     #GBIF procedure createDataGBIF, cleanDataGBIF in utils.R
     log_info("START - Create data")
@@ -168,6 +175,7 @@ function(scientific_name) {
     # Calculates EOO and assess Red List criterion B1
     log_info("START - Calculates EOO and assess Red List criterion B1")
     dat_cl <- dat[flags$.summary,]
+    gbif_data_number <- nrow(dat_cl)
     dat_proj <- SpatialPoints(cbind(dat_cl$decimalLongitude, dat_cl$decimalLatitude), proj4string=CRS("+proj=longlat +datum=WGS84")) %>% spTransform(., CRSobj = CRS("+proj=moll +lon_0=0 +x_0=0 +y_0=0 +ellps=WGS84 +units=m +no_defs")) #nolint
     ll <- data.frame(y = coordinates(dat_proj)[,2], x = coordinates(dat_proj)[,1]) # nolint
     EOO_km2 <- round(EOOarea(ll)/1000000) # nolint
@@ -182,7 +190,7 @@ function(scientific_name) {
     #EOO$binomial <- "Papilio sosia"
     EOO$binomial <- as.character(scientific_name)
     #Save EOO distribution: Utils.R
-    saveEooDistribution(scientific_name, EOO)
+    saveEooDistribution(scientific_name, EOO, gbif_data_number)
     ggsave("eoo.png", plot(ggplot() + geom_sf(data = EOO) + geom_sf(data = st_as_sf(dat_proj)) + ggtitle(paste0("EOO of ", scientific_name)))) # nolint
     plot3 <- base64enc::dataURI(file = "eoo.png", mime = "image/png") # nolint
     log_info("END - Plot EOO")
@@ -195,7 +203,8 @@ function(scientific_name) {
         plot_clean_coordinates = plot2,
         eoo_km2 = EOO_km2,
         eoo_rating = EOO_rating,
-        plot_eoo = plot3
+        plot_eoo = plot3,
+        gbif_data_number  = gbif_data_number
         ));
 
 }
@@ -207,17 +216,19 @@ function(scientific_name) {
 #* @param presences:[int] presences (1, 2, 3)
 #* @param seasons:[int] seasons (1, 2)
 #* @param origins:[int] origins (1, 2)
+#* @param path:string Distribution Folder default RedList
 #* @serializer unboxedJSON
 #* @tag sRedList
-function(scientific_name, presences = list(), seasons = list() , origins = list()) { # nolint
+function(scientific_name, presences = list(), seasons = list() , origins = list(), path = "") { # nolint
   #Filter param
   scientific_name <- url_decode(scientific_name)
+  path <- ifelse(path == "", paste0(R.utils::capitalize(trim(gsub(" ", "_", scientific_name))), '_RL'), path ) # nolint
   if (length(presences) != 0) presences <- as.character(presences);
   if (length(seasons) != 0) seasons <- as.character(seasons);
   if (length(origins) != 0) origins <- as.character(origins);
   
   #Load Distribution Species
-  distributions <- read_distribution(scientific_name)
+  distributions <- read_distribution(scientific_name, path)
 
   distSP_full <- subset(distributions, distributions$binomial == scientific_name) # nolint    
   choice_presence <- c(presences)
@@ -273,11 +284,13 @@ function(scientific_name) {
 #* @param density_pref:int density_pref
 #* @param density_pref:int density_pref
 #* @param isGbifDistribution:boolean isGbifDistribution
+#* @param path:string Distribution Folder default RedList
 #* @serializer unboxedJSON
 #* @tag sRedList
-function(scientific_name, presences = list(), seasons = list() , origins = list(), habitats_pref= list(), altitudes_pref= list(), density_pref= -1, isGbifDistribution = FALSE) { # nolint    
+function(scientific_name, presences = list(), seasons = list() , origins = list(), habitats_pref= list(), altitudes_pref= list(), density_pref= -1, isGbifDistribution = FALSE, path = "") { # nolint    
   #Filter param
   scientific_name <- url_decode(scientific_name)
+  path <- ifelse(path == "", paste0(R.utils::capitalize(trim(gsub(" ", "_", scientific_name))), '_RL'), path ) # nolint
   if (length(presences) != 0) presences <- as.character(presences);
   if (length(seasons) != 0) seasons <- as.character(seasons);
   if (length(origins) != 0) origins <- as.character(origins);
@@ -295,7 +308,7 @@ function(scientific_name, presences = list(), seasons = list() , origins = list(
   print(isGbifDistribution)
   
   #Load Distribution Species
-  distributions <- read_distribution(scientific_name)
+  distributions <- read_distribution(scientific_name, path)
 
   distSP_full <- subset(distributions, distributions$binomial == scientific_name) # nolint    
   choice_presence <- c(presences)
@@ -432,11 +445,13 @@ function(scientific_name, presences = list(), seasons = list() , origins = list(
 #* @param habitats_pref:[str] habitats_pref
 #* @param altitudes_pref:[int] altitudes_pref
 #* @param isGbifDistribution:boolean isGbifDistribution
+#* @param path:string Distribution Folder default RedList
 #* @serializer unboxedJSON
 #* @tag sRedList
-function(scientific_name, presences = list(), seasons = list() , origins = list(), habitats_pref= list(), altitudes_pref= list(), isGbifDistribution = FALSE) { # nolint
+function(scientific_name, presences = list(), seasons = list() , origins = list(), habitats_pref= list(), altitudes_pref= list(), isGbifDistribution = FALSE, path = "") { # nolint
   #Filter param
   scientific_name <- url_decode(scientific_name)
+  path <- ifelse(path == "", paste0(R.utils::capitalize(trim(gsub(" ", "_", scientific_name))), '_RL'), path ) # nolint
   if (length(presences) != 0) presences <- as.character(presences);
   if (length(seasons) != 0) seasons <- as.character(seasons);
   if (length(origins) != 0) origins <- as.character(origins);
@@ -451,7 +466,7 @@ function(scientific_name, presences = list(), seasons = list() , origins = list(
   print(altitudes_pref)
   
   #Load Distribution Species
-  distributions <- read_distribution(scientific_name)
+  distributions <- read_distribution(scientific_name, path)
 
   distSP_full <- subset(distributions, distributions$binomial == scientific_name) # nolint    
   choice_presence <- c(presences)
@@ -552,7 +567,7 @@ function(scientific_name, presences = list(), seasons = list() , origins = list(
 #* @param pop_size:int Pop_size
 #* @serializer png list(width = 800, height = 600)
 #* @tag sRedList
-function(scientific_name, aoh_lost, eoo_km2, aoo_km2, pop_size ) {
+function(scientific_name, aoh_lost, eoo_km2, aoo_km2, pop_size) {
   #Filter param
   scientific_name <- url_decode(scientific_name)
   AOH_lost <- round(as.numeric(aoh_lost), 3)

@@ -65,11 +65,13 @@ function(scientific_name) {
 #* Plot the distributions plot from RedList API
 #* @get species/<scientific_name>/distribution
 #* @param scientific_name:string Scientific Name
+#* @param path:string Distribution Folder default RedList
 #* @serializer png list(width = 800, height = 600)
 #* @tag RedList-API
-function(scientific_name) {
+function(scientific_name, path = "") {
   scientific_name <- url_decode(scientific_name)
-  distributions <- read_distribution(scientific_name)
+  path <- ifelse(path == "", paste0(R.utils::capitalize(trim(gsub(" ", "_", scientific_name))), '_RL'), path ) # nolint
+  distributions <- read_distribution(scientific_name, path)
   dist_species <- subset(distributions, distributions$binomial == scientific_name) # nolint
   #TODO: call RedList API for get distribution
   return(plot(ggplot(dist_species) +

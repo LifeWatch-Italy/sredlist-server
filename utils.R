@@ -6,9 +6,9 @@ firstup <- function(x) {
 
 `%not in%` <- function (x, table) is.na(match(x, table, nomatch=NA_integer_)) # nolint
 
-# Generated distribution from File by scientific_name of species
-read_distribution <- function(scientific_name) {
-  speciesPath <- paste0("Distributions/", scientific_name) # nolint
+# Generated distribution from File by scientific_name of species and folder path
+read_distribution <- function(scientific_name, path) {
+  speciesPath <- paste0("Distributions/", scientific_name, "/", path) # nolint
   files <- base::list.files(path = speciesPath, pattern = "\\.shp$")
 
   if (length(files) == 0) {
@@ -67,15 +67,29 @@ cleanDataGBIF <- function(data) { # nolint
 }
 
 # Save EOO distribution from GBIF procedure
-saveEooDistribution <- function(scientific_name, EOO) {
+saveEooDistribution <- function(scientific_name, EOO, gbif_data_number) {
+  # Create a file path E.g: Distributions/Nile tilapia/Nile_tilapia_GBIF_20211207/ # nolint
+  upload_folder_scientific_name <- R.utils::capitalize(paste0(stringr::str_replace(scientific_name, " ", "_"), format(Sys.time(), "_GBIF_%Y%m%d"))) # nolint
   # Create a file path
-  filePath <- paste0("Distributions/", scientific_name, "/") # nolint
+  filePath <- paste0("Distributions/", scientific_name, "/", upload_folder_scientific_name, "/") # nolint
   if (dir.exists(filePath)) {
     print("The directory exists")
   } else {
   # create the "my_new_folder
     dir.create(filePath)
   }
-  path <- paste0(filePath, scientific_name, ".shp")
+  path <- paste0(filePath, upload_folder_scientific_name, ".shp")
   st_write(EOO, path, append = FALSE)
+
+  print("Write metadata file")
+  text <- paste0(
+  "A distribution has been stored for the species: ",
+  scientific_name,
+  ".\nIt was created with the GBIF procedure from the sRedList platform, based on ", # nolint
+  gbif_data_number,
+  " occurrence data downloaded from GBIF on the ",
+  Sys.time(),
+  " CET."
+  )
+  writeLines(text, paste0(filePath, upload_folder_scientific_name, ".txt"))
 }
