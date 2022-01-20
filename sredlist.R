@@ -717,7 +717,7 @@ function() {
         subFiles <- list()
         for( subFileName in list.files(paste0("Distributions/", directoryName, "/", fileName))) { # nolint 
           # GBIF distributions INFO
-          metadata <- NILL
+          metadata <- NULL
           if (file_ext(subFileName) == "json") {
             metadata = jsonlite::read_json(paste0("Distributions/", directoryName, "/", fileName, "/", subFileName), simplifyVector = FALSE)  # nolint 
           }
