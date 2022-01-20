@@ -709,21 +709,48 @@ function() {
   for (directoryName in list.files("Distributions")) {
     files <- list()
     directorySize <- 0
-    for( fileName in list.files(paste0("Distributions/", directoryName))) {
-        fileSize <- (file.info(paste0("Distributions/", directoryName, "/", fileName))$size) / 1024 # nolint 
-        files <- append(files, list(list(data = list(
-          name = fileName,
-          size = fileSize, # nolint
-          type = "file"
-        ))))
-        directorySize <- directorySize + fileSize
+    edit <- TRUE
+    for(fileName in list.files(paste0("Distributions/", directoryName))) {
+        # Red list distributions cannot be deleted
+        if (grepl("_RL", fileName)) edit <- FALSE;  # nolint
+        subDirectorySize <- 0
+        subFiles <- list()
+        for( subFileName in list.files(paste0("Distributions/", directoryName, "/", fileName))) { # nolint 
+          # GBIF distributions INFO
+          metadata <- NILL
+          if (file_ext(subFileName) == "json") {
+            metadata = jsonlite::read_json(paste0("Distributions/", directoryName, "/", fileName, "/", subFileName), simplifyVector = FALSE)  # nolint 
+          }
+          subFileSize <- (file.info(paste0("Distributions/", directoryName, "/", fileName, "/", subFileName))$size) / 1024 # nolint 
+          subFiles <- append(subFiles, list(list(data = list(
+          name = subFileName,
+          size = subFileSize, # nolint
+          type = "file",
+          path = fileName, # nolint 
+          metadata = metadata,
+          edit = edit
+          ))))
+          subDirectorySize <- subDirectorySize + subFileSize
+        }
+        fileSize <- (file.info(paste0(directoryName, "/", fileName))$size) / 1024 # nolint 
+        files <- append(files, list(list(
+          data = list(
+            name = fileName,
+            size = subDirectorySize, # nolint
+            type = "folder",
+            path = directoryName, # nolint 
+            edit = edit),
+          children = subFiles
+        )))
+        directorySize <- directorySize + subDirectorySize
     }
     distributions <- append(distributions, list(
       list(
         data = list(
           name = directoryName,
           size = directorySize,
-          type = "folder"),
+          type = "folder",
+          edit = FALSE),
         children = files
         )));
   }
@@ -734,19 +761,39 @@ function() {
 #* @delete species/<scientific_name>/distribution
 #* @param scientific_name:string Scientific Name
 #* @param file_name:string file_name
+#* @param path:string path
+#* @param type:string type
 #* @serializer unboxedJSON
 #* @tag sRedList
-function(scientific_name, file_name = "") {
+function(scientific_name, file_name, path, type) {
   scientific_name <- url_decode(scientific_name)
   file_name <- url_decode(file_name)
-  print(scientific_name)
-  if (scientific_name %in% list.files("Distributions")) {
-        if (file_name == "") {
-          return(list(response = unlink(paste0("Distributions/", scientific_name), recursive = TRUE))) # nolint
+  path <- url_decode(path)
+  type <- url_decode(type)
+  if ((scientific_name %in% list.files("Distributions")) && !grepl("_RL", file_name) && !grepl("_RL", path)) { # nolint
+        if (type == "folder") {
+          if (file_name %in% list.files(paste0("Distributions/", path))) {
+            log_info(paste0("Delete distribution:", "Distributions/", path, '/', file_name)) # nolint
+            return(list(response = unlink(paste0("Distributions/", path, '/', file_name), recursive = TRUE))) # nolint
+          }
         }else {
-          return(list(response = unlink(paste0("Distributions/", scientific_name, "/", file_name)))) # nolint
+          if(file_name %in% list.files(paste0("Distributions/", scientific_name, '/', path))){ # nolint
+            log_info(paste0("Delete distribution:", "Distributions/", scientific_name, '/', path, "/", file_name)) # nolint
+            return(list(response = unlink(paste0("Distributions/", scientific_name, "/", path, "/", file_name)))) # nolint
+          }
         }
+        not_found("Species distribution not exist!") # nolint
     }else {
        not_found("Species distribution not exist!") # nolint
     }
+}
+
+#* Get distributions species from sRedList platform
+#* @get species/<scientific_name>/distributions
+#* @param scientific_name:string Scientific Name
+#* @serializer unboxedJSON
+#* @tag sRedList
+function(scientific_name) {
+  #Filter param
+  scientific_name <- url_decode(scientific_name)
 }
