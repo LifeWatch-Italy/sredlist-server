@@ -5,7 +5,7 @@ speciesRL <- read.csv("Species/species-all-page.csv") # nolint
 #* @get species/search
 #* @serializer json
 #* @param scientific_name:str Digit Scientific Name (min. 3 characters)
-#* @tag RedList-API
+#* @tag RedList
 function(scientific_name) {
   if (nchar(scientific_name) < 3) {
     invalid_params("You must enter at least 3 characters.")
@@ -18,7 +18,7 @@ function(scientific_name) {
 #* @get species/<scientific_name>
 #* @param scientific_name:str Scientific Name
 #* @serializer json
-#* @tag RedList-API
+#* @tag RedList
 function(scientific_name) {
   species <- rl_search(scientific_name, key = config$red_list_token)#$result
   return(species)
@@ -29,7 +29,7 @@ function(scientific_name) {
 #* @get species/<scientific_name>/citation
 #* @serializer unboxedJSON
 #* @param scientific_name:str Scientific Name
-#* @tag RedList-API
+#* @tag RedList
 function(scientific_name) {
   # Get link to current assessment (this link could go where I wrote "link to assessment" in the PNG file) # nolint
   cite <- unlist(strsplit(as.character(rl_sp_citation(name = scientific_name, key=config$red_list_token)$result), " ")) # nolint
@@ -40,7 +40,7 @@ function(scientific_name) {
 #* @get species/<scientific_name>/historic
 #* @param scientific_name:str Scientific Name
 #* @serializer png list(width = 800, height = 600)
-#* @tag RedList-API
+#* @tag RedList
 function(scientific_name) {
   historic <- rl_history(scientific_name, key = config$red_list_token)$result
 
@@ -67,7 +67,7 @@ function(scientific_name) {
 #* @param scientific_name:string Scientific Name
 #* @param path:string Distribution Folder default RedList
 #* @serializer png list(width = 800, height = 600)
-#* @tag RedList-API
+#* @tag RedList
 function(scientific_name, path = "") {
   scientific_name <- url_decode(scientific_name)
   path <- ifelse(path == "", paste0(R.utils::capitalize(trim(gsub(" ", "_", scientific_name))), '_RL'), path ) # nolint
@@ -86,7 +86,7 @@ function(scientific_name, path = "") {
 #* @get species/<scientific_name>/habitat-preferences
 #* @param scientific_name:string Scientific Name
 #* @serializer json
-#* @tag RedList-API
+#* @tag RedList
 function(scientific_name) {
   #Filter param
   scientific_name <- url_decode(scientific_name)
@@ -98,7 +98,7 @@ function(scientific_name) {
 #* @get species/<scientific_name>/altitude-preferences
 #* @param scientific_name:string Scientific Name
 #* @serializer unboxedJSON
-#* @tag RedList-API
+#* @tag RedList
 function(scientific_name) {
   #Filter param
   scientific_name <- url_decode(scientific_name)
