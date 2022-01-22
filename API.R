@@ -6,7 +6,7 @@
 #* @apiContact list(name = "API Support", url = "http://www.example.com/support", email = "support@example.com") # nolint
 #* @apiLicense list(name = "Apache 2.0", url = "https://www.apache.org/licenses/LICENSE-2.0.html") # nolint
 #* @apiVersion 1.0.0
-#* @apiTag RedList-API API from RedList
+#* @apiTag RedList RedList API
 #* @apiTag sRedList Plaftorm API
 
 #* @filter cors
