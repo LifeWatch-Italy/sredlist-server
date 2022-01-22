@@ -19,7 +19,7 @@ read_distribution <- function(scientific_name, path) {
 
   #distributions<-st_read("Distributions/Chameleons/CHAMELEONS.shp") # nolint
   print(distributionPath)
-  distributions <- st_read(distributionPath)
+  distributions <- sf::st_read(distributionPath)
   names(distributions)[which(names(distributions) %in% c("SCINAME", "binomial", "BINOMIAL"))] <- "binomial" # nolint
   names(distributions)[which(names(distributions) %in% c("PRESENC", "PRESENCE", "presence"))] <- "presence" # nolint
   names(distributions)[which(names(distributions) %in% c("ORIGIN", "origin"))] <- "origin" # nolint
@@ -35,7 +35,7 @@ read_map_countries <- function() {
 
 createDataGBIF <- function(scientific_name) { # nolint
     #Download data
-    dat <- occ_search(scientificName = scientific_name, hasCoordinate = T)$data
+    dat <- rgbif::occ_search(scientificName = scientific_name, hasCoordinate = T)$data # nolint
     #print(dat)
     if (is.null(dat)) {
       not_found("GBIF occurrences of the species could not be found! Check whether the scientific name of the species has been typed correctly!") # nolint

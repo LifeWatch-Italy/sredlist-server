@@ -722,23 +722,26 @@ function() {
             metadata = jsonlite::read_json(paste0("Distributions/", directoryName, "/", fileName, "/", subFileName), simplifyVector = FALSE)  # nolint 
           }
           subFileSize <- (file.info(paste0("Distributions/", directoryName, "/", fileName, "/", subFileName))$size) / 1024 # nolint 
+          subFileCreated <- (file.info(paste0("Distributions/", directoryName, "/", fileName, "/", subFileName))$ctime) # nolint 
           subFiles <- append(subFiles, list(list(data = list(
           name = subFileName,
           size = subFileSize, # nolint
           type = "file",
           path = fileName, # nolint 
           metadata = metadata,
+          created = subFileCreated,
           edit = edit
           ))))
           subDirectorySize <- subDirectorySize + subFileSize
         }
-        fileSize <- (file.info(paste0(directoryName, "/", fileName))$size) / 1024 # nolint 
+        fileCreated <- (file.info(paste0("Distributions/", directoryName, "/", fileName))$ctime) # nolint 
         files <- append(files, list(list(
           data = list(
             name = fileName,
             size = subDirectorySize, # nolint
             type = "folder",
             path = directoryName, # nolint 
+            created = fileCreated,
             edit = edit),
           children = subFiles
         )))
@@ -788,7 +791,7 @@ function(scientific_name, file_name, path, type) {
     }
 }
 
-#* Get distributions species from sRedList platform
+#* Get distributions species from sRedList platform excluding GBIF distributions
 #* @get species/<scientific_name>/distributions
 #* @param scientific_name:string Scientific Name
 #* @serializer unboxedJSON
@@ -796,4 +799,41 @@ function(scientific_name, file_name, path, type) {
 function(scientific_name) {
   #Filter param
   scientific_name <- url_decode(scientific_name)
+  if (scientific_name %in% list.files("Distributions")) { # nolint
+    distributions <- list()
+    for(distributionFolder in list.files(paste0("Distributions/", scientific_name))) { # nolint
+      # GBIF distributions cannot be selected
+      if (!grepl("_GBIF", distributionFolder)){
+        files <- list();
+        directorySize <- 0;
+        for(fileName in list.files(paste0("Distributions/", scientific_name, "/", distributionFolder))) {  # nolint
+          fileSize <- (file.info(paste0("Distributions/", scientific_name, "/", distributionFolder, "/", fileName))$size) / 1024 # nolint 
+          fileCreated <- (file.info(paste0("Distributions/", scientific_name, "/", distributionFolder, "/", fileName))$ctime) # nolint 
+          files <- append(files, list(
+          list(
+            data = list(
+              name = fileName,
+              size = fileSize,
+              created = fileCreated,
+              path = distributionFolder,
+              type = "file")
+            )));
+            directorySize <- directorySize + fileSize;
+        }
+        folderCreated <- (file.info(paste0("Distributions/", scientific_name, "/", distributionFolder))$ctime) # nolint 
+        distributions <- append(distributions, list(
+        list(
+          data = list(
+            name = distributionFolder,
+            size = directorySize,
+            created = folderCreated,
+            path = distributionFolder,
+            type = "folder"),
+            children = files
+          )));
+      }
+    }
+    return(distributions)
+
+  }else { not_found("Species distribution not exist!") } # nolint
 }
