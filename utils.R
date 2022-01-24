@@ -92,5 +92,6 @@ saveEooDistribution <- function(scientific_name, EOO, gbif_data_number) {
   " CET."
   )
   jsonlite::write_json(list(info = text), paste0(filePath, upload_folder_scientific_name, ".json"), auto_unbox= TRUE) # nolint
+  return(upload_folder_scientific_name)
   # writeLines(text, paste0(filePath, upload_folder_scientific_name, ".txt"))
 }

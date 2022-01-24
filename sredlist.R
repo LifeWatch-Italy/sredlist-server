@@ -101,8 +101,7 @@ function(scientific_name, presences = list(), seasons = list() , origins = list(
   distCountries <- read_map_countries()
   #Load Distribution Species
   distributions <- read_distribution(scientific_name, path)
-
-  distSP_full <- subset(distributions, distributions$binomial == scientific_name) # nolint    
+  distSP_full <- subset(distributions, distributions$binomial == scientific_name) # nolint 
   choice_presence <- c(presences)
   choice_season <- c(seasons)
   choice_origin <- c(origins)
@@ -190,7 +189,7 @@ function(scientific_name) {
     #EOO$binomial <- "Papilio sosia"
     EOO$binomial <- as.character(scientific_name)
     #Save EOO distribution: Utils.R
-    saveEooDistribution(scientific_name, EOO, gbif_data_number)
+    gbif_path <- saveEooDistribution(scientific_name, EOO, gbif_data_number)
     ggsave("eoo.png", plot(ggplot() + geom_sf(data = EOO) + geom_sf(data = st_as_sf(dat_proj)) + ggtitle(paste0("EOO of ", scientific_name)))) # nolint
     plot3 <- base64enc::dataURI(file = "eoo.png", mime = "image/png") # nolint
     log_info("END - Plot EOO")
@@ -204,7 +203,8 @@ function(scientific_name) {
         eoo_km2 = EOO_km2,
         eoo_rating = EOO_rating,
         plot_eoo = plot3,
-        gbif_data_number  = gbif_data_number
+        gbif_data_number  = gbif_data_number,
+        gbif_path = gbif_path
         ));
 
 }
