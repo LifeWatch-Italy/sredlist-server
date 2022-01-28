@@ -83,7 +83,7 @@ function(scientific_name, path = "") {
 #* Plot the distributions plot from sRedList platform
 #* @get species/<scientific_name>/distribution
 #* @param scientific_name:string Scientific Name
-#* @param presences:[int] presences (1, 2, 3)
+#* @param presences:[int] presences (1, 2)
 #* @param seasons:[int] seasons (1, 2)
 #* @param origins:[int] origins (1, 2)
 #* @param path:string Distribution Folder default RedList
@@ -213,7 +213,7 @@ function(scientific_name) {
 #* Estimate the Extent of Occurrence (EOO) from range
 #* @get species/<scientific_name>/analysis/eoo
 #* @param scientific_name:string Scientific Name
-#* @param presences:[int] presences (1, 2, 3)
+#* @param presences:[int] presences (1, 2)
 #* @param seasons:[int] seasons (1, 2)
 #* @param origins:[int] origins (1, 2)
 #* @param path:string Distribution Folder default RedList
@@ -276,7 +276,7 @@ function(scientific_name) {
 #* Estimate the Area of Habitat (AOH)
 #* @get species/<scientific_name>/analysis/aoh
 #* @param scientific_name:string Scientific Name
-#* @param presences:[int] presences (1, 2, 3)
+#* @param presences:[int] presences (1, 2)
 #* @param seasons:[int] seasons (1, 2)
 #* @param origins:[int] origins (1, 2)
 #* @param habitats_pref:[str] habitats_pref
@@ -439,7 +439,7 @@ function(scientific_name, presences = list(), seasons = list() , origins = list(
 #* Estimate trends in AOH as a proxy of population trends (Criterion A2)
 #* @get species/<scientific_name>/analysis/trends-aoh
 #* @param scientific_name:string Scientific Name
-#* @param presences:[int] presences (1, 2, 3)
+#* @param presences:[int] presences (1, 2)
 #* @param seasons:[int] seasons (1, 2)
 #* @param origins:[int] origins (1, 2)
 #* @param habitats_pref:[str] habitats_pref
@@ -549,7 +549,7 @@ function(scientific_name, presences = list(), seasons = list() , origins = list(
 
   return(list(
         aoh_lost_km2 = round(AOH_old_km2),
-        aoh_lost = AOH_lost,
+        aoh_lost = AOH_lost * 100,
         plot_trends_aoh = plot1
         ));
 
@@ -637,7 +637,7 @@ function(scientific_name, aoh_lost, eoo_km2, aoo_km2, pop_size, res) {
     Date_processed = Sys.time(),
     EOO = EOO_km2,
     AOO = AOO_km2,
-    Trends = AOH_lost,
+    "Percentage_of_habitat_lost" = AOH_lost,
     Pop.size = Pop_size,
     Criterias = paste0(criteria$Value, " (", criteria$Crit, ")") %>% paste(., collapse="; "),
     Highest_category = criteria$Value[which(as.numeric(criteria$Value)==max(as.numeric(criteria$Value), na.rm=T))] %>% unique()
@@ -689,7 +689,7 @@ function(scientific_name, aoh_lost, eoo_km2, aoo_km2, pop_size) {
     Date_processed = Sys.time(),
     EOO = EOO_km2,
     AOO = AOO_km2,
-    Trends = AOH_lost,
+    "Percentage_of_habitat_lost" = AOH_lost,
     Pop.size = Pop_size,
     Criterias = paste0(criteria$Value, " (", criteria$Crit, ")") %>% paste(., collapse="; "),
     Highest_category = criteria$Value[which(as.numeric(criteria$Value)==max(as.numeric(criteria$Value), na.rm=T))] %>% unique()
