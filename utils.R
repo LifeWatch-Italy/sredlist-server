@@ -76,7 +76,8 @@ saveEooDistribution <- function(scientific_name, EOO, gbif_data_number) {
     print("The directory exists")
   } else {
   # create the "my_new_folder
-    dir.create(filePath)
+    dir.create(filePath, showWarnings = TRUE, recursive = TRUE)
+    #dir.create(filePath)
   }
   path <- paste0(filePath, upload_folder_scientific_name, ".shp")
   st_write(EOO, path, append = FALSE)
