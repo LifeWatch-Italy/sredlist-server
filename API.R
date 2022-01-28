@@ -1,6 +1,6 @@
 # API.R
 
-#* @apiTitle LifeWach-sRedList-Platform API
+#* @apiTitle LifeWatchItaly-sRedList-Platform API
 #* @apiDescription This is a sample server for a sRedList workflow.
 #* @apiTOS http://example.com/terms/
 #* @apiContact list(name = "API Support", url = "http://www.example.com/support", email = "support@example.com") # nolint
