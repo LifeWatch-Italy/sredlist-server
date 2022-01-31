@@ -8,7 +8,7 @@ firstup <- function(x) {
 
 # Generated distribution from File by scientific_name of species and folder path
 read_distribution <- function(scientific_name, path) {
-  speciesPath <- paste0("Distributions/", scientific_name, "/", path) # nolint
+  speciesPath <- paste0(config$distribution_path, scientific_name, "/", path) # nolint
   files <- base::list.files(path = speciesPath, pattern = "\\.shp$")
 
   if (length(files) == 0) {
@@ -71,7 +71,7 @@ saveEooDistribution <- function(scientific_name, EOO, gbif_data_number) {
   # Create a file path E.g: Distributions/Nile tilapia/Nile_tilapia_GBIF_20211207/ # nolint
   upload_folder_scientific_name <- R.utils::capitalize(paste0(stringr::str_replace(scientific_name, " ", "_"), format(Sys.time(), "_GBIF_%Y%m%d"))) # nolint
   # Create a file path
-  filePath <- paste0("Distributions/", scientific_name, "/", upload_folder_scientific_name, "/") # nolint
+  filePath <- paste0(config$distribution_path, scientific_name, "/", upload_folder_scientific_name, "/") # nolint
   if (dir.exists(filePath)) {
     print("The directory exists")
   } else {

@@ -42,7 +42,7 @@ function(scientific_name, req) {
   #print(fileInfo) # nolint
   upload_folder_scientific_name <- R.utils::capitalize(paste0(stringr::str_replace(scientific_name, " ", "_"), format(Sys.time(), "_%Y%m%d"))) # nolint
   # Create a file path E.g: Distributions/Nile tilapia/Nile_tilapia_20211207/
-  filePath <- paste0("Distributions/", scientific_name, "/", upload_folder_scientific_name, "/") # nolint
+  filePath <- paste0(config$distribution_path, scientific_name, "/", upload_folder_scientific_name, "/") # nolint
   if (dir.exists(filePath)) {
     print("The directory exists")
   } else {
@@ -710,19 +710,19 @@ function() {
     files <- list()
     directorySize <- 0
     edit <- TRUE
-    for(fileName in list.files(paste0("Distributions/", directoryName))) {
+    for(fileName in list.files(paste0(config$distribution_path, directoryName))) {
         # Red list distributions cannot be deleted
         if (grepl("_RL", fileName)) edit <- FALSE;  # nolint
         subDirectorySize <- 0
         subFiles <- list()
-        for( subFileName in list.files(paste0("Distributions/", directoryName, "/", fileName))) { # nolint 
+        for( subFileName in list.files(paste0(config$distribution_path, directoryName, "/", fileName))) { # nolint 
           # GBIF distributions INFO
           metadata <- NULL
           if (file_ext(subFileName) == "json") {
-            metadata = jsonlite::read_json(paste0("Distributions/", directoryName, "/", fileName, "/", subFileName), simplifyVector = FALSE)  # nolint 
+            metadata = jsonlite::read_json(paste0(config$distribution_path, directoryName, "/", fileName, "/", subFileName), simplifyVector = FALSE)  # nolint 
           }
-          subFileSize <- (file.info(paste0("Distributions/", directoryName, "/", fileName, "/", subFileName))$size) / 1024 # nolint 
-          subFileCreated <- (file.info(paste0("Distributions/", directoryName, "/", fileName, "/", subFileName))$ctime) # nolint 
+          subFileSize <- (file.info(paste0(config$distribution_path, directoryName, "/", fileName, "/", subFileName))$size) / 1024 # nolint 
+          subFileCreated <- (file.info(paste0(config$distribution_path, directoryName, "/", fileName, "/", subFileName))$ctime) # nolint 
           subFiles <- append(subFiles, list(list(data = list(
           name = subFileName,
           size = subFileSize, # nolint
@@ -734,7 +734,7 @@ function() {
           ))))
           subDirectorySize <- subDirectorySize + subFileSize
         }
-        fileCreated <- (file.info(paste0("Distributions/", directoryName, "/", fileName))$ctime) # nolint 
+        fileCreated <- (file.info(paste0(config$distribution_path, directoryName, "/", fileName))$ctime) # nolint 
         files <- append(files, list(list(
           data = list(
             name = fileName,
@@ -773,16 +773,16 @@ function(scientific_name, file_name, path, type) {
   file_name <- url_decode(file_name)
   path <- url_decode(path)
   type <- url_decode(type)
-  if ((scientific_name %in% list.files("Distributions")) && !grepl("_RL", file_name) && !grepl("_RL", path)) { # nolint
+  if ((scientific_name %in% list.files(config$distribution_path)) && !grepl("_RL", file_name) && !grepl("_RL", path)) { # nolint
         if (type == "folder") {
-          if (file_name %in% list.files(paste0("Distributions/", path))) {
-            log_info(paste0("Delete distribution:", "Distributions/", path, '/', file_name)) # nolint
-            return(list(response = unlink(paste0("Distributions/", path, '/', file_name), recursive = TRUE))) # nolint
+          if (file_name %in% list.files(paste0(config$distribution_path, path))) {
+            log_info(paste0("Delete distribution:", config$distribution_path, path, '/', file_name)) # nolint
+            return(list(response = unlink(paste0(config$distribution_path, path, '/', file_name), recursive = TRUE))) # nolint
           }
         }else {
-          if(file_name %in% list.files(paste0("Distributions/", scientific_name, '/', path))){ # nolint
-            log_info(paste0("Delete distribution:", "Distributions/", scientific_name, '/', path, "/", file_name)) # nolint
-            return(list(response = unlink(paste0("Distributions/", scientific_name, "/", path, "/", file_name)))) # nolint
+          if(file_name %in% list.files(paste0(config$distribution_path, scientific_name, '/', path))){ # nolint
+            log_info(paste0("Delete distribution:", config$distribution_path, scientific_name, '/', path, "/", file_name)) # nolint
+            return(list(response = unlink(paste0(config$distribution_path, scientific_name, "/", path, "/", file_name)))) # nolint
           }
         }
         not_found("Species distribution not exist!") # nolint
@@ -801,14 +801,14 @@ function(scientific_name) {
   scientific_name <- url_decode(scientific_name)
   if (scientific_name %in% list.files("Distributions")) { # nolint
     distributions <- list()
-    for(distributionFolder in list.files(paste0("Distributions/", scientific_name))) { # nolint
+    for(distributionFolder in list.files(paste0(config$distribution_path, scientific_name))) { # nolint
       # GBIF distributions cannot be selected
       if (!grepl("_GBIF", distributionFolder)){
         files <- list();
         directorySize <- 0;
-        for(fileName in list.files(paste0("Distributions/", scientific_name, "/", distributionFolder))) {  # nolint
-          fileSize <- (file.info(paste0("Distributions/", scientific_name, "/", distributionFolder, "/", fileName))$size) / 1024 # nolint 
-          fileCreated <- (file.info(paste0("Distributions/", scientific_name, "/", distributionFolder, "/", fileName))$ctime) # nolint 
+        for(fileName in list.files(paste0(config$distribution_path, scientific_name, "/", distributionFolder))) {  # nolint
+          fileSize <- (file.info(paste0(config$distribution_path, scientific_name, "/", distributionFolder, "/", fileName))$size) / 1024 # nolint 
+          fileCreated <- (file.info(paste0(config$distribution_path, scientific_name, "/", distributionFolder, "/", fileName))$ctime) # nolint 
           files <- append(files, list(
           list(
             data = list(
@@ -820,7 +820,7 @@ function(scientific_name) {
             )));
             directorySize <- directorySize + fileSize;
         }
-        folderCreated <- (file.info(paste0("Distributions/", scientific_name, "/", distributionFolder))$ctime) # nolint 
+        folderCreated <- (file.info(paste0(config$distribution_path, scientific_name, "/", distributionFolder))$ctime) # nolint 
         distributions <- append(distributions, list(
         list(
           data = list(
