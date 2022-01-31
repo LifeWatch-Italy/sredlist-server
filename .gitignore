@@ -41,8 +41,8 @@ vignettes/*.pdf
 # Logs
 logs/*.log
 
-# Distributions
-Distributions/*
+# Resources
+#resources/Distributions/*
 
 # Assessments
 Assessments/*

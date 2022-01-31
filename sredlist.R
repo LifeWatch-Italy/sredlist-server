@@ -706,7 +706,7 @@ function(scientific_name, aoh_lost, eoo_km2, aoo_km2, pop_size) {
 function() {
   # File size in bytes
   distributions <- list()
-  for (directoryName in list.files("Distributions")) {
+  for (directoryName in list.files(config$distribution_path)) {
     files <- list()
     directorySize <- 0
     edit <- TRUE
@@ -799,7 +799,7 @@ function(scientific_name, file_name, path, type) {
 function(scientific_name) {
   #Filter param
   scientific_name <- url_decode(scientific_name)
-  if (scientific_name %in% list.files("Distributions")) { # nolint
+  if (scientific_name %in% list.files(config$distribution_path)) { # nolint
     distributions <- list()
     for(distributionFolder in list.files(paste0(config$distribution_path, scientific_name))) { # nolint
       # GBIF distributions cannot be selected
