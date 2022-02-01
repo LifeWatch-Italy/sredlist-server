@@ -100,3 +100,9 @@ sudo docker exec -it sredlist /bin/bash
 It turned out that AppArmor service was messing up with Docker. AppArmor (or "Application Armor") is a Linux kernel security module that allows the system administrator to restrict programs' capabilities with per-program profiles. For this problem with containers, it helped me to remove the unknown from AppArmor using the following command:
 
 sudo aa-remove-unknown
+
+## Run sRedList-Platform
+1) Run the following command to run the docker-compose of the sRedList project: (Client and server images must have been created previously) 
+sudo docker compose -p sredlist -f sredlist.yml up --scale server=5 -d
+
+--scale server=5 -> create 5 server service containers
