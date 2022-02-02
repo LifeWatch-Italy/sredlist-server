@@ -643,10 +643,10 @@ function(scientific_name, aoh_lost, eoo_km2, aoo_km2, pop_size, res) {
     Highest_category = criteria$Value[which(as.numeric(criteria$Value)==max(as.numeric(criteria$Value), na.rm=T))] %>% unique()
   )
 
-  filename <- paste0('assessment-', scientific_name, '-', Sys.Date(), '.csv') 
-  pathToSaveAssessment <- paste0("Assessments/", filename)
+  #filename <- paste0('assessment-', scientific_name, '-', Sys.Date(), '.csv') 
+  #pathToSaveAssessment <- paste0("Assessments/", filename)
 
-  write.csv(df, pathToSaveAssessment, row.names = F)
+  #write.csv(df, pathToSaveAssessment, row.names = F)
   return(df)
 }
 
@@ -699,14 +699,28 @@ function(scientific_name, aoh_lost, eoo_km2, aoo_km2, pop_size) {
 }
 
 
-#* All species distributions on the platform
+#* All distributions of paginated species on the platform
 #* @get distributions
+#* @param start:int start
+#* @param end:int end
+#* @param filter:string filter element by scientific_name
 #* @serializer unboxedJSON
 #* @tag sRedList
-function() {
+function(start = 0, end = 10, filter = "") {
+  if (nchar(filter) < 3 && filter != "") {
+    invalid_params("You must enter at least 3 characters.")
+  }
+  species_distribution <- as.data.frame(list.files(config$distribution_path))
+  colnames(species_distribution) <- "scientific_name"
+  if (filter != "") {
+    indices <- grep(tolower(filter), tolower(species_distribution$scientific_name))  # nolint
+    species_distribution <- na.omit(species_distribution[indices, ][start:end])
+  } else{
+    species_distribution <- na.omit(species_distribution$scientific_name[start:end])  # nolint
+  }
   # File size in bytes
   distributions <- list()
-  for (directoryName in list.files(config$distribution_path)) {
+  for (directoryName in species_distribution) {
     files <- list()
     directorySize <- 0
     edit <- TRUE
@@ -758,6 +772,29 @@ function() {
         )));
   }
   return(distributions)
+}
+
+#* Number of distributions on the platform
+#* @get distribution/count
+#* @serializer unboxedJSON
+#* @tag sRedList
+function() {
+  return(length(list.files(config$distribution_path)))
+}
+
+#* All species distributions folder on the platform
+#* @get distribution/search
+#* @serializer json
+#* @param scientific_name:str Digit Scientific Name (min. 3 characters)
+#* @tag sRedList
+function(scientific_name) {
+  if (nchar(scientific_name) < 3) {
+    invalid_params("You must enter at least 3 characters.")
+  }
+  species_distribution <- as.data.frame(list.files(config$distribution_path))
+  colnames(species_distribution) <- "scientific_name"
+  indices <- grep(tolower(scientific_name), tolower(species_distribution$scientific_name))  # nolint
+  return(species_distribution[indices, ])
 }
 
 #* Delete distribution from sRedList platform
