@@ -69,16 +69,57 @@ function(scientific_name) {
 #* @serializer png list(width = 800, height = 600)
 #* @tag RedList
 function(scientific_name, path = "") {
+  #Filter param
   scientific_name <- url_decode(scientific_name)
   path <- ifelse(path == "", paste0(R.utils::capitalize(trim(gsub(" ", "_", scientific_name))), '_RL'), path ) # nolint
-  distributions <- read_distribution(scientific_name, path)
-  dist_species <- subset(distributions, distributions$binomial == scientific_name) # nolint
-  #TODO: call RedList API for get distribution
-  return(plot(ggplot(dist_species) +
-    geom_sf() +
-    theme_void() +
-    ggtitle("Distribution")))
-
+  #Load Map countries
+  distCountries <- read_map_countries()
+  #Load Distribution Species
+  speciesPath <- paste0(config$distribution_path, scientific_name, "/", path) # nolint
+  files <- base::list.files(path = speciesPath, pattern = "\\.shp$")
+  if (length(files) == 0) {
+    not_found("Shapefile of the species does not exist!") # nolint
+  } else {
+    distributionPath <- paste0(speciesPath, "/", files[1]) # nolint
+  }
+  if (file.info(distributionPath)$size >= config$distribution_size) {
+      payload_too_large("The distribution is too large to be shown here")
+  }
+  distributions <- sf::st_read(distributionPath)
+  names(distributions)[which(names(distributions) %in% c("SCINAME", "binomial", "BINOMIAL"))] <- "binomial" # nolint
+  names(distributions)[which(names(distributions) %in% c("PRESENC", "PRESENCE", "presence"))] <- "presence" # nolint
+  names(distributions)[which(names(distributions) %in% c("ORIGIN", "origin"))] <- "origin" # nolint
+  names(distributions)[which(names(distributions) %in% c("SEASONA", "SEASONAL", "seasonal"))] <- "seasonal" # nolint
+  distSP <- subset(distributions, distributions$binomial == scientific_name) # nolint 
+  if (nrow(distSP) > 0) { 
+    distSP$cols <- NA
+    distSP$cols <- revalue(as.character(distSP$presence), c("1"=NA, "2"=NA, "3"=NA, "4"="mistyrose1", "5"="brown4", "6"="gray70")) # nolint    if (nrow(distSP) > 0) {
+    for (i in which(is.na(distSP$cols))) {
+        if (distSP$origin[i] == "1") {
+          if(distSP$seasonal[i] == "1"){ distSP$cols[i] <- revalue(as.character(distSP$presence[i]), c("1"="#d95f02", "2"="#fc8d62", "3"="#fc8d62"))} # nolint
+          if(distSP$seasonal[i] == "2"){ distSP$cols[i] <- revalue(as.character(distSP$presence[i]), c("1"="#1b9e77", "2"="#66c2a5", "3"="#66c2a5"))} # nolint
+          if(distSP$seasonal[i] == "3"){ distSP$cols[i] <- revalue(as.character(distSP$presence[i]), c("1"="#7570b3", "2"="#8da0cb", "3"="#8da0cb"))} # nolint
+          if(distSP$seasonal[i] == "4"){ distSP$cols[i] <- revalue(as.character(distSP$presence[i]), c("1"="yellowgreen", "2"="yellow2", "3"="yellow2"))} # nolint
+          if(distSP$seasonal[i] == "5"){ distSP$cols[i]<-"gray70"}
+        } else{
+          distSP$cols[i]<-revalue(as.character(distSP$origin[i]), c("2"="darkorchid1", "3"="darkorchid4", "4"="darkseagreen3", "5"="gray70", "6"="darkorchid1")) # nolint
+        }   # nolint
+    }
+  }
+  sf::sf_use_s2(FALSE)
+  if (nrow(distSP) > 0) {
+  return(plot(ggplot() +
+              geom_sf(data = st_buffer(st_crop(distCountries, extent(distSP)),0), fill="white", col="gray50") + # nolint
+              geom_sf(data = distSP, fill = distSP$cols) +
+              theme_void() +
+              ggtitle("Distribution")))
+  } else{
+    sf::sf_use_s2(FALSE)
+    return(plot(ggplot() +
+                geom_sf(data = st_buffer(st_crop(distCountries, extent(distSP)),0), fill="white", col="gray50") + # nolint
+                theme_void() +
+                ggtitle("The distribution is empty")))
+  }
 }
 
 

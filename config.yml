@@ -7,6 +7,8 @@ default:
   cci1_raster_path: "resources/ESA-CCI/CCI_2010_Nesoenas.mayeri.tif"
   cci2_raster_path: "resources/ESA-CCI/CCI_2020_Nesoenas.mayeri.tif"
   access_control_allow_origin: "*"
+  # 3MB
+  distribution_size: 3000000 
   #Production
   #alt_raster_path: "resources/GLOBEelevation/GLOBE_projected_Moll.tif"
   #cci1_raster_path: "resources/ESA-CCI/ESACCI-LC-L4-LCCS-Map-300m-P1Y-2010-v2.0.7cds.nc"
