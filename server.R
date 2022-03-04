@@ -6,6 +6,8 @@ library(glue)
 
 library(urltools)
 
+library(R.utils)
+
 library(Rook) ; library(ggplot2) ; library(raster) ; library(plyr) ;library(dplyr) ; library(sf) ; library(rgdal) ;  library(ncdf4) ; library(ggalluvial) ; library(rredlist) ;  library(tools) # nolint
 
 #GBIF

@@ -6,9 +6,9 @@ firstup <- function(x) {
 
 `%not in%` <- function (x, table) is.na(match(x, table, nomatch=NA_integer_)) # nolint
 
-# Generated distribution from File by scientific_name of species
-read_distribution <- function(scientific_name) {
-  speciesPath <- paste0("Distributions/", scientific_name) # nolint
+# Generated distribution from File by scientific_name of species and folder path
+read_distribution <- function(scientific_name, path) {
+  speciesPath <- paste0(config$distribution_path, scientific_name, "/", path) # nolint
   files <- base::list.files(path = speciesPath, pattern = "\\.shp$")
 
   if (length(files) == 0) {
@@ -19,7 +19,7 @@ read_distribution <- function(scientific_name) {
 
   #distributions<-st_read("Distributions/Chameleons/CHAMELEONS.shp") # nolint
   print(distributionPath)
-  distributions <- st_read(distributionPath)
+  distributions <- sf::st_read(distributionPath)
   names(distributions)[which(names(distributions) %in% c("SCINAME", "binomial", "BINOMIAL"))] <- "binomial" # nolint
   names(distributions)[which(names(distributions) %in% c("PRESENC", "PRESENCE", "presence"))] <- "presence" # nolint
   names(distributions)[which(names(distributions) %in% c("ORIGIN", "origin"))] <- "origin" # nolint
@@ -35,7 +35,7 @@ read_map_countries <- function() {
 
 createDataGBIF <- function(scientific_name) { # nolint
     #Download data
-    dat <- occ_search(scientificName = scientific_name, hasCoordinate = T)$data
+    dat <- rgbif::occ_search(scientificName = scientific_name, hasCoordinate = T)$data # nolint
     #print(dat)
     if (is.null(dat)) {
       not_found("GBIF occurrences of the species could not be found! Check whether the scientific name of the species has been typed correctly!") # nolint
@@ -67,15 +67,32 @@ cleanDataGBIF <- function(data) { # nolint
 }
 
 # Save EOO distribution from GBIF procedure
-saveEooDistribution <- function(scientific_name, EOO) {
+saveEooDistribution <- function(scientific_name, EOO, gbif_data_number) {
+  # Create a file path E.g: Distributions/Nile tilapia/Nile_tilapia_GBIF_20211207/ # nolint
+  upload_folder_scientific_name <- R.utils::capitalize(paste0(stringr::str_replace(scientific_name, " ", "_"), format(Sys.time(), "_GBIF_%Y%m%d"))) # nolint
   # Create a file path
-  filePath <- paste0("Distributions/", scientific_name, "/") # nolint
+  filePath <- paste0(config$distribution_path, scientific_name, "/", upload_folder_scientific_name, "/") # nolint
   if (dir.exists(filePath)) {
     print("The directory exists")
   } else {
   # create the "my_new_folder
-    dir.create(filePath)
+    dir.create(filePath, showWarnings = TRUE, recursive = TRUE)
+    #dir.create(filePath)
   }
-  path <- paste0(filePath, scientific_name, ".shp")
+  path <- paste0(filePath, upload_folder_scientific_name, ".shp")
   st_write(EOO, path, append = FALSE)
+
+  print("Write metadata file")
+  text <- paste0(
+  "A distribution has been stored for the species: ",
+  scientific_name,
+  ".\nIt was created with the GBIF procedure from the sRedList platform, based on ", # nolint
+  gbif_data_number,
+  " occurrence data downloaded from GBIF on the ",
+  Sys.time(),
+  " CET."
+  )
+  jsonlite::write_json(list(info = text), paste0(filePath, upload_folder_scientific_name, ".json"), auto_unbox= TRUE) # nolint
+  return(upload_folder_scientific_name)
+  # writeLines(text, paste0(filePath, upload_folder_scientific_name, ".txt"))
 }

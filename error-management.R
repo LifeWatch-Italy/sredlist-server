@@ -29,6 +29,10 @@ error_handler <- function(req, res, err) {
   return(res)
 }
 
+payload_too_large  <- function(message = "Payload Too Large") {
+  api_error(message = message, status = 413)
+}
+
 not_found <- function(message = "Not found.") {
   api_error(message = message, status = 404)
 }

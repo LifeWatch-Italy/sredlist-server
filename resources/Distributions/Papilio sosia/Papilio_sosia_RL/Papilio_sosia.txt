@@ -1,0 +1,2 @@
+A distribution has been stored for the species: Papilio sosia.
+It was created with the GBIF procedure from the sRedList platform, based on 192 occurrence data downloaded from GBIF on the 2021-12-02 13:34:34 CET.

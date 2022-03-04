@@ -17,10 +17,11 @@ cci_classes <- data.frame(Classes = c(levels(as.factor(crosswalk$esa_code)), 220
 #* @param req:file Distribution file (shp,.shx,.prj,.dbf,.cpg)
 #* @param scientific_name:str Insert Species Name
 #* @serializer unboxedJSON
-#* @parser multi 
+#* @parser multi
 #* @tag sRedList
 function(scientific_name, req) {
   scientific_name <- url_decode(scientific_name)
+  scientific_name <- R.utils::capitalize(trim(gsub("[[:punct:]]", " ", scientific_name))) # nolint
 
   # Required for multiple file uploads
   names(req)
@@ -39,20 +40,23 @@ function(scientific_name, req) {
   # The file is downloaded in a temporary folder
   tmpfile <- fileInfo$formContents$req$tempfile
   #print(fileInfo) # nolint
-
-  # Create a file path
-  filePath <- paste0("Distributions/", scientific_name, "/") # nolint
+  upload_folder_scientific_name <- R.utils::capitalize(paste0(stringr::str_replace(scientific_name, " ", "_"), format(Sys.time(), "_%Y%m%d"))) # nolint
+  # Create a file path E.g: Distributions/Nile tilapia/Nile_tilapia_20211207/
+  filePath <- paste0(config$distribution_path, scientific_name, "/", upload_folder_scientific_name, "/") # nolint
   if (dir.exists(filePath)) {
-    print("The direcoty exists")
+    print("The directory exists")
   } else {
   # create the "my_new_folder
-    dir.create(filePath)
+    dir.create(filePath, showWarnings = TRUE, recursive = TRUE)
   }
-  fn <- paste0(filePath, file_name, sepp = "")
+  print(file_name)
+  new_file_name2 = paste0(upload_folder_scientific_name, ".", file_ext(file_name)) # nolint
+  fn <- paste0(filePath, new_file_name2, sepp = "")
   print(fn)
 
   #Copies the file into the designated folder
   file.copy(tmpfile, fn)
+  #file.rename(fn , fn)
 
 
   print(paste0("Your file is now stored in ", fn))
@@ -62,11 +66,12 @@ function(scientific_name, req) {
 #* Info distribution species from sRedList platform
 #* @get species/<scientific_name>/distribution/info
 #* @param scientific_name:string Scientific Name
-#* @serializer json
+#* @param path:string Distribution Folder default RedList
 #* @tag sRedList
-function(scientific_name) {
+function(scientific_name, path = "") {
   scientific_name <- url_decode(scientific_name)
-  distributions <- read_distribution(scientific_name)
+  path <- ifelse(path == "", paste0(R.utils::capitalize(trim(gsub(" ", "_", scientific_name))), '_RL'), path ) # nolint
+  distributions <- read_distribution(scientific_name, path)
   distSP <- subset(distributions, distributions$binomial == scientific_name) # nolint
   return(list(
     presences = union(c(1, 2, 3), unique(distSP$presence)),
@@ -78,14 +83,16 @@ function(scientific_name) {
 #* Plot the distributions plot from sRedList platform
 #* @get species/<scientific_name>/distribution
 #* @param scientific_name:string Scientific Name
-#* @param presences:[int] presences (1, 2, 3)
+#* @param presences:[int] presences (1, 2)
 #* @param seasons:[int] seasons (1, 2)
 #* @param origins:[int] origins (1, 2)
+#* @param path:string Distribution Folder default RedList
 #* @serializer png list(width = 800, height = 600)
 #* @tag sRedList
-function(scientific_name, presences = list(), seasons = list() , origins = list()) { # nolint
+function(scientific_name, presences = list(), seasons = list() , origins = list(), path = "") { # nolint
   #Filter param
   scientific_name <- url_decode(scientific_name)
+  path <- ifelse(path == "", paste0(R.utils::capitalize(trim(gsub(" ", "_", scientific_name))), '_RL'), path ) # nolint
   if (length(presences) != 0) presences <- as.character(presences);
   if (length(seasons) != 0) seasons <- as.character(seasons);
   if (length(origins) != 0) origins <- as.character(origins);
@@ -93,9 +100,8 @@ function(scientific_name, presences = list(), seasons = list() , origins = list(
   #Load Map countries
   distCountries <- read_map_countries()
   #Load Distribution Species
-  distributions <- read_distribution(scientific_name)
-
-  distSP_full <- subset(distributions, distributions$binomial == scientific_name) # nolint    
+  distributions <- read_distribution(scientific_name, path)
+  distSP_full <- subset(distributions, distributions$binomial == scientific_name) # nolint 
   choice_presence <- c(presences)
   choice_season <- c(seasons)
   choice_origin <- c(origins)
@@ -145,7 +151,7 @@ function(scientific_name, presences = list(), seasons = list() , origins = list(
 function(scientific_name) {
     #Clean-string from user
     scientific_name <- url_decode(scientific_name)
-    scientific_name <- trim(gsub("[[:punct:]]", " ", scientific_name))
+    scientific_name <- R.utils::capitalize(trim(gsub("[[:punct:]]", " ", scientific_name))) # nolint
     print(scientific_name)
     #GBIF procedure createDataGBIF, cleanDataGBIF in utils.R
     log_info("START - Create data")
@@ -168,6 +174,7 @@ function(scientific_name) {
     # Calculates EOO and assess Red List criterion B1
     log_info("START - Calculates EOO and assess Red List criterion B1")
     dat_cl <- dat[flags$.summary,]
+    gbif_data_number <- nrow(dat_cl)
     dat_proj <- SpatialPoints(cbind(dat_cl$decimalLongitude, dat_cl$decimalLatitude), proj4string=CRS("+proj=longlat +datum=WGS84")) %>% spTransform(., CRSobj = CRS("+proj=moll +lon_0=0 +x_0=0 +y_0=0 +ellps=WGS84 +units=m +no_defs")) #nolint
     ll <- data.frame(y = coordinates(dat_proj)[,2], x = coordinates(dat_proj)[,1]) # nolint
     EOO_km2 <- round(EOOarea(ll)/1000000) # nolint
@@ -182,7 +189,7 @@ function(scientific_name) {
     #EOO$binomial <- "Papilio sosia"
     EOO$binomial <- as.character(scientific_name)
     #Save EOO distribution: Utils.R
-    saveEooDistribution(scientific_name, EOO)
+    gbif_path <- saveEooDistribution(scientific_name, EOO, gbif_data_number)
     ggsave("eoo.png", plot(ggplot() + geom_sf(data = EOO) + geom_sf(data = st_as_sf(dat_proj)) + ggtitle(paste0("EOO of ", scientific_name)))) # nolint
     plot3 <- base64enc::dataURI(file = "eoo.png", mime = "image/png") # nolint
     log_info("END - Plot EOO")
@@ -195,7 +202,9 @@ function(scientific_name) {
         plot_clean_coordinates = plot2,
         eoo_km2 = EOO_km2,
         eoo_rating = EOO_rating,
-        plot_eoo = plot3
+        plot_eoo = plot3,
+        gbif_data_number  = gbif_data_number,
+        gbif_path = gbif_path
         ));
 
 }
@@ -204,20 +213,22 @@ function(scientific_name) {
 #* Estimate the Extent of Occurrence (EOO) from range
 #* @get species/<scientific_name>/analysis/eoo
 #* @param scientific_name:string Scientific Name
-#* @param presences:[int] presences (1, 2, 3)
+#* @param presences:[int] presences (1, 2)
 #* @param seasons:[int] seasons (1, 2)
 #* @param origins:[int] origins (1, 2)
+#* @param path:string Distribution Folder default RedList
 #* @serializer unboxedJSON
 #* @tag sRedList
-function(scientific_name, presences = list(), seasons = list() , origins = list()) { # nolint
+function(scientific_name, presences = list(), seasons = list() , origins = list(), path = "") { # nolint
   #Filter param
   scientific_name <- url_decode(scientific_name)
+  path <- ifelse(path == "", paste0(R.utils::capitalize(trim(gsub(" ", "_", scientific_name))), '_RL'), path ) # nolint
   if (length(presences) != 0) presences <- as.character(presences);
   if (length(seasons) != 0) seasons <- as.character(seasons);
   if (length(origins) != 0) origins <- as.character(origins);
   
   #Load Distribution Species
-  distributions <- read_distribution(scientific_name)
+  distributions <- read_distribution(scientific_name, path)
 
   distSP_full <- subset(distributions, distributions$binomial == scientific_name) # nolint    
   choice_presence <- c(presences)
@@ -265,7 +276,7 @@ function(scientific_name) {
 #* Estimate the Area of Habitat (AOH)
 #* @get species/<scientific_name>/analysis/aoh
 #* @param scientific_name:string Scientific Name
-#* @param presences:[int] presences (1, 2, 3)
+#* @param presences:[int] presences (1, 2)
 #* @param seasons:[int] seasons (1, 2)
 #* @param origins:[int] origins (1, 2)
 #* @param habitats_pref:[str] habitats_pref
@@ -273,11 +284,13 @@ function(scientific_name) {
 #* @param density_pref:int density_pref
 #* @param density_pref:int density_pref
 #* @param isGbifDistribution:boolean isGbifDistribution
+#* @param path:string Distribution Folder default RedList
 #* @serializer unboxedJSON
 #* @tag sRedList
-function(scientific_name, presences = list(), seasons = list() , origins = list(), habitats_pref= list(), altitudes_pref= list(), density_pref= -1, isGbifDistribution = FALSE) { # nolint    
+function(scientific_name, presences = list(), seasons = list() , origins = list(), habitats_pref= list(), altitudes_pref= list(), density_pref= -1, isGbifDistribution = FALSE, path = "") { # nolint    
   #Filter param
   scientific_name <- url_decode(scientific_name)
+  path <- ifelse(path == "", paste0(R.utils::capitalize(trim(gsub(" ", "_", scientific_name))), '_RL'), path ) # nolint
   if (length(presences) != 0) presences <- as.character(presences);
   if (length(seasons) != 0) seasons <- as.character(seasons);
   if (length(origins) != 0) origins <- as.character(origins);
@@ -295,7 +308,7 @@ function(scientific_name, presences = list(), seasons = list() , origins = list(
   print(isGbifDistribution)
   
   #Load Distribution Species
-  distributions <- read_distribution(scientific_name)
+  distributions <- read_distribution(scientific_name, path)
 
   distSP_full <- subset(distributions, distributions$binomial == scientific_name) # nolint    
   choice_presence <- c(presences)
@@ -426,17 +439,19 @@ function(scientific_name, presences = list(), seasons = list() , origins = list(
 #* Estimate trends in AOH as a proxy of population trends (Criterion A2)
 #* @get species/<scientific_name>/analysis/trends-aoh
 #* @param scientific_name:string Scientific Name
-#* @param presences:[int] presences (1, 2, 3)
+#* @param presences:[int] presences (1, 2)
 #* @param seasons:[int] seasons (1, 2)
 #* @param origins:[int] origins (1, 2)
 #* @param habitats_pref:[str] habitats_pref
 #* @param altitudes_pref:[int] altitudes_pref
 #* @param isGbifDistribution:boolean isGbifDistribution
+#* @param path:string Distribution Folder default RedList
 #* @serializer unboxedJSON
 #* @tag sRedList
-function(scientific_name, presences = list(), seasons = list() , origins = list(), habitats_pref= list(), altitudes_pref= list(), isGbifDistribution = FALSE) { # nolint
+function(scientific_name, presences = list(), seasons = list() , origins = list(), habitats_pref= list(), altitudes_pref= list(), isGbifDistribution = FALSE, path = "") { # nolint
   #Filter param
   scientific_name <- url_decode(scientific_name)
+  path <- ifelse(path == "", paste0(R.utils::capitalize(trim(gsub(" ", "_", scientific_name))), '_RL'), path ) # nolint
   if (length(presences) != 0) presences <- as.character(presences);
   if (length(seasons) != 0) seasons <- as.character(seasons);
   if (length(origins) != 0) origins <- as.character(origins);
@@ -451,7 +466,7 @@ function(scientific_name, presences = list(), seasons = list() , origins = list(
   print(altitudes_pref)
   
   #Load Distribution Species
-  distributions <- read_distribution(scientific_name)
+  distributions <- read_distribution(scientific_name, path)
 
   distSP_full <- subset(distributions, distributions$binomial == scientific_name) # nolint    
   choice_presence <- c(presences)
@@ -534,7 +549,7 @@ function(scientific_name, presences = list(), seasons = list() , origins = list(
 
   return(list(
         aoh_lost_km2 = round(AOH_old_km2),
-        aoh_lost = AOH_lost,
+        aoh_lost = AOH_lost * 100,
         plot_trends_aoh = plot1
         ));
 
@@ -552,7 +567,7 @@ function(scientific_name, presences = list(), seasons = list() , origins = list(
 #* @param pop_size:int Pop_size
 #* @serializer png list(width = 800, height = 600)
 #* @tag sRedList
-function(scientific_name, aoh_lost, eoo_km2, aoo_km2, pop_size ) {
+function(scientific_name, aoh_lost, eoo_km2, aoo_km2, pop_size) {
   #Filter param
   scientific_name <- url_decode(scientific_name)
   AOH_lost <- round(as.numeric(aoh_lost), 3)
@@ -622,16 +637,16 @@ function(scientific_name, aoh_lost, eoo_km2, aoo_km2, pop_size, res) {
     Date_processed = Sys.time(),
     EOO = EOO_km2,
     AOO = AOO_km2,
-    Trends = AOH_lost,
+    "Percentage_of_habitat_lost" = AOH_lost,
     Pop.size = Pop_size,
     Criterias = paste0(criteria$Value, " (", criteria$Crit, ")") %>% paste(., collapse="; "),
     Highest_category = criteria$Value[which(as.numeric(criteria$Value)==max(as.numeric(criteria$Value), na.rm=T))] %>% unique()
   )
 
-  filename <- paste0('assessment-', scientific_name, '-', Sys.Date(), '.csv') 
-  pathToSaveAssessment <- paste0("Assessments/", filename)
+  #filename <- paste0('assessment-', scientific_name, '-', Sys.Date(), '.csv') 
+  #pathToSaveAssessment <- paste0("Assessments/", filename)
 
-  write.csv(df, pathToSaveAssessment, row.names = F)
+  #write.csv(df, pathToSaveAssessment, row.names = F)
   return(df)
 }
 
@@ -674,7 +689,7 @@ function(scientific_name, aoh_lost, eoo_km2, aoo_km2, pop_size) {
     Date_processed = Sys.time(),
     EOO = EOO_km2,
     AOO = AOO_km2,
-    Trends = AOH_lost,
+    "Percentage_of_habitat_lost" = AOH_lost,
     Pop.size = Pop_size,
     Criterias = paste0(criteria$Value, " (", criteria$Crit, ")") %>% paste(., collapse="; "),
     Highest_category = criteria$Value[which(as.numeric(criteria$Value)==max(as.numeric(criteria$Value), na.rm=T))] %>% unique()
@@ -684,54 +699,178 @@ function(scientific_name, aoh_lost, eoo_km2, aoo_km2, pop_size) {
 }
 
 
-#* All species distributions on the platform
+#* All distributions of paginated species on the platform
 #* @get distributions
+#* @param start:int start
+#* @param end:int end
+#* @param filter:string filter element by scientific_name
 #* @serializer unboxedJSON
 #* @tag sRedList
-function() {
+function(start = 0, end = 10, filter = "") {
+  if (nchar(filter) < 3 && filter != "") {
+    invalid_params("You must enter at least 3 characters.")
+  }
+  species_distribution <- as.data.frame(list.files(config$distribution_path))
+  colnames(species_distribution) <- "scientific_name"
+  if (filter != "") {
+    indices <- grep(tolower(filter), tolower(species_distribution$scientific_name))  # nolint
+    species_distribution <- na.omit(species_distribution[indices, ][start:end])
+  } else{
+    species_distribution <- na.omit(species_distribution$scientific_name[start:end])  # nolint
+  }
   # File size in bytes
   distributions <- list()
-  for (directoryName in list.files("Distributions")) {
+  for (directoryName in species_distribution) {
     files <- list()
     directorySize <- 0
-    for( fileName in list.files(paste0("Distributions/", directoryName))) {
-        fileSize <- (file.info(paste0("Distributions/", directoryName, "/", fileName))$size) / 1024 # nolint 
-        files <- append(files, list(list(data = list(
-          name = fileName,
-          size = fileSize, # nolint
-          type = "file"
-        ))))
-        directorySize <- directorySize + fileSize
+    edit <- TRUE
+    for(fileName in list.files(paste0(config$distribution_path, directoryName))) {
+        # Red list distributions cannot be deleted
+        if (grepl("_RL", fileName)) edit <- FALSE;  # nolint
+        subDirectorySize <- 0
+        subFiles <- list()
+        for( subFileName in list.files(paste0(config$distribution_path, directoryName, "/", fileName))) { # nolint 
+          # GBIF distributions INFO
+          metadata <- NULL
+          if (file_ext(subFileName) == "json") {
+            metadata = jsonlite::read_json(paste0(config$distribution_path, directoryName, "/", fileName, "/", subFileName), simplifyVector = FALSE)  # nolint 
+          }
+          subFileSize <- (file.info(paste0(config$distribution_path, directoryName, "/", fileName, "/", subFileName))$size) / 1024 # nolint 
+          subFileCreated <- (file.info(paste0(config$distribution_path, directoryName, "/", fileName, "/", subFileName))$ctime) # nolint 
+          subFiles <- append(subFiles, list(list(data = list(
+          name = subFileName,
+          size = subFileSize, # nolint
+          type = "file",
+          path = fileName, # nolint 
+          metadata = metadata,
+          created = subFileCreated,
+          edit = edit
+          ))))
+          subDirectorySize <- subDirectorySize + subFileSize
+        }
+        fileCreated <- (file.info(paste0(config$distribution_path, directoryName, "/", fileName))$ctime) # nolint 
+        files <- append(files, list(list(
+          data = list(
+            name = fileName,
+            size = subDirectorySize, # nolint
+            type = "folder",
+            path = directoryName, # nolint 
+            created = fileCreated,
+            edit = edit),
+          children = subFiles
+        )))
+        directorySize <- directorySize + subDirectorySize
     }
     distributions <- append(distributions, list(
       list(
         data = list(
           name = directoryName,
           size = directorySize,
-          type = "folder"),
+          type = "folder",
+          edit = FALSE),
         children = files
         )));
   }
   return(distributions)
 }
 
+#* Number of distributions on the platform
+#* @get distribution/count
+#* @serializer unboxedJSON
+#* @tag sRedList
+function() {
+  return(length(list.files(config$distribution_path)))
+}
+
+#* All species distributions folder on the platform
+#* @get distribution/search
+#* @serializer json
+#* @param scientific_name:str Digit Scientific Name (min. 3 characters)
+#* @tag sRedList
+function(scientific_name) {
+  if (nchar(scientific_name) < 3) {
+    invalid_params("You must enter at least 3 characters.")
+  }
+  species_distribution <- as.data.frame(list.files(config$distribution_path))
+  colnames(species_distribution) <- "scientific_name"
+  indices <- grep(tolower(scientific_name), tolower(species_distribution$scientific_name))  # nolint
+  return(species_distribution[indices, ])
+}
+
 #* Delete distribution from sRedList platform
 #* @delete species/<scientific_name>/distribution
 #* @param scientific_name:string Scientific Name
 #* @param file_name:string file_name
+#* @param path:string path
+#* @param type:string type
 #* @serializer unboxedJSON
 #* @tag sRedList
-function(scientific_name, file_name = "") {
+function(scientific_name, file_name, path, type) {
   scientific_name <- url_decode(scientific_name)
   file_name <- url_decode(file_name)
-  print(scientific_name)
-  if (scientific_name %in% list.files("Distributions")) {
-        if (file_name == "") {
-          return(list(response = unlink(paste0("Distributions/", scientific_name), recursive = TRUE))) # nolint
+  path <- url_decode(path)
+  type <- url_decode(type)
+  if ((scientific_name %in% list.files(config$distribution_path)) && !grepl("_RL", file_name) && !grepl("_RL", path)) { # nolint
+        if (type == "folder") {
+          if (file_name %in% list.files(paste0(config$distribution_path, path))) {
+            log_info(paste0("Delete distribution:", config$distribution_path, path, '/', file_name)) # nolint
+            return(list(response = unlink(paste0(config$distribution_path, path, '/', file_name), recursive = TRUE))) # nolint
+          }
         }else {
-          return(list(response = unlink(paste0("Distributions/", scientific_name, "/", file_name)))) # nolint
+          if(file_name %in% list.files(paste0(config$distribution_path, scientific_name, '/', path))){ # nolint
+            log_info(paste0("Delete distribution:", config$distribution_path, scientific_name, '/', path, "/", file_name)) # nolint
+            return(list(response = unlink(paste0(config$distribution_path, scientific_name, "/", path, "/", file_name)))) # nolint
+          }
         }
+        not_found("Species distribution not exist!") # nolint
     }else {
        not_found("Species distribution not exist!") # nolint
     }
+}
+
+#* Get distributions species from sRedList platform excluding GBIF distributions
+#* @get species/<scientific_name>/distributions
+#* @param scientific_name:string Scientific Name
+#* @serializer unboxedJSON
+#* @tag sRedList
+function(scientific_name) {
+  #Filter param
+  scientific_name <- url_decode(scientific_name)
+  if (scientific_name %in% list.files(config$distribution_path)) { # nolint
+    distributions <- list()
+    for(distributionFolder in list.files(paste0(config$distribution_path, scientific_name))) { # nolint
+      # GBIF distributions cannot be selected
+      if (!grepl("_GBIF", distributionFolder)){
+        files <- list();
+        directorySize <- 0;
+        for(fileName in list.files(paste0(config$distribution_path, scientific_name, "/", distributionFolder))) {  # nolint
+          fileSize <- (file.info(paste0(config$distribution_path, scientific_name, "/", distributionFolder, "/", fileName))$size) / 1024 # nolint 
+          fileCreated <- (file.info(paste0(config$distribution_path, scientific_name, "/", distributionFolder, "/", fileName))$ctime) # nolint 
+          files <- append(files, list(
+          list(
+            data = list(
+              name = fileName,
+              size = fileSize,
+              created = fileCreated,
+              path = distributionFolder,
+              type = "file")
+            )));
+            directorySize <- directorySize + fileSize;
+        }
+        folderCreated <- (file.info(paste0(config$distribution_path, scientific_name, "/", distributionFolder))$ctime) # nolint 
+        distributions <- append(distributions, list(
+        list(
+          data = list(
+            name = distributionFolder,
+            size = directorySize,
+            created = folderCreated,
+            path = distributionFolder,
+            type = "folder"),
+            children = files
+          )));
+      }
+    }
+    return(distributions)
+
+  }else { not_found("Species distribution not exist!") } # nolint
 }
