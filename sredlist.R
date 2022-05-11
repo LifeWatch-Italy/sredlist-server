@@ -1,15 +1,9 @@
-#Extensions File Distribution
-extensions <- list("shp", "shx", "prj", "dbf", "cpg")
 
-#Load ESA land cover data (in 2010 and 2020) and altitude data
-alt <- raster(config$alt_raster_path)
-cci1 <- raster(config$cci1_raster_path)
-cci2 <- raster(config$cci2_raster_path)
 
-#Load Crosswalk CSV and Density CSV
-density<-read.csv("Species/Density.table.csv", sep=",") ; names(density)[1]<-"Species" ; # nolint
-crosswalk <- read.csv("Species/Crosswalk_CCI_IUCN.csv")
-cci_classes <- data.frame(Classes = c(levels(as.factor(crosswalk$esa_code)), 220)) # nolint
+
+######################################
+### MODULE 1: CHARGE DISTRIBUTIONS ###
+######################################
 
 
 #* Upload Distribution species
@@ -18,25 +12,25 @@ cci_classes <- data.frame(Classes = c(levels(as.factor(crosswalk$esa_code)), 220
 #* @param scientific_name:str Insert Species Name
 #* @serializer unboxedJSON
 #* @parser multi
-#* @tag sRedList
+#* @tag sRedList1
 function(scientific_name, req) {
   scientific_name <- url_decode(scientific_name)
   scientific_name <- R.utils::capitalize(trim(gsub("[[:punct:]]", " ", scientific_name))) # nolint
-
+  
   # Required for multiple file uploads
   names(req)
-
+  
   # Parses into a Rook multipart file type;needed for API conversions
   fileInfo <- list(formContents = Rook::Multipart$parse(req)) # nolint
   # This is where the file name is stored
   # print(fileInfo$formContents$file$filename) # nolint
   file_name <- fileInfo$formContents$req$filename
-
+  
   print(file_ext(file_name))
   if(file_ext(file_name) %not in% extensions) {
     invalid_extension(file_name)
   }
-
+  
   # The file is downloaded in a temporary folder
   tmpfile <- fileInfo$formContents$req$tempfile
   #print(fileInfo) # nolint
@@ -46,39 +40,59 @@ function(scientific_name, req) {
   if (dir.exists(filePath)) {
     print("The directory exists")
   } else {
-  # create the "my_new_folder
+    # create the "my_new_folder
     dir.create(filePath, showWarnings = TRUE, recursive = TRUE)
   }
   print(file_name)
   new_file_name2 = paste0(upload_folder_scientific_name, ".", file_ext(file_name)) # nolint
   fn <- paste0(filePath, new_file_name2, sepp = "")
   print(fn)
-
+  
   #Copies the file into the designated folder
   file.copy(tmpfile, fn)
   #file.rename(fn , fn)
-
-
+  
+  
   print(paste0("Your file is now stored in ", fn))
   return(list(path = fn))
 }
+
+
+
 
 #* Info distribution species from sRedList platform
 #* @get species/<scientific_name>/distribution/info
 #* @param scientific_name:string Scientific Name
 #* @param path:string Distribution Folder default RedList
-#* @tag sRedList
+#* @tag sRedList1
 function(scientific_name, path = "") {
+  
   scientific_name <- url_decode(scientific_name)
   path <- ifelse(path == "", paste0(R.utils::capitalize(trim(gsub(" ", "_", scientific_name))), '_RL'), path ) # nolint
-  distributions <- read_distribution(scientific_name, path)
-  distSP <- subset(distributions, distributions$binomial == scientific_name) # nolint
+  
+  speciesPath <- paste0(config$distribution_path, scientific_name, "/", path) # nolint
+  files <- base::list.files(path = speciesPath, pattern = "\\.shp$")
+  
+  if (length(files) == 0) {
+    not_found("Shapefile of the species does not exist!") # nolint
+  } else {
+    distributionPath <- paste0(speciesPath, "/", files[1]) # nolint
+  }
+  
+  print(distributionPath)
+  distributions <- sf::st_read(distributionPath)
+  
+  ### Clean the distribution
+  distSP <-sRL_PrepareDistrib(distributions, scientific_name) # nolint
+  
   return(list(
     presences = union(c(1, 2, 3), unique(distSP$presence)),
     seasons = union(c(1, 2), unique(distSP$seasonal)),
     origins = union(c(1, 2), unique(distSP$origin))
   ))
 }
+
+
 
 #* Plot the distributions plot from sRedList platform
 #* @get species/<scientific_name>/distribution
@@ -88,8 +102,9 @@ function(scientific_name, path = "") {
 #* @param origins:[int] origins (1, 2)
 #* @param path:string Distribution Folder default RedList
 #* @serializer png list(width = 800, height = 600)
-#* @tag sRedList
+#* @tag sRedList1
 function(scientific_name, presences = list(), seasons = list() , origins = list(), path = "") { # nolint
+  
   #Filter param
   scientific_name <- url_decode(scientific_name)
   path <- ifelse(path == "", paste0(R.utils::capitalize(trim(gsub(" ", "_", scientific_name))), '_RL'), path ) # nolint
@@ -97,50 +112,57 @@ function(scientific_name, presences = list(), seasons = list() , origins = list(
   if (length(seasons) != 0) seasons <- as.character(seasons);
   if (length(origins) != 0) origins <- as.character(origins);
   
-  #Load Map countries
-  distCountries <- read_map_countries()
-  #Load Distribution Species
-  distributions <- read_distribution(scientific_name, path)
+  
+  ### Load Distribution Species
+  distributions <- sRL_ReadDistribution(scientific_name, path) %>% sRL_PrepareDistrib(., scientific_name)
   distSP_full <- subset(distributions, distributions$binomial == scientific_name) # nolint 
   choice_presence <- c(presences)
   choice_season <- c(seasons)
   choice_origin <- c(origins)
-
+  
   distSP <- subset(distSP_full, # nolint
-    distSP_full$presence %in% choice_presence &
-    distSP_full$seasonal %in% choice_season &
-    distSP_full$origin %in% choice_origin)
-
-  if (nrow(distSP) > 0) { 
-    distSP$cols <- NA
-    distSP$cols <- revalue(as.character(distSP$presence), c("1"=NA, "2"=NA, "3"=NA, "4"="mistyrose1", "5"="brown4", "6"="gray70")) # nolint    if (nrow(distSP) > 0) {
-    for (i in which(is.na(distSP$cols))) {
-        if (distSP$origin[i] == "1") {
-          if(distSP$seasonal[i] == "1"){ distSP$cols[i] <- revalue(as.character(distSP$presence[i]), c("1"="#d95f02", "2"="#fc8d62", "3"="#fc8d62"))} # nolint
-          if(distSP$seasonal[i] == "2"){ distSP$cols[i] <- revalue(as.character(distSP$presence[i]), c("1"="#1b9e77", "2"="#66c2a5", "3"="#66c2a5"))} # nolint
-          if(distSP$seasonal[i] == "3"){ distSP$cols[i] <- revalue(as.character(distSP$presence[i]), c("1"="#7570b3", "2"="#8da0cb", "3"="#8da0cb"))} # nolint
-          if(distSP$seasonal[i] == "4"){ distSP$cols[i] <- revalue(as.character(distSP$presence[i]), c("1"="yellowgreen", "2"="yellow2", "3"="yellow2"))} # nolint
-          if(distSP$seasonal[i] == "5"){ distSP$cols[i]<-"gray70"}
-        } else{
-          distSP$cols[i]<-revalue(as.character(distSP$origin[i]), c("2"="darkorchid1", "3"="darkorchid4", "4"="darkseagreen3", "5"="gray70", "6"="darkorchid1")) # nolint
-        }   # nolint
-    }
-  }
-  sf::sf_use_s2(FALSE)
+                   distSP_full$presence %in% choice_presence &
+                     distSP_full$seasonal %in% choice_season &
+                     distSP_full$origin %in% choice_origin)
+  
+  ### Colour the distributions
+  distSP<-sRL_ColourDistrib(distSP)
+  
+  ### Save the distribution in memory
+  assign("distSP_saved", distSP, .GlobalEnv)
+  
+  ### Prepare countries if they were not charged + crop depending on the current selection of range
+  if(exists("CountrySP_saved")==F){CountrySP_saved<-sRL_PrepareCountries(extent(distSP))}
+  CountrySP<-st_crop(CountrySP_saved, extent(distSP))
+  
+  ### Plot
   if (nrow(distSP) > 0) {
-  return(plot(ggplot() +
-              geom_sf(data = st_buffer(st_crop(distCountries, extent(distSP)),0), fill="white", col="gray50") + # nolint
-              geom_sf(data = distSP, fill = distSP$cols) +
-              theme_void() +
-              ggtitle("Distribution")))
+    return(plot(ggplot() +
+                  geom_sf(data = CountrySP, fill="gray96", col="gray50") + # nolint
+                  geom_sf(data = distSP, fill = distSP$cols) +
+                  theme_void() +
+                  ggtitle("")))
   } else{
     sf::sf_use_s2(FALSE)
     return(plot(ggplot() +
-                geom_sf(data = st_buffer(st_crop(distCountries, extent(distSP_full)),0), fill="white", col="gray50") + # nolint
-                theme_void() +
-                ggtitle("The distribution is empty")))
+                  geom_sf(data = CountrySP, fill="white96", col="gray50") + # nolint
+                  theme_void() +
+                  ggtitle("The distribution is empty")))
   }
+  
 }
+
+
+
+
+
+
+
+
+
+#########################
+### MODULE 2: MAPPING ###
+#########################
 
 
 #* Global Biodiversity Information Facility
@@ -149,65 +171,119 @@ function(scientific_name, presences = list(), seasons = list() , origins = list(
 #* @serializer unboxedJSON
 #* @tag sRedList
 function(scientific_name) {
-    #Clean-string from user
-    scientific_name <- url_decode(scientific_name)
-    scientific_name <- R.utils::capitalize(trim(gsub("[[:punct:]]", " ", scientific_name))) # nolint
-    print(scientific_name)
-    #GBIF procedure createDataGBIF, cleanDataGBIF in utils.R
-    log_info("START - Create data")
-    dat <- createDataGBIF(scientific_name)
-    wm <- borders("world", colour = "gray50", fill = "gray50")
-    ggsave("plot_data.png", plot(ggplot() + coord_fixed() + wm + geom_point(data = dat, aes(x = decimalLongitude, y = decimalLatitude), colour = "darkred", size = 0.5) + theme_bw())) # nolint
-    plot1 <- base64enc::dataURI(file = "plot_data.png", mime = "image/png")
-    log_info("END - Create data")
-    log_info("START - Clean coordinates")
 
-    #Convert country code from ISO2c to ISO3c
-    dat$countryCode <-  countrycode::countrycode(dat$countryCode, origin =  'iso2c', destination = 'iso3c') # nolint
-    #Flag observations to remove and subset: in utils.R
-    dat <- data.frame(dat)
-    flags <- cleanDataGBIF(dat)
-    ggsave("clean_coordinates.png", plot(plot(flags, lon = "decimalLongitude", lat = "decimalLatitude"))) # nolint
-    plot2 <- base64enc::dataURI(file = "clean_coordinates.png", mime = "image/png") # nolint
-    log_info("END - Clean coordinates")
+#GBIF STEP 1
+  ### Clean-string from user
+  scientific_name <- url_decode(scientific_name)
+  scientific_name <- R.utils::capitalize(trim(gsub("[[:punct:]]", " ", scientific_name))) # nolint
+  print(scientific_name)
+  
+  ### GBIF procedure 
+  log_info("START - Create data")
+  dat <- sRL_createDataGBIF(scientific_name, LIM_GBIF)
+  
+  # ### Plot
+  wm <- borders("world", colour = "gray70", fill = "gray70")
+  ggsave("plot_data.png", plot(
+    ggplot() +
+      coord_fixed() +
+      wm +
+      geom_point(data = dat, aes(x = decimalLongitude, y = decimalLatitude), colour = "darkred", size = 0.5) +
+      theme_bw())) # nolint
+  plot1 <- base64enc::dataURI(file = "plot_data.png", mime = "image/png")
+  log_info("END - Create data")
+  log_info("START - Clean coordinates")
+ 
+  
+  # Prepare countries
+  CountrySP_WGS<-st_crop(distCountries_WGS, c(xmin=min(dat$decimalLongitude), xmax=max(dat$decimalLongitude), ymin=min(dat$decimalLatitude), ymax=max(dat$decimalLatitude)))
+  
+  # Flag observations to remove
+  flags_raw <- clean_coordinates(x = dat,
+                             lon = "decimalLongitude",
+                             lat = "decimalLatitude",
+                             countries = "countryCode",
+                             species = "species",
+                             seas_ref=CountrySP_WGS %>% as_Spatial(.),
+                             tests = c("capitals", "centroids", "equal", "gbif", "institutions", "zeros", "seas"))
 
-    # Calculates EOO and assess Red List criterion B1
-    log_info("START - Calculates EOO and assess Red List criterion B1")
-    dat_cl <- dat[flags$.summary,]
-    gbif_data_number <- nrow(dat_cl)
-    dat_proj <- SpatialPoints(cbind(dat_cl$decimalLongitude, dat_cl$decimalLatitude), proj4string=CRS("+proj=longlat +datum=WGS84")) %>% spTransform(., CRSobj = CRS("+proj=moll +lon_0=0 +x_0=0 +y_0=0 +ellps=WGS84 +units=m +no_defs")) #nolint
-    ll <- data.frame(y = coordinates(dat_proj)[,2], x = coordinates(dat_proj)[,1]) # nolint
-    EOO_km2 <- round(EOOarea(ll)/1000000) # nolint
-    EOO_rating <- EOORating(EOO_km2) # nolint
+#GBIF STEP 2  
+  # Subset the observations user wants to keep (can be run several times if users play with parameters)
+  flags <- sRL_cleanDataGBIF(flags_raw, year_GBIF, uncertainty_GBIF, keepyearNA_GBIF, cleaningpar_GBIF, GBIF_xmin, GBIF_xmax, GBIF_ymin, GBIF_ymax)
+  
+  # Plot
+  ggsave("clean_coordinates.png", plot(
+    
+    ### This is a static plot that works 
+    ggplot()+
+       coord_fixed()+
+       geom_sf(data=CountrySP_WGS, fill="gray70")+
+       geom_point(data = flags, aes(x = decimalLongitude, y = decimalLatitude, col=factor(is.na(Reason), c("FALSE", "TRUE"))), size = 1.3)+
+       scale_colour_manual(values=c("#440154ff", "#fde725ff"), name="Valid observation", drop=F)+
+       xlab("")+ylab("")+
+       theme_bw() %+replace%   theme(legend.position="bottom")
+    
+    ### This is an interactive plot that I'd like to include but I didn't manage to include on the platform
+    # flags$Valid<-paste(revalue(as.character(is.na(flags$Reason)), c("TRUE"="Valid observation", "FALSE"="Invalid observation")), "\n Gbif_ID: ", flags$gbifID, '\n Year:', flags$year) ; flags$Valid[is.na(flags$Reason)==F]<-paste0(flags$Valid[is.na(flags$Reason)==F], '\n Reason_flagged:', flags$Reason[is.na(flags$Reason)==F])
+    # 
+    # ggplotly(
+    #   ggplot()+
+    #     coord_fixed()+
+    #     geom_sf(data=sf::st_cast(CountrySP_WGS, "MULTIPOLYGON"), fill="#999999ff")+
+    #     geom_point(data = flags, aes(x = decimalLongitude, y = decimalLatitude, col=factor(is.na(Reason), c("FALSE", "TRUE")), label=Valid), size = 1.3)+
+    #     scale_colour_manual(values=c("#440154ff", "#fde725ff"), name="Valid observation", drop=F)+
+    #     xlab("")+ylab("")+
+    #     theme_bw() %+replace%   theme(legend.position="bottom"),
+    #   tooltip="label"
+    # )
+    
+  ))
+  plot2 <- base64enc::dataURI(file = "clean_coordinates.png", mime = "image/png") # nolint
+  log_info("END - Clean coordinates")
+  
 
-    log_info("END - Calculates EOO and assess Red List criterion B1")
+#GBIF STEP 3  
+  # Map distribution from GBIF
+  log_info("START - Maps the distribution")
+  
+  distGBIF0<-sRL_MapEOOGBIF(flags)
+  distSP<-sRL_MapDistributionGBIF(distGBIF0, GBIF_BUFF_km2, GBIF_crop, scientific_name)
+  EOO_km2 <- round(as.numeric(st_area(distSP))/1000000) # nolint
+  EOO_rating <- EOORating(EOO_km2) # nolint
 
-    #Plot EOO
-    log_info("START - Plot EOO")
-    EOO <- st_convex_hull(st_combine(st_as_sf(dat_proj))) # nolint
-    EOO<-st_as_sf(st_convex_hull(st_combine(st_as_sf(dat_proj))))
-    #EOO$binomial <- "Papilio sosia"
-    EOO$binomial <- as.character(scientific_name)
-    #Save EOO distribution: Utils.R
-    gbif_path <- saveEooDistribution(scientific_name, EOO, gbif_data_number)
-    ggsave("eoo.png", plot(ggplot() + geom_sf(data = EOO) + geom_sf(data = st_as_sf(dat_proj)) + ggtitle(paste0("EOO of ", scientific_name)))) # nolint
-    plot3 <- base64enc::dataURI(file = "eoo.png", mime = "image/png") # nolint
-    log_info("END - Plot EOO")
+  # Plot distribution
+  gbif_path <- sRL_saveMapDistribution(scientific_name, distSP, gbif_number_saved)
+  ggsave("eoo.png", plot(
+    ggplot() + 
+      geom_sf(data=CountrySP_saved, fill="gray70")+
+      geom_sf(data = distSP, fill="darkred") + 
+      ggtitle("")+
+      theme_bw()
+    )) # nolint
+  plot3 <- base64enc::dataURI(file = "eoo.png", mime = "image/png") # nolint
+  log_info("END - Maps the distribution")
 
-    file.remove("plot_data.png")
-    file.remove("clean_coordinates.png")
-    file.remove("eoo.png")
-    return(list(
-        plot_data = plot1,
-        plot_clean_coordinates = plot2,
-        eoo_km2 = EOO_km2,
-        eoo_rating = EOO_rating,
-        plot_eoo = plot3,
-        gbif_data_number  = gbif_data_number,
-        gbif_path = gbif_path
-        ));
-
+  # Keep distribution in memory
+  assign("distSP_saved", distSP, .GlobalEnv)
+  
+  
+  file.remove("plot_data.png")
+  file.remove("clean_coordinates.png")
+  file.remove("eoo.png")
+  return(list(
+    plot_data = plot1,
+    plot_clean_coordinates = plot2,
+    eoo_km2 = EOO_km2,
+    eoo_rating = EOO_rating,
+    plot_eoo = plot3,
+    gbif_data_number  = as.numeric(gbif_number_saved),
+    gbif_path = gbif_path
+  ))
+  
 }
+
+
+
 
 
 #* Estimate the Extent of Occurrence (EOO) from range
@@ -219,45 +295,51 @@ function(scientific_name) {
 #* @param path:string Distribution Folder default RedList
 #* @serializer unboxedJSON
 #* @tag sRedList
-function(scientific_name, presences = list(), seasons = list() , origins = list(), path = "") { # nolint
+function(scientific_name, presences = list(), seasons = list() , origins = list(), path = "", dist_fun=distSP_saved) { # nolint
+  
   #Filter param
   scientific_name <- url_decode(scientific_name)
-  path <- ifelse(path == "", paste0(R.utils::capitalize(trim(gsub(" ", "_", scientific_name))), '_RL'), path ) # nolint
-  if (length(presences) != 0) presences <- as.character(presences);
-  if (length(seasons) != 0) seasons <- as.character(seasons);
-  if (length(origins) != 0) origins <- as.character(origins);
   
-  #Load Distribution Species
-  distributions <- read_distribution(scientific_name, path)
-
-  distSP_full <- subset(distributions, distributions$binomial == scientific_name) # nolint    
-  choice_presence <- c(presences)
-  choice_season <- c(seasons)
-  choice_origin <- c(origins)
-
-  distSP <- subset(distSP_full, # nolint
-    distSP_full$presence %in% choice_presence &
-    distSP_full$seasonal %in% choice_season &
-    distSP_full$origin %in% choice_origin)
-
-  # Combine polygons in a single shapefile, that will be used in analyses
-  distSP <- distSP %>% dplyr::group_by(binomial) %>% dplyr::summarise(N = n())
-  range <- st_transform(distSP, crs(alt))
-
-  #Plot EOO
+  # Load distribution
+  distSP<-dist_fun
+  
+  ### Plot EOO
   log_info("START - Plot EOO")
-  EOO <- st_convex_hull(range)
-  ggsave(paste0(scientific_name, ".png"), plot(ggplot() + geom_sf(data=EOO, fill="darkred", col=NA) + geom_sf(data=range, fill="coral2", col=NA) + ggtitle(paste0("EOO of ", scientific_name)))) # nolint
+  EOO <- st_as_sf(st_convex_hull(st_union(distSP))) ## Needed to avoid having different sub-polygons
+  ggsave(paste0(scientific_name, ".png"), plot(
+    ggplot() + 
+      geom_sf(data=EOO, fill="#ef3b2c", col=NA) + 
+      geom_sf(data=distSP, fill="#fcbba1", col=NA) + 
+      geom_sf(data=st_crop(CountrySP_saved, extent(EOO)), fill=NA, col="black")+
+      ggtitle(paste0("EOO of ", scientific_name))) +
+      theme_bw()
+    ) # nolint
   plot3 <- base64enc::dataURI(file = paste0(scientific_name, ".png"), mime = "image/png") # nolint
   log_info("END - Plot EOO")
   file.remove(paste0(scientific_name, ".png"))
+  
+  ### Calculate EOO area
   EOO_km2 <- round(as.numeric(st_area(EOO))/1000000)
+  
   return(list(
-        eoo_km2 = EOO_km2,
-        plot_eoo = plot3
-        ));
-
+    eoo_km2 = EOO_km2,
+    plot_eoo = plot3
+  ))
+  
 }
+
+
+
+
+
+
+
+
+
+
+##############################
+### MODULE 3: AOH ANALYSES ###
+##############################
 
 
 #* Species density preferences
@@ -269,16 +351,15 @@ function(scientific_name) {
   #Filter param
   scientific_name <- url_decode(scientific_name)
   return(list(
-        density = density$Density[density$Species == scientific_name]
-        ));
+    density = density$Density[density$Species == scientific_name]
+  ));
 }
+
+
 
 #* Estimate the Area of Habitat (AOH)
 #* @get species/<scientific_name>/analysis/aoh
 #* @param scientific_name:string Scientific Name
-#* @param presences:[int] presences (1, 2)
-#* @param seasons:[int] seasons (1, 2)
-#* @param origins:[int] origins (1, 2)
 #* @param habitats_pref:[str] habitats_pref
 #* @param altitudes_pref:[int] altitudes_pref
 #* @param density_pref:int density_pref
@@ -287,151 +368,122 @@ function(scientific_name) {
 #* @param path:string Distribution Folder default RedList
 #* @serializer unboxedJSON
 #* @tag sRedList
-function(scientific_name, presences = list(), seasons = list() , origins = list(), habitats_pref= list(), altitudes_pref= list(), density_pref= -1, isGbifDistribution = FALSE, path = "") { # nolint    
+function(scientific_name, habitats_pref= list(), altitudes_pref= list(), density_pref= -1, isGbifDistribution = FALSE, path = "", crs_to_use=CRSMOLL, distSP=distSP_saved) { # nolint    
   #Filter param
   scientific_name <- url_decode(scientific_name)
-  path <- ifelse(path == "", paste0(R.utils::capitalize(trim(gsub(" ", "_", scientific_name))), '_RL'), path ) # nolint
-  if (length(presences) != 0) presences <- as.character(presences);
-  if (length(seasons) != 0) seasons <- as.character(seasons);
-  if (length(origins) != 0) origins <- as.character(origins);
 
-  habitats_pref <- as.character(habitats_pref)
-  altitudes_pref <- as.integer(altitudes_pref)
+
+  # Habitat table (for aoh analysis and for SIS Connect)
+  habitats_pref_DF<-sRL_PrepareHabitatFile(scientific_name, habitats_pref)
+  assign("habitats_SIS", habitats_pref_DF, .GlobalEnv)
+
+  # Altitude table (for aoh analysis and for SIS Connect)
+  altitudes_pref_DF<-sRL_PrepareAltitudeFile(scientific_name, altitudes_pref)
+  assign("AltPref_saved", altitudes_pref_DF, .GlobalEnv)
+
   density_pref <- as.integer(density_pref)
-
-  print(presences)
-  print(seasons)
-  print(origins)
+  
   print(habitats_pref)
   print(altitudes_pref)
   print(density_pref)
   print(isGbifDistribution)
   
-  #Load Distribution Species
-  distributions <- read_distribution(scientific_name, path)
+  # Charge distribution
+  distSP$binomial<-as.character(distSP$binomial)
 
-  distSP_full <- subset(distributions, distributions$binomial == scientific_name) # nolint    
-  choice_presence <- c(presences)
-  choice_season <- c(seasons)
-  choice_origin <- c(origins)
+  ### Prepare distribution, altitude, and preference files (i.e., part of the AOH analysis that has to be run only once)
+  # Distribution (assuming seasonal=resident after users decided what they keep)
+  distSP$seasonal=1
+  rangeSP_clean<-create_spp_info_data(distSP, 
+                                      keep_iucn_rl_presence = 1:6, # The selection has already been made, so I give fake numbers here
+                                      keep_iucn_rl_seasonal = 1:5, 
+                                      keep_iucn_rl_origin = 1:6,
+                                      spp_summary_data = altitudes_pref_DF,
+                                      spp_habitat_data = habitats_pref_DF,
+                                      key=red_list_token,
+                                      crs=st_crs(crs_to_use))
+  assign("RangeClean_saved", rangeSP_clean, .GlobalEnv)
 
-  # isGbifDistribution <- TRUE
-  if (isGbifDistribution == FALSE) {
-  distSP <- subset(distSP_full, # nolint
-    distSP_full$presence %in% choice_presence &
-    distSP_full$seasonal %in% choice_season &
-    distSP_full$origin %in% choice_origin)
-  }else {
-    distSP <- st_transform(distSP_full, crs(cci2))
-  }
-  # Combine polygons in a single shapefile, that will be used in analyses
-  distSP <- distSP %>% dplyr::group_by(binomial) %>% dplyr::summarise(N = n())
-  range <- st_transform(distSP, crs(alt))
-
-  #species habitat preferences
-  crosswalk$species_pref <- as.numeric(crosswalk$iucn_code %in% habitats_pref)
-
-  print("ok1")
-
-  #Restrict to land cover categories that are in species habitat preferences (takes all ESA categories that are named against the habitat preferences of the species)
-  cci_classes$SP <- cci_classes$Classes %in% crosswalk$esa_code[crosswalk$species_pref == 1] %>% as.numeric(.) # nolint 
-
-  print("ok1.1")
-  cci_classes$Classes <- as.numeric(as.character(cci_classes$Classes))
-  print("ok1.2")
-  cci_classes$SP <- as.numeric(as.character(cci_classes$SP))
-  print("ok1.3")
-  cci2_sp <- crop(cci2, extent(distSP)) # nolint 
-  print("ok1.4")
-  cci2_sp <- reclassify(cci2_sp, as.matrix(cci_classes)) # nolint
-
-  print("ok2")
-
-  #Restrict by species altitude preferences (if they are known). We downscale altitude data to fit with the resolution of Land Cover. # nolint
-
-  if (is.na(altitudes_pref[1])) {
-    altitudes_pref[1] <- (-10)
-    } # If there are no minimal value provided, we consider -10 so that every altitude is higher # nolint
-  if (is.na(altitudes_pref[2])) {
-    altitudes_pref[2] <- (10000)
-    } # If there are no maximal value provided, we consider 10000 so that every altitude is higher # nolint
-
-  print("ok3")
-
-  alt_mat <- matrix(c(-11, altitudes_pref[1], 0, altitudes_pref[1], altitudes_pref[2], 1, altitudes_pref[2], 10001, 0), byrow=T, ncol=3)
-
-  print("ok4")
-
-  alt_sp <- crop(alt, extent(range))
-
-  alt_sp <- reclassify(alt_sp, alt_mat)
-
-  print("ok5")
-
-  alt_spPROJ <- projectRaster(alt_sp, cci2_sp) > 0 # Becomes a 1 wherever there was suitable altitude
-
-  #Map AOH (reproject altitude raster, overlap with distribution and sum)
-
-  AOH0 <- (cci2_sp + alt_spPROJ) == 2
-
-  AOH <- mask(AOH0, distSP)
-
-  log_info("START - Plot EOO")
-
-  plot1 <- gplot(AOH) + 
-  geom_tile(aes(fill = as.factor(value))) +
-  scale_fill_manual(values=c("#dfc27d", "#018571"), labels=c("Unsuitable", "Suitable", ""), name="", na.translate=F) +
-  ggtitle("Area of Habitat") +
-  theme_void() %+replace%   theme(plot.title=element_text(hjust=0.5, size=14, face="bold"))
-
+  # Altitude
+  alt_crop=crop(alt_raw, extent(distSP)) ; assign("alt_crop_saved", alt_crop, .GlobalEnv)
+  cci2_crop<-crop(cci2, extent(distSP))
+  
+  # Remove old stored AOH
+  output_dir<-"Species/AOH_stored"
+  do.call(file.remove, list(list.files(output_dir, full.names = TRUE, recursive=T)))
+  
+   AOH2<-sRL_calculateAOH(rangeSP_fun=rangeSP_clean, 
+                  cci_fun=cci2_crop, 
+                  alt_fun=alt_crop,
+                  habitat_pref_fun=habitats_pref_DF,
+                  FOLDER=paste0(output_dir, "/Current"),
+                  elevation_data_fun=altitudes_pref_DF,
+                  crs_to_use)
+  assign("AOH2_saved", AOH2, .GlobalEnv)
+  
+ 
+  # Plot
+  log_info("START - Plot AOH")
+  
+  plot1 <- gplot(AOH2[[1]]) +
+    coord_fixed()+
+    geom_tile(aes(fill = as.factor(value))) +
+    scale_fill_manual(values=c("#dfc27d", "#018571", NA), labels=c("Unsuitable", "Suitable", ""), name="", na.translate=F) +
+    ggtitle("Area of Habitat in 2020") +
+    theme_void() %+replace%   theme(plot.title=element_text(hjust=0.5, size=14, face="bold"))
+  
   ggsave(filename = "aoh.png", plot = plot(plot1))
   
   plot1 <- base64enc::dataURI(file = "aoh.png", mime = "image/png", encoding = "base64") # nolint
   file.remove("aoh.png")
-  log_info("END - Plot EOO")
-
-  AOH_km2 <- 0.09*exactextractr::exact_extract(AOH, range, fun="sum") # This is an approximation (resolution in degree), will have to be improved at some point
+  log_info("END - Plot AOH")
+  
+  AOH_km2 <-  sRL_areaAOH(AOH2[[1]], SCALE="cci")
   
   #Calculate Area of Habitat in a resolution of 2x2km (as is the map of altitude provided), in order to use it as an upper bound of species Area of Occupancy under criterion B2 (each cell covers 4km2)
+  grid22_crop<-crop(grid22, AOH2[[1]])
+  aoh_22<-resample(AOH2[[1]], grid22_crop, method="max")
 
-  AOO <- projectRaster(AOH, alt_sp) > 0
-
-  plot2 <- gplot(AOO) + 
-  geom_tile(aes(fill = as.factor(value))) +
-  scale_fill_manual(values=c("#dfc27d", "#018571"), labels=c("Unsuitable", "Suitable"), name="", na.translate=F) +
-  ggtitle("Area of Habitat (2x2km)") +
-  theme_void() %+replace%   theme(plot.title=element_text(hjust=0.5, size=14, face="bold"))
-
+  plot2 <- gplot(aoh_22[[1]]) +
+    coord_fixed()+
+    geom_tile(aes(fill = factor(as.character(value), c("0", "1")))) +
+    scale_fill_manual(values=c("#dfc27d", "#018571"), labels=c("Unsuitable", "Suitable"), name="", na.translate=F, drop=F) +
+    ggtitle("Area of Habitat (2x2km)") +
+    theme_void() %+replace%   theme(plot.title=element_text(hjust=0.5, size=14, face="bold"))
+  
+  
   ggsave(filename = "aoo.png", plot = plot(plot2))
   plot2 <- base64enc::dataURI(file = "aoo.png", mime = "image/png", encoding = "base64") # nolint
   file.remove("aoo.png")
+  
+  AOO_km2<- sRL_areaAOH(aoh_22[[1]], SCALE="2x2")
 
-  AOO_km2<-4*exactextractr::exact_extract(AOO, range, fun="sum")
-
-  #Calculate population size
+  
+  # Calculate population size
   if (density_pref != -1) {
-    #TODO: If not present in CSV calculate populution size
-    #density_sp <- density$Density[density$Species == scientific_name]
     density_sp <- density_pref
     pop_size <- AOH_km2 * density_sp
     return(list(
-        aoh_km2 = round(AOH_km2),
-        aoo_km2 = round(AOO_km2),
-        plot_aoh = plot1,
-        plot_aoh_2x2 = plot2,
-        pop_size = round(pop_size)
-        ));
+      aoh_km2 = round(AOH_km2),
+      aoo_km2 = round(AOO_km2),
+      plot_aoh = plot1,
+      plot_aoh_2x2 = plot2,
+      pop_size = round(pop_size)
+    ));
   }
-
+  
   return(list(
-        aoh_km2 = round(AOH_km2),
-        aoo_km2 = round(AOO_km2),
-        plot_aoh = plot1,
-        plot_aoh_2x2 = plot2
-        ));
-
-
+    aoh_km2 = round(AOH_km2),
+    aoo_km2 = round(AOO_km2),
+    plot_aoh = plot1,
+    plot_aoh_2x2 = plot2
+  ));
+  
+  
 }
+
+
+
 
 
 
@@ -448,114 +500,66 @@ function(scientific_name, presences = list(), seasons = list() , origins = list(
 #* @param path:string Distribution Folder default RedList
 #* @serializer unboxedJSON
 #* @tag sRedList
-function(scientific_name, presences = list(), seasons = list() , origins = list(), habitats_pref= list(), altitudes_pref= list(), isGbifDistribution = FALSE, path = "") { # nolint
+function(scientific_name, habitats_pref_DF=habitats_SIS, altitudes_pref_DF=AltPref_saved, path = "", distSP=distSP_saved, AOH2=AOH2_saved, alt_crop=alt_crop_saved, crs_to_use=CRSMOLL, rangeSP_clean=RangeClean_saved) { # nolint
   #Filter param
   scientific_name <- url_decode(scientific_name)
-  path <- ifelse(path == "", paste0(R.utils::capitalize(trim(gsub(" ", "_", scientific_name))), '_RL'), path ) # nolint
-  if (length(presences) != 0) presences <- as.character(presences);
-  if (length(seasons) != 0) seasons <- as.character(seasons);
-  if (length(origins) != 0) origins <- as.character(origins);
-
-  habitats_pref <- as.character(habitats_pref)
-  altitudes_pref <- as.integer(altitudes_pref)
-
-  print(presences)
-  print(seasons)
-  print(origins)
-  print(habitats_pref)
-  print(altitudes_pref)
   
-  #Load Distribution Species
-  distributions <- read_distribution(scientific_name, path)
+  # Charge distribution
+  distSP$binomial<-as.character(distSP$binomial)
+  
+  # Charge CCI1
+  Year1_theo<-config$YearAOH2-max(10, round(3*GL_species))
+  Year1<-max(Year1_theo, 1992) ; print(Year1)
+  
+  cci1<-rast(paste0("H:/Postdoc/Platform/CCI", Year1, "_reprojMollweide.tif")) ; crs(cci1)<-CRSMOLL # I ensure the CRS is correctly assigned
+  
+  # Crop CCI1
+  cci1_crop<-crop(cci1, extent(distSP))
+  
+  # Calculate AOH
+  output_dir<-"Species/AOH_stored"
+  AOH1<-sRL_calculateAOH(rangeSP_fun=rangeSP_clean,
+                         cci_fun=cci1_crop,
+                         alt_fun=alt_crop,
+                         habitat_pref_fun=habitats_pref_DF,
+                         FOLDER=paste0(output_dir, "/Initial"),
+                         elevation_data_fun=altitudes_pref_DF,
+                         crs_to_use)
 
-  distSP_full <- subset(distributions, distributions$binomial == scientific_name) # nolint    
-  choice_presence <- c(presences)
-  choice_season <- c(seasons)
-  choice_origin <- c(origins)
-
-  #isGbifDistribution <- TRUE
-  if (isGbifDistribution == FALSE) {
-  distSP <- subset(distSP_full, # nolint
-    distSP_full$presence %in% choice_presence &
-    distSP_full$seasonal %in% choice_season &
-    distSP_full$origin %in% choice_origin)
-  }else {
-    distSP <- st_transform(distSP_full, crs(cci2))
-  }
-
-  # Combine polygons in a single shapefile, that will be used in analyses
-  distSP <- distSP %>% dplyr::group_by(binomial) %>% dplyr::summarise(N = n())
-  range <- st_transform(distSP, crs(alt))
-
-  #species habitat preferences
-  crosswalk$species_pref <- as.numeric(crosswalk$iucn_code %in% habitats_pref)
-
-  #Restrict to land cover categories that are in species habitat preferences (takes all ESA categories that are named against the habitat preferences of the species)
-  cci_classes$SP <- cci_classes$Classes %in% crosswalk$esa_code[crosswalk$species_pref == 1] %>% as.numeric(.) # nolint 
-
-  cci_classes$Classes <- as.numeric(as.character(cci_classes$Classes))
-  cci_classes$SP <- as.numeric(as.character(cci_classes$SP))
-
-  cci2_sp <- crop(cci2, extent(distSP)) # nolint 
-
-  cci2_sp <- reclassify(cci2_sp, as.matrix(cci_classes)) # nolint
-
-
-  #Restrict by species altitude preferences (if they are known). We downscale altitude data to fit with the resolution of Land Cover. # nolint
-
-  if (is.na(altitudes_pref[1])) {
-    altitudes_pref[1] <- (-10)
-    } # If there are no minimal value provided, we consider -10 so that every altitude is higher # nolint
-  if (is.na(altitudes_pref[2])) {
-    altitudes_pref[2] <- (10000)
-    } # If there are no maximal value provided, we consider 10000 so that every altitude is higher # nolint
-
-  alt_mat <- matrix(c(-11, altitudes_pref[1], 0, altitudes_pref[1], altitudes_pref[2], 1, altitudes_pref[2], 10001, 0), byrow=T, ncol=3)
-
-  alt_sp <- crop(alt, extent(range))
-
-  alt_sp <- reclassify(alt_sp, alt_mat)
-
-  alt_spPROJ <- projectRaster(alt_sp, cci2_sp) > 0 # Becomes a 1 wherever there was suitable altitude
-
-  #Map AOH (reproject altitude raster, overlap with distribution and sum)
-
-  AOH0 <- (cci2_sp + alt_spPROJ) == 2
-
-  AOH <- mask(AOH0, distSP)
-
-  AOH_km2 <- 0.09*exactextractr::exact_extract(AOH, range, fun="sum") # This is an approximation (resolution in degree), will have to be improved at some point
-
-  #Map old AOH and overlap with distribution
-  cci1_sp<-crop(cci1, extent(distSP))
-  cci1_sp<-reclassify(cci1_sp, as.matrix(cci_classes))
-
-  AOH0_old<-(cci1_sp+alt_spPROJ)==2
-  AOH_old<-mask(AOH0_old, distSP)
-  AOH_old_km2<-0.09*exactextractr::exact_extract(AOH_old, range, fun="sum")
-
-  #Calculate trends in AOH and plot
+  # Area
+  AOH_km2<-sRL_areaAOH(AOH2[[1]], SCALE="cci")
+  AOH_old_km2<-sRL_areaAOH(AOH1[[1]], SCALE="cci")
+  
+  # Calculate trends in AOH and plot
   AOH_lost<- (1-(AOH_km2/AOH_old_km2))
-
-  plot1 <- gplot((AOH*2+3)-AOH_old) + 
-  geom_tile(aes(fill = as.factor(value)))+
-  scale_fill_manual(values=c("#a6611a", "gray90", "#80cdc1", "#018571"), labels=c("Newly unsuitable", "Unsuitable", "Suitable", "Newly suitable"), name="", na.translate=F)+
-  ggtitle("Trends in Area of Habitat")+
-  theme_void() %+replace%   theme(plot.title=element_text(hjust=0.5, size=14, face="bold"))
-
+  
+  plot1 <- gplot((AOH2[[1]]*2+3)-AOH1[[1]]) + 
+    coord_fixed()+
+    geom_tile(aes(fill = factor(as.character(value), c("2", "3", "4", "5"))))+
+    scale_fill_manual(values=c("#a6611a", "gray90", "#80cdc1", "#018571"), labels=c("Newly unsuitable", "Unsuitable", "Suitable", "Newly suitable"), name="", na.translate=F, drop=F)+
+    ggtitle(paste0("Trends in Area of Habitat between ", Year1, " and ", config$YearAOH2))+
+    theme_void() %+replace%   theme(plot.title=element_text(hjust=0.5, size=14, face="bold"))
+  
   ggsave(filename = "trends-aoh.png", plot = plot(plot1))
   plot1 <- base64enc::dataURI(file = "trends-aoh.png", mime = "image/png", encoding = "base64") # nolint
   file.remove("trends-aoh.png")
-
+  
+  assign("aoh_lost_saved", as.numeric(AOH_lost)*100, .GlobalEnv) # Unsure why this is needed but without assigning, the next function does not find aoh_lost when it is equal to 0 (at least true for Lophornis brachylophus with GBIF data)
+  
   return(list(
-        aoh_lost_km2 = round(AOH_old_km2),
-        aoh_lost = AOH_lost * 100,
-        plot_trends_aoh = plot1
-        ));
-
+    aoh_lost_km2 = round(AOH_old_km2),
+    aoh_lost = (as.numeric(AOH_lost)*100),
+    plot_trends_aoh = plot1
+  ))
+  
 }
 
 
+
+
+#########################
+### MODULE N: OUTPUTS ###
+#########################
 
 
 #* Plot Red List category
@@ -567,32 +571,25 @@ function(scientific_name, presences = list(), seasons = list() , origins = list(
 #* @param pop_size:int Pop_size
 #* @serializer png list(width = 800, height = 600)
 #* @tag sRedList
-function(scientific_name, aoh_lost, eoo_km2, aoo_km2, pop_size) {
+function(scientific_name, aoh_lost=aoh_lost_saved, eoo_km2, aoo_km2, pop_size) {
+  
   #Filter param
   scientific_name <- url_decode(scientific_name)
-  AOH_lost <- round(as.numeric(aoh_lost), 3)
-  EOO_km2 <-  round(as.numeric(eoo_km2))
-  AOO_km2 <-  round(as.numeric(aoo_km2))
-  Pop_size <-  round(as.numeric(pop_size))
-  if (Pop_size == -1) {
-    Pop_size <- as.numeric(NaN)
-  }
-  log_info("AOH_lost", AOH_lost, "EOO_km2", EOO_km2, "AOO_km2", AOO_km2, "Pop_size", Pop_size)
-
-  criteria <- data.frame(Crit=c("A2", "B1", "B2", "C1", "D"), Value=NA) ; criteria$Value=factor(criteria$Value, c("LC/NT", "VU", "EN", "CR")) # nolint
-  criteria$Value[criteria$Crit=="A2"] <- cut(AOH_lost, breaks=c(-Inf, 0.3, 0.5, 0.8, 1), labels=c("LC/NT", "VU", "EN", "CR")) # nolint
-  criteria$Value[criteria$Crit=="B1"] <- cut(EOO_km2, breaks=c(0, 100, 5000, 20000, Inf), labels=rev(c("LC/NT", "VU", "EN", "CR"))) # nolint
-  criteria$Value[criteria$Crit=="B2"] <- cut(AOO_km2, breaks=c(0, 10, 500, 2000, Inf), labels=rev(c("LC/NT", "VU", "EN", "CR"))) # nolint
-  criteria$Value[criteria$Crit=="C1"] <- min(
-    as.numeric(cut(Pop_size, breaks=c(0, 250, 2500, 10000, Inf), labels=rev(c(1,2,3,4)))),  # nolint
-    as.numeric(cut(AOH_lost, breaks=c(-Inf, 0.1, 0.2, 0.25, 1), labels=rev(c(1,2,3,4))))) %>% as.character(.) %>% revalue(., c("1"="LC/NT", "2"="VU", "3"="EN", "4"="CR")) # Note for later, the timeframe applied here for CR and EN species is not in line with guidelines)  # nolint
-  criteria$Value[criteria$Crit=="D"]<-cut(Pop_size, breaks=c(0, 50, 250, 1000, Inf), labels=rev(c("LC/NT", "VU", "EN", "CR")))  # nolint
-
-  return(plot(ggplot(criteria) +
-    geom_point(aes(x = Value, y = Crit, col = Value), size = 10, show.legend=F) +
-    scale_x_discrete(drop = F) + scale_y_discrete(drop=F) +
-    scale_colour_manual(drop = F, values=c("#60c659ff", "#f9e814ff", "#fc7f3fff", "#d81e05ff"))))
-
+ 
+  # Calculate criteria
+  criteria<-sRL_CalculateCriteria(aoh_lost, eoo_km2, aoo_km2, pop_size)
+  log_info("ok3")
+  return(plot(
+    ggplot(criteria) +
+      geom_point(aes(x = Value, y = Crit, col = Value), size = 40, show.legend=F) +
+      geom_text(aes(x=Value, y=Crit, label=Value), col="white", size=10)+
+      scale_x_discrete(drop = F) + scale_y_discrete(drop=F) +
+      xlab("Red List Category triggered") + ylab("Criteria")+
+      scale_colour_manual(drop = F, values=c("#006666ff", "#cc9900ff", "#cc6633ff", "#cc3333ff"))+
+      ggtitle(paste0("The species seems to meet the ", as.character(max(criteria$Value, na.rm=T)), " category under criteria ", paste(criteria$Crit[criteria$Value==max(criteria$Value, na.rm=T)], collapse=" / "), ". Please check subcriteria!"))+
+      theme_bw()
+    ))
+   
 }
 
 
@@ -606,49 +603,34 @@ function(scientific_name, aoh_lost, eoo_km2, aoo_km2, pop_size) {
 #* @param pop_size:int Pop_size
 #* @serializer csv
 #* @tag sRedList
-function(scientific_name, aoh_lost, eoo_km2, aoo_km2, pop_size, res) {
+function(scientific_name, aoh_lost=aoh_lost_saved, eoo_km2, aoo_km2, pop_size, res) {
   #Filter param
   scientific_name <- url_decode(scientific_name)
-  AOH_lost <- round(as.numeric(aoh_lost), 3)
-  EOO_km2 <-  round(as.numeric(eoo_km2))
-  AOO_km2 <-  round(as.numeric(aoo_km2))
-
-  criteria <- data.frame(Crit=c("A2", "B1", "B2", "C1", "D"), Value=NA) ; criteria$Value=factor(criteria$Value, c("LC/NT", "VU", "EN", "CR")) # nolint
-  criteria$Value[criteria$Crit=="A2"] <- cut(AOH_lost, breaks=c(-Inf, 0.3, 0.5, 0.8, 1), labels=c("LC/NT", "VU", "EN", "CR")) # nolint
-  criteria$Value[criteria$Crit=="B1"] <- cut(EOO_km2, breaks=c(0, 100, 5000, 20000, Inf), labels=rev(c("LC/NT", "VU", "EN", "CR"))) # nolint
-  criteria$Value[criteria$Crit=="B2"] <- cut(AOO_km2, breaks=c(0, 10, 500, 2000, Inf), labels=rev(c("LC/NT", "VU", "EN", "CR"))) # nolint
-
-
-  Pop_size <-  round(as.numeric(pop_size))
-
-  if (Pop_size == -1) {
-    Pop_size <- as.numeric(NaN)
-    criteria$Value[criteria$Crit=="C1"] <- NA # Note for later, the timeframe applied here for CR and EN species is not in line with guidelines)  # nolint
-    criteria$Value[criteria$Crit=="D"]<- NA  # nolint
-  } else{
-  criteria$Value[criteria$Crit=="C1"] <- min(
-    as.numeric(cut(Pop_size, breaks=c(0, 250, 2500, 10000, Inf), labels=rev(c(1,2,3,4)))),  # nolint
-    as.numeric(cut(AOH_lost, breaks=c(-Inf, 0.1, 0.2, 0.25, 1), labels=rev(c(1,2,3,4))))) %>% as.character(.) %>% revalue(., c("1"="LC/NT", "2"="VU", "3"="EN", "4"="CR")) # Note for later, the timeframe applied here for CR and EN species is not in line with guidelines)  # nolint
-  criteria$Value[criteria$Crit=="D"]<-cut(Pop_size, breaks=c(0, 50, 250, 1000, Inf), labels=rev(c("LC/NT", "VU", "EN", "CR")))  # nolint  #TODO: Error when Pop_size == NaN
-  }
-
-  df <- data.frame(
-    Species = scientific_name,
-    Date_processed = Sys.time(),
-    EOO = EOO_km2,
-    AOO = AOO_km2,
-    "Percentage_of_habitat_lost" = AOH_lost,
-    Pop.size = Pop_size,
-    Criterias = paste0(criteria$Value, " (", criteria$Crit, ")") %>% paste(., collapse="; "),
-    Highest_category = criteria$Value[which(as.numeric(criteria$Value)==max(as.numeric(criteria$Value), na.rm=T))] %>% unique()
-  )
-
+  
+  # Calculate criteria
+  criteria<-sRL_CalculateCriteria(aoh_lost, eoo_km2, aoo_km2, pop_size)
+  
+  # Prepare file to extract
+  allfields_SIS<-sRL_CreateALLFIELDS(aoh_lost, eoo_km2, aoo_km2, pop_size)
+  
+  # Prepare countries
+  countries_SIS<-sRL_OutputCountries(scientific_name)
+  
+  # Prepare references
+  ref_SIS<-sRL_OutputRef(scientific_name)
+  
+  # Prepare distributions
+  distSP_SIS<-sRL_OutputDistribution(scientific_name)
+  
   #filename <- paste0('assessment-', scientific_name, '-', Sys.Date(), '.csv') 
   #pathToSaveAssessment <- paste0("Assessments/", filename)
-
-  #write.csv(df, pathToSaveAssessment, row.names = F)
-  return(df)
+  
+  #write.csv(allfields_SIS, pathToSaveAssessment, row.names = F)
+  return(allfields_SIS) # We also want to extract: habitats_SIS, countries_SIS, ref_SIS (best would be all in 1 zip file); we also want to download the distribution with a second button. You can use st_write(distSP_SIS, paste0("sRedList_Distribution_", gsub(" ", ".", scientific_name), ".shp"), append=F)
 }
+
+
+
 
 #* Download .json Red List category
 #* @get species/<scientific_name>/assessment/red-list-criteria/json
@@ -659,44 +641,36 @@ function(scientific_name, aoh_lost, eoo_km2, aoo_km2, pop_size, res) {
 #* @param pop_size:int Pop_size
 #* @serializer unboxedJSON
 #* @tag sRedList
-function(scientific_name, aoh_lost, eoo_km2, aoo_km2, pop_size) {
+function(scientific_name, aoh_lost=aoh_lost_saved, eoo_km2, aoo_km2, pop_size) {
   #Filter param
   scientific_name <- url_decode(scientific_name)
-  AOH_lost <- round(as.numeric(aoh_lost), 3)
-  EOO_km2 <-  round(as.numeric(eoo_km2))
-  AOO_km2 <-  round(as.numeric(aoo_km2))
-
-  criteria <- data.frame(Crit=c("A2", "B1", "B2", "C1", "D"), Value=NA) ; criteria$Value=factor(criteria$Value, c("LC/NT", "VU", "EN", "CR")) # nolint
-  criteria$Value[criteria$Crit=="A2"] <- cut(AOH_lost, breaks=c(-Inf, 0.3, 0.5, 0.8, 1), labels=c("LC/NT", "VU", "EN", "CR")) # nolint
-  criteria$Value[criteria$Crit=="B1"] <- cut(EOO_km2, breaks=c(0, 100, 5000, 20000, Inf), labels=rev(c("LC/NT", "VU", "EN", "CR"))) # nolint
-  criteria$Value[criteria$Crit=="B2"] <- cut(AOO_km2, breaks=c(0, 10, 500, 2000, Inf), labels=rev(c("LC/NT", "VU", "EN", "CR"))) # nolint
-
-
-  Pop_size <-  round(as.numeric(pop_size))
-
-  if (Pop_size == -1) {
-    Pop_size <- as.numeric(NaN)
-    criteria$Value[criteria$Crit=="C1"] <- NA # Note for later, the timeframe applied here for CR and EN species is not in line with guidelines)  # nolint
-    criteria$Value[criteria$Crit=="D"]<- NA  # nolint
-  } else{
-  criteria$Value[criteria$Crit=="C1"] <- min(
-    as.numeric(cut(Pop_size, breaks=c(0, 250, 2500, 10000, Inf), labels=rev(c(1,2,3,4)))),  # nolint
-    as.numeric(cut(AOH_lost, breaks=c(-Inf, 0.1, 0.2, 0.25, 1), labels=rev(c(1,2,3,4))))) %>% as.character(.) %>% revalue(., c("1"="LC/NT", "2"="VU", "3"="EN", "4"="CR")) # Note for later, the timeframe applied here for CR and EN species is not in line with guidelines)  # nolint
-  criteria$Value[criteria$Crit=="D"]<-cut(Pop_size, breaks=c(0, 50, 250, 1000, Inf), labels=rev(c("LC/NT", "VU", "EN", "CR")))  # nolint  #TODO: Error when Pop_size == NaN
-  }
+  
+  # Calculate criteria
+  criteria<-sRL_CalculateCriteria(aoh_lost, eoo_km2, aoo_km2, pop_size)
+  
   json <- list(
     Species = scientific_name,
     Date_processed = Sys.time(),
-    EOO = EOO_km2,
-    AOO = AOO_km2,
-    "Percentage_of_habitat_lost" = AOH_lost,
+    EOO = eoo_km2,
+    AOO = aoo_km2,
+    "Percentage_of_habitat_lost" = aoh_lost,
     Pop.size = Pop_size,
     Criterias = paste0(criteria$Value, " (", criteria$Crit, ")") %>% paste(., collapse="; "),
     Highest_category = criteria$Value[which(as.numeric(criteria$Value)==max(as.numeric(criteria$Value), na.rm=T))] %>% unique()
   )
-
+  
   return(json);
 }
+
+
+
+
+
+
+
+###########################################
+### OTHER FUNCTIONS (PLATFORM BUILDING) ###
+###########################################
 
 
 #* All distributions of paginated species on the platform

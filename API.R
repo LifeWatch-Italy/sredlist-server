@@ -7,6 +7,7 @@
 #* @apiLicense list(name = "Apache 2.0", url = "https://www.apache.org/licenses/LICENSE-2.0.html") # nolint
 #* @apiVersion 1.0.0
 #* @apiTag RedList RedList API
+#* @apiTag sRedList1 Plaftorm API
 #* @apiTag sRedList Plaftorm API
 
 #* @filter cors

@@ -2,13 +2,11 @@ default:
   log_dir: "logs"
   red_list_token: "9bb4facb6d23f48efbf424bb05c0c1ef1cf6f468393bc745d42179ac4aca5fee"
   distribution_path: "resources/Distributions/"
+  YearAOH2: 2020
+  LIM_GBIF: 10000
   #Development
-  alt_raster_path:  "resources/GLOBEelevation/alt_Nesoenas.mayeri.tif"
-  cci1_raster_path: "resources/ESA-CCI/CCI_2010_Nesoenas.mayeri.tif"
-  cci2_raster_path: "resources/ESA-CCI/CCI_2020_Nesoenas.mayeri.tif"
   access_control_allow_origin: "*"
-  # 3MB
-  distribution_size: 3000000 
+  alt_raster_path: "H:/Postdoc/Platform/Elevation_MollweidePlatform.tif"
   #Production
   #alt_raster_path: "resources/GLOBEelevation/GLOBE_projected_Moll.tif"
   #cci1_raster_path: "resources/ESA-CCI/ESACCI-LC-L4-LCCS-Map-300m-P1Y-2010-v2.0.7cds.nc"

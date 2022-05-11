@@ -26,7 +26,6 @@ error_handler <- function(req, res, err) {
     )
     log_error('{req$PATH_INFO} : {err$message}') # nolint
   }
-  return(res)
 }
 
 payload_too_large  <- function(message = "Payload Too Large") {
