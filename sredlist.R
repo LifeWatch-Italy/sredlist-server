@@ -511,7 +511,7 @@ function(scientific_name, habitats_pref_DF=habitats_SIS, altitudes_pref_DF=AltPr
   Year1_theo<-config$YearAOH2-max(10, round(3*GL_species))
   Year1<-max(Year1_theo, 1992) ; print(Year1)
   
-  cci1<-rast(paste0("H:/Postdoc/Platform/CCI", Year1, "_reprojMollweide.tif")) ; crs(cci1)<-CRSMOLL # I ensure the CRS is correctly assigned
+  cci1<-rast(sub("XXXX", Year1, config$cci2_raster_path) ; crs(cci1)<-CRSMOLL # I ensure the CRS is correctly assigned
   
   # Crop CCI1
   cci1_crop<-crop(cci1, extent(distSP))

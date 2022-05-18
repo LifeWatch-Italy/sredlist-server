@@ -99,8 +99,7 @@ distCountries<-st_read("Species/Map countries/Admin_dissolved_by_country_Simplif
 
 # Load ESA land cover data from 2020 and altitude data
 alt_raw <- rast(config$alt_raster_path) ; crs(alt_raw)<-CRSMOLL  # I ensure the CRS is correctly assigned (it was saved as a CRSMOLL raster)
-cci2 <- rast(paste0("H:/Postdoc/Platform/CCI", config$YearAOH2, "_reprojMollweide.tif")); crs(cci2)<-CRSMOLL
-
+cci2 <- rast(config$cci2_raster_path); crs(cci2)<-CRSMOLL
 grid22<-rast("resources/EmptyGrid2x2/Empty.grid.2x2.Mollweide.tif")
 
 # Load Crosswalk CSV and Density CSV
