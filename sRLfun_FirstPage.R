@@ -122,3 +122,9 @@ sRL_PrepareCountries <- function(LIMS){
 }
 
 
+
+### Function to reuse past calculated and stored values
+sRL_reuse=function(scientific_name){
+  eval(parse(text=paste0("Storage_SP_", sub(" ", "_", url_decode(scientific_name)))))
+}
+

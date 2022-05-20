@@ -72,12 +72,13 @@ sRL_cleanDataGBIF <- function(flags, year_GBIF, uncertainty_GBIF, keepyearNA_GBI
 
 
 ### Create EOO polygon from GBIF data
-sRL_MapEOOGBIF<-function(flags){
+sRL_MapEOOGBIF<-function(flags, scientific_name){
 
 # Prepare GBIF data for mapping
 dat_cl <- flags[is.na(flags$Reason)==T,] # Keep only data that are not flagged
 gbif_data_number <- nrow(dat_cl)
-assign("gbif_number_saved", gbif_data_number, .GlobalEnv)
+
+assign(paste0("gbif_number_saved_", sub(" ", "_", scientific_name)), gbif_data_number, .GlobalEnv)
 
 # Prepare spatial points
 dat_proj<-st_geometry(st_as_sf(dat_cl,coords = c("decimalLongitude", "decimalLatitude"), crs="+proj=longlat +datum=WGS84")) %>%
@@ -103,7 +104,7 @@ sRL_MapDistributionGBIF<-function(EOO_GBIF, GBIF_BUFF_km2, GBIF_crop, scientific
   
   ### Create countries map based on the buffer
   CountrySP<-st_crop(distCountries_notsimplif, extent(distGBIF))
-  assign("CountrySP_saved", CountrySP, .GlobalEnv)
+  assign(paste0("Storage_SP_", sub(" ", "_", scientific_name)), list(CountrySP_saved=CountrySP), .GlobalEnv)
   
   # Remove land or sea if requested
   if(GBIF_crop=="Land"){
@@ -127,7 +128,7 @@ sRL_MapDistributionGBIF<-function(EOO_GBIF, GBIF_BUFF_km2, GBIF_crop, scientific
 
 
 ### Save distribution mapped from the GBIF procedure
-sRL_saveMapDistribution <- function(scientific_name, distSP, gbif_number_saved) {
+sRL_saveMapDistribution <- function(scientific_name, distSP, gbif_nb) {
   # Create a file path E.g: Distributions/Nile tilapia/Nile_tilapia_GBIF_20211207/ # nolint
   upload_folder_scientific_name <- R.utils::capitalize(paste0(stringr::str_replace(scientific_name, " ", "_"), format(Sys.time(), "_GBIF_%Y%m%d"))) # nolint
   # Create a file path
@@ -147,7 +148,7 @@ sRL_saveMapDistribution <- function(scientific_name, distSP, gbif_number_saved) 
     "A distribution has been stored for the species: ",
     scientific_name,
     ".\nIt was created with the GBIF procedure from the sRedList platform, based on ", # nolint
-    gbif_number_saved,
+    gbif_nb,
     " occurrence data downloaded from GBIF on the ",
     Sys.time(),
     " CET."

@@ -103,7 +103,7 @@ function(scientific_name, path = "") {
 #* @param path:string Distribution Folder default RedList
 #* @serializer png list(width = 800, height = 600)
 #* @tag sRedList1
-function(scientific_name, presences = list(), seasons = list() , origins = list(), path = "") { # nolint
+function(scientific_name, presences = list(), seasons = list() , origins = list(), path = "", Storage_SP=sRL_reuse(scientific_name)) { # nolint
   
   #Filter param
   scientific_name <- url_decode(scientific_name)
@@ -129,11 +129,12 @@ function(scientific_name, presences = list(), seasons = list() , origins = list(
   distSP<-sRL_ColourDistrib(distSP)
   
   ### Save the distribution in memory
-  assign("distSP_saved", distSP, .GlobalEnv)
+  Storage_SP$distSP_saved<-distSP
   
   ### Prepare countries if they were not charged + crop depending on the current selection of range
-  if(exists("CountrySP_saved")==F){CountrySP_saved<-sRL_PrepareCountries(extent(distSP))}
-  CountrySP<-st_crop(CountrySP_saved, extent(distSP))
+  if("CountrySP_saved" %not in% names(Storage_SP)){Storage_SP$CountrySP_saved<-sRL_PrepareCountries(extent(distSP))} 
+  CountrySP<-st_crop(Storage_SP$CountrySP_saved, extent(distSP))
+  assign(paste0("Storage_SP_", sub(" ", "_", scientific_name)), Storage_SP, .GlobalEnv)
   
   ### Plot
   if (nrow(distSP) > 0) {
@@ -246,16 +247,18 @@ function(scientific_name) {
   # Map distribution from GBIF
   log_info("START - Maps the distribution")
   
-  distGBIF0<-sRL_MapEOOGBIF(flags)
+  distGBIF0<-sRL_MapEOOGBIF(flags, scientific_name)
   distSP<-sRL_MapDistributionGBIF(distGBIF0, GBIF_BUFF_km2, GBIF_crop, scientific_name)
+  Storage_SP=eval(parse(text=paste0("Storage_SP_", sub(" ", "_", scientific_name))))
+  Storage_SP$gbif_number_saved=eval(parse(text=paste0("gbif_number_saved_", sub(" ", "_", scientific_name))))
   EOO_km2 <- round(as.numeric(st_area(distSP))/1000000) # nolint
   EOO_rating <- EOORating(EOO_km2) # nolint
 
   # Plot distribution
-  gbif_path <- sRL_saveMapDistribution(scientific_name, distSP, gbif_number_saved)
+  gbif_path <- sRL_saveMapDistribution(scientific_name, distSP, gbif_nb=Storage_SP$gbif_number_saved)
   ggsave("eoo.png", plot(
     ggplot() + 
-      geom_sf(data=CountrySP_saved, fill="gray70")+
+      geom_sf(data=Storage_SP$CountrySP_saved, fill="gray70")+
       geom_sf(data = distSP, fill="darkred") + 
       ggtitle("")+
       theme_bw()
@@ -264,7 +267,8 @@ function(scientific_name) {
   log_info("END - Maps the distribution")
 
   # Keep distribution in memory
-  assign("distSP_saved", distSP, .GlobalEnv)
+  Storage_SP$distSP_saved=distSP
+  assign(paste0("Storage_SP_", sub(" ", "_", scientific_name)), Storage_SP, .GlobalEnv)
   
   
   file.remove("plot_data.png")
@@ -276,7 +280,7 @@ function(scientific_name) {
     eoo_km2 = EOO_km2,
     eoo_rating = EOO_rating,
     plot_eoo = plot3,
-    gbif_data_number  = as.numeric(gbif_number_saved),
+    gbif_data_number  = as.numeric(Storage_SP$gbif_number_saved),
     gbif_path = gbif_path
   ))
   
@@ -295,13 +299,13 @@ function(scientific_name) {
 #* @param path:string Distribution Folder default RedList
 #* @serializer unboxedJSON
 #* @tag sRedList
-function(scientific_name, presences = list(), seasons = list() , origins = list(), path = "", dist_fun=distSP_saved) { # nolint
+function(scientific_name, presences = list(), seasons = list() , origins = list(), path = "", Storage_SP=sRL_reuse(scientific_name)) { # nolint
   
   #Filter param
   scientific_name <- url_decode(scientific_name)
   
   # Load distribution
-  distSP<-dist_fun
+  distSP<-Storage_SP$distSP_saved
   
   ### Plot EOO
   log_info("START - Plot EOO")
@@ -310,7 +314,7 @@ function(scientific_name, presences = list(), seasons = list() , origins = list(
     ggplot() + 
       geom_sf(data=EOO, fill="#ef3b2c", col=NA) + 
       geom_sf(data=distSP, fill="#fcbba1", col=NA) + 
-      geom_sf(data=st_crop(CountrySP_saved, extent(EOO)), fill=NA, col="black")+
+      geom_sf(data=st_crop(Storage_SP$CountrySP_saved, extent(EOO)), fill=NA, col="black")+
       ggtitle(paste0("EOO of ", scientific_name))) +
       theme_bw()
     ) # nolint
@@ -368,19 +372,19 @@ function(scientific_name) {
 #* @param path:string Distribution Folder default RedList
 #* @serializer unboxedJSON
 #* @tag sRedList
-function(scientific_name, habitats_pref= list(), altitudes_pref= list(), density_pref= -1, isGbifDistribution = FALSE, path = "", crs_to_use=CRSMOLL, distSP=distSP_saved) { # nolint    
+function(scientific_name, habitats_pref= list(), altitudes_pref= list(), density_pref= -1, isGbifDistribution = FALSE, path = "", crs_to_use=CRSMOLL, Storage_SP=sRL_reuse(scientific_name)) { # nolint    
   #Filter param
   scientific_name <- url_decode(scientific_name)
-
+  distSP=Storage_SP$distSP_saved
 
   # Habitat table (for aoh analysis and for SIS Connect)
   habitats_pref_DF<-sRL_PrepareHabitatFile(scientific_name, habitats_pref)
-  assign("habitats_SIS", habitats_pref_DF, .GlobalEnv)
+  Storage_SP$habitats_SIS=habitats_pref_DF
 
   # Altitude table (for aoh analysis and for SIS Connect)
   altitudes_pref_DF<-sRL_PrepareAltitudeFile(scientific_name, altitudes_pref)
-  assign("AltPref_saved", altitudes_pref_DF, .GlobalEnv)
-
+  Storage_SP$AltPref_saved=altitudes_pref_DF
+  
   density_pref <- as.integer(density_pref)
   
   print(habitats_pref)
@@ -402,14 +406,16 @@ function(scientific_name, habitats_pref= list(), altitudes_pref= list(), density
                                       spp_habitat_data = habitats_pref_DF,
                                       key=red_list_token,
                                       crs=st_crs(crs_to_use))
-  assign("RangeClean_saved", rangeSP_clean, .GlobalEnv)
-
+  Storage_SP$RangeClean_saved=rangeSP_clean
+  
   # Altitude
-  alt_crop=crop(alt_raw, extent(distSP)) ; assign("alt_crop_saved", alt_crop, .GlobalEnv)
+  alt_crop=crop(alt_raw, extent(distSP)) 
+  Storage_SP$alt_crop_saved=alt_crop
   cci2_crop<-crop(cci2, extent(distSP))
   
   # Remove old stored AOH
-  output_dir<-"Species/AOH_stored"
+  dir.create(paste0("Species/AOH_stored/", sub(" ", "_", scientific_name), "/Current"), recursive=T)
+  output_dir<-paste0("Species/AOH_stored/", sub(" ", "_", scientific_name))
   do.call(file.remove, list(list.files(output_dir, full.names = TRUE, recursive=T)))
   
    AOH2<-sRL_calculateAOH(rangeSP_fun=rangeSP_clean, 
@@ -419,7 +425,7 @@ function(scientific_name, habitats_pref= list(), altitudes_pref= list(), density
                   FOLDER=paste0(output_dir, "/Current"),
                   elevation_data_fun=altitudes_pref_DF,
                   crs_to_use)
-  assign("AOH2_saved", AOH2, .GlobalEnv)
+  Storage_SP$AOH2_saved=AOH2
   
  
   # Plot
@@ -458,6 +464,8 @@ function(scientific_name, habitats_pref= list(), altitudes_pref= list(), density
   
   AOO_km2<- sRL_areaAOH(aoh_22[[1]], SCALE="2x2")
 
+  assign(paste0("Storage_SP_", sub(" ", "_", scientific_name)), Storage_SP, .GlobalEnv)
+  
   
   # Calculate population size
   if (density_pref != -1) {
@@ -500,9 +508,16 @@ function(scientific_name, habitats_pref= list(), altitudes_pref= list(), density
 #* @param path:string Distribution Folder default RedList
 #* @serializer unboxedJSON
 #* @tag sRedList
-function(scientific_name, habitats_pref_DF=habitats_SIS, altitudes_pref_DF=AltPref_saved, path = "", distSP=distSP_saved, AOH2=AOH2_saved, alt_crop=alt_crop_saved, crs_to_use=CRSMOLL, rangeSP_clean=RangeClean_saved) { # nolint
+function(scientific_name, Storage_SP=sRL_reuse(scientific_name), crs_to_use=CRSMOLL) { # nolint
   #Filter param
   scientific_name <- url_decode(scientific_name)
+  
+  distSP=Storage_SP$distSP_saved
+  alt_crop=Storage_SP$alt_crop_saved
+  rangeSP_clean=Storage_SP$RangeClean_saved
+  habitats_pref_DF=Storage_SP$habitats_SIS
+  altitude_pref_DF=Storage_SP$AltPref_saved
+  AOH2=Storage_SP$AOH2_saved
   
   # Charge distribution
   distSP$binomial<-as.character(distSP$binomial)
@@ -511,13 +526,14 @@ function(scientific_name, habitats_pref_DF=habitats_SIS, altitudes_pref_DF=AltPr
   Year1_theo<-config$YearAOH2-max(10, round(3*GL_species))
   Year1<-max(Year1_theo, 1992) ; print(Year1)
   
-  cci1<-rast(sub("XXXX", Year1, config$cci2_raster_path)) ; crs(cci1)<-CRSMOLL # I ensure the CRS is correctly assigned
+  cci1<-rast(sub("XXXX", Year1, config$cci1_raster_path)) ; crs(cci1)<-CRSMOLL # I ensure the CRS is correctly assigned
   
   # Crop CCI1
   cci1_crop<-crop(cci1, extent(distSP))
   
   # Calculate AOH
-  output_dir<-"Species/AOH_stored"
+  dir.create(paste0("Species/AOH_stored/", sub(" ", "_", scientific_name), "/Initial"))
+  output_dir<-paste0("Species/AOH_stored/", sub(" ", "_", scientific_name))
   AOH1<-sRL_calculateAOH(rangeSP_fun=rangeSP_clean,
                          cci_fun=cci1_crop,
                          alt_fun=alt_crop,
@@ -544,11 +560,16 @@ function(scientific_name, habitats_pref_DF=habitats_SIS, altitudes_pref_DF=AltPr
   plot1 <- base64enc::dataURI(file = "trends-aoh.png", mime = "image/png", encoding = "base64") # nolint
   file.remove("trends-aoh.png")
   
-  assign("aoh_lost_saved", as.numeric(AOH_lost)*100, .GlobalEnv) # Unsure why this is needed but without assigning, the next function does not find aoh_lost when it is equal to 0 (at least true for Lophornis brachylophus with GBIF data)
+  Storage_SP$aoh_lost_saved=round(as.numeric(AOH_lost)*100)
+  Storage_SP$RangeClean_saved=Storage_SP$AOH2_saved=Storage_SP$alt_crop_saved=NULL
+  assign(paste0("Storage_SP_", sub(" ", "_", scientific_name)), Storage_SP, .GlobalEnv)
+  
+  # Remove the AOH files stored
+  unlink(output_dir, recursive=T)
   
   return(list(
     aoh_lost_km2 = round(AOH_old_km2),
-    aoh_lost = (as.numeric(AOH_lost)*100),
+    aoh_lost = Storage_SP$aoh_lost_saved,
     plot_trends_aoh = plot1
   ))
   
@@ -571,7 +592,9 @@ function(scientific_name, habitats_pref_DF=habitats_SIS, altitudes_pref_DF=AltPr
 #* @param pop_size:int Pop_size
 #* @serializer png list(width = 800, height = 600)
 #* @tag sRedList
-function(scientific_name, aoh_lost=aoh_lost_saved, eoo_km2, aoo_km2, pop_size) {
+function(scientific_name, eoo_km2, aoo_km2, pop_size, Storage_SP=sRL_reuse(scientific_name)) {
+  
+  aoh_lost=Storage_SP$aoh_lost_saved
   
   #Filter param
   scientific_name <- url_decode(scientific_name)
@@ -603,29 +626,33 @@ function(scientific_name, aoh_lost=aoh_lost_saved, eoo_km2, aoo_km2, pop_size) {
 #* @param pop_size:int Pop_size
 #* @serializer csv
 #* @tag sRedList
-function(scientific_name, aoh_lost=aoh_lost_saved, eoo_km2, aoo_km2, pop_size, res) {
+function(scientific_name, eoo_km2, aoo_km2, pop_size, res, Storage_SP=sRL_reuse(scientific_name)) {
   #Filter param
   scientific_name <- url_decode(scientific_name)
+  
+  aoh_lost=Storage_SP$aoh_lost_saved
+  AltPref_saved=Storage_SP$AltPref_saved
+  habitats_SIS=Storage_SP$habitats_SIS
   
   # Calculate criteria
   criteria<-sRL_CalculateCriteria(aoh_lost, eoo_km2, aoo_km2, pop_size)
   
   # Prepare file to extract
-  allfields_SIS<-sRL_CreateALLFIELDS(aoh_lost, eoo_km2, aoo_km2, pop_size)
+  allfields_SIS<-sRL_CreateALLFIELDS(aoh_lost, eoo_km2, aoo_km2, pop_size, AltPref_saved)
   
   # Prepare countries
-  countries_SIS<-sRL_OutputCountries(scientific_name)
+  countries_SIS<-sRL_OutputCountries(scientific_name, distSP_saved=Storage_SP$distSP_saved, CountrySP_saved=Storage_SP$CountrySP_saved, AltPref_saved)
   
   # Prepare references
-  ref_SIS<-sRL_OutputRef(scientific_name)
+  ref_SIS<-sRL_OutputRef(scientific_name, AltPref_saved)
   
   # Prepare distributions
-  distSP_SIS<-sRL_OutputDistribution(scientific_name)
+  distSP_SIS<-sRL_OutputDistribution(scientific_name, Storage_SP$distSP_saved)
   
   #filename <- paste0('assessment-', scientific_name, '-', Sys.Date(), '.csv') 
   #pathToSaveAssessment <- paste0("Assessments/", filename)
   
-  #write.csv(allfields_SIS, pathToSaveAssessment, row.names = F)
+  eval(parse(text=paste0("rm(Storage_SP_", sub(" ", "_", scientific_name), ")")))  #write.csv(allfields_SIS, pathToSaveAssessment, row.names = F)
   return(allfields_SIS) # We also want to extract: habitats_SIS, countries_SIS, ref_SIS (best would be all in 1 zip file); we also want to download the distribution with a second button. You can use st_write(distSP_SIS, paste0("sRedList_Distribution_", gsub(" ", ".", scientific_name), ".shp"), append=F)
 }
 
