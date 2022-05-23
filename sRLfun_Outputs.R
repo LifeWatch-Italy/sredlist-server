@@ -30,7 +30,7 @@ sRL_CalculateCriteria<- function(aoh_lost, eoo_km2, aoo_km2, pop_size){
 
 
 ### Create the allfields file for SIS Connect
-sRL_CreateALLFIELDS <- function(aoh_lost, eoo_km2, aoo_km2, pop_size){
+sRL_CreateALLFIELDS <- function(aoh_lost, eoo_km2, aoo_km2, pop_size, AltPref_saved){
   
   # Charge empty allfields
   allfields<-read.csv("Species/SIS_allfields_empty.csv")[1,]
@@ -69,7 +69,7 @@ sRL_CreateALLFIELDS <- function(aoh_lost, eoo_km2, aoo_km2, pop_size){
 
 
 ### Prepare countries output csv
-sRL_OutputCountries<-function(scientific_name){
+sRL_OutputCountries<-function(scientific_name, distSP_saved, CountrySP_saved, AltPref_saved){
   
   # Charge the file with 2 sRedList references
   countries_inters<-st_join(distSP_saved, CountrySP_saved, join=st_intersects)$FIRST_NA2_ %>% unique(.)
@@ -93,7 +93,7 @@ sRL_OutputCountries<-function(scientific_name){
 
 
 ### Prepare references output csv
-sRL_OutputRef<-function(scientific_name){
+sRL_OutputRef<-function(scientific_name, AltPref_saved){
 
   # Charge the file with 2 sRedList references
   ref_SIS<-read.csv("Species/SIS_references_empty.csv")
@@ -108,7 +108,7 @@ sRL_OutputRef<-function(scientific_name){
 
 
 ### Prepare distribution output shapefile
-sRL_OutputDistribution<-function(scientific_name){
+sRL_OutputDistribution<-function(scientific_name, distSP_saved){
   
   # Charge the file with 2 sRedList references
   distSP_SIS<-distSP_saved[, names(distSP_saved) %not in% c("cols")] # Write column names to remove from the file to download
