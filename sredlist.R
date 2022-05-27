@@ -414,8 +414,8 @@ function(scientific_name, habitats_pref= list(), altitudes_pref= list(), density
   cci2_crop<-crop(cci2, extent(distSP))
   
   # Remove old stored AOH
-  dir.create(paste0("Species/AOH_stored/", sub(" ", "_", scientific_name), "/Current"), recursive=T)
-  output_dir<-paste0("Species/AOH_stored/", sub(" ", "_", scientific_name))
+  dir.create(paste0("resources/AOH_stored/", sub(" ", "_", scientific_name), "/Current"), recursive=T)
+  output_dir<-paste0("resources/AOH_stored/", sub(" ", "_", scientific_name))
   do.call(file.remove, list(list.files(output_dir, full.names = TRUE, recursive=T)))
   
    AOH2<-sRL_calculateAOH(rangeSP_fun=rangeSP_clean, 
@@ -532,8 +532,8 @@ function(scientific_name, Storage_SP=sRL_reuse(scientific_name), crs_to_use=CRSM
   cci1_crop<-crop(cci1, extent(distSP))
   
   # Calculate AOH
-  dir.create(paste0("Species/AOH_stored/", sub(" ", "_", scientific_name), "/Initial"))
-  output_dir<-paste0("Species/AOH_stored/", sub(" ", "_", scientific_name))
+  dir.create(paste0("resources/AOH_stored/", sub(" ", "_", scientific_name), "/Initial"))
+  output_dir<-paste0("resources/AOH_stored/", sub(" ", "_", scientific_name))
   AOH1<-sRL_calculateAOH(rangeSP_fun=rangeSP_clean,
                          cci_fun=cci1_crop,
                          alt_fun=alt_crop,
