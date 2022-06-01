@@ -409,6 +409,7 @@ function(scientific_name, habitats_pref= list(), altitudes_pref= list(), density
   Storage_SP$RangeClean_saved=rangeSP_clean
   
   # Altitude
+  terraOptions(tempdir="resources/AOH_stored")
   alt_crop=crop(alt_raw, extent(distSP)) 
   Storage_SP$alt_crop_saved=alt_crop
   cci2_crop<-crop(cci2, extent(distSP))
