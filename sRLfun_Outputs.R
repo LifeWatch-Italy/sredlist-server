@@ -58,8 +58,8 @@ sRL_CreateALLFIELDS <- function(aoh_lost, eoo_km2, aoo_km2, pop_size, AltPref_sa
   allfields$PopulationReductionPast.range<-aoh_lost
   allfields$PopulationReductionPast.justification<-allfields$PopulationDeclineGenerations3.justification<-"The decline has been measured from the sRedList platform as the decline in Area of Habitat over the last 10 years / 3 generations"
   
-  # Population size
-  allfields$PopulationSize.range<-pop_size
+  # Population size (only if positive, i.e. if an estimate of density has been provided)
+  if(pop_size>=0){allfields$PopulationSize.range<-pop_size}
 
   return(allfields)
   

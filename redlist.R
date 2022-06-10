@@ -1,4 +1,3 @@
-
 #* Find Species
 #* @get species/search
 #* @serializer json

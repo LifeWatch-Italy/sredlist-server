@@ -70,10 +70,10 @@ sRL_ReadDistribution <- function(scientific_name, path) {
 
 ### Prepare distribution
 sRL_PrepareDistrib <- function(distributions, scientific_name){
-  names(distributions)[which(names(distributions) %in% c("SCINAME", "binomial", "BINOMIAL"))] <- "binomial" # nolint
-  names(distributions)[which(names(distributions) %in% c("PRESENC", "PRESENCE", "presence"))] <- "presence" # nolint
+  names(distributions)[which(names(distributions) %in% c("SCINAME", "binomial", "BINOMIAL", "binomil"))] <- "binomial" # nolint
+  names(distributions)[which(names(distributions) %in% c("PRESENC", "PRESENCE", "presence", "presenc"))] <- "presence" # nolint
   names(distributions)[which(names(distributions) %in% c("ORIGIN", "origin"))] <- "origin" # nolint
-  names(distributions)[which(names(distributions) %in% c("SEASONA", "SEASONAL", "seasonal"))] <- "seasonal" # nolint
+  names(distributions)[which(names(distributions) %in% c("SEASONA", "SEASONAL", "seasonal", "seasonl"))] <- "seasonal" # nolint
   distSP <- subset(distributions, distributions$binomial == scientific_name) # nolint 
   
   distSP<-st_transform(distSP, st_crs(CRSMOLL))
