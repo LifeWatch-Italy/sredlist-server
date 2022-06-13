@@ -9,6 +9,10 @@ default:
   alt_raster_path: "H:/Postdoc/Platform/Elevation_MollweidePlatform.tif"
   cci1_raster_path: "H:/Postdoc/Platform/ESA-CCI/CCIXXXX_reprojMollweide.tif"
   cci2_raster_path: "H:/Postdoc/Platform/ESA-CCI/CCI2020_reprojMollweide.tif"
+  # Development Victor
+  #alt_raster_path: "C:/Victor_local/Platform/InProgress/Large_Files/Elevation_MollweidePlatform.tif"
+  #cci1_raster_path: "C:/Victor_local/Platform/InProgress/Large_Files/CCIXXXX_reprojMollweide.tif"
+  #cci2_raster_path: "C:/Victor_local/Platform/InProgress/Large_Files/CCI2020_reprojMollweide.tif"
   #Production
   #alt_raster_path: "resources/GLOBEelevation/Elevation_MollweidePlatform.tif"
   #cci1_raster_path: "resources/ESA-CCI/CCIXXXX_reprojMollweide.tif"
