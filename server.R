@@ -15,7 +15,6 @@ GBIF_xmin<- -180 ; GBIF_xmax<-180 ; GBIF_ymin<- -90 ; GBIF_ymax<-90
 GBIF_BUFF_km2<-10
 GBIF_crop<-"Land" # Could be Land or Sea or could be empty
 
-GL_species<-2 # This is the generation length parameters
 
 
 
