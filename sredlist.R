@@ -361,7 +361,7 @@ function(scientific_name) {
 
 
 #* Species generation length
-#* @get species/<scientific_name>/SpeciesGenerationlength
+#* @get species/<scientific_name>/generation-length
 #* @param scientific_name:string Scientific Name
 #* @serializer json
 #* @tag sRedList
@@ -370,22 +370,7 @@ function(scientific_name) {
   scientific_name <- url_decode(scientific_name)
   return(list(
     # If value in GL_file we take it, otherwise default=1
-    GL_species<-ifelse(scientific_name %in% GL_file$internal_taxon_name, GL_file$GL_estimate[GL_file$internal_taxon_name==scientific_name][1], 1)
-  ));
-}
-
-
-#* Species generation length
-#* @get species/<scientific_name>/SpeciesGenerationlength
-#* @param scientific_name:string Scientific Name
-#* @serializer json
-#* @tag sRedList
-function(scientific_name) {
-  #Filter param
-  scientific_name <- url_decode(scientific_name)
-  return(list(
-    # If value in GL_file we take it, otherwise default=1
-    GL_species<-ifelse(scientific_name %in% GL_file$internal_taxon_name, GL_file$GL_estimate[GL_file$internal_taxon_name==scientific_name][1], 1)
+    GL_species = ifelse(scientific_name %in% GL_file$internal_taxon_name, GL_file$GL_estimate[GL_file$internal_taxon_name==scientific_name][1], 1)
   ));
 }
 
