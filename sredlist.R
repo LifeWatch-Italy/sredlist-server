@@ -365,7 +365,7 @@ function(scientific_name) {
 #* @param scientific_name:string Scientific Name
 #* @serializer json
 #* @tag sRedList
-function(scientific_name) {
+function(scientific_name, Storage_SP=sRL_reuse(scientific_name)) {
   #Filter param
   scientific_name <- url_decode(scientific_name)
   
