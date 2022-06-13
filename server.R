@@ -105,7 +105,7 @@ grid22<-rast("resources/EmptyGrid2x2/Empty.grid.2x2.Mollweide.tif")
 # Load Crosswalk CSV and Density CSV
 density<-read.csv("Species/Density.table.csv", sep=",") ; density<-select(density, c("Species", "Density"))
 crosswalk <- read.csv("Species/Crosswalk_CCI_IUCN.csv")
-
+GL_file<-read.csv("Species/Generation_length_sRedList.csv", sep=",")
 
 
 
