@@ -375,7 +375,7 @@ function(scientific_name, Storage_SP=sRL_reuse(scientific_name)) {
   # Store GL
   Storage_SP$GL_saved<-GL_species
   
-  return(list(GL_species))
+  return(list(GL_species = GL_species))
 }
 
 
