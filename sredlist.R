@@ -368,10 +368,14 @@ function(scientific_name) {
 function(scientific_name) {
   #Filter param
   scientific_name <- url_decode(scientific_name)
-  return(list(
-    # If value in GL_file we take it, otherwise default=1
-    GL_species = ifelse(scientific_name %in% GL_file$internal_taxon_name, GL_file$GL_estimate[GL_file$internal_taxon_name==scientific_name][1], 1)
-  ));
+  
+  # If value in GL_file we take it, otherwise default=1
+  GL_species = ifelse(scientific_name %in% GL_file$internal_taxon_name, GL_file$GL_estimate[GL_file$internal_taxon_name==scientific_name][1], 1)
+  
+  # Store GL
+  Storage_SP$GL_saved<-GL_species
+  
+  return(list(GL_species))
 }
 
 
@@ -534,7 +538,8 @@ function(scientific_name, Storage_SP=sRL_reuse(scientific_name), crs_to_use=CRSM
   habitats_pref_DF=Storage_SP$habitats_SIS
   altitude_pref_DF=Storage_SP$AltPref_saved
   AOH2=Storage_SP$AOH2_saved
-  
+  GL_species<-Storage_SP$GL_saved
+
   # Charge distribution
   distSP$binomial<-as.character(distSP$binomial)
   
