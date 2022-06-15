@@ -540,9 +540,6 @@ function(scientific_name, GL_species=1) { # nolint
   altitude_pref_DF=Storage_SP$AltPref_saved
   AOH2=Storage_SP$AOH2_saved
 
-  # # Save GL in Storage
-  print(paste0("Generation length is: ", GL_species))
-
   # Charge distribution
   distSP$binomial<-as.character(distSP$binomial)
   
@@ -551,13 +548,9 @@ function(scientific_name, GL_species=1) { # nolint
   dir.create(paste0(output_dir, "/Initial"))
   
   # Charge CCI1
-  log_info("ok3")
   terraOptions(tempdir=paste0(output_dir, "/Temporary"))
-  log_info("ok3b")
   Year1_theo<-config$YearAOH2-max(10, round(3*GL_species))
-  log_info("ok3c")
   Year1<-max(Year1_theo, 1992) ; print(Year1)
-  log_info("ok4")
   cci1<-rast(sub("XXXX", Year1, config$cci1_raster_path)) ; crs(cci1)<-CRSMOLL # I ensure the CRS is correctly assigned
   
   # Crop CCI1
