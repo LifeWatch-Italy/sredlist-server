@@ -104,6 +104,17 @@ function(scientific_name) {
 function(scientific_name) {
   #Filter param
   scientific_name <- url_decode(scientific_name)
+  Storage_SP=sRL_reuse(scientific_name)
+  #Extract alt_pref
   alt_pref <- rl_search(scientific_name, key = config$red_list_token)#$result
+    # If species in the RL but no altitude preference, take from raster
+  if(is.na(alt_pref$result$elevation_lower+alt_pref$result$elevation_upper)){
+    EXTR<-round(exactextractr::exact_extract(alt_raw, Storage_SP$distSP_saved, c("min", "max")))
+    alt_pref$result$elevation_lower<-min(EXTR$min)
+    alt_pref$result$elevation_upper<-max(EXTR$max)}
+  
   return(alt_pref)
 }
+
+
+
