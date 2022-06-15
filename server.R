@@ -15,7 +15,6 @@ GBIF_xmin<- -180 ; GBIF_xmax<-180 ; GBIF_ymin<- -90 ; GBIF_ymax<-90
 GBIF_BUFF_km2<-10
 GBIF_crop<-"Land" # Could be Land or Sea or could be empty
 
-GL_species<-2 # This is the generation length parameters
 
 
 
@@ -145,5 +144,5 @@ pr$registerHooks(
 #bytes = 10MB
 options_plumber(maxRequestSize = 10000000)
 pr %>% pr_hook("exit", function() {
-    print("Bye bye from sRedList!")
-  }) %>% pr_run(port = 8000, host = "0.0.0.0") # nolint
+  print("Bye bye from sRedList!")
+}) %>% pr_run(port = 8000, host = "0.0.0.0") # nolint

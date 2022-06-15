@@ -82,7 +82,7 @@ assign(paste0("gbif_number_saved_", sub(" ", "_", scientific_name)), gbif_data_n
 
 # Prepare spatial points
 dat_proj<-st_geometry(st_as_sf(dat_cl,coords = c("decimalLongitude", "decimalLatitude"), crs="+proj=longlat +datum=WGS84")) %>%
-  st_transform(., st_crs("+proj=moll +lon_0=0 +x_0=0 +y_0=0 +ellps=WGS84 +units=m +no_defs"))
+  st_transform(., st_crs(CRSMOLL))
 
 # Create EOO
 EOO_GBIF<-st_as_sf(st_convex_hull(st_union(dat_proj)))

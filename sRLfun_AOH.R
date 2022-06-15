@@ -52,7 +52,7 @@ sRL_PrepareAltitudeFile<-function(scientific_name, altitudes_pref){
 
 ### Function to map AOH
 
-sRL_calculateAOH<-function(rangeSP_fun, cci_fun, alt_fun, habitat_pref_fun, FOLDER, elevation_data_fun, crs_to_use){
+sRL_calculateAOH<-function(rangeSP_fun, cci_fun, alt_fun, habitat_pref_fun, FOLDER, elevation_data_fun){
 
   #terra::compareGeom(cci_fun, alt_fun)
   
@@ -62,8 +62,7 @@ sRL_calculateAOH<-function(rangeSP_fun, cci_fun, alt_fun, habitat_pref_fun, FOLD
     habitat_data = cci_fun,
     crosswalk_data = crosswalk_lumbierres_data,
     output_dir=FOLDER,
-    engine="terra" # GRASS is in "C:/OSGeo4W/apps/grass/grass78"
-  )
+    engine="terra")
   
   return(lapply(AOH$path, terra::rast))
 }

@@ -30,7 +30,9 @@ sRL_CalculateCriteria<- function(aoh_lost, eoo_km2, aoo_km2, pop_size){
 
 
 ### Create the allfields file for SIS Connect
-sRL_CreateALLFIELDS <- function(aoh_lost, eoo_km2, aoo_km2, pop_size, AltPref_saved){
+sRL_CreateALLFIELDS <- function(scientific_name, aoh_lost, eoo_km2, aoo_km2, pop_size, AltPref_saved){
+  
+  Storage_SP=sRL_reuse(scientific_name)
   
   # Charge empty allfields
   allfields<-read.csv("Species/SIS_allfields_empty.csv")[1,]
@@ -56,7 +58,8 @@ sRL_CreateALLFIELDS <- function(aoh_lost, eoo_km2, aoo_km2, pop_size, AltPref_sa
   # Decline
   allfields$PopulationDeclineGenerations3.range<-aoh_lost
   allfields$PopulationReductionPast.range<-aoh_lost
-  allfields$PopulationReductionPast.justification<-allfields$PopulationDeclineGenerations3.justification<-"The decline has been measured from the sRedList platform as the decline in Area of Habitat over the last 10 years / 3 generations"
+  Justif.3gen<-ifelse(Storage_SP$Year1_saved>Storage_SP$Year1theo_saved, paste0(" (which is ", (Storage_SP$Year1_saved-Storage_SP$Year1theo_saved), " years less than 3 generations)"),  " (which corresponds to the maximum between 10 years / 3 generations)")
+  allfields$PopulationReductionPast.justification<-allfields$PopulationDeclineGenerations3.justification<-paste0("The decline has been measured from the sRedList platform as the decline in Area of Habitat between ", Storage_SP$Year1_saved, " and ",  config$YearAOH2, Justif.3gen)
   
   # Population size (only if positive, i.e. if an estimate of density has been provided)
   if(pop_size>=0){allfields$PopulationSize.range<-pop_size}

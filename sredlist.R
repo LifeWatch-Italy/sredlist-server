@@ -103,10 +103,11 @@ function(scientific_name, path = "") {
 #* @param path:string Distribution Folder default RedList
 #* @serializer png list(width = 800, height = 600)
 #* @tag sRedList1
-function(scientific_name, presences = list(), seasons = list() , origins = list(), path = "", Storage_SP=sRL_reuse(scientific_name)) { # nolint
+function(scientific_name, presences = list(), seasons = list() , origins = list(), path = "") { # nolint
   
   #Filter param
   scientific_name <- url_decode(scientific_name)
+  Storage_SP=sRL_reuse(scientific_name)
   path <- ifelse(path == "", paste0(R.utils::capitalize(trim(gsub(" ", "_", scientific_name))), '_RL'), path ) # nolint
   if (length(presences) != 0) presences <- as.character(presences);
   if (length(seasons) != 0) seasons <- as.character(seasons);
@@ -172,8 +173,8 @@ function(scientific_name, presences = list(), seasons = list() , origins = list(
 #* @serializer unboxedJSON
 #* @tag sRedList
 function(scientific_name) {
-
-#GBIF STEP 1
+  
+  #GBIF STEP 1
   ### Clean-string from user
   scientific_name <- url_decode(scientific_name)
   scientific_name <- R.utils::capitalize(trim(gsub("[[:punct:]]", " ", scientific_name))) # nolint
@@ -194,21 +195,21 @@ function(scientific_name) {
   plot1 <- base64enc::dataURI(file = "plot_data.png", mime = "image/png")
   log_info("END - Create data")
   log_info("START - Clean coordinates")
- 
+  
   
   # Prepare countries
   CountrySP_WGS<-st_crop(distCountries_WGS, c(xmin=min(dat$decimalLongitude), xmax=max(dat$decimalLongitude), ymin=min(dat$decimalLatitude), ymax=max(dat$decimalLatitude)))
   
   # Flag observations to remove
   flags_raw <- clean_coordinates(x = dat,
-                             lon = "decimalLongitude",
-                             lat = "decimalLatitude",
-                             countries = "countryCode",
-                             species = "species",
-                             seas_ref=CountrySP_WGS %>% as_Spatial(.),
-                             tests = c("capitals", "centroids", "equal", "gbif", "institutions", "zeros", "seas"))
-
-#GBIF STEP 2  
+                                 lon = "decimalLongitude",
+                                 lat = "decimalLatitude",
+                                 countries = "countryCode",
+                                 species = "species",
+                                 seas_ref=CountrySP_WGS %>% as_Spatial(.),
+                                 tests = c("capitals", "centroids", "equal", "gbif", "institutions", "zeros", "seas"))
+  
+  #GBIF STEP 2  
   # Subset the observations user wants to keep (can be run several times if users play with parameters)
   flags <- sRL_cleanDataGBIF(flags_raw, year_GBIF, uncertainty_GBIF, keepyearNA_GBIF, cleaningpar_GBIF, GBIF_xmin, GBIF_xmax, GBIF_ymin, GBIF_ymax)
   
@@ -217,12 +218,12 @@ function(scientific_name) {
     
     ### This is a static plot that works 
     ggplot()+
-       coord_fixed()+
-       geom_sf(data=CountrySP_WGS, fill="gray70")+
-       geom_point(data = flags, aes(x = decimalLongitude, y = decimalLatitude, col=factor(is.na(Reason), c("FALSE", "TRUE"))), size = 1.3)+
-       scale_colour_manual(values=c("#440154ff", "#fde725ff"), name="Valid observation", drop=F)+
-       xlab("")+ylab("")+
-       theme_bw() %+replace%   theme(legend.position="bottom")
+      coord_fixed()+
+      geom_sf(data=CountrySP_WGS, fill="gray70")+
+      geom_point(data = flags, aes(x = decimalLongitude, y = decimalLatitude, col=factor(is.na(Reason), c("FALSE", "TRUE"))), size = 1.3)+
+      scale_colour_manual(values=c("#440154ff", "#fde725ff"), name="Valid observation", drop=F)+
+      xlab("")+ylab("")+
+      theme_bw() %+replace%   theme(legend.position="bottom")
     
     ### This is an interactive plot that I'd like to include but I didn't manage to include on the platform
     # flags$Valid<-paste(revalue(as.character(is.na(flags$Reason)), c("TRUE"="Valid observation", "FALSE"="Invalid observation")), "\n Gbif_ID: ", flags$gbifID, '\n Year:', flags$year) ; flags$Valid[is.na(flags$Reason)==F]<-paste0(flags$Valid[is.na(flags$Reason)==F], '\n Reason_flagged:', flags$Reason[is.na(flags$Reason)==F])
@@ -242,8 +243,8 @@ function(scientific_name) {
   plot2 <- base64enc::dataURI(file = "clean_coordinates.png", mime = "image/png") # nolint
   log_info("END - Clean coordinates")
   
-
-#GBIF STEP 3  
+  
+  #GBIF STEP 3  
   # Map distribution from GBIF
   log_info("START - Maps the distribution")
   
@@ -253,7 +254,7 @@ function(scientific_name) {
   Storage_SP$gbif_number_saved=eval(parse(text=paste0("gbif_number_saved_", sub(" ", "_", scientific_name))))
   EOO_km2 <- round(as.numeric(st_area(distSP))/1000000) # nolint
   EOO_rating <- EOORating(EOO_km2) # nolint
-
+  
   # Plot distribution
   gbif_path <- sRL_saveMapDistribution(scientific_name, distSP, gbif_nb=Storage_SP$gbif_number_saved)
   ggsave("eoo.png", plot(
@@ -262,10 +263,10 @@ function(scientific_name) {
       geom_sf(data = distSP, fill="darkred") + 
       ggtitle("")+
       theme_bw()
-    )) # nolint
+  )) # nolint
   plot3 <- base64enc::dataURI(file = "eoo.png", mime = "image/png") # nolint
   log_info("END - Maps the distribution")
-
+  
   # Keep distribution in memory
   Storage_SP$distSP_saved=distSP
   assign(paste0("Storage_SP_", sub(" ", "_", scientific_name)), Storage_SP, .GlobalEnv)
@@ -299,10 +300,11 @@ function(scientific_name) {
 #* @param path:string Distribution Folder default RedList
 #* @serializer unboxedJSON
 #* @tag sRedList
-function(scientific_name, presences = list(), seasons = list() , origins = list(), path = "", Storage_SP=sRL_reuse(scientific_name)) { # nolint
+function(scientific_name, presences = list(), seasons = list() , origins = list(), path = "") { # nolint
   
   #Filter param
   scientific_name <- url_decode(scientific_name)
+  Storage_SP=sRL_reuse(scientific_name)
   
   # Load distribution
   distSP<-Storage_SP$distSP_saved
@@ -317,7 +319,7 @@ function(scientific_name, presences = list(), seasons = list() , origins = list(
       geom_sf(data=st_crop(Storage_SP$CountrySP_saved, extent(EOO)), fill=NA, col="black")+
       ggtitle(paste0("EOO of ", scientific_name))) +
       theme_bw()
-    ) # nolint
+  ) # nolint
   plot3 <- base64enc::dataURI(file = paste0(scientific_name, ".png"), mime = "image/png") # nolint
   log_info("END - Plot EOO")
   file.remove(paste0(scientific_name, ".png"))
@@ -361,32 +363,18 @@ function(scientific_name) {
 
 
 #* Species generation length
-#* @get species/<scientific_name>/SpeciesGenerationlength
+#* @get species/<scientific_name>/generation-length
 #* @param scientific_name:string Scientific Name
 #* @serializer json
 #* @tag sRedList
 function(scientific_name) {
   #Filter param
   scientific_name <- url_decode(scientific_name)
-  return(list(
-    # If value in GL_file we take it, otherwise default=1
-    GL_species<-ifelse(scientific_name %in% GL_file$internal_taxon_name, GL_file$GL_estimate[GL_file$internal_taxon_name==scientific_name][1], 1)
-  ));
-}
 
+  # If value in GL_file we take it, otherwise default=1
+  GL_species = ifelse(scientific_name %in% GL_file$internal_taxon_name, GL_file$GL_estimate[GL_file$internal_taxon_name==scientific_name][1], 1)
 
-#* Species generation length
-#* @get species/<scientific_name>/SpeciesGenerationlength
-#* @param scientific_name:string Scientific Name
-#* @serializer json
-#* @tag sRedList
-function(scientific_name) {
-  #Filter param
-  scientific_name <- url_decode(scientific_name)
-  return(list(
-    # If value in GL_file we take it, otherwise default=1
-    GL_species<-ifelse(scientific_name %in% GL_file$internal_taxon_name, GL_file$GL_estimate[GL_file$internal_taxon_name==scientific_name][1], 1)
-  ));
+  return(list(GL_species = GL_species))
 }
 
 
@@ -396,26 +384,26 @@ function(scientific_name) {
 #* @param scientific_name:string Scientific Name
 #* @param habitats_pref:[str] habitats_pref
 #* @param altitudes_pref:[int] altitudes_pref
-#* @param density_pref:int density_pref
-#* @param density_pref:int density_pref
+#* @param density_pref:numeric density_pref
 #* @param isGbifDistribution:boolean isGbifDistribution
 #* @param path:string Distribution Folder default RedList
 #* @serializer unboxedJSON
 #* @tag sRedList
-function(scientific_name, habitats_pref= list(), altitudes_pref= list(), density_pref= -1, isGbifDistribution = FALSE, path = "", crs_to_use=CRSMOLL, Storage_SP=sRL_reuse(scientific_name)) { # nolint    
+function(scientific_name, habitats_pref= list(), altitudes_pref= list(), density_pref= -1, isGbifDistribution = FALSE, path = "") { # nolint    
   #Filter param
   scientific_name <- url_decode(scientific_name)
+  Storage_SP=sRL_reuse(scientific_name)
   distSP=Storage_SP$distSP_saved
-
+  
   # Habitat table (for aoh analysis and for SIS Connect)
   habitats_pref_DF<-sRL_PrepareHabitatFile(scientific_name, habitats_pref)
   Storage_SP$habitats_SIS=habitats_pref_DF
-
+  
   # Altitude table (for aoh analysis and for SIS Connect)
   altitudes_pref_DF<-sRL_PrepareAltitudeFile(scientific_name, altitudes_pref)
   Storage_SP$AltPref_saved=altitudes_pref_DF
   
-  density_pref <- as.integer(density_pref)
+  density_pref <- as.numeric(density_pref)
   
   print(habitats_pref)
   print(altitudes_pref)
@@ -424,7 +412,7 @@ function(scientific_name, habitats_pref= list(), altitudes_pref= list(), density
   
   # Charge distribution
   distSP$binomial<-as.character(distSP$binomial)
-
+  
   ### Prepare distribution, altitude, and preference files (i.e., part of the AOH analysis that has to be run only once)
   # Distribution (assuming seasonal=resident after users decided what they keep)
   distSP$seasonal=1
@@ -435,30 +423,30 @@ function(scientific_name, habitats_pref= list(), altitudes_pref= list(), density
                                       spp_summary_data = altitudes_pref_DF,
                                       spp_habitat_data = habitats_pref_DF,
                                       key=red_list_token,
-                                      crs=st_crs(crs_to_use))
+                                      crs=st_crs(CRSMOLL))
   Storage_SP$RangeClean_saved=rangeSP_clean
   
+  # Remove old stored AOH
+  output_dir<-paste0("resources/AOH_stored/", sub(" ", "_", scientific_name))
+  dir.create(paste0(output_dir, "/Current"), recursive=T)
+  dir.create(paste0(output_dir, "/Temporary"))
+  do.call(file.remove, list(list.files(output_dir, full.names = TRUE, recursive=T)))
+
   # Altitude
-  terraOptions(tempdir="resources/AOH_stored")
+  terraOptions(tempdir=paste0(output_dir, "/Temporary"))
   alt_crop=crop(alt_raw, extent(distSP)) 
   Storage_SP$alt_crop_saved=alt_crop
   cci2_crop<-crop(cci2, extent(distSP))
-  
-  # Remove old stored AOH
-  dir.create(paste0("resources/AOH_stored/", sub(" ", "_", scientific_name), "/Current"), recursive=T)
-  output_dir<-paste0("resources/AOH_stored/", sub(" ", "_", scientific_name))
-  do.call(file.remove, list(list.files(output_dir, full.names = TRUE, recursive=T)))
-  
-   AOH2<-sRL_calculateAOH(rangeSP_fun=rangeSP_clean, 
-                  cci_fun=cci2_crop, 
-                  alt_fun=alt_crop,
-                  habitat_pref_fun=habitats_pref_DF,
-                  FOLDER=paste0(output_dir, "/Current"),
-                  elevation_data_fun=altitudes_pref_DF,
-                  crs_to_use)
+    
+  AOH2<-sRL_calculateAOH(rangeSP_fun=rangeSP_clean, 
+                         cci_fun=cci2_crop, 
+                         alt_fun=alt_crop,
+                         habitat_pref_fun=habitats_pref_DF,
+                         FOLDER=paste0(output_dir, "/Current"),
+                         elevation_data_fun=altitudes_pref_DF)
   Storage_SP$AOH2_saved=AOH2
   
- 
+  
   # Plot
   log_info("START - Plot AOH")
   
@@ -480,7 +468,7 @@ function(scientific_name, habitats_pref= list(), altitudes_pref= list(), density
   #Calculate Area of Habitat in a resolution of 2x2km (as is the map of altitude provided), in order to use it as an upper bound of species Area of Occupancy under criterion B2 (each cell covers 4km2)
   grid22_crop<-crop(grid22, AOH2[[1]])
   aoh_22<-resample(AOH2[[1]], grid22_crop, method="max")
-
+  
   plot2 <- gplot(aoh_22[[1]]) +
     coord_fixed()+
     geom_tile(aes(fill = factor(as.character(value), c("0", "1")))) +
@@ -494,7 +482,7 @@ function(scientific_name, habitats_pref= list(), altitudes_pref= list(), density
   file.remove("aoo.png")
   
   AOO_km2<- sRL_areaAOH(aoh_22[[1]], SCALE="2x2")
-
+  
   assign(paste0("Storage_SP_", sub(" ", "_", scientific_name)), Storage_SP, .GlobalEnv)
   
   
@@ -535,44 +523,55 @@ function(scientific_name, habitats_pref= list(), altitudes_pref= list(), density
 #* @param origins:[int] origins (1, 2)
 #* @param habitats_pref:[str] habitats_pref
 #* @param altitudes_pref:[int] altitudes_pref
+#* @param GL_species:numeric GL_species
 #* @param isGbifDistribution:boolean isGbifDistribution
 #* @param path:string Distribution Folder default RedList
 #* @serializer unboxedJSON
 #* @tag sRedList
-function(scientific_name, Storage_SP=sRL_reuse(scientific_name), crs_to_use=CRSMOLL) { # nolint
+function(scientific_name, GL_species=1) { # nolint
   #Filter param
   scientific_name <- url_decode(scientific_name)
-  
+  Storage_SP=sRL_reuse(scientific_name)
+  GL_species<-as.numeric(GL_species)
   distSP=Storage_SP$distSP_saved
   alt_crop=Storage_SP$alt_crop_saved
   rangeSP_clean=Storage_SP$RangeClean_saved
   habitats_pref_DF=Storage_SP$habitats_SIS
   altitude_pref_DF=Storage_SP$AltPref_saved
   AOH2=Storage_SP$AOH2_saved
-  
+
+  # # Save GL in Storage
+  print(paste0("Generation length is: ", GL_species))
+
   # Charge distribution
   distSP$binomial<-as.character(distSP$binomial)
   
-  # Charge CCI1
-  Year1_theo<-config$YearAOH2-max(10, round(3*GL_species))
-  Year1<-max(Year1_theo, 1992) ; print(Year1)
+  # Output directory
+  output_dir<-paste0("resources/AOH_stored/", sub(" ", "_", scientific_name))
+  dir.create(paste0(output_dir, "/Initial"))
   
+  # Charge CCI1
+  log_info("ok3")
+  terraOptions(tempdir=paste0(output_dir, "/Temporary"))
+  log_info("ok3b")
+  Year1_theo<-config$YearAOH2-max(10, round(3*GL_species))
+  log_info("ok3c")
+  Year1<-max(Year1_theo, 1992) ; print(Year1)
+  log_info("ok4")
   cci1<-rast(sub("XXXX", Year1, config$cci1_raster_path)) ; crs(cci1)<-CRSMOLL # I ensure the CRS is correctly assigned
   
   # Crop CCI1
   cci1_crop<-crop(cci1, extent(distSP))
+
   
   # Calculate AOH
-  dir.create(paste0("resources/AOH_stored/", sub(" ", "_", scientific_name), "/Initial"))
-  output_dir<-paste0("resources/AOH_stored/", sub(" ", "_", scientific_name))
   AOH1<-sRL_calculateAOH(rangeSP_fun=rangeSP_clean,
                          cci_fun=cci1_crop,
                          alt_fun=alt_crop,
                          habitat_pref_fun=habitats_pref_DF,
                          FOLDER=paste0(output_dir, "/Initial"),
-                         elevation_data_fun=altitudes_pref_DF,
-                         crs_to_use)
-
+                         elevation_data_fun=altitudes_pref_DF)
+  
   # Area
   AOH_km2<-sRL_areaAOH(AOH2[[1]], SCALE="cci")
   AOH_old_km2<-sRL_areaAOH(AOH1[[1]], SCALE="cci")
@@ -593,10 +592,12 @@ function(scientific_name, Storage_SP=sRL_reuse(scientific_name), crs_to_use=CRSM
   
   Storage_SP$aoh_lost_saved=round(as.numeric(AOH_lost)*100)
   Storage_SP$RangeClean_saved=Storage_SP$AOH2_saved=Storage_SP$alt_crop_saved=NULL
+  Storage_SP$Year1_saved<-Year1 ; Storage_SP$Year1theo_saved<-Year1_theo
   assign(paste0("Storage_SP_", sub(" ", "_", scientific_name)), Storage_SP, .GlobalEnv)
   
   # Remove the AOH files stored
   unlink(output_dir, recursive=T)
+  terraOptions(tempdir=tempdir())
   
   return(list(
     aoh_lost_km2 = round(AOH_old_km2),
@@ -623,16 +624,16 @@ function(scientific_name, Storage_SP=sRL_reuse(scientific_name), crs_to_use=CRSM
 #* @param pop_size:int Pop_size
 #* @serializer png list(width = 800, height = 600)
 #* @tag sRedList
-function(scientific_name, eoo_km2, aoo_km2, pop_size, Storage_SP=sRL_reuse(scientific_name)) {
-  
-  aoh_lost=Storage_SP$aoh_lost_saved
+function(scientific_name, eoo_km2, aoo_km2, pop_size) {
   
   #Filter param
   scientific_name <- url_decode(scientific_name)
- 
+  Storage_SP=sRL_reuse(scientific_name)
+  aoh_lost=Storage_SP$aoh_lost_saved
+  
   # Calculate criteria
   criteria<-sRL_CalculateCriteria(aoh_lost, eoo_km2, aoo_km2, pop_size)
-  log_info("ok3")
+
   return(plot(
     ggplot(criteria) +
       geom_point(aes(x = Value, y = Crit, col = Value), size = 40, show.legend=F) +
@@ -642,8 +643,8 @@ function(scientific_name, eoo_km2, aoo_km2, pop_size, Storage_SP=sRL_reuse(scien
       scale_colour_manual(drop = F, values=c("#006666ff", "#cc9900ff", "#cc6633ff", "#cc3333ff"))+
       ggtitle(paste0("The species seems to meet the ", as.character(max(criteria$Value, na.rm=T)), " category under criteria ", paste(criteria$Crit[criteria$Value==max(criteria$Value, na.rm=T)], collapse=" / "), ". Please check subcriteria!"))+
       theme_bw()
-    ))
-   
+  ))
+  
 }
 
 
@@ -657,9 +658,10 @@ function(scientific_name, eoo_km2, aoo_km2, pop_size, Storage_SP=sRL_reuse(scien
 #* @param pop_size:int Pop_size
 #* @serializer csv
 #* @tag sRedList
-function(scientific_name, eoo_km2, aoo_km2, pop_size, res, Storage_SP=sRL_reuse(scientific_name)) {
+function(scientific_name, eoo_km2, aoo_km2, pop_size, res) {
   #Filter param
   scientific_name <- url_decode(scientific_name)
+  Storage_SP=sRL_reuse(scientific_name)
   
   aoh_lost=Storage_SP$aoh_lost_saved
   AltPref_saved=Storage_SP$AltPref_saved
@@ -669,7 +671,7 @@ function(scientific_name, eoo_km2, aoo_km2, pop_size, res, Storage_SP=sRL_reuse(
   criteria<-sRL_CalculateCriteria(aoh_lost, eoo_km2, aoo_km2, pop_size)
   
   # Prepare file to extract
-  allfields_SIS<-sRL_CreateALLFIELDS(aoh_lost, eoo_km2, aoo_km2, pop_size, AltPref_saved)
+  allfields_SIS<-sRL_CreateALLFIELDS(scientific_name, aoh_lost, eoo_km2, aoo_km2, pop_size, AltPref_saved)
   
   # Prepare countries
   countries_SIS<-sRL_OutputCountries(scientific_name, distSP_saved=Storage_SP$distSP_saved, CountrySP_saved=Storage_SP$CountrySP_saved, AltPref_saved)
@@ -757,19 +759,19 @@ function(start = 0, end = 10, filter = "") {
     directorySize <- 0
     edit <- TRUE
     for(fileName in list.files(paste0(config$distribution_path, directoryName))) {
-        # Red list distributions cannot be deleted
-        if (grepl("_RL", fileName)) edit <- FALSE;  # nolint
-        subDirectorySize <- 0
-        subFiles <- list()
-        for( subFileName in list.files(paste0(config$distribution_path, directoryName, "/", fileName))) { # nolint 
-          # GBIF distributions INFO
-          metadata <- NULL
-          if (file_ext(subFileName) == "json") {
-            metadata = jsonlite::read_json(paste0(config$distribution_path, directoryName, "/", fileName, "/", subFileName), simplifyVector = FALSE)  # nolint 
-          }
-          subFileSize <- (file.info(paste0(config$distribution_path, directoryName, "/", fileName, "/", subFileName))$size) / 1024 # nolint 
-          subFileCreated <- (file.info(paste0(config$distribution_path, directoryName, "/", fileName, "/", subFileName))$ctime) # nolint 
-          subFiles <- append(subFiles, list(list(data = list(
+      # Red list distributions cannot be deleted
+      if (grepl("_RL", fileName)) edit <- FALSE;  # nolint
+      subDirectorySize <- 0
+      subFiles <- list()
+      for( subFileName in list.files(paste0(config$distribution_path, directoryName, "/", fileName))) { # nolint 
+        # GBIF distributions INFO
+        metadata <- NULL
+        if (file_ext(subFileName) == "json") {
+          metadata = jsonlite::read_json(paste0(config$distribution_path, directoryName, "/", fileName, "/", subFileName), simplifyVector = FALSE)  # nolint 
+        }
+        subFileSize <- (file.info(paste0(config$distribution_path, directoryName, "/", fileName, "/", subFileName))$size) / 1024 # nolint 
+        subFileCreated <- (file.info(paste0(config$distribution_path, directoryName, "/", fileName, "/", subFileName))$ctime) # nolint 
+        subFiles <- append(subFiles, list(list(data = list(
           name = subFileName,
           size = subFileSize, # nolint
           type = "file",
@@ -777,21 +779,21 @@ function(start = 0, end = 10, filter = "") {
           metadata = metadata,
           created = subFileCreated,
           edit = edit
-          ))))
-          subDirectorySize <- subDirectorySize + subFileSize
-        }
-        fileCreated <- (file.info(paste0(config$distribution_path, directoryName, "/", fileName))$ctime) # nolint 
-        files <- append(files, list(list(
-          data = list(
-            name = fileName,
-            size = subDirectorySize, # nolint
-            type = "folder",
-            path = directoryName, # nolint 
-            created = fileCreated,
-            edit = edit),
-          children = subFiles
-        )))
-        directorySize <- directorySize + subDirectorySize
+        ))))
+        subDirectorySize <- subDirectorySize + subFileSize
+      }
+      fileCreated <- (file.info(paste0(config$distribution_path, directoryName, "/", fileName))$ctime) # nolint 
+      files <- append(files, list(list(
+        data = list(
+          name = fileName,
+          size = subDirectorySize, # nolint
+          type = "folder",
+          path = directoryName, # nolint 
+          created = fileCreated,
+          edit = edit),
+        children = subFiles
+      )))
+      directorySize <- directorySize + subDirectorySize
     }
     distributions <- append(distributions, list(
       list(
@@ -801,7 +803,7 @@ function(start = 0, end = 10, filter = "") {
           type = "folder",
           edit = FALSE),
         children = files
-        )));
+      )));
   }
   return(distributions)
 }
@@ -843,21 +845,21 @@ function(scientific_name, file_name, path, type) {
   path <- url_decode(path)
   type <- url_decode(type)
   if ((scientific_name %in% list.files(config$distribution_path)) && !grepl("_RL", file_name) && !grepl("_RL", path)) { # nolint
-        if (type == "folder") {
-          if (file_name %in% list.files(paste0(config$distribution_path, path))) {
-            log_info(paste0("Delete distribution:", config$distribution_path, path, '/', file_name)) # nolint
-            return(list(response = unlink(paste0(config$distribution_path, path, '/', file_name), recursive = TRUE))) # nolint
-          }
-        }else {
-          if(file_name %in% list.files(paste0(config$distribution_path, scientific_name, '/', path))){ # nolint
-            log_info(paste0("Delete distribution:", config$distribution_path, scientific_name, '/', path, "/", file_name)) # nolint
-            return(list(response = unlink(paste0(config$distribution_path, scientific_name, "/", path, "/", file_name)))) # nolint
-          }
-        }
-        not_found("Species distribution not exist!") # nolint
+    if (type == "folder") {
+      if (file_name %in% list.files(paste0(config$distribution_path, path))) {
+        log_info(paste0("Delete distribution:", config$distribution_path, path, '/', file_name)) # nolint
+        return(list(response = unlink(paste0(config$distribution_path, path, '/', file_name), recursive = TRUE))) # nolint
+      }
     }else {
-       not_found("Species distribution not exist!") # nolint
+      if(file_name %in% list.files(paste0(config$distribution_path, scientific_name, '/', path))){ # nolint
+        log_info(paste0("Delete distribution:", config$distribution_path, scientific_name, '/', path, "/", file_name)) # nolint
+        return(list(response = unlink(paste0(config$distribution_path, scientific_name, "/", path, "/", file_name)))) # nolint
+      }
     }
+    not_found("Species distribution not exist!") # nolint
+  }else {
+    not_found("Species distribution not exist!") # nolint
+  }
 }
 
 #* Get distributions species from sRedList platform excluding GBIF distributions
@@ -879,30 +881,30 @@ function(scientific_name) {
           fileSize <- (file.info(paste0(config$distribution_path, scientific_name, "/", distributionFolder, "/", fileName))$size) / 1024 # nolint 
           fileCreated <- (file.info(paste0(config$distribution_path, scientific_name, "/", distributionFolder, "/", fileName))$ctime) # nolint 
           files <- append(files, list(
-          list(
-            data = list(
-              name = fileName,
-              size = fileSize,
-              created = fileCreated,
-              path = distributionFolder,
-              type = "file")
+            list(
+              data = list(
+                name = fileName,
+                size = fileSize,
+                created = fileCreated,
+                path = distributionFolder,
+                type = "file")
             )));
-            directorySize <- directorySize + fileSize;
+          directorySize <- directorySize + fileSize;
         }
         folderCreated <- (file.info(paste0(config$distribution_path, scientific_name, "/", distributionFolder))$ctime) # nolint 
         distributions <- append(distributions, list(
-        list(
-          data = list(
-            name = distributionFolder,
-            size = directorySize,
-            created = folderCreated,
-            path = distributionFolder,
-            type = "folder"),
+          list(
+            data = list(
+              name = distributionFolder,
+              size = directorySize,
+              created = folderCreated,
+              path = distributionFolder,
+              type = "folder"),
             children = files
           )));
       }
     }
     return(distributions)
-
+    
   }else { not_found("Species distribution not exist!") } # nolint
 }
