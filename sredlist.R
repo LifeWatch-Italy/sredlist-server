@@ -464,7 +464,7 @@ function(scientific_name, habitats_pref= list(), altitudes_pref= list(), density
   log_info("END - Plot AOH")
   
   AOH_km2 <-  sRL_areaAOH(AOH2[[1]], SCALE="cci")
-  
+
   #Calculate Area of Habitat in a resolution of 2x2km (as is the map of altitude provided), in order to use it as an upper bound of species Area of Occupancy under criterion B2 (each cell covers 4km2)
   grid22_crop<-crop(grid22, AOH2[[1]])
   aoh_22<-resample(AOH2[[1]], grid22_crop, method="max")
@@ -594,7 +594,7 @@ function(scientific_name, GL_species=1) { # nolint
   
   return(list(
     aoh_lost_km2 = round(AOH_old_km2),
-    aoh_lost = Storage_SP$aoh_lost_saved,
+    aoh_lost = paste0(revalue(as.factor(sign(Storage_SP$aoh_lost_saved)), c("-1"="AOH gain of ", "1"="AOH loss of ")), abs(Storage_SP$aoh_lost_saved)), # Give trend in AOH rather than loss
     plot_trends_aoh = plot1
   ))
   
