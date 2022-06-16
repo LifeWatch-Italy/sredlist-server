@@ -165,14 +165,32 @@ function(scientific_name, presences = list(), seasons = list() , origins = list(
 #########################
 ### MODULE 2: MAPPING ###
 #########################
+#* GBIF year
+#* @get species/<scientific_name>/gbif-year
+#* @param scientific_name:string Scientific Name
+#* @serializer json
+#* @tag sRedList
+function(scientific_name) {
+  scientific_name <- url_decode(scientific_name)
+  
+  Gbif_Year = 1910
+  
+  return(list(Gbif_Year = Gbif_Year))
+}
+
+
+
 
 
 #* Global Biodiversity Information Facility
 #* @get species/<scientific_name>/gbif
 #* @param scientific_name:string Scientific Name
+#* @param Gbif_Year:int Gbif_Year
 #* @serializer unboxedJSON
 #* @tag sRedList
-function(scientific_name) {
+function(scientific_name, Gbif_Year= -1) {
+  
+  print(Gbif_Year)
   
   #GBIF STEP 1
   ### Clean-string from user
@@ -211,7 +229,7 @@ function(scientific_name) {
   
   #GBIF STEP 2  
   # Subset the observations user wants to keep (can be run several times if users play with parameters)
-  flags <- sRL_cleanDataGBIF(flags_raw, year_GBIF, uncertainty_GBIF, keepyearNA_GBIF, cleaningpar_GBIF, GBIF_xmin, GBIF_xmax, GBIF_ymin, GBIF_ymax)
+  flags <- sRL_cleanDataGBIF(flags_raw, Gbif_Year, uncertainty_GBIF, keepyearNA_GBIF, cleaningpar_GBIF, GBIF_xmin, GBIF_xmax, GBIF_ymin, GBIF_ymax)
   
   # Plot
   ggsave("clean_coordinates.png", plot(
