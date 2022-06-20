@@ -170,16 +170,30 @@ function(scientific_name, presences = list(), seasons = list() , origins = list(
 #* @param scientific_name:string Scientific Name
 #* @serializer json
 #* @tag sRedList
+function(scientific_name) {return(list(Gbif_Year = 1900))}
+
+#* GBIF uncertainty
+#* @get species/<scientific_name>/gbif-uncertainty
+#* @param scientific_name:string Scientific Name
+#* @serializer json
+#* @tag sRedList
+function(scientific_name) {return(list(Gbif_Uncertainty = 100))}
+
+#* GBIF Extent
+#* @get species/<scientific_name>/gbif-extent
+#* @param scientific_name:[string] Scientific Name
+#* @serializer json
+#* @tag sRedList
 function(scientific_name) {
-  scientific_name <- url_decode(scientific_name)
-  
-  Gbif_Year = 1910
-  
-  return(list(Gbif_Year = Gbif_Year))
-}
+  Gbif_Extent = data.frame(xmin=-180, xmax=180, ymin=-90, ymax=90)
+  return(Gbif_Extent)}
 
-
-
+#* GBIF sea
+#* @get species/<scientific_name>/gbif-sea
+#* @param scientific_name:string Scientific Name
+#* @serializer json
+#* @tag sRedList
+function(scientific_name) {return(list(Gbif_Sea = 0))}
 
 
 #* Global Biodiversity Information Facility
@@ -188,9 +202,23 @@ function(scientific_name) {
 #* @param Gbif_Year:int Gbif_Year
 #* @serializer unboxedJSON
 #* @tag sRedList
-function(scientific_name, Gbif_Year= -1) {
+function(scientific_name, Gbif_Year= -1, Gbif_Uncertainty=-1, Gbif_Extent=list(), Gbif_Sea=-1) {
   
+  # Transform parameters GBIF filtering
   print(Gbif_Year)
+  print(Gbif_Uncertainty)
+  print(Gbif_Extent)
+  
+  if(Gbif_Sea==1){
+    cleaningpar_GBIF<-c("capitals", "centroids", "equal", "gbif", "institutions", "zeros", "seas")} else {
+      cleaningpar_GBIF<-c("capitals", "centroids", "equal", "gbif", "institutions", "zeros")}
+
+  print(cleaningpar_GBIF)
+  
+  Gbif_Extent<-as.numeric(Gbif_Extent)
+  # Gbif_Extent<-Gbif_Extent %>% gsub(" ", "", .) %>% strsplit(., ",") %>% unlist(.) %>% as.vector(.) %>% as.numeric(.)
+  # if(length(Gbif_Extent)!=4){print(Gbif_Extent) ; Gbif_Extent<-c(-180, 180, -90, 90)}
+  
   
   #GBIF STEP 1
   ### Clean-string from user
@@ -229,8 +257,8 @@ function(scientific_name, Gbif_Year= -1) {
   
   #GBIF STEP 2  
   # Subset the observations user wants to keep (can be run several times if users play with parameters)
-  flags <- sRL_cleanDataGBIF(flags_raw, Gbif_Year, uncertainty_GBIF, keepyearNA_GBIF, cleaningpar_GBIF, GBIF_xmin, GBIF_xmax, GBIF_ymin, GBIF_ymax)
-  
+  flags <- sRL_cleanDataGBIF(flags_raw, as.numeric(Gbif_Year), as.numeric(Gbif_Uncertainty), keepyearNA_GBIF, cleaningpar_GBIF, Gbif_Extent[1], Gbif_Extent[2], Gbif_Extent[3], Gbif_Extent[4])
+  assign("Test", flags, .GlobalEnv) ; assign("Test2", Gbif_Extent, .GlobalEnv)
   # Plot
   ggsave("clean_coordinates.png", plot(
     
@@ -275,10 +303,12 @@ function(scientific_name, Gbif_Year= -1) {
   
   # Plot distribution
   gbif_path <- sRL_saveMapDistribution(scientific_name, distSP, gbif_nb=Storage_SP$gbif_number_saved)
+  pts_to_plot<-st_geometry(st_as_sf(flags[is.na(flags$Reason)==T,],coords = c("decimalLongitude", "decimalLatitude"), crs="+proj=longlat +datum=WGS84")) %>% st_transform(., st_crs(CRSMOLL))
   ggsave("eoo.png", plot(
     ggplot() + 
       geom_sf(data=Storage_SP$CountrySP_saved, fill="gray70")+
       geom_sf(data = distSP, fill="darkred") + 
+      geom_sf(data=pts_to_plot)+
       ggtitle("")+
       theme_bw()
   )) # nolint

@@ -6,14 +6,9 @@
 ### TEMP: PARAMETERS TO INCLUDE AS INTERACTIVE ###
 ##################################################
 
-year_GBIF<-1900
 keepyearNA_GBIF<-T
-uncertainty_GBIF<-100 # In KILOmeters
-cleaningpar_GBIF<-c("capitals", "centroids", "equal", "gbif", "institutions", "zeros", "seas")
-GBIF_xmin<- -180 ; GBIF_xmax<-180 ; GBIF_ymin<- -90 ; GBIF_ymax<-90
-
-GBIF_BUFF_km2<-10
-GBIF_crop<-"Land" # Could be Land or Sea or could be empty
+GBIF_BUFF_km2<-0
+GBIF_crop<-"" # Could be Land or Sea or could be empty
 
 
 
