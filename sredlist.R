@@ -244,7 +244,7 @@ function(scientific_name, Gbif_Year= -1, Gbif_Uncertainty=-1, Gbif_Extent=list()
   
   
   # Prepare countries
-  CountrySP_WGS<-st_crop(distCountries_WGS, c(xmin=min(dat$decimalLongitude), xmax=max(dat$decimalLongitude), ymin=min(dat$decimalLatitude), ymax=max(dat$decimalLatitude)))
+  CountrySP_WGS<-st_crop(distCountries_WGS, c(xmin=min(dat$decimalLongitude), xmax=max(dat$decimalLongitude), ymin=min(dat$decimalLatitude), ymax=max(dat$decimalLatitude))) %>% st_buffer(., 0) # The buffer is needed for Zerynthia rumina, I can probably find something more clever
   
   # Flag observations to remove
   flags_raw <- clean_coordinates(x = dat,
