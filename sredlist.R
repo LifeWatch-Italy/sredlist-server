@@ -539,7 +539,7 @@ function(scientific_name, habitats_pref= list(), altitudes_pref= list(), density
     density_sp <- density_pref
     pop_size <- AOH_km2 * density_sp
     return(list(
-      aoh_km2 = round(AOH_km2),
+      aoh_km2 = ceiling(AOH_km2), # I use ceiling to avoid having a 0 which is problematic
       aoo_km2 = round(AOO_km2),
       plot_aoh = plot1,
       plot_aoh_2x2 = plot2,
@@ -548,7 +548,7 @@ function(scientific_name, habitats_pref= list(), altitudes_pref= list(), density
   }
   
   return(list(
-    aoh_km2 = round(AOH_km2),
+    aoh_km2 = ceiling(AOH_km2),
     aoo_km2 = round(AOO_km2),
     plot_aoh = plot1,
     plot_aoh_2x2 = plot2
@@ -641,7 +641,7 @@ function(scientific_name, GL_species=1) { # nolint
   terraOptions(tempdir=tempdir())
   
   return(list(
-    aoh_lost_km2 = round(AOH_old_km2),
+    aoh_lost_km2 = ceiling(AOH_old_km2),
     aoh_lost = paste0(revalue(as.factor(sign(Storage_SP$aoh_lost_saved)), c("-1"="AOH gain of ", "1"="AOH loss of ")), abs(Storage_SP$aoh_lost_saved)), # Give trend in AOH rather than loss
     plot_trends_aoh = plot1
   ))
@@ -675,6 +675,38 @@ function(scientific_name, eoo_km2, aoo_km2, pop_size) {
   # Calculate criteria
   criteria<-sRL_CalculateCriteria(aoh_lost, eoo_km2, aoo_km2, pop_size)
 
+  
+  ### Test download
+  AltPref_saved=Storage_SP$AltPref_saved
+  habitats_SIS=Storage_SP$habitats_SIS
+  # Prepare file to extract
+  allfields_SIS<-sRL_CreateALLFIELDS(scientific_name, aoh_lost, eoo_km2, aoo_km2, pop_size, AltPref_saved)
+  
+  # Prepare countries
+  countries_SIS<-sRL_OutputCountries(scientific_name, distSP_saved=Storage_SP$distSP_saved, CountrySP_saved=Storage_SP$CountrySP_saved, AltPref_saved)
+  
+  # Prepare references
+  ref_SIS<-sRL_OutputRef(scientific_name, AltPref_saved)
+  
+  # Prepare distributions
+  distSP_SIS<-sRL_OutputDistribution(scientific_name, Storage_SP$distSP_saved)
+  
+  # Save csv files in a folder
+  output_dir<-paste0(sub(" ", "_", scientific_name), "_sRedList")
+  dir.create(output_dir)
+  write.csv(allfields_SIS, paste0(output_dir, "/allfields.csv"))
+  write.csv(countries_SIS, paste0(output_dir, "/countries.csv"))
+  write.csv(ref_SIS, paste0(output_dir, "/references.csv"))
+  write.csv(habitats_SIS, paste0(output_dir, "/habitats.csv"))
+  # Save distribution if from GBIF
+  if(is.null(Storage_SP$gbif_number_saved)==F){st_write(distSP_SIS, paste0(output_dir, "/sRedList_Distribution_", gsub(" ", ".", scientific_name), ".shp"), append=F)}
+  
+  # Zip that folder
+  zip(zipfile = output_dir, files = output_dir,  zip = config$Loc_zip, flags="a -tzip")
+  unlink(output_dir, recursive=T)
+  eval(parse(text=paste0("rm(Storage_SP_", sub(" ", "_", scientific_name), ")")))  # Removes Storage_SP
+  
+  # Plot
   return(plot(
     ggplot(criteria) +
       geom_point(aes(x = Value, y = Crit, col = Value), size = 40, show.legend=F) +
@@ -690,45 +722,58 @@ function(scientific_name, eoo_km2, aoo_km2, pop_size) {
 
 
 
-#* Download .CSV Red List category
-#* @get species/<scientific_name>/assessment/red-list-criteria/csv
-#* @param scientific_name:string Scientific Name
-#* @param aoh_lost:int AOH_lost
-#* @param eoo_km2:int EOO_km2
-#* @param aoo_km2:int AOO_km2
-#* @param pop_size:int Pop_size
-#* @serializer csv
-#* @tag sRedList
-function(scientific_name, eoo_km2, aoo_km2, pop_size, res) {
-  #Filter param
-  scientific_name <- url_decode(scientific_name)
-  Storage_SP=sRL_reuse(scientific_name)
-  
-  aoh_lost=Storage_SP$aoh_lost_saved
-  AltPref_saved=Storage_SP$AltPref_saved
-  habitats_SIS=Storage_SP$habitats_SIS
-  
-  # Calculate criteria
-  criteria<-sRL_CalculateCriteria(aoh_lost, eoo_km2, aoo_km2, pop_size)
-  
-  # Prepare file to extract
-  allfields_SIS<-sRL_CreateALLFIELDS(scientific_name, aoh_lost, eoo_km2, aoo_km2, pop_size, AltPref_saved)
-  
-  # Prepare countries
-  countries_SIS<-sRL_OutputCountries(scientific_name, distSP_saved=Storage_SP$distSP_saved, CountrySP_saved=Storage_SP$CountrySP_saved, AltPref_saved)
-  
-  # Prepare references
-  ref_SIS<-sRL_OutputRef(scientific_name, AltPref_saved)
-  
-  # Prepare distributions
-  distSP_SIS<-sRL_OutputDistribution(scientific_name, Storage_SP$distSP_saved)
-  
-  #filename <- paste0('assessment-', scientific_name, '-', Sys.Date(), '.csv') 
-  #pathToSaveAssessment <- paste0("Assessments/", filename)
-  
-  eval(parse(text=paste0("rm(Storage_SP_", sub(" ", "_", scientific_name), ")")))  #write.csv(allfields_SIS, pathToSaveAssessment, row.names = F)
-  return(allfields_SIS) # We also want to extract: habitats_SIS, countries_SIS, ref_SIS (best would be all in 1 zip file); we also want to download the distribution with a second button. You can use st_write(distSP_SIS, paste0("sRedList_Distribution_", gsub(" ", ".", scientific_name), ".shp"), append=F)
-}
+# #* Download .CSV Red List category
+# #* @get species/<scientific_name>/assessment/red-list-criteria/csv
+# #* @param scientific_name:string Scientific Name
+# #* @param aoh_lost:int AOH_lost
+# #* @param eoo_km2:int EOO_km2
+# #* @param aoo_km2:int AOO_km2
+# #* @param pop_size:int Pop_size
+# #* @serializer csv
+# #* @tag sRedList
+# function(scientific_name, eoo_km2, aoo_km2, pop_size, res) {
+#   #Filter param
+#   scientific_name <- url_decode(scientific_name)
+#   Storage_SP=sRL_reuse(scientific_name)
+#   
+#   aoh_lost=Storage_SP$aoh_lost_saved
+#   AltPref_saved=Storage_SP$AltPref_saved
+#   habitats_SIS=Storage_SP$habitats_SIS
+#   
+#   # Calculate criteria
+#   criteria<-sRL_CalculateCriteria(aoh_lost, eoo_km2, aoo_km2, pop_size)
+#   
+#   # Prepare file to extract
+#   allfields_SIS<-sRL_CreateALLFIELDS(scientific_name, aoh_lost, eoo_km2, aoo_km2, pop_size, AltPref_saved)
+#   
+#   # Prepare countries
+#   countries_SIS<-sRL_OutputCountries(scientific_name, distSP_saved=Storage_SP$distSP_saved, CountrySP_saved=Storage_SP$CountrySP_saved, AltPref_saved)
+#   
+#   # Prepare references
+#   ref_SIS<-sRL_OutputRef(scientific_name, AltPref_saved)
+#   
+#   # Prepare distributions
+#   distSP_SIS<-sRL_OutputDistribution(scientific_name, Storage_SP$distSP_saved)
+#   
+#   # Save csv files in a folder
+#   output_dir<-paste0(sub(" ", "_", scientific_name), "_sRedList")
+#   dir.create(output_dir)
+#   write.csv(allfields_SIS, paste0(output_dir, "/allfields.csv"))
+#   write.csv(countries_SIS, paste0(output_dir, "/countries.csv"))
+#   write.csv(ref_SIS, paste0(output_dir, "/references.csv"))
+#   write.csv(habitats_SIS, paste0(output_dir, "/habitats.csv"))
+#   # Save distribution if from GBIF
+#   if(is.null(Storage_SP$gbif_number_saved)==F){st_write(distSP_SIS, paste0(output_dir, "/sRedList_Distribution_", gsub(" ", ".", scientific_name), ".shp"), append=F)}
+#   
+#   # Zip that folder
+#   zip(zipfile = output_dir, files = output_dir,  zip = config$Loc_zip, flags="a -tzip")
+# 
+#   #filename <- paste0('assessment-', scientific_name, '-', Sys.Date(), '.csv') 
+#   #pathToSaveAssessment <- paste0("Assessments/", filename)
+#   
+#   #eval(parse(text=paste0("rm(Storage_SP_", sub(" ", "_", scientific_name), ")")))  # Removes Storage_SP
+#   return(allfields_SIS) # We also want to extract: habitats_SIS, countries_SIS, ref_SIS (best would be all in 1 zip file); we also want to download the distribution with a second button. You can use 
+# }
 
 
 

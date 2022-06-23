@@ -102,6 +102,7 @@ grid22<-rast("resources/EmptyGrid2x2/Empty.grid.2x2.Mollweide.tif")
 # Load Crosswalk CSV and Density CSV
 density<-read.csv("Species/Density.table.csv", sep=",") ; density<-select(density, c("Species", "Density"))
 crosswalk <- read.csv("Species/Crosswalk_CCI_IUCN.csv")
+crosswalk_to_use<- crosswalk[is.na(crosswalk$esa_code)==F, c("iucn_code", "esa_code")] ; names(crosswalk_to_use)<-c("code", "value")
 GL_file<-read.csv("Species/Generation_length_sRedList.csv", sep=",")
 
 
@@ -141,3 +142,5 @@ options_plumber(maxRequestSize = 10000000)
 pr %>% pr_hook("exit", function() {
   print("Bye bye from sRedList!")
 }) %>% pr_run(port = 8000, host = "0.0.0.0") # nolint
+
+

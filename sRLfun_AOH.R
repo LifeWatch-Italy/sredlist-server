@@ -60,7 +60,7 @@ sRL_calculateAOH<-function(rangeSP_fun, cci_fun, alt_fun, habitat_pref_fun, FOLD
     rangeSP_fun, 
     elevation_data = alt_fun,
     habitat_data = cci_fun,
-    crosswalk_data = crosswalk_lumbierres_data,
+    crosswalk_data = crosswalk_to_use,
     output_dir=FOLDER,
     engine="terra")
   
