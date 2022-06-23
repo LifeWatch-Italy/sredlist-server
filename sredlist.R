@@ -702,7 +702,8 @@ function(scientific_name, eoo_km2, aoo_km2, pop_size) {
   if(is.null(Storage_SP$gbif_number_saved)==F){st_write(distSP_SIS, paste0(output_dir, "/sRedList_Distribution_", gsub(" ", ".", scientific_name), ".shp"), append=F)}
   
   # Zip that folder
-  zip(zipfile = output_dir, files = output_dir,  zip = config$Loc_zip, flags="a -tzip")
+  #zip(zipfile = output_dir, files = output_dir,  zip = "C:/Program Files/7-Zip/7Z", flags="a -tzip")
+  zip(zipfile = output_dir, files = output_dir)
   unlink(output_dir, recursive=T)
   eval(parse(text=paste0("rm(Storage_SP_", sub(" ", "_", scientific_name), ")")))  # Removes Storage_SP
   
@@ -718,6 +719,20 @@ function(scientific_name, eoo_km2, aoo_km2, pop_size) {
       theme_bw()
   ))
   
+}
+
+
+
+#* Download .zip assesment file of the species
+#* @get species/<scientific_name>/assessment/red-list-criteria/zip
+#* @param scientific_name:string Scientific Name
+#* @serializer contentType list(type="application/octet-stream")
+#* @tag sRedList
+function(scientific_name) {
+  scientific_name <- url_decode(scientific_name)
+  zip_to_extract<-readBin(paste0(gsub(" ", "_", scientific_name), "_sRedList.zip"), "raw", n = file.info(paste0(gsub(" ", "_", scientific_name), "_sRedList.zip"))$size)
+  unlink(paste0(gsub(" ", "_", scientific_name), "_sRedList.zip"), recursive=T)
+  return(zip_to_extract)
 }
 
 
