@@ -631,6 +631,7 @@ function(scientific_name, GL_species=1) { # nolint
   plot1 <- base64enc::dataURI(file = "trends-aoh.png", mime = "image/png", encoding = "base64") # nolint
   file.remove("trends-aoh.png")
   
+  Storage_SP$GL_saved<-GL_species
   Storage_SP$aoh_lost_saved=round(as.numeric(AOH_lost)*100)
   Storage_SP$RangeClean_saved=Storage_SP$AOH2_saved=Storage_SP$alt_crop_saved=NULL
   Storage_SP$Year1_saved<-Year1 ; Storage_SP$Year1theo_saved<-Year1_theo
@@ -672,23 +673,18 @@ function(scientific_name, eoo_km2, aoo_km2, pop_size) {
   Storage_SP=sRL_reuse(scientific_name)
   aoh_lost=Storage_SP$aoh_lost_saved
   
+  
   # Calculate criteria
   criteria<-sRL_CalculateCriteria(aoh_lost, eoo_km2, aoo_km2, pop_size)
 
   
-  ### Test download
+  ### Prepare SIS Connect files
   AltPref_saved=Storage_SP$AltPref_saved
   habitats_SIS=Storage_SP$habitats_SIS
-  # Prepare file to extract
+
   allfields_SIS<-sRL_CreateALLFIELDS(scientific_name, aoh_lost, eoo_km2, aoo_km2, pop_size, AltPref_saved)
-  
-  # Prepare countries
   countries_SIS<-sRL_OutputCountries(scientific_name, distSP_saved=Storage_SP$distSP_saved, CountrySP_saved=Storage_SP$CountrySP_saved, AltPref_saved)
-  
-  # Prepare references
   ref_SIS<-sRL_OutputRef(scientific_name, AltPref_saved)
-  
-  # Prepare distributions
   distSP_SIS<-sRL_OutputDistribution(scientific_name, Storage_SP$distSP_saved)
   
   # Save csv files in a folder
@@ -698,14 +694,16 @@ function(scientific_name, eoo_km2, aoo_km2, pop_size) {
   write.csv(countries_SIS, paste0(output_dir, "/countries.csv"))
   write.csv(ref_SIS, paste0(output_dir, "/references.csv"))
   write.csv(habitats_SIS, paste0(output_dir, "/habitats.csv"))
+  
   # Save distribution if from GBIF
   if(is.null(Storage_SP$gbif_number_saved)==F){st_write(distSP_SIS, paste0(output_dir, "/sRedList_Distribution_", gsub(" ", ".", scientific_name), ".shp"), append=F)}
   
-  # Zip that folder
+  # Zip that folder and delete it + Storage_SP
   #zip(zipfile = output_dir, files = output_dir,  zip = "C:/Program Files/7-Zip/7Z", flags="a -tzip")
   zip(zipfile = output_dir, files = output_dir)
   unlink(output_dir, recursive=T)
-  eval(parse(text=paste0("rm(Storage_SP_", sub(" ", "_", scientific_name), ")")))  # Removes Storage_SP
+  eval(parse(text=paste0("rm(Storage_SP_", sub(" ", "_", scientific_name), ", envir=.GlobalEnv)")))  # Removes Storage_SP
+  
   
   # Plot
   return(plot(
@@ -730,7 +728,11 @@ function(scientific_name, eoo_km2, aoo_km2, pop_size) {
 #* @tag sRedList
 function(scientific_name) {
   scientific_name <- url_decode(scientific_name)
+  
+  # Prepare the ZIP to return
   zip_to_extract<-readBin(paste0(gsub(" ", "_", scientific_name), "_sRedList.zip"), "raw", n = file.info(paste0(gsub(" ", "_", scientific_name), "_sRedList.zip"))$size)
+  
+  # Remove the local file
   unlink(paste0(gsub(" ", "_", scientific_name), "_sRedList.zip"), recursive=T)
   return(zip_to_extract)
 }

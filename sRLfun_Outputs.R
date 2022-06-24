@@ -36,6 +36,7 @@ sRL_CreateALLFIELDS <- function(scientific_name, aoh_lost, eoo_km2, aoo_km2, pop
   
   # Charge empty allfields
   allfields<-read.csv("Species/SIS_allfields_empty.csv")[1,]
+  allfields$X<-NULL
   
   # Take data from saved prepared dataset
   allfields$internal_taxon_id<-AltPref_saved$taxonid[1]
@@ -45,8 +46,11 @@ sRL_CreateALLFIELDS <- function(scientific_name, aoh_lost, eoo_km2, aoo_km2, pop
   allfields$ElevationLower.limit<-AltPref_saved$elevation_lower[1]
   allfields$ElevationUpper.limit<-AltPref_saved$elevation_upper[1]
   
-  # Save parameters from analyses
+  ### Save parameters from analyses
   
+  # Generation length
+  allfields$GenerationLength.range<-Storage_SP$GL_saved
+
   # EOO
   allfields$EOO.range<-eoo_km2
   allfields$EOO.justification<-"The EOO has been estimated on the sRedList Platform"
