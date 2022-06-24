@@ -13,9 +13,9 @@ sRL_PrepareHabitatFile<-function(scientific_name, habitats_pref){
   # Columns for SIS Connect
   habitats_pref_DF$GeneralHabitats.GeneralHabitatsSubfield.GeneralHabitatsLookup<-habitats_pref_DF$code # Column with habitat code
   habitats_pref_DF$GeneralHabitats.GeneralHabitatsSubfield.GeneralHabitatsName<-habitats_pref_DF$habitat # Column with habitat name
-  habitats_pref_DF$GeneralHabitats.GeneralHabitatsSubfield.majorImportance<-"No" # Assume no habitat of major importance	
-  habitats_pref_DF$GeneralHabitats.GeneralHabitatsSubfield.season<-"Resident" # Assume all resident habitats
-  habitats_pref_DF$GeneralHabitats.GeneralHabitatsSubfield.suitability<-"Suitable" # Assume all suitable habitats
+  habitats_pref_DF$GeneralHabitats.GeneralHabitatsSubfield.majorImportance<- NA #"No" # Assume no habitat of major importance	
+  habitats_pref_DF$GeneralHabitats.GeneralHabitatsSubfield.season<-NA #"Resident" # Assume all resident habitats
+  habitats_pref_DF$GeneralHabitats.GeneralHabitatsSubfield.suitability<-NA #"Suitable" # Assume all suitable habitats
   habitats_pref_DF$assessment_id<-99999999999	# No assessment_id associated
   habitats_pref_DF$internal_taxon_id<-habitats_pref_DF$id_no # Column with the taxon ID	
   habitats_pref_DF$internal_taxon_name<-scientific_name # Column with the scientific name
@@ -52,7 +52,7 @@ sRL_PrepareAltitudeFile<-function(scientific_name, altitudes_pref){
 
 ### Function to map AOH
 
-sRL_calculateAOH<-function(rangeSP_fun, cci_fun, alt_fun, habitat_pref_fun, FOLDER, elevation_data_fun){
+sRL_calculateAOH<-function(rangeSP_fun, cci_fun, alt_fun, FOLDER, elevation_data_fun){
 
   #terra::compareGeom(cci_fun, alt_fun)
   

@@ -41,7 +41,7 @@ sRL_CreateALLFIELDS <- function(scientific_name, aoh_lost, eoo_km2, aoo_km2, pop
   # Take data from saved prepared dataset
   allfields$internal_taxon_id<-AltPref_saved$taxonid[1]
   allfields$internal_taxon_name<-AltPref_saved$scientific_name[1]
-  allfields$assessment_id<-99999999999
+  allfields$assessment_id<-NA
   
   allfields$ElevationLower.limit<-AltPref_saved$elevation_lower[1]
   allfields$ElevationUpper.limit<-AltPref_saved$elevation_upper[1]
@@ -86,10 +86,10 @@ sRL_OutputCountries<-function(scientific_name, distSP_saved, CountrySP_saved, Al
     
   CO_SIS$CountryOccurrence.CountryOccurrenceSubfield.CountryOccurrenceLookup=NA
   CO_SIS$CountryOccurrence.CountryOccurrenceSubfield.formerlyBred=NA
-  CO_SIS$CountryOccurrence.CountryOccurrenceSubfield.origin="Native"
-  CO_SIS$CountryOccurrence.CountryOccurrenceSubfield.presence="Extant"
-  CO_SIS$CountryOccurrence.CountryOccurrenceSubfield.seasonality="Resident"
-  CO_SIS$assessment_id=99999999999
+  CO_SIS$CountryOccurrence.CountryOccurrenceSubfield.origin=NA # "Native"
+  CO_SIS$CountryOccurrence.CountryOccurrenceSubfield.presence=NA # "Extant"
+  CO_SIS$CountryOccurrence.CountryOccurrenceSubfield.seasonality=NA # "Resident"
+  CO_SIS$assessment_id=NA
   CO_SIS$internal_taxon_id=AltPref_saved$taxonid[1]
   CO_SIS$internal_taxon_name=scientific_name
   
