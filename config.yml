@@ -4,6 +4,7 @@ default:
   distribution_path: "resources/Distributions/"
   YearAOH2: 2020
   LIM_GBIF: 10000
+  engine_AOH: "terra"
   #Development
   access_control_allow_origin: "*"
   #alt_raster_path: "H:/Postdoc/Platform/Elevation_MollweidePlatform.tif"

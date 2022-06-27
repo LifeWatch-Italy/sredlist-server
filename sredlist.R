@@ -483,6 +483,7 @@ function(scientific_name, habitats_pref= list(), altitudes_pref= list(), density
 
   # Altitude
   terraOptions(tempdir=paste0(output_dir, "/Temporary"))
+  rasterOptions(tmpdir=paste0(output_dir, "/Temporary"))
   alt_crop=crop(alt_raw, extent(distSP)) 
   Storage_SP$alt_crop_saved=alt_crop
   cci2_crop<-crop(cci2, extent(distSP))
@@ -512,7 +513,8 @@ function(scientific_name, habitats_pref= list(), altitudes_pref= list(), density
   log_info("END - Plot AOH")
   
   AOH_km2 <-  sRL_areaAOH(AOH2[[1]], SCALE="cci")
-
+  Storage_SP$AOHkm2_saved<-AOH_km2
+  
   #Calculate Area of Habitat in a resolution of 2x2km (as is the map of altitude provided), in order to use it as an upper bound of species Area of Occupancy under criterion B2 (each cell covers 4km2)
   grid22_crop<-crop(grid22, AOH2[[1]])
   aoh_22<-resample(AOH2[[1]], grid22_crop, method="max")
@@ -532,7 +534,8 @@ function(scientific_name, habitats_pref= list(), altitudes_pref= list(), density
   AOO_km2<- sRL_areaAOH(aoh_22[[1]], SCALE="2x2")
   
   assign(paste0("Storage_SP_", sub(" ", "_", scientific_name)), Storage_SP, .GlobalEnv)
-  
+  terraOptions(tempdir=tempdir())
+  rasterOptions(tmpdir=tempdir())
   
   # Calculate population size
   if (density_pref != -1) {
@@ -587,7 +590,8 @@ function(scientific_name, GL_species=1) { # nolint
   habitats_pref_DF=Storage_SP$habitats_SIS
   altitude_pref_DF=Storage_SP$AltPref_saved
   AOH2=Storage_SP$AOH2_saved
-
+  AOH_km2<-Storage_SP$AOHkm2_saved
+  
   # Charge distribution
   distSP$binomial<-as.character(distSP$binomial)
   
@@ -597,6 +601,8 @@ function(scientific_name, GL_species=1) { # nolint
   
   # Charge CCI1
   terraOptions(tempdir=paste0(output_dir, "/Temporary"))
+  rasterOptions(tmpdir=paste0(output_dir, "/Temporary"))
+
   Year1_theo<-config$YearAOH2-max(10, round(3*GL_species))
   Year1<-max(Year1_theo, 1992) ; print(Year1)
   cci1<-rast(sub("XXXX", Year1, config$cci1_raster_path)) ; crs(cci1)<-CRSMOLL # I ensure the CRS is correctly assigned
@@ -613,7 +619,6 @@ function(scientific_name, GL_species=1) { # nolint
                          elevation_data_fun=altitudes_pref_DF)
   
   # Area
-  AOH_km2<-sRL_areaAOH(AOH2[[1]], SCALE="cci")
   AOH_old_km2<-sRL_areaAOH(AOH1[[1]], SCALE="cci")
   
   # Calculate trends in AOH and plot
@@ -639,6 +644,8 @@ function(scientific_name, GL_species=1) { # nolint
   # Remove the AOH files stored
   unlink(output_dir, recursive=T)
   terraOptions(tempdir=tempdir())
+  rasterOptions(tmpdir=tempdir())
+  
   
   return(list(
     aoh_lost_km2 = ceiling(AOH_old_km2),

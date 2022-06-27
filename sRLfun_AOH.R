@@ -62,7 +62,7 @@ sRL_calculateAOH<-function(rangeSP_fun, cci_fun, alt_fun, FOLDER, elevation_data
     habitat_data = cci_fun,
     crosswalk_data = crosswalk_to_use,
     output_dir=FOLDER,
-    engine="terra")
+    engine=config$engine_AOH)
   
   return(lapply(AOH$path, terra::rast))
 }
