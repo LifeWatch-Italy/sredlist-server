@@ -64,8 +64,8 @@ function(scientific_name, path = "") {
   
   ### Format the countries shapefile and save it in the global memory (to avoid recalculating at every step)
   CountrySP<-sRL_PrepareCountries(extent(distSP))
-  #assign(paste0("CountrySP_saved_", sub(" ", "_", scientific_name)), CountrySP, .GlobalEnv)
-  assign(paste0("Storage_SP_", sub(" ", "_", scientific_name)), list(CountrySP_saved=CountrySP), .GlobalEnv)
+
+  assign(paste0("Storage_SP_", sub(" ", "_", scientific_name)), list(CountrySP_saved=CountrySP, Creation=Sys.time()), .GlobalEnv)
   
   ### Plot the distribution
   sf::sf_use_s2(FALSE)

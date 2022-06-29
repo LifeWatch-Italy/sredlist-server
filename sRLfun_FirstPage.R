@@ -128,3 +128,41 @@ sRL_reuse=function(scientific_name){
   eval(parse(text=paste0("Storage_SP_", sub(" ", "_", url_decode(scientific_name)))))
 }
 
+
+### sRedList cleaning function
+sRL_cleaningMemory<-function(Time_limit){
+  
+  # Current time
+  Time_now<-Sys.time()
+
+  tryCatch({
+  # Remove ZIP files
+  list_zips<-list.files()[grepl(".zip", list.files())]
+  if(length(list_zips)>0){
+    Time_diff_zips<-difftime(Time_now, file.info(list_zips)$ctime, units="mins") %>% as.numeric(.)
+    unlink(list_zips[Time_diff_zips>Time_limit], recursive=T)
+  }
+  
+  # Remove temporary folders
+  list_temp<-paste0("resources/AOH_stored/", list.files("resources/AOH_stored"))
+  if(length(list_temp)>0){
+    Time_diff_temp<-difftime(Time_now, file.info(list_temp)$ctime, units="mins") %>% as.numeric(.)
+    unlink(list_temp[Time_diff_temp>Time_limit], recursive=T)
+  }
+  
+  
+  # Remove Storage_SP
+  list_storage<-ls(name=".GlobalEnv")[grepl("Storage_SP", ls(name=".GlobalEnv"))]
+  if(length(list_storage)>0){
+    for(i in 1:length(list_storage)){
+      Time_storage<-eval(parse(text= paste0(list_storage[i], "$Creation")))
+      Time_diff_stor<-difftime(Time_now, Time_storage, units="mins") %>% as.numeric(.)
+      if(Time_diff_stor>Time_limit){rm(list=list_storage[i], pos=".GlobalEnv")}
+    }
+   }
+  } ,error=function(e){cat("cleaning Memory function is not happy")}) 
+}
+
+
+
+

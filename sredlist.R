@@ -52,7 +52,7 @@ function(scientific_name, req) {
   file.copy(tmpfile, fn)
   #file.rename(fn , fn)
   
-  
+
   print(paste0("Your file is now stored in ", fn))
   return(list(path = fn))
 }
@@ -104,6 +104,8 @@ function(scientific_name, path = "") {
 #* @serializer png list(width = 800, height = 600)
 #* @tag sRedList1
 function(scientific_name, presences = list(), seasons = list() , origins = list(), path = "") { # nolint
+  
+  if(paste0("Storage_SP_", sub(" ", "_", url_decode(scientific_name))) %not in% ls(name=".GlobalEnv")){assign(paste0("Storage_SP_", sub(" ", "_", url_decode(scientific_name))), list(Creation=Sys.time()), .GlobalEnv)}
   
   #Filter param
   scientific_name <- url_decode(scientific_name)
@@ -258,7 +260,7 @@ function(scientific_name, Gbif_Year= -1, Gbif_Uncertainty=-1, Gbif_Extent=list()
   #GBIF STEP 2  
   # Subset the observations user wants to keep (can be run several times if users play with parameters)
   flags <- sRL_cleanDataGBIF(flags_raw, as.numeric(Gbif_Year), as.numeric(Gbif_Uncertainty), keepyearNA_GBIF, cleaningpar_GBIF, Gbif_Extent[1], Gbif_Extent[2], Gbif_Extent[3], Gbif_Extent[4])
-  assign("Test", flags, .GlobalEnv) ; assign("Test2", Gbif_Extent, .GlobalEnv)
+
   # Plot
   ggsave("clean_coordinates.png", plot(
     
@@ -438,6 +440,10 @@ function(scientific_name) {
 #* @serializer unboxedJSON
 #* @tag sRedList
 function(scientific_name, habitats_pref= list(), altitudes_pref= list(), density_pref= -1, isGbifDistribution = FALSE, path = "") { # nolint    
+  
+  # Clean memory
+  sRL_cleaningMemory(Time_limit=90)
+  
   #Filter param
   scientific_name <- url_decode(scientific_name)
   Storage_SP=sRL_reuse(scientific_name)

@@ -104,7 +104,7 @@ sRL_MapDistributionGBIF<-function(EOO_GBIF, GBIF_BUFF_km2, GBIF_crop, scientific
   
   ### Create countries map based on the buffer
   CountrySP<-st_crop(distCountries_notsimplif, extent(distGBIF))
-  assign(paste0("Storage_SP_", sub(" ", "_", scientific_name)), list(CountrySP_saved=CountrySP), .GlobalEnv)
+  assign(paste0("Storage_SP_", sub(" ", "_", scientific_name)), list(CountrySP_saved=CountrySP, Creation=Sys.time()), .GlobalEnv)
   
   # Remove land or sea if requested
   if(GBIF_crop=="Land"){
