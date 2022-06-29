@@ -448,15 +448,15 @@ function(scientific_name, habitats_pref= list(), altitudes_pref= list(), density
   scientific_name <- url_decode(scientific_name)
   Storage_SP=sRL_reuse(scientific_name)
   distSP=Storage_SP$distSP_saved
-  
+
   # Habitat table (for aoh analysis and for SIS Connect)
   habitats_pref_DF<-sRL_PrepareHabitatFile(scientific_name, habitats_pref)
   Storage_SP$habitats_SIS=habitats_pref_DF
   
   # Altitude table (for aoh analysis and for SIS Connect)
+  if(length(altitudes_pref)==0){altitudes_pref<-c(0,9000)} # If users don't click on the altitude preferences when it's 0-9000, it sometimes returns empty list
   altitudes_pref_DF<-sRL_PrepareAltitudeFile(scientific_name, altitudes_pref)
   Storage_SP$AltPref_saved=altitudes_pref_DF
-  
   density_pref <- as.numeric(density_pref)
   
   print(habitats_pref)
