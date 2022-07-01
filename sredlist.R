@@ -442,7 +442,9 @@ function(scientific_name) {
 function(scientific_name, habitats_pref= list(), altitudes_pref= list(), density_pref= -1, isGbifDistribution = FALSE, path = "") { # nolint    
   
   # Clean memory
+  log_info("START - Cleaning memory")
   sRL_cleaningMemory(Time_limit=90)
+  log_info("END - Cleaning memory")
   
   #Filter param
   scientific_name <- url_decode(scientific_name)
