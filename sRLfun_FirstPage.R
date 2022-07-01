@@ -140,27 +140,40 @@ sRL_cleaningMemory<-function(Time_limit){
   list_zips<-list.files()[grepl(".zip", list.files())]
   if(length(list_zips)>0){
     Time_diff_zips<-difftime(Time_now, file.info(list_zips)$ctime, units="mins") %>% as.numeric(.)
-    unlink(list_zips[Time_diff_zips>Time_limit], recursive=T)
+    toremove_zips<-list_zips[Time_diff_zips>Time_limit]
+    unlink(toremove_zips, recursive=T)
+    zips_prop_removed<- (length(list_zips)-length(list.files()[grepl(".zip", list.files())]))
+    cat(paste0(length(toremove_zips), " / ", length(list_zips), " zip files should be removed, (", zips_prop_removed, " were correctly removed)", "\n"))
+    
   }
+  } ,error=function(e){cat("Problem removing Zip files")}) 
   
   # Remove temporary folders
-  list_temp<-paste0("resources/AOH_stored/", list.files("resources/AOH_stored"))
-  if(length(list_temp)>0){
+  tryCatch({
+    list_temp<-paste0("resources/AOH_stored/", list.files("resources/AOH_stored"))
+  if(length(list.files("resources/AOH_stored"))>0){
     Time_diff_temp<-difftime(Time_now, file.info(list_temp)$ctime, units="mins") %>% as.numeric(.)
-    unlink(list_temp[Time_diff_temp>Time_limit], recursive=T)
+    toremove_temp<-list_temp[Time_diff_temp>Time_limit]
+    unlink(toremove_temp, recursive=T)
+    temp_prop_removed<- (length(list_temp)-length(list.files("resources/AOH_stored")))
+    cat(paste0(length(toremove_temp), " / ", length(list_temp), " temporary folders should be removed, (", temp_prop_removed, " were correctly removed)", "\n"))
   }
-  
+} ,error=function(e){cat("Problem removing temporary files")}) 
   
   # Remove Storage_SP
-  list_storage<-ls(name=".GlobalEnv")[grepl("Storage_SP", ls(name=".GlobalEnv"))]
-  if(length(list_storage)>0){
+  tryCatch({
+    list_storage<-ls(name=".GlobalEnv")[grepl("Storage_SP", ls(name=".GlobalEnv"))]
+    toremove_storage<-0
+  if(length(list_storage)>1){ # >1 because there will always be the Storage of the species currently running
     for(i in 1:length(list_storage)){
       Time_storage<-eval(parse(text= paste0(list_storage[i], "$Creation")))
       Time_diff_stor<-difftime(Time_now, Time_storage, units="mins") %>% as.numeric(.)
-      if(Time_diff_stor>Time_limit){rm(list=list_storage[i], pos=".GlobalEnv")}
+      if(Time_diff_stor>Time_limit){rm(list=list_storage[i], pos=".GlobalEnv")
+        toremove_storage<-toremove_storage+1}
     }
+    cat(paste0(toremove_storage, " / ", length(list_storage), " Storage_SP should be removed, (", (length(list_storage)-length(ls(name=".GlobalEnv")[grepl("Storage_SP", ls(name=".GlobalEnv"))])), " were correctly removed)", "\n"))
    }
-  } ,error=function(e){cat("cleaning Memory function is not happy")}) 
+  } ,error=function(e){cat("Problem removing Storage_SP")}) 
 }
 
 
