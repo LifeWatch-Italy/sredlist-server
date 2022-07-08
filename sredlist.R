@@ -490,8 +490,8 @@ function(scientific_name, habitats_pref= list(), altitudes_pref= list(), density
   do.call(file.remove, list(list.files(output_dir, full.names = TRUE, recursive=T)))
 
   # Altitude
-  terraOptions(tempdir=paste0(output_dir, "/Temporary"))
-  rasterOptions(tmpdir=paste0(output_dir, "/Temporary"))
+  terraOptions(tempdir=paste0(output_dir, "/Temporary"), memfrac=0.4)
+  rasterOptions(tmpdir=paste0(output_dir, "/Temporary"), memfrac=0.4)
   alt_crop=crop(alt_raw, extent(distSP)) 
   Storage_SP$alt_crop_saved=alt_crop
   cci2_crop<-crop(cci2, extent(distSP))
@@ -502,6 +502,7 @@ function(scientific_name, habitats_pref= list(), altitudes_pref= list(), density
                          FOLDER=paste0(output_dir, "/Current"),
                          elevation_data_fun=altitudes_pref_DF)
   Storage_SP$AOH2_saved=AOH2
+
   
   
   # Plot
@@ -522,11 +523,12 @@ function(scientific_name, habitats_pref= list(), altitudes_pref= list(), density
   
   AOH_km2 <-  sRL_areaAOH(AOH2[[1]], SCALE="cci")
   Storage_SP$AOHkm2_saved<-AOH_km2
-  
+
+
   #Calculate Area of Habitat in a resolution of 2x2km (as is the map of altitude provided), in order to use it as an upper bound of species Area of Occupancy under criterion B2 (each cell covers 4km2)
   grid22_crop<-crop(grid22, AOH2[[1]])
   aoh_22<-resample(AOH2[[1]], grid22_crop, method="max")
-  
+
   plot2 <- gplot(aoh_22[[1]]) +
     coord_fixed()+
     geom_tile(aes(fill = factor(as.character(value), c("0", "1")))) +
@@ -538,12 +540,13 @@ function(scientific_name, habitats_pref= list(), altitudes_pref= list(), density
   ggsave(filename = "aoo.png", plot = plot(plot2))
   plot2 <- base64enc::dataURI(file = "aoo.png", mime = "image/png", encoding = "base64") # nolint
   file.remove("aoo.png")
-  
+
   AOO_km2<- sRL_areaAOH(aoh_22[[1]], SCALE="2x2")
   
   assign(paste0("Storage_SP_", sub(" ", "_", scientific_name)), Storage_SP, .GlobalEnv)
   terraOptions(tempdir=tempdir())
   rasterOptions(tmpdir=tempdir())
+  gc()
   
   # Calculate population size
   if (density_pref != -1) {
@@ -608,8 +611,8 @@ function(scientific_name, GL_species=1) { # nolint
   dir.create(paste0(output_dir, "/Initial"))
   
   # Charge CCI1
-  terraOptions(tempdir=paste0(output_dir, "/Temporary"))
-  rasterOptions(tmpdir=paste0(output_dir, "/Temporary"))
+  terraOptions(tempdir=paste0(output_dir, "/Temporary"), memfrac=0.4)
+  rasterOptions(tmpdir=paste0(output_dir, "/Temporary"), memfrac=0.4)
 
   Year1_theo<-config$YearAOH2-max(10, round(3*GL_species))
   Year1<-max(Year1_theo, 1992) ; print(Year1)
@@ -653,7 +656,7 @@ function(scientific_name, GL_species=1) { # nolint
   unlink(output_dir, recursive=T)
   terraOptions(tempdir=tempdir())
   rasterOptions(tmpdir=tempdir())
-  
+  gc()
   
   return(list(
     aoh_lost_km2 = ceiling(AOH_old_km2),
