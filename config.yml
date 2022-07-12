@@ -5,6 +5,8 @@ default:
   YearAOH2: 2020
   LIM_GBIF: 10000
   engine_AOH: "terra"
+  crosswalk: "Lumbierres"
+  RAMmax_GB: 10
   #Development
   access_control_allow_origin: "*"
   #alt_raster_path: "H:/Postdoc/Platform/Elevation_MollweidePlatform.tif"

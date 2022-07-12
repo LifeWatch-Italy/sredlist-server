@@ -135,6 +135,21 @@ sRL_cleaningMemory<-function(Time_limit){
   # Current time
   Time_now<-Sys.time()
 
+  
+  # Remove temporary files in temporary folder
+  tryCatch({
+    # Remove ZIP files
+    list_tempdir<-paste0(tempdir(), "\\", list.files(tempdir(), recursive=T))
+    if(length(list_tempdir)>0){
+      Time_diff_tempdir<-difftime(Time_now, file.info(list_tempdir)$ctime, units="mins") %>% as.numeric(.)
+      toremove_tempdir<-list_tempdir[Time_diff_tempdir>Time_limit]
+      unlink(toremove_tempdir, recursive=T)
+      tempdir_prop_removed<- (length(list_tempdir)-length(list.files(tempdir(), recursive=T)))
+      cat(paste0(length(toremove_tempdir), " / ", length(list_tempdir), " Temporary files in tempdir should be removed, (", tempdir_prop_removed, " were correctly removed)", "\n"))
+      
+    }
+  } ,error=function(e){cat("Problem removing temporary files from tempdir()")}) 
+  
   tryCatch({
   # Remove ZIP files
   list_zips<-list.files()[grepl(".zip", list.files())]

@@ -6,7 +6,7 @@ sRL_PrepareHabitatFile<-function(scientific_name, habitats_pref){
   # Columns for AOH package analyses
   habitats_pref_DF <- data.frame(code=as.character(habitats_pref))
   habitats_pref_DF$habitat<-crosswalk$iucn_habitat[match(habitats_pref_DF$code, crosswalk$iucn_code)]
-  if(scientific_name %in% speciesRL$scientific_name) {habitats_pref_DF$id_no<-speciesRL$taxonid[speciesRL$scientific_name==scientific_name]} else {habitats_pref_DF$id_no<-99999999999} 
+  if(scientific_name %in% speciesRL$scientific_name) {habitats_pref_DF$id_no<-speciesRL$taxonid[speciesRL$scientific_name==scientific_name & is.na(speciesRL$population)==T]} else {habitats_pref_DF$id_no<-99999999999} # I subset for population NA for species like Panthera leo 
   habitats_pref_DF$suitability<-"Suitable"
   habitats_pref_DF$season<-"Resident"
   

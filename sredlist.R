@@ -454,7 +454,7 @@ function(scientific_name, habitats_pref= list(), altitudes_pref= list(), density
   # Habitat table (for aoh analysis and for SIS Connect)
   habitats_pref_DF<-sRL_PrepareHabitatFile(scientific_name, habitats_pref)
   Storage_SP$habitats_SIS=habitats_pref_DF
-  
+
   # Altitude table (for aoh analysis and for SIS Connect)
   if(length(altitudes_pref)==0){altitudes_pref<-c(0,9000)} # If users don't click on the altitude preferences when it's 0-9000, it sometimes returns empty list
   altitudes_pref_DF<-sRL_PrepareAltitudeFile(scientific_name, altitudes_pref)
@@ -490,12 +490,16 @@ function(scientific_name, habitats_pref= list(), altitudes_pref= list(), density
   do.call(file.remove, list(list.files(output_dir, full.names = TRUE, recursive=T)))
 
   # Altitude
-  terraOptions(tempdir=paste0(output_dir, "/Temporary"), memfrac=0.4)
-  rasterOptions(tmpdir=paste0(output_dir, "/Temporary"), memfrac=0.4)
+  terraOptions(tempdir=paste0(output_dir, "/Temporary"), memmax=config$RAMmax_GB)
+  rasterOptions(tmpdir=paste0(output_dir, "/Temporary"), maxmemory=config$RAMmax_GB)
+  log_info("START - Cropping rasters")
   alt_crop=crop(alt_raw, extent(distSP)) 
   Storage_SP$alt_crop_saved=alt_crop
   cci2_crop<-crop(cci2, extent(distSP))
-
+  gc()
+  log_info("END - Cropping rasters")
+  
+  
   AOH2<-sRL_calculateAOH(rangeSP_fun=rangeSP_clean, 
                          cci_fun=cci2_crop, 
                          alt_fun=alt_crop,
@@ -611,16 +615,16 @@ function(scientific_name, GL_species=1) { # nolint
   dir.create(paste0(output_dir, "/Initial"))
   
   # Charge CCI1
-  terraOptions(tempdir=paste0(output_dir, "/Temporary"), memfrac=0.4)
-  rasterOptions(tmpdir=paste0(output_dir, "/Temporary"), memfrac=0.4)
-
+  terraOptions(tempdir=paste0(output_dir, "/Temporary"), memmax=config$RAMmax_GB)
+  rasterOptions(tmpdir=paste0(output_dir, "/Temporary"), maxmemory=config$RAMmax_GB)
+  log_info("START - Cropping rasters")
   Year1_theo<-config$YearAOH2-max(10, round(3*GL_species))
   Year1<-max(Year1_theo, 1992) ; print(Year1)
   cci1<-rast(sub("XXXX", Year1, config$cci1_raster_path)) ; crs(cci1)<-CRSMOLL # I ensure the CRS is correctly assigned
   
   # Crop CCI1
   cci1_crop<-crop(cci1, extent(distSP))
-
+  log_info("END - Cropping rasters")
   
   # Calculate AOH
   AOH1<-sRL_calculateAOH(rangeSP_fun=rangeSP_clean,
