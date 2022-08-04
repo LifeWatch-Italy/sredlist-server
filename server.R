@@ -8,8 +8,8 @@
 
 keepyearNA_GBIF<-T
 GBIF_BUFF_km2<-0
-GBIF_crop<-"" # Could be Land or Sea or could be empty
-
+GBIF_cropPAR<-"Land" # Could be Land or Sea or could be empty
+FirstPAR="EOO"
 
 
 
@@ -32,6 +32,7 @@ library(Rook) ; library(ggplot2) ; library(raster) ; library(plyr) ;library(dply
 ### GBIF mapping
 library(rgbif) ; library(CoordinateCleaner) ; library(rCAT) ; library(maps) ; library(countrycode); library(rnaturalearthdata); # nolint
 library(plotly)
+library(adehabitatHR) ; library(smoothr)
 
 ### AOH analyses
 library(exactextractr)
@@ -100,14 +101,14 @@ cci2 <- rast(config$cci2_raster_path); crs(cci2)<-CRSMOLL
 grid22<-rast("resources/EmptyGrid2x2/Empty.grid.2x2.Mollweide.tif")
 
 # Load Crosswalk CSV and Density CSV
-density<-read.csv("Species/Density.table.csv", sep=",") ; density<-select(density, c("Species", "Density"))
+density<-read.csv("Species/Density.table.csv", sep=",")
 crosswalk <- read.csv("Species/Crosswalk_CCI_IUCN.csv")
 GL_file<-read.csv("Species/Generation_length_sRedList.csv", sep=",")
 if(config$crosswalk == "Santini"){crosswalk_to_use<- crosswalk[is.na(crosswalk$esa_code)==F, c("iucn_code", "esa_code")] ; names(crosswalk_to_use)<-c("code", "value")}
 if(config$crosswalk == "Lumbierres"){crosswalk_to_use<- read.csv("Species/Crosswalk_CCI_IUCN_Lumbierres.csv") ; crosswalk_to_use$code<-as.character(crosswalk_to_use$code)}
 
-
-
+# Load Hydrobasins map
+hydro_raw<-st_read(config$hydrobasins_path) %>% st_transform(., crs=CRSMOLL)
 
 
 

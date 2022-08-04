@@ -71,40 +71,56 @@ sRL_cleanDataGBIF <- function(flags, year_GBIF, uncertainty_GBIF, keepyearNA_GBI
 
 
 
-### Create EOO polygon from GBIF data
-sRL_MapEOOGBIF<-function(flags, scientific_name){
-
-# Prepare GBIF data for mapping
-dat_cl <- flags[is.na(flags$Reason)==T,] # Keep only data that are not flagged
-gbif_data_number <- nrow(dat_cl)
-
-assign(paste0("gbif_number_saved_", sub(" ", "_", scientific_name)), gbif_data_number, .GlobalEnv)
-
-# Prepare spatial points
-dat_proj<-st_geometry(st_as_sf(dat_cl,coords = c("decimalLongitude", "decimalLatitude"), crs="+proj=longlat +datum=WGS84")) %>%
-  st_transform(., st_crs(CRSMOLL))
-
-# Create EOO
-EOO_GBIF<-st_as_sf(st_convex_hull(st_union(dat_proj)))
-st_geometry(EOO_GBIF)<-"geometry" # Rename the variable including geometry
-
-return(EOO_GBIF)
-
+### Filter GBIF data
+sRL_SubsetGbif<-function(flags, scientific_name){
+  
+  # Prepare GBIF data for mapping
+  dat_cl <- flags[is.na(flags$Reason)==T,] # Keep only data that are not flagged
+  gbif_data_number <- nrow(dat_cl)
+  
+  assign(paste0("gbif_number_saved_", sub(" ", "_", scientific_name)), gbif_data_number, .GlobalEnv)
+  
+  # Prepare spatial points
+  dat_proj<-st_geometry(st_as_sf(dat_cl,coords = c("decimalLongitude", "decimalLatitude"), crs="+proj=longlat +datum=WGS84")) %>%
+    st_transform(., st_crs(CRSMOLL)) %>%
+    st_as_sf(.)
+  
+  return(dat_proj)
+  
 }
 
 
 
-
 ### Create Distribution map from GBIF data
-sRL_MapDistributionGBIF<-function(EOO_GBIF, GBIF_BUFF_km2, GBIF_crop, scientific_name){
+sRL_MapDistributionGBIF<-function(dat, scientific_name, First_step, AltMIN, AltMAX, Buffer_km2, GBIF_crop){
   
-  # Use a buffer around the EOO
-  distGBIF<-st_buffer(EOO_GBIF, GBIF_BUFF_km2*1000) %>% st_as_sf()
-  distGBIF$binomial<-as.factor(scientific_name)
+  ### The first step must be EOO, or Kernel, or Hydrobasins
+  if(First_step=="EOO"){
+    distGBIF<-st_as_sf(st_convex_hull(st_union(dat)))
+    st_geometry(distGBIF)<-"geometry" # Rename the variable including geometry
+  }
   
-  ### Create countries map based on the buffer
+  if(First_step=="Kernel"){
+    kernel.ref <- kernelUD(as_Spatial(dat), h = "href")  # href = the reference bandwidth
+    distGBIF <- getverticeshr(kernel.ref, percent = 99) %>% st_as_sf(.)
+  }
+  
+  if(First_step=="Hydrobasins"){
+    hydro_sub<-st_crop(hydro_raw, extent(dat))
+    interHyd<-st_join(dat, hydro_sub, join=st_intersects) %>% subset(., is.na(.$hybas_id)==F) # Identify hydrobasins with data 
+    distGBIF<-subset(hydro_raw, hydro_raw$hybas_id %in% interHyd$hybas_id) # Isolate these hydrobasins
+  }
+  
+  
+  ### Apply buffer
+  distGBIF<-st_buffer(distGBIF, Buffer_km2*1000) %>% st_as_sf()
+  
+  
+  ### Apply crop by land/sea
+  # Create countries map based on the buffer
   CountrySP<-st_crop(distCountries_notsimplif, extent(distGBIF))
-  assign(paste0("Storage_SP_", sub(" ", "_", scientific_name)), list(CountrySP_saved=CountrySP, Creation=Sys.time()), .GlobalEnv)
+  
+  distGBIF$binomial=scientific_name
   
   # Remove land or sea if requested
   if(GBIF_crop=="Land"){
@@ -114,14 +130,48 @@ sRL_MapDistributionGBIF<-function(EOO_GBIF, GBIF_BUFF_km2, GBIF_crop, scientific
   if(GBIF_crop=="Sea"){
     countr<-CountrySP %>% st_crop(., extent(distGBIF)) %>% dplyr::group_by() %>% dplyr::summarise(N = n())
     distGBIF<-st_difference(distGBIF, countr)}
-
-  # Set default columns to fit with final expected format
+  
+  
+  ### Merge
+  distGBIF<-distGBIF %>% dplyr::group_by(binomial) %>% dplyr::summarise(N = n())
+  
+  ### Apply crop by altitude
+  mcp.spatial <- as_Spatial(distGBIF)
+  sp.mcp.terra <- terra::vect(distGBIF)
+  
+  dem.crop <- terra::crop(alt_raw, ext(mcp.spatial))
+  
+  sp.mcp.ras <- terra::rasterize(sp.mcp.terra, dem.crop)
+  dem.sp <- terra::mask(dem.crop, mask = sp.mcp.terra)
+  
+  m <- c(-Inf, AltMIN, 0, AltMIN, 
+         AltMAX, 1, AltMAX, Inf, 0)
+  rclmat <- matrix(m, ncol=3, byrow=TRUE)
+  
+  sp.range <- terra::classify(dem.sp, rclmat) %>% 
+    terra::aggregate(fact = 4, fun = 'max')
+  
+  sp.range[sp.range == 0] <- NA
+  
+  distGBIF <- as.polygons(sp.range) %>% st_as_sf(.)
+  
+  
+  ### Smooth the borders
+  distGBIF<-smooth(distGBIF, method = "ksmooth", smoothness=3)
+  
+  
+  ### Restrict CountrySP in case the altitude reduced it a lot, and create Storage_SP
+  CountrySP<-st_crop(CountrySP, distGBIF)
+  assign(paste0("Storage_SP_", sub(" ", "_", scientific_name)), list(CountrySP_saved=CountrySP, Creation=Sys.time()), .GlobalEnv)
+  
+  
+  ### Prepare to export
+  distGBIF$binomial<-scientific_name
   distGBIF$id_no<-ifelse(scientific_name %in% speciesRL$scientific_name, speciesRL$taxonid[speciesRL$scientific_name==scientific_name], 99999999999)
   distGBIF$presence<-1
   distGBIF$origin<-1
   distGBIF$seasonal<-1
-
-  # Export
+  
   return(distGBIF)
   
 }

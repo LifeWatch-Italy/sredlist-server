@@ -218,10 +218,7 @@ function(scientific_name, Gbif_Year= -1, Gbif_Uncertainty=-1, Gbif_Extent=list()
   print(cleaningpar_GBIF)
   
   Gbif_Extent<-as.numeric(Gbif_Extent)
-  # Gbif_Extent<-Gbif_Extent %>% gsub(" ", "", .) %>% strsplit(., ",") %>% unlist(.) %>% as.vector(.) %>% as.numeric(.)
-  # if(length(Gbif_Extent)!=4){print(Gbif_Extent) ; Gbif_Extent<-c(-180, 180, -90, 90)}
-  
-  
+
   #GBIF STEP 1
   ### Clean-string from user
   scientific_name <- url_decode(scientific_name)
@@ -292,12 +289,22 @@ function(scientific_name, Gbif_Year= -1, Gbif_Uncertainty=-1, Gbif_Extent=list()
   log_info("END - Clean coordinates")
   
   
-  #GBIF STEP 3  
-  # Map distribution from GBIF
+  #GBIF STEP 3: Map distribution from GBIF
   log_info("START - Maps the distribution")
   
-  distGBIF0<-sRL_MapEOOGBIF(flags, scientific_name)
-  distSP<-sRL_MapDistributionGBIF(distGBIF0, GBIF_BUFF_km2, GBIF_crop, scientific_name)
+  # Subset observations 
+  dat_proj=sRL_SubsetGbif(flags, scientific_name)
+  
+  # Extract altitude from GBIF points
+  Alt_points=terra::extract(alt_raw, st_coordinates(dat_proj), method="simple", list=F)
+  
+  # Create distribution
+  distSP<-sRL_MapDistributionGBIF(dat_proj, scientific_name,
+                                  First_step=FirstPAR,
+                                  AltMIN=min(Alt_points, na.rm=T), AltMAX=max(Alt_points, na.rm=T),
+                                  Buffer_km2=GBIF_BUFF_km2,
+                                  GBIF_crop=GBIF_cropPAR)
+  
   Storage_SP=eval(parse(text=paste0("Storage_SP_", sub(" ", "_", scientific_name))))
   Storage_SP$gbif_number_saved=eval(parse(text=paste0("gbif_number_saved_", sub(" ", "_", scientific_name))))
   EOO_km2 <- round(as.numeric(st_area(distSP))/1000000) # nolint
