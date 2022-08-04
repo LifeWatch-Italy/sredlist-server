@@ -294,24 +294,26 @@ function(scientific_name, Gbif_Year= -1, Gbif_Uncertainty=-1, Gbif_Extent=list()
   
   # Subset observations 
   dat_proj=sRL_SubsetGbif(flags, scientific_name)
-  
+
   # Extract altitude from GBIF points
   Alt_points=terra::extract(alt_raw, st_coordinates(dat_proj), method="simple", list=F)
-  
+
   # Create distribution
   distSP<-sRL_MapDistributionGBIF(dat_proj, scientific_name,
                                   First_step=FirstPAR,
-                                  AltMIN=min(Alt_points, na.rm=T), AltMAX=max(Alt_points, na.rm=T),
+                                  AltMIN=trunc(min(Alt_points$Elevation_reprojMollweide3, na.rm=T)), AltMAX=ceiling(max(Alt_points$Elevation_reprojMollweide3, na.rm=T)),
                                   Buffer_km2=GBIF_BUFF_km2,
                                   GBIF_crop=GBIF_cropPAR)
-  
+ 
+  # Store and calculate area
   Storage_SP=eval(parse(text=paste0("Storage_SP_", sub(" ", "_", scientific_name))))
   Storage_SP$gbif_number_saved=eval(parse(text=paste0("gbif_number_saved_", sub(" ", "_", scientific_name))))
   EOO_km2 <- round(as.numeric(st_area(distSP))/1000000) # nolint
   EOO_rating <- EOORating(EOO_km2) # nolint
-  
+
   # Plot distribution
   gbif_path <- sRL_saveMapDistribution(scientific_name, distSP, gbif_nb=Storage_SP$gbif_number_saved)
+
   pts_to_plot<-st_geometry(st_as_sf(flags[is.na(flags$Reason)==T,],coords = c("decimalLongitude", "decimalLatitude"), crs="+proj=longlat +datum=WGS84")) %>% st_transform(., st_crs(CRSMOLL))
   ggsave("eoo.png", plot(
     ggplot() + 
