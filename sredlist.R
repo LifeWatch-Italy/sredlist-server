@@ -198,28 +198,14 @@ function(scientific_name) {
 function(scientific_name) {return(list(Gbif_Sea = 0))}
 
 
-#* Global Biodiversity Information Facility
+
+#* Global Biodiversity Information Facility Step 1 
 #* @get species/<scientific_name>/gbif
 #* @param scientific_name:string Scientific Name
-#* @param Gbif_Year:int Gbif_Year
 #* @serializer unboxedJSON
 #* @tag sRedList
-function(scientific_name, Gbif_Year= -1, Gbif_Uncertainty=-1, Gbif_Extent=list(), Gbif_Sea=-1) {
+function(scientific_name) {
   
-  # Transform parameters GBIF filtering
-  print(Gbif_Year)
-  print(Gbif_Uncertainty)
-  print(Gbif_Extent)
-  
-  if(Gbif_Sea==1){
-    cleaningpar_GBIF<-c("capitals", "centroids", "equal", "gbif", "institutions", "zeros", "seas")} else {
-      cleaningpar_GBIF<-c("capitals", "centroids", "equal", "gbif", "institutions", "zeros")}
-
-  print(cleaningpar_GBIF)
-  
-  Gbif_Extent<-as.numeric(Gbif_Extent)
-
-  #GBIF STEP 1
   ### Clean-string from user
   scientific_name <- url_decode(scientific_name)
   scientific_name <- R.utils::capitalize(trim(gsub("[[:punct:]]", " ", scientific_name))) # nolint
@@ -236,7 +222,7 @@ function(scientific_name, Gbif_Year= -1, Gbif_Uncertainty=-1, Gbif_Extent=list()
       coord_fixed() +
       wm +
       geom_point(data = dat, aes(x = decimalLongitude, y = decimalLatitude), colour = "darkred", size = 0.5) +
-      theme_bw())) # nolint
+      theme_bw()), width=12, height=5.5) # nolint
   plot1 <- base64enc::dataURI(file = "plot_data.png", mime = "image/png")
   log_info("END - Create data")
   log_info("START - Clean coordinates")
@@ -254,72 +240,163 @@ function(scientific_name, Gbif_Year= -1, Gbif_Uncertainty=-1, Gbif_Extent=list()
                                  seas_ref=CountrySP_WGS %>% as_Spatial(.),
                                  tests = c("capitals", "centroids", "equal", "gbif", "institutions", "zeros", "seas"))
   
-  #GBIF STEP 2  
-  # Subset the observations user wants to keep (can be run several times if users play with parameters)
-  flags <- sRL_cleanDataGBIF(flags_raw, as.numeric(Gbif_Year), as.numeric(Gbif_Uncertainty), keepyearNA_GBIF, cleaningpar_GBIF, Gbif_Extent[1], Gbif_Extent[2], Gbif_Extent[3], Gbif_Extent[4])
+  # Assign
+  assign(paste0("Storage_SP_", sub(" ", "_", scientific_name)), list(flags_raw_saved=flags_raw, CountrySP_WGS_saved=CountrySP_WGS, Creation=Sys.time()), .GlobalEnv)
+  
+  
+  
+  return(list(
+    plot_data = plot1))
+  
+}
 
+
+
+#* Global Biodiversity Information Facility Step 2 
+#* @get species/<scientific_name>/gbif2
+#* @param scientific_name:string Scientific Name
+#* @param Gbif_Year:int Gbif_Year
+#* @param Gbif_Uncertainty:int Gbif_Uncertainty
+#* @param Gbif_Extent:[int] Gbif_Extent
+#* @param Gbif_Sea:int Gbif_Sea
+#* @serializer unboxedJSON
+#* @tag sRedList
+function(scientific_name, Gbif_Year= -1, Gbif_Uncertainty=-1, Gbif_Extent=list(), Gbif_Sea=-1) {
+  
+  # Transform parameters GBIF filtering
+  print(Gbif_Year)
+  print(Gbif_Uncertainty)
+  print(Gbif_Extent)
+  
+  Gbif_Extent<-as.numeric(Gbif_Extent)
+  
+  ### Clean-string from user
+  scientific_name <- url_decode(scientific_name)
+  
+  ### Charge downloaded data
+  Storage_SP<-sRL_reuse(scientific_name)
+  flags_raw<-Storage_SP$flags_raw_saved
+  CountrySP_WGS<-Storage_SP$CountrySP_WGS_saved
+  
+  ### Subset the observations user wants to keep (can be run several times if users play with parameters)
+  flags <- sRL_cleanDataGBIF(flags_raw, as.numeric(Gbif_Year), as.numeric(Gbif_Uncertainty), keepyearNA_GBIF, Gbif_Sea, Gbif_Extent[1], Gbif_Extent[2], Gbif_Extent[3], Gbif_Extent[4])
+  
+  ### Extract altitude from GBIF points
+  dat_proj=sRL_SubsetGbif(flags, scientific_name)
+  Alt_points=terra::extract(alt_raw, st_coordinates(dat_proj), method="simple", list=F)
+  
   # Plot
   ggsave("clean_coordinates.png", plot(
     
-    ### This is a static plot that works 
     ggplot()+
       coord_fixed()+
       geom_sf(data=CountrySP_WGS, fill="gray70")+
       geom_point(data = flags, aes(x = decimalLongitude, y = decimalLatitude, col=factor(is.na(Reason), c("FALSE", "TRUE"))), size = 1.3)+
       scale_colour_manual(values=c("#440154ff", "#fde725ff"), name="Valid observation", drop=F)+
       xlab("")+ylab("")+
-      theme_bw() %+replace%   theme(legend.position="bottom")
-    
-    ### This is an interactive plot that I'd like to include but I didn't manage to include on the platform
-    # flags$Valid<-paste(revalue(as.character(is.na(flags$Reason)), c("TRUE"="Valid observation", "FALSE"="Invalid observation")), "\n Gbif_ID: ", flags$gbifID, '\n Year:', flags$year) ; flags$Valid[is.na(flags$Reason)==F]<-paste0(flags$Valid[is.na(flags$Reason)==F], '\n Reason_flagged:', flags$Reason[is.na(flags$Reason)==F])
-    # 
-    # ggplotly(
-    #   ggplot()+
-    #     coord_fixed()+
-    #     geom_sf(data=sf::st_cast(CountrySP_WGS, "MULTIPOLYGON"), fill="#999999ff")+
-    #     geom_point(data = flags, aes(x = decimalLongitude, y = decimalLatitude, col=factor(is.na(Reason), c("FALSE", "TRUE")), label=Valid), size = 1.3)+
-    #     scale_colour_manual(values=c("#440154ff", "#fde725ff"), name="Valid observation", drop=F)+
-    #     xlab("")+ylab("")+
-    #     theme_bw() %+replace%   theme(legend.position="bottom"),
-    #   tooltip="label"
-    # )
-    
+      theme_bw() %+replace%   theme(legend.position="bottom")+
+      labs(subtitle=paste0("Elevation of GBIF data range from ", trunc(min(Alt_points, na.rm=T)), " to ", ceiling(max(Alt_points, na.rm=T)), "m.")) 
   ))
   plot2 <- base64enc::dataURI(file = "clean_coordinates.png", mime = "image/png") # nolint
   log_info("END - Clean coordinates")
   
+  file.remove("plot_data.png")
+  file.remove("clean_coordinates.png")
+  
+  # Assign
+  Storage_SP$dat_proj_saved<-dat_proj
+  assign(paste0("Storage_SP_", sub(" ", "_", scientific_name)), Storage_SP, .GlobalEnv)
+  
+  
+  return(list(
+    plot_clean_coordinates = plot2
+  ))
+  
+}
+
+
+
+
+
+#* GBIF start
+#* @get species/<scientific_name>/gbif-start
+#* @param scientific_name:string Scientific Name
+#* @serializer json
+#* @tag sRedList
+function(scientific_name) {return(list(Gbif_Start = 0))}
+
+#* GBIF buffer
+#* @get species/<scientific_name>/gbif-buffer
+#* @param scientific_name:string Scientific Name
+#* @serializer json
+#* @tag sRedList
+function(scientific_name) {return(list(Gbif_Buffer = 0))}
+
+#* GBIF Altitude
+#* @get species/<scientific_name>/gbif-altitude
+#* @param scientific_name:[string] Scientific Name
+#* @serializer json
+#* @tag sRedList
+function(scientific_name) {
+  Gbif_Altitude = data.frame(AltMIN=0, AltMAX=4000)
+  return(Gbif_Altitude)}
+
+#* GBIF crop
+#* @get species/<scientific_name>/gbif-crop
+#* @param scientific_name:string Scientific Name
+#* @serializer json
+#* @tag sRedList
+function(scientific_name) {return(list(Gbif_Crop = 0))}
+
+
+#* Global Biodiversity Information Facility
+#* @get species/<scientific_name>/gbif3
+#* @param scientific_name:string Scientific Name
+#* @param Gbif_Start:int Gbif_Start
+#* @param Gbif_Buffer:int Gbif_Buffer
+#* @param Gbif_Altitude:[int] Gbif_Start
+#* @param Gbif_Crop:int Gbif_Crop
+#* @serializer unboxedJSON
+#* @tag sRedList
+function(scientific_name, Gbif_Start=-1, Gbif_Buffer=-1, Gbif_Altitude=list(), Gbif_Crop=-1) {
+  
+  # Transform parameters GBIF filtering
+  scientific_name <- url_decode(scientific_name)
+  Gbif_Start<-revalue(as.character(Gbif_Start), c("0"="EOO", "1"="Kernel", "2"="Hydrobasins"))
+  Gbif_Crop<-revalue(as.character(Gbif_Crop), c("0"="0", "1"="Land", "2"="Sea"))
+  print(Gbif_Start)
+  print(Gbif_Buffer)
+  print(Gbif_Altitude)
+  print(Gbif_Crop)
   
   #GBIF STEP 3: Map distribution from GBIF
   log_info("START - Maps the distribution")
   
-  # Subset observations 
-  dat_proj=sRL_SubsetGbif(flags, scientific_name)
-
-  # Extract altitude from GBIF points
-  Alt_points=terra::extract(alt_raw, st_coordinates(dat_proj), method="simple", list=F)
-
+  # Get back GBIF observations
+  Storage_SP=sRL_reuse(scientific_name)
+  dat_proj=Storage_SP$dat_proj_saved
+  
+  
   # Create distribution
   distSP<-sRL_MapDistributionGBIF(dat_proj, scientific_name,
-                                  First_step=FirstPAR,
-                                  AltMIN=trunc(min(Alt_points$Elevation_reprojMollweide3, na.rm=T)), AltMAX=ceiling(max(Alt_points$Elevation_reprojMollweide3, na.rm=T)),
-                                  Buffer_km2=GBIF_BUFF_km2,
-                                  GBIF_crop=GBIF_cropPAR)
- 
+                                  First_step=Gbif_Start,
+                                  AltMIN=as.numeric(Gbif_Altitude[1]), AltMAX=as.numeric(Gbif_Altitude[2]),
+                                  Buffer_km2=as.numeric(Gbif_Buffer),
+                                  GBIF_crop=Gbif_Crop)
+  
   # Store and calculate area
-  Storage_SP=eval(parse(text=paste0("Storage_SP_", sub(" ", "_", scientific_name))))
   Storage_SP$gbif_number_saved=eval(parse(text=paste0("gbif_number_saved_", sub(" ", "_", scientific_name))))
   EOO_km2 <- round(as.numeric(st_area(distSP))/1000000) # nolint
   EOO_rating <- EOORating(EOO_km2) # nolint
-
+  
   # Plot distribution
   gbif_path <- sRL_saveMapDistribution(scientific_name, distSP, gbif_nb=Storage_SP$gbif_number_saved)
-
-  pts_to_plot<-st_geometry(st_as_sf(flags[is.na(flags$Reason)==T,],coords = c("decimalLongitude", "decimalLatitude"), crs="+proj=longlat +datum=WGS84")) %>% st_transform(., st_crs(CRSMOLL))
+  
   ggsave("eoo.png", plot(
     ggplot() + 
-      geom_sf(data=Storage_SP$CountrySP_saved, fill="gray70")+
+      geom_sf(data=sRL_reuse(scientific_name)$CountrySP_saved, fill="gray70")+
       geom_sf(data = distSP, fill="darkred") + 
-      geom_sf(data=pts_to_plot)+
+      geom_sf(data=dat_proj)+
       ggtitle("")+
       theme_bw()
   )) # nolint
@@ -335,8 +412,6 @@ function(scientific_name, Gbif_Year= -1, Gbif_Uncertainty=-1, Gbif_Extent=list()
   file.remove("clean_coordinates.png")
   file.remove("eoo.png")
   return(list(
-    plot_data = plot1,
-    plot_clean_coordinates = plot2,
     eoo_km2 = EOO_km2,
     eoo_rating = EOO_rating,
     plot_eoo = plot3,
@@ -345,6 +420,10 @@ function(scientific_name, Gbif_Year= -1, Gbif_Uncertainty=-1, Gbif_Extent=list()
   ))
   
 }
+
+
+
+
 
 
 

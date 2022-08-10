@@ -30,17 +30,13 @@ sRL_createDataGBIF <- function(scientific_name, LIM_GBIF) { # nolint
 
 
 ### Function that subsets the observations to flag
-sRL_cleanDataGBIF <- function(flags, year_GBIF, uncertainty_GBIF, keepyearNA_GBIF, cleaningpar_GBIF, GBIF_xmin, GBIF_xmax, GBIF_ymin, GBIF_ymax) { # nolint
+sRL_cleanDataGBIF <- function(flags, year_GBIF, uncertainty_GBIF, keepyearNA_GBIF, sea_GBIF, GBIF_xmin, GBIF_xmax, GBIF_ymin, GBIF_ymax) { # nolint
 
-  ### Keep only columns of CleanCoordinate parameters I want to keep
-  if("capitals" %not in% cleaningpar_GBIF){flags$.cap<-NULL}
-  if("centroids" %not in% cleaningpar_GBIF){flags$.cen<-NULL}
-  if("equal" %not in% cleaningpar_GBIF){flags$.equ<-NULL}
-  if("gbif" %not in% cleaningpar_GBIF){flags$.gbf<-NULL}
-  if("institutions" %not in% cleaningpar_GBIF){flags$.inst<-NULL}
-  if("zeros" %not in% cleaningpar_GBIF){flags$.zer<-NULL}
-  if("seas" %not in% cleaningpar_GBIF){flags$.sea<-NULL}
   flags$.summary<-NULL
+  
+  ### Change flagging for sea
+  if(sea_GBIF==0){flags$.sea<-NULL} # If Sea=0, we should not select data based on sea
+  if(sea_GBIF==2){flags$.sea<-revalue(as.character(flags$.sea), c("TRUE"="FALSE", "FALSE"="TRUE"))} %>% as.factor(.) # If Sea=2, we keep only seas (so we flag land)
   
   ### Add flagging for year and uncertainty
   flags$.year <- flags$year > year_GBIF
@@ -136,6 +132,7 @@ sRL_MapDistributionGBIF<-function(dat, scientific_name, First_step, AltMIN, AltM
   distGBIF<-distGBIF %>% dplyr::group_by(binomial) %>% dplyr::summarise(N = n())
   
   ### Apply crop by altitude
+  if(AltMIN>0 | AltMAX<9000){
   mcp.spatial <- as_Spatial(distGBIF)
   sp.mcp.terra <- terra::vect(distGBIF)
   
@@ -154,15 +151,17 @@ sRL_MapDistributionGBIF<-function(dat, scientific_name, First_step, AltMIN, AltM
   sp.range[sp.range == 0] <- NA
   
   distGBIF <- as.polygons(sp.range) %>% st_as_sf(.)
-  
+  }
   
   ### Smooth the borders
-  distGBIF<-smooth(distGBIF, method = "ksmooth", smoothness=3, max_distance=10000)
+  #distGBIF<-smooth(distGBIF, method = "ksmooth", smoothness=3, max_distance=10000)
   
   
-  ### Restrict CountrySP in case the altitude reduced it a lot, and create Storage_SP
+  ### Restrict CountrySP in case the altitude reduced it a lot, and store in Storage_SP
   CountrySP<-st_crop(CountrySP, distGBIF)
-  assign(paste0("Storage_SP_", sub(" ", "_", scientific_name)), list(CountrySP_saved=CountrySP, Creation=Sys.time()), .GlobalEnv)
+  Storage_SP=sRL_reuse(scientific_name)
+  Storage_SP$CountrySP_saved<-CountrySP
+  assign(paste0("Storage_SP_", sub(" ", "_", scientific_name)), Storage_SP, .GlobalEnv)
   
   
   ### Prepare to export

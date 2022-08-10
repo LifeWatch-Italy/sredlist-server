@@ -7,9 +7,6 @@
 ##################################################
 
 keepyearNA_GBIF<-T
-GBIF_BUFF_km2<-0
-GBIF_cropPAR<-"Land" # Could be Land or Sea or could be empty
-FirstPAR="EOO"
 
 
 
