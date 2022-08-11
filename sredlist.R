@@ -211,19 +211,22 @@ function(scientific_name) {
   scientific_name <- R.utils::capitalize(trim(gsub("[[:punct:]]", " ", scientific_name))) # nolint
   print(scientific_name)
   
+  ### Create storage folder if it does not exist
+  dir.create(paste0("resources/AOH_stored/", sub(" ", "_", scientific_name), "/Plots"), recursive=T)
+  
   ### GBIF procedure 
   log_info("START - Create data")
   dat <- sRL_createDataGBIF(scientific_name, LIM_GBIF)
   
   # ### Plot
   wm <- borders("world", colour = "gray70", fill = "gray70")
-  ggsave("plot_data.png", plot(
+  ggsave(paste0("resources/AOH_stored/", sub(" ", "_", scientific_name), "/Plots/plot_data.png"), plot(
     ggplot() +
       coord_fixed() +
       wm +
       geom_point(data = dat, aes(x = decimalLongitude, y = decimalLatitude), colour = "darkred", size = 0.5) +
       theme_bw()), width=18, height=5.5) # nolint
-  plot1 <- base64enc::dataURI(file = "plot_data.png", mime = "image/png")
+  plot1 <- base64enc::dataURI(file = paste0("resources/AOH_stored/", sub(" ", "_", scientific_name), "/Plots/plot_data.png"), mime = "image/png")
   log_info("END - Create data")
   log_info("START - Clean coordinates")
   
@@ -251,8 +254,6 @@ function(scientific_name) {
   
   # Assign
   assign(paste0("Storage_SP_", sub(" ", "_", scientific_name)), list(flags_raw_saved=flags_raw, CountrySP_WGS_saved=CountrySP_WGS, Creation=Sys.time()), .GlobalEnv)
-  
-  
   
   return(list(
     plot_data = plot1))
@@ -292,7 +293,7 @@ function(scientific_name, Gbif_Year= -1, Gbif_Uncertainty=-1, Gbif_Extent=list()
   dat_proj=sRL_SubsetGbif(flags, scientific_name)
   
   # Plot
-  ggsave("clean_coordinates.png", 
+  ggsave(paste0("resources/AOH_stored/", sub(" ", "_", scientific_name), "/Plots/clean_coordinates.png"), 
     
     grid.arrange(
     ggplot()+
@@ -311,11 +312,8 @@ function(scientific_name, Gbif_Year= -1, Gbif_Uncertainty=-1, Gbif_Extent=list()
       theme_minimal()
       
       , layout_matrix=matrix(c(1,1,3,1,1,2,1,1,3), ncol=3, byrow=T)), width=18, height=5.5)
-  plot2 <- base64enc::dataURI(file = "clean_coordinates.png", mime = "image/png") # nolint
+  plot2 <- base64enc::dataURI(file = paste0("resources/AOH_stored/", sub(" ", "_", scientific_name), "/Plots/clean_coordinates.png"), mime = "image/png") # nolint
   log_info("END - Clean coordinates")
-  
-  file.remove("plot_data.png")
-  file.remove("clean_coordinates.png")
   
   # Assign
   Storage_SP$dat_proj_saved<-dat_proj
@@ -363,7 +361,7 @@ function(scientific_name) {
 function(scientific_name) {return(list(Gbif_Crop = 0))}
 
 
-#* Global Biodiversity Information Facility
+#* Global Biodiversity Information Facility step 3
 #* @get species/<scientific_name>/gbif3
 #* @param scientific_name:string Scientific Name
 #* @param Gbif_Start:int Gbif_Start
@@ -407,7 +405,7 @@ function(scientific_name, Gbif_Start=-1, Gbif_Buffer=-1, Gbif_Altitude=list(), G
   gbif_path <- sRL_saveMapDistribution(scientific_name, distSP, gbif_nb=Storage_SP$gbif_number_saved)
   Storage_SP$CountrySP_saved<-sRL_reuse(scientific_name)$CountrySP_saved
   
-  ggsave("eoo.png", plot(
+  ggsave(paste0("resources/AOH_stored/", sub(" ", "_", scientific_name), "/Plots/eoo.png"), plot(
     ggplot() + 
       geom_sf(data=Storage_SP$CountrySP_saved, fill="gray70")+
       geom_sf(data = distSP, fill="darkred") + 
@@ -415,17 +413,13 @@ function(scientific_name, Gbif_Start=-1, Gbif_Buffer=-1, Gbif_Altitude=list(), G
       ggtitle("")+
       theme_bw()
   ), width=18, height=5.5) # nolint
-  plot3 <- base64enc::dataURI(file = "eoo.png", mime = "image/png") # nolint
+  plot3 <- base64enc::dataURI(file = paste0("resources/AOH_stored/", sub(" ", "_", scientific_name), "/Plots/eoo.png"), mime = "image/png") # nolint
   log_info("END - Maps the distribution")
   
   # Keep distribution in memory
   Storage_SP$distSP3_saved=distSP
   assign(paste0("Storage_SP_", sub(" ", "_", scientific_name)), Storage_SP, .GlobalEnv)
   
-  
-  file.remove("plot_data.png")
-  file.remove("clean_coordinates.png")
-  file.remove("eoo.png")
   return(list(
     plot_eoo = plot3,
     gbif_data_number  = as.numeric(Storage_SP$gbif_number_saved),
@@ -465,7 +459,7 @@ function(scientific_name, Gbif_Smooth=-1) {
   assign(paste0("Storage_SP_", sub(" ", "_", scientific_name)), Storage_SP, .GlobalEnv)
   
   # Plot
-  ggsave("plot_final.png", plot(
+  ggsave(paste0("resources/AOH_stored/", sub(" ", "_", scientific_name), "/Plots/plot_final.png"), plot(
     ggplot() + 
       geom_sf(data=Storage_SP$CountrySP_saved, fill="gray70")+
       geom_sf(data = distSP, fill="darkred") + 
@@ -473,14 +467,9 @@ function(scientific_name, Gbif_Smooth=-1) {
       ggtitle("")+
       theme_bw()
   ), width=18, height=5.5) # nolint
-  plot_final <- base64enc::dataURI(file = "plot_final.png", mime = "image/png") # nolint
+  plot_final <- base64enc::dataURI(file = paste0("resources/AOH_stored/", sub(" ", "_", scientific_name), "/Plots/plot_final.png"), mime = "image/png") # nolint
   
-  file.remove("plot_data.png")
-  file.remove("clean_coordinates.png")
-  file.remove("eoo.png")
-  file.remove("plot_final.png")
-  
-  return(list(
+ return(list(
     plot_eoo = plot_final,
     eoo_km2 = 1, # eoo_km2 parameter is used in the client to know if we come from GBIF or RL distribution, so I have to keep it here or to change the client
     eoo_rating = 1
@@ -512,10 +501,13 @@ function(scientific_name, presences = list(), seasons = list() , origins = list(
   # Load distribution
   distSP<-Storage_SP$distSP_saved
   
+  # Create storage directory if it does not exist
+  dir.create(paste0("resources/AOH_stored/", sub(" ", "_", scientific_name), "/Plots"), recursive=T)
+  
   ### Plot EOO
   log_info("START - Plot EOO")
   EOO <- st_as_sf(st_convex_hull(st_union(distSP))) ## Needed to avoid having different sub-polygons
-  ggsave(paste0(scientific_name, ".png"), plot(
+  ggsave(paste0("resources/AOH_stored/", sub(" ", "_", scientific_name), "/Plots/plot_eoo.png"), plot(
     ggplot() + 
       geom_sf(data=EOO, fill="#ef3b2c", col=NA) + 
       geom_sf(data=distSP, fill="#fcbba1", col=NA) + 
@@ -523,10 +515,9 @@ function(scientific_name, presences = list(), seasons = list() , origins = list(
       ggtitle(paste0("EOO of ", scientific_name))) +
       theme_bw()
   ) # nolint
-  plot3 <- base64enc::dataURI(file = paste0(scientific_name, ".png"), mime = "image/png") # nolint
+  plot3 <- base64enc::dataURI(file = paste0("resources/AOH_stored/", sub(" ", "_", scientific_name), "/Plots/plot_eoo.png"), mime = "image/png") # nolint
   log_info("END - Plot EOO")
-  file.remove(paste0(scientific_name, ".png"))
-  
+
   ### Calculate EOO area
   EOO_km2 <- round(as.numeric(st_area(EOO))/1000000)
   
@@ -672,10 +663,9 @@ function(scientific_name, habitats_pref= list(), altitudes_pref= list(), density
     ggtitle("Area of Habitat in 2020") +
     theme_void() %+replace%   theme(plot.title=element_text(hjust=0.5, size=14, face="bold"))
   
-  ggsave(filename = "aoh.png", plot = plot(plot1))
+  ggsave(filename = paste0("resources/AOH_stored/", sub(" ", "_", scientific_name), "/Plots/aoh.png"), plot = plot(plot1))
   
-  plot1 <- base64enc::dataURI(file = "aoh.png", mime = "image/png", encoding = "base64") # nolint
-  file.remove("aoh.png")
+  plot1 <- base64enc::dataURI(file = paste0("resources/AOH_stored/", sub(" ", "_", scientific_name), "/Plots/aoh.png"), mime = "image/png", encoding = "base64") # nolint
   log_info("END - Plot AOH")
   
   AOH_km2 <-  sRL_areaAOH(AOH2[[1]], SCALE="cci")
@@ -694,9 +684,8 @@ function(scientific_name, habitats_pref= list(), altitudes_pref= list(), density
     theme_void() %+replace%   theme(plot.title=element_text(hjust=0.5, size=14, face="bold"))
   
   
-  ggsave(filename = "aoo.png", plot = plot(plot2))
-  plot2 <- base64enc::dataURI(file = "aoo.png", mime = "image/png", encoding = "base64") # nolint
-  file.remove("aoo.png")
+  ggsave(filename = paste0("resources/AOH_stored/", sub(" ", "_", scientific_name), "/Plots/aoo.png"), plot = plot(plot2))
+  plot2 <- base64enc::dataURI(file = paste0("resources/AOH_stored/", sub(" ", "_", scientific_name), "/Plots/aoo.png"), mime = "image/png", encoding = "base64") # nolint
 
   AOO_km2<- sRL_areaAOH(aoh_22[[1]], SCALE="2x2")
   
@@ -799,9 +788,8 @@ function(scientific_name, GL_species=1) { # nolint
     ggtitle(paste0("Trends in Area of Habitat between ", Year1, " and ", config$YearAOH2))+
     theme_void() %+replace%   theme(plot.title=element_text(hjust=0.5, size=14, face="bold"))
   
-  ggsave(filename = "trends-aoh.png", plot = plot(plot1))
-  plot1 <- base64enc::dataURI(file = "trends-aoh.png", mime = "image/png", encoding = "base64") # nolint
-  file.remove("trends-aoh.png")
+  ggsave(filename = paste0("resources/AOH_stored/", sub(" ", "_", scientific_name), "/Plots/trends_aoh.png"), plot = plot(plot1))
+  plot1 <- base64enc::dataURI(file = paste0("resources/AOH_stored/", sub(" ", "_", scientific_name), "/Plots/trends_aoh.png"), mime = "image/png", encoding = "base64") # nolint
   
   Storage_SP$GL_saved<-GL_species
   Storage_SP$aoh_lost_saved=round(as.numeric(AOH_lost)*100)

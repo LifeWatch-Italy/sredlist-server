@@ -153,9 +153,7 @@ sRL_MapDistributionGBIF<-function(dat, scientific_name, First_step, AltMIN, AltM
   distGBIF <- as.polygons(sp.range) %>% st_as_sf(.)
   }
   
-  ### Smooth the borders
-  
-  
+
   ### Restrict CountrySP in case the altitude reduced it a lot, and store in Storage_SP
   Storage_SP=sRL_reuse(scientific_name)
   Storage_SP$CountrySP_saved<-CountrySP
