@@ -419,7 +419,7 @@ function(scientific_name, Gbif_Start=-1, Gbif_Buffer=-1, Gbif_Altitude=list(), G
   log_info("END - Maps the distribution")
   
   # Keep distribution in memory
-  Storage_SP$distSP_saved=distSP
+  Storage_SP$distSP3_saved=distSP
   assign(paste0("Storage_SP_", sub(" ", "_", scientific_name)), Storage_SP, .GlobalEnv)
   
   
@@ -427,8 +427,6 @@ function(scientific_name, Gbif_Start=-1, Gbif_Buffer=-1, Gbif_Altitude=list(), G
   file.remove("clean_coordinates.png")
   file.remove("eoo.png")
   return(list(
-    eoo_km2 = EOO_km2,
-    eoo_rating = EOO_rating,
     plot_eoo = plot3,
     gbif_data_number  = as.numeric(Storage_SP$gbif_number_saved),
     gbif_path = gbif_path
@@ -436,7 +434,59 @@ function(scientific_name, Gbif_Start=-1, Gbif_Buffer=-1, Gbif_Altitude=list(), G
   
 }
 
+#* GBIF smooth
+#* @get species/<scientific_name>/gbif-smooth
+#* @param scientific_name:string Scientific Name
+#* @serializer json
+#* @tag sRedList
+function(scientific_name) {return(list(Gbif_Smooth = 3))}
 
+#* Global Biodiversity Information Facility 4 (smooth)
+#* @get species/<scientific_name>/gbif4
+#* @param scientific_name:string Scientific Name
+#* @param Gbif_Smooth:num Gbif_Smooth
+#* @serializer unboxedJSON
+#* @tag sRedList
+function(scientific_name, Gbif_Smooth=-1) {
+  
+  # Transform parameters GBIF filtering
+  scientific_name <- url_decode(scientific_name)
+  Storage_SP=sRL_reuse(scientific_name)
+  
+  # Smooth if parameter >0
+  Gbif_Smooth=as.numeric(Gbif_Smooth) ; print(Gbif_Smooth)
+  if(Gbif_Smooth>0){
+  distSP<-smooth(Storage_SP$distSP3_saved, method = "ksmooth", smoothness=Gbif_Smooth, max_distance=10000)} else{
+    distSP<-Storage_SP$distSP3_saved
+  }
+  
+  # Keep distribution in memory
+  Storage_SP$distSP_saved=distSP
+  assign(paste0("Storage_SP_", sub(" ", "_", scientific_name)), Storage_SP, .GlobalEnv)
+  
+  # Plot
+  ggsave("plot_final.png", plot(
+    ggplot() + 
+      geom_sf(data=Storage_SP$CountrySP_saved, fill="gray70")+
+      geom_sf(data = distSP, fill="darkred") + 
+      geom_sf(data=dat_proj)+
+      ggtitle("")+
+      theme_bw()
+  ), width=18, height=5.5) # nolint
+  plot_final <- base64enc::dataURI(file = "plot_final.png", mime = "image/png") # nolint
+  
+  file.remove("plot_data.png")
+  file.remove("clean_coordinates.png")
+  file.remove("eoo.png")
+  file.remove("plot_final.png")
+  
+  return(list(
+    plot_eoo = plot_final,
+    eoo_km2 = 1, # eoo_km2 parameter is used in the client to know if we come from GBIF or RL distribution, so I have to keep it here or to change the client
+    eoo_rating = 1
+  ))
+  
+}
 
 
 

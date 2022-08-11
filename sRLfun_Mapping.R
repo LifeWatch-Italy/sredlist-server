@@ -154,7 +154,6 @@ sRL_MapDistributionGBIF<-function(dat, scientific_name, First_step, AltMIN, AltM
   }
   
   ### Smooth the borders
-  #distGBIF<-smooth(distGBIF, method = "ksmooth", smoothness=3, max_distance=10000)
   
   
   ### Restrict CountrySP in case the altitude reduced it a lot, and store in Storage_SP
