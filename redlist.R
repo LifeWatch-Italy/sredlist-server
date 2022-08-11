@@ -102,17 +102,31 @@ function(scientific_name) {
 #* @serializer unboxedJSON
 #* @tag RedList
 function(scientific_name) {
+  log_info("START - Altitude extract")
+
   #Filter param
   scientific_name <- url_decode(scientific_name)
   Storage_SP=sRL_reuse(scientific_name)
+
   #Extract alt_pref
-  alt_pref <- rl_search(scientific_name, key = config$red_list_token)#$result
-    # If species in the RL but no altitude preference, take from raster
+  if(scientific_name %in% speciesRL$scientific_name){
+  alt_pref <- rl_search(scientific_name, key = config$red_list_token)} else {
+    alt_pref<-list(name=scientific_name, result=sRL_PrepareAltitudeFile(scientific_name, altitudes_pref=c(NA,NA)))
+  }
+
+  # If no altitude preference, take from raster
   if(is.na(alt_pref$result$elevation_lower+alt_pref$result$elevation_upper)){
     EXTR<-round(exactextractr::exact_extract(alt_raw, Storage_SP$distSP_saved, c("min", "max")))
-    alt_pref$result$elevation_lower<-min(EXTR$min)
-    alt_pref$result$elevation_upper<-max(EXTR$max)}
+    if(is.na(alt_pref$result$elevation_lower)==T){alt_pref$result$elevation_lower<-min(EXTR$min, na.rm=T)}
+    if(is.na(alt_pref$result$elevation_upper)==T){alt_pref$result$elevation_upper<-max(EXTR$max, na.rm=T)}
+  }
+
+  # If something remains NA -> 0, 9000
+  if(is.na(alt_pref$result$elevation_lower)==T){alt_pref$result$elevation_lower<-0}
+  if(is.na(alt_pref$result$elevation_upper)==T){alt_pref$result$elevation_upper<-9000}
   
+  log_info("END - Altitude extract")
+  print(alt_pref)
   return(alt_pref)
 }
 

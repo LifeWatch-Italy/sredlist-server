@@ -398,9 +398,7 @@ function(scientific_name, Gbif_Start=-1, Gbif_Buffer=-1, Gbif_Altitude=list(), G
   
   # Store and calculate area
   Storage_SP$gbif_number_saved=eval(parse(text=paste0("gbif_number_saved_", sub(" ", "_", scientific_name))))
-  EOO_km2 <- round(as.numeric(st_area(distSP))/1000000) # nolint
-  EOO_rating <- EOORating(EOO_km2) # nolint
-  
+
   # Plot distribution
   gbif_path <- sRL_saveMapDistribution(scientific_name, distSP, gbif_nb=Storage_SP$gbif_number_saved)
   Storage_SP$CountrySP_saved<-sRL_reuse(scientific_name)$CountrySP_saved
@@ -600,7 +598,7 @@ function(scientific_name, habitats_pref= list(), altitudes_pref= list(), density
   Storage_SP$habitats_SIS=habitats_pref_DF
 
   # Altitude table (for aoh analysis and for SIS Connect)
-  if(length(altitudes_pref)==0){altitudes_pref<-c(0,9000)} # If users don't click on the altitude preferences when it's 0-9000, it sometimes returns empty list
+  if(length(altitudes_pref)==0){altitudes_pref<-c(0,9000)}
   altitudes_pref_DF<-sRL_PrepareAltitudeFile(scientific_name, altitudes_pref)
   Storage_SP$AltPref_saved=altitudes_pref_DF
   density_pref <- as.numeric(density_pref)
