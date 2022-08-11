@@ -114,7 +114,7 @@ sRL_MapDistributionGBIF<-function(dat, scientific_name, First_step, AltMIN, AltM
   
   ### Apply crop by land/sea
   # Create countries map based on the buffer
-  CountrySP<-st_crop(distCountries_notsimplif, extent(distGBIF))
+  CountrySP<-st_crop(distCountries_notsimplif, 1.1*extent(distGBIF))
   
   distGBIF$binomial=scientific_name
   
@@ -158,7 +158,6 @@ sRL_MapDistributionGBIF<-function(dat, scientific_name, First_step, AltMIN, AltM
   
   
   ### Restrict CountrySP in case the altitude reduced it a lot, and store in Storage_SP
-  CountrySP<-st_crop(CountrySP, distGBIF)
   Storage_SP=sRL_reuse(scientific_name)
   Storage_SP$CountrySP_saved<-CountrySP
   assign(paste0("Storage_SP_", sub(" ", "_", scientific_name)), Storage_SP, .GlobalEnv)

@@ -405,15 +405,16 @@ function(scientific_name, Gbif_Start=-1, Gbif_Buffer=-1, Gbif_Altitude=list(), G
   
   # Plot distribution
   gbif_path <- sRL_saveMapDistribution(scientific_name, distSP, gbif_nb=Storage_SP$gbif_number_saved)
+  Storage_SP$CountrySP_saved<-sRL_reuse(scientific_name)$CountrySP_saved
   
   ggsave("eoo.png", plot(
     ggplot() + 
-      geom_sf(data=sRL_reuse(scientific_name)$CountrySP_saved, fill="gray70")+
+      geom_sf(data=Storage_SP$CountrySP_saved, fill="gray70")+
       geom_sf(data = distSP, fill="darkred") + 
       geom_sf(data=dat_proj)+
       ggtitle("")+
       theme_bw()
-  )) # nolint
+  ), width=18, height=5.5) # nolint
   plot3 <- base64enc::dataURI(file = "eoo.png", mime = "image/png") # nolint
   log_info("END - Maps the distribution")
   
