@@ -222,7 +222,7 @@ function(scientific_name) {
       coord_fixed() +
       wm +
       geom_point(data = dat, aes(x = decimalLongitude, y = decimalLatitude), colour = "darkred", size = 0.5) +
-      theme_bw()), width=12, height=5.5) # nolint
+      theme_bw()), width=18, height=5.5) # nolint
   plot1 <- base64enc::dataURI(file = "plot_data.png", mime = "image/png")
   log_info("END - Create data")
   log_info("START - Clean coordinates")
@@ -239,6 +239,15 @@ function(scientific_name) {
                                  species = "species",
                                  seas_ref=CountrySP_WGS %>% as_Spatial(.),
                                  tests = c("capitals", "centroids", "equal", "gbif", "institutions", "zeros", "seas"))
+  # Extract elevation (need to transform the CRS for it)
+  log_info("START - Extracting elevation values")  
+  flags_foralt<-st_geometry(st_as_sf(flags_raw,coords = c("decimalLongitude", "decimalLatitude"), crs="+proj=longlat +datum=WGS84")) %>%
+    st_transform(., st_crs(CRSMOLL)) %>%
+    st_as_sf(.)
+
+  flags_raw$Alt_points=terra::extract(alt_raw, st_coordinates(flags_foralt), method="simple", list=F)$Elevation_reprojMollweide3
+  log_info("END - Extracting elevation values")  
+  
   
   # Assign
   assign(paste0("Storage_SP_", sub(" ", "_", scientific_name)), list(flags_raw_saved=flags_raw, CountrySP_WGS_saved=CountrySP_WGS, Creation=Sys.time()), .GlobalEnv)
@@ -280,23 +289,28 @@ function(scientific_name, Gbif_Year= -1, Gbif_Uncertainty=-1, Gbif_Extent=list()
   
   ### Subset the observations user wants to keep (can be run several times if users play with parameters)
   flags <- sRL_cleanDataGBIF(flags_raw, as.numeric(Gbif_Year), as.numeric(Gbif_Uncertainty), keepyearNA_GBIF, Gbif_Sea, Gbif_Extent[1], Gbif_Extent[2], Gbif_Extent[3], Gbif_Extent[4])
-  
-  ### Extract altitude from GBIF points
   dat_proj=sRL_SubsetGbif(flags, scientific_name)
-  Alt_points=terra::extract(alt_raw, st_coordinates(dat_proj), method="simple", list=F)
   
   # Plot
-  ggsave("clean_coordinates.png", plot(
+  ggsave("clean_coordinates.png", 
     
+    grid.arrange(
     ggplot()+
       coord_fixed()+
       geom_sf(data=CountrySP_WGS, fill="gray70")+
       geom_point(data = flags, aes(x = decimalLongitude, y = decimalLatitude, col=factor(is.na(Reason), c("FALSE", "TRUE"))), size = 1.3)+
       scale_colour_manual(values=c("#440154ff", "#fde725ff"), name="Valid observation", drop=F)+
       xlab("")+ylab("")+
-      theme_bw() %+replace%   theme(legend.position="bottom")+
-      labs(subtitle=paste0("Elevation of GBIF data range from ", trunc(min(Alt_points, na.rm=T)), " to ", ceiling(max(Alt_points, na.rm=T)), "m.")) 
-  ))
+      theme_bw() %+replace%   theme(legend.position="bottom"), 
+                           
+    ggplot(flags[is.na(flags$Reason)==T,])+
+      geom_histogram(aes(x=Alt_points))+
+      ggtitle("Elevation of valid observations")+
+      xlab("Elevation (m)")+ylab("N")+
+      labs(subtitle=paste0("Elevation ranges from ", trunc(min(flags$Alt_points[is.na(flags$Reason)==T], na.rm=T)), " to ", ceiling(max(flags$Alt_points[is.na(flags$Reason)==T], na.rm=T))))+
+      theme_minimal()
+      
+      , layout_matrix=matrix(c(1,1,3,1,1,2,1,1,3), ncol=3, byrow=T)), width=18, height=5.5)
   plot2 <- base64enc::dataURI(file = "clean_coordinates.png", mime = "image/png") # nolint
   log_info("END - Clean coordinates")
   

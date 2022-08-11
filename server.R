@@ -24,7 +24,7 @@ library(logger)
 library(glue)
 library(urltools)
 library(R.utils)
-library(Rook) ; library(ggplot2) ; library(raster) ; library(plyr) ;library(dplyr) ; library(sf) ; library(rgdal) ;  library(ncdf4) ; library(ggalluvial) ; library(rredlist) ;  library(tools) # nolint
+library(Rook) ; library(ggplot2) ; library(gridExtra) ; library(raster) ; library(plyr) ;library(dplyr) ; library(sf) ; library(rgdal) ;  library(ncdf4) ; library(ggalluvial) ; library(rredlist) ;  library(tools) # nolint
 
 ### GBIF mapping
 library(rgbif) ; library(CoordinateCleaner) ; library(rCAT) ; library(maps) ; library(countrycode); library(rnaturalearthdata); # nolint
@@ -105,7 +105,7 @@ if(config$crosswalk == "Santini"){crosswalk_to_use<- crosswalk[is.na(crosswalk$e
 if(config$crosswalk == "Lumbierres"){crosswalk_to_use<- read.csv("Species/Crosswalk_CCI_IUCN_Lumbierres.csv") ; crosswalk_to_use$code<-as.character(crosswalk_to_use$code)}
 
 # Load Hydrobasins map
-hydro_raw<-st_read(config$hydrobasins_path) %>% st_transform(., crs=CRSMOLL)
+#hydro_raw<-st_read(config$hydrobasins_path) %>% st_transform(., crs=CRSMOLL)
 
 
 
