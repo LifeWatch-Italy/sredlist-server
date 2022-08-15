@@ -219,13 +219,14 @@ function(scientific_name) {
   dat <- sRL_createDataGBIF(scientific_name, LIM_GBIF)
   
   # ### Plot
-  wm <- borders("world", colour = "gray70", fill = "gray70")
   ggsave(paste0("resources/AOH_stored/", sub(" ", "_", scientific_name), "/Plots/plot_data.png"), plot(
     ggplot() +
       coord_fixed() +
-      wm +
-      geom_point(data = dat, aes(x = decimalLongitude, y = decimalLatitude), colour = "darkred", size = 0.5) +
-      theme_bw()), width=18, height=5.5) # nolint
+      borders("world", colour = "gray86", fill = "gray80") +
+      geom_point(data = dat, aes(x = decimalLongitude, y = decimalLatitude), colour = "darkred", size = 1) +
+      ggtitle(paste0("Raw geo-referenced observations from GBIF (N=", nrow(dat), ")"))+
+      theme_bw() %+replace%   theme(plot.title=element_text(hjust=0.5, size=12, face="bold"))
+    ), width=18, height=5.5) # nolint
   plot1 <- base64enc::dataURI(file = paste0("resources/AOH_stored/", sub(" ", "_", scientific_name), "/Plots/plot_data.png"), mime = "image/png")
   log_info("END - Create data")
   log_info("START - Clean coordinates")
@@ -306,7 +307,7 @@ function(scientific_name, Gbif_Year= -1, Gbif_Uncertainty=-1, Gbif_Extent=list()
                            
     ggplot(flags[is.na(flags$Reason)==T,])+
       geom_histogram(aes(x=Alt_points))+
-      ggtitle("Elevation of valid observations")+
+      ggtitle(paste0("Elevation of valid observations (N=", nrow(flags[is.na(flags$Reason)==T,]), ")"))+
       xlab("Elevation (m)")+ylab("N")+
       labs(subtitle=paste0("Elevation ranges from ", trunc(min(flags$Alt_points[is.na(flags$Reason)==T], na.rm=T)), " to ", ceiling(max(flags$Alt_points[is.na(flags$Reason)==T], na.rm=T))))+
       theme_minimal()
@@ -416,6 +417,7 @@ function(scientific_name, Gbif_Start=-1, Gbif_Buffer=-1, Gbif_Altitude=list(), G
   
   # Keep distribution in memory
   Storage_SP$distSP3_saved=distSP
+  Storage_SP$Crop_par<-Gbif_Crop
   assign(paste0("Storage_SP_", sub(" ", "_", scientific_name)), Storage_SP, .GlobalEnv)
   
   return(list(
@@ -441,27 +443,40 @@ function(scientific_name) {return(list(Gbif_Smooth = 3))}
 #* @tag sRedList
 function(scientific_name, Gbif_Smooth=-1) {
   
-  # Transform parameters GBIF filtering
+  ### Transform parameters GBIF filtering
   scientific_name <- url_decode(scientific_name)
   Storage_SP=sRL_reuse(scientific_name)
   
-  # Smooth if parameter >0
+  ### Smooth if parameter >0
   Gbif_Smooth=as.numeric(Gbif_Smooth) ; print(Gbif_Smooth)
   if(Gbif_Smooth>0){
   distSP<-smooth(Storage_SP$distSP3_saved, method = "ksmooth", smoothness=Gbif_Smooth, max_distance=10000)} else{
     distSP<-Storage_SP$distSP3_saved
   }
+  distSP<-st_make_valid(distSP)
   
-  # Keep distribution in memory
+  
+  ### If smooth and the distribution should be cropped by land/sea, we crop again after smoothing
+  if(Gbif_Smooth>0 & Storage_SP$Crop_par %in% c("Land", "Sea")){
+    if(Storage_SP$Crop_par=="Land"){
+      distSP<-st_intersection(distSP, Storage_SP$CountrySP_saved) %>% 
+        dplyr::group_by(binomial) %>% dplyr::summarise(N = n())}
+    
+    if(Storage_SP$Crop_par=="Sea"){
+      countr<-Storage_SP$CountrySP_saved %>% st_crop(., extent(distSP)) %>% dplyr::group_by() %>% dplyr::summarise(N = n())
+      distSP<-st_difference(distSP, countr)}
+  }
+  
+  ### Keep distribution in memory
   Storage_SP$distSP_saved=distSP
   assign(paste0("Storage_SP_", sub(" ", "_", scientific_name)), Storage_SP, .GlobalEnv)
   
-  # Plot
+  ### Plot
   ggsave(paste0("resources/AOH_stored/", sub(" ", "_", scientific_name), "/Plots/plot_final.png"), plot(
     ggplot() + 
       geom_sf(data=Storage_SP$CountrySP_saved, fill="gray70")+
       geom_sf(data = distSP, fill="darkred") + 
-      geom_sf(data=dat_proj)+
+      geom_sf(data=Storage_SP$dat_proj_saved)+
       ggtitle("")+
       theme_bw()
   ), width=18, height=5.5) # nolint
