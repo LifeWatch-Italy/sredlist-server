@@ -4,16 +4,22 @@
 
 sRL_createDataGBIF <- function(scientific_name, LIM_GBIF) { # nolint
   #Download data
-  dat <- rgbif::occ_search(scientificName = scientific_name, hasCoordinate = T, limit=10000)$data # nolint
+  dat_gbif <- rgbif::occ_search(scientificName = scientific_name, hasCoordinate = T, limit=LIM_GBIF)$data # nolint
+  dat_obis <- robis::occurrence(scientific_name)
+  dat_gbif$ID<-paste0(dat_gbif$decimalLongitude, dat_gbif$decimalLatitude, dat_gbif$year)
+  dat_obis$ID<-paste0(dat_obis$decimalLongitude, dat_obis$decimalLatitude, dat_obis$date_year)
+  dat_obis_sub<-subset(dat_obis, !dat_obis$ID %in% dat_gbif$ID)
+  dat<-rbind.fill(dat_gbif, dat_obis_sub)
+  
   #print(dat)
   if (is.null(dat)) {
     not_found("GBIF occurrences of the species could not be found! Check whether the scientific name of the species has been typed correctly!") # nolint
   }
   #Select columns of interest
   dat <- dat %>%
-    dplyr::select(species, decimalLongitude, decimalLatitude, countryCode, individualCount, # nolint
-                  gbifID, family, taxonRank, coordinateUncertaintyInMeters, year,
-                  basisOfRecord, institutionCode, datasetName)
+    dplyr::select(any_of(c("species", "decimalLongitude", "decimalLatitude", "countryCode", "individualCount", # nolint
+                  "gbifID", "family", "taxonRank", "coordinateUncertaintyInMeters", "year",
+                  "basisOfRecord", "institutionCode", "datasetName")))
   
   #Remove records with no spatial coordinates
   dat <- dat %>% filter(!is.na(decimalLongitude)) %>% filter(!is.na(decimalLatitude)) # nolint
@@ -41,6 +47,8 @@ sRL_cleanDataGBIF <- function(flags, year_GBIF, uncertainty_GBIF, keepyearNA_GBI
   ### Add flagging for year and uncertainty
   flags$.year <- flags$year > year_GBIF
   if(keepyearNA_GBIF==F){flags$.year[is.na(flags$.year)]<-F}
+  
+  if(!"coordinateUncertaintyInMeters" %in% names(flags)){flags$coordinateUncertaintyInMeters<-NA}
   flags$.uncertainty <- flags$coordinateUncertaintyInMeters < uncertainty_GBIF*1000 
   
   ### Add flagging for points outside GBIF_xmin...
@@ -89,7 +97,7 @@ sRL_SubsetGbif<-function(flags, scientific_name){
 
 ### Create Distribution map from GBIF data
 sRL_MapDistributionGBIF<-function(dat, scientific_name, First_step, AltMIN, AltMAX, Buffer_km2, GBIF_crop){
-  
+
   ### The first step must be EOO, or Kernel, or Hydrobasins
   if(First_step=="EOO"){
     distGBIF<-st_as_sf(st_convex_hull(st_union(dat)))
@@ -107,7 +115,6 @@ sRL_MapDistributionGBIF<-function(dat, scientific_name, First_step, AltMIN, AltM
     distGBIF<-subset(hydro_raw, hydro_raw$hybas_id %in% interHyd$hybas_id) # Isolate these hydrobasins
   }
   
-  
   ### Apply buffer
   distGBIF<-st_buffer(distGBIF, Buffer_km2*1000) %>% st_as_sf()
   
@@ -122,11 +129,11 @@ sRL_MapDistributionGBIF<-function(dat, scientific_name, First_step, AltMIN, AltM
   if(GBIF_crop=="Land"){
     distGBIF<-st_intersection(distGBIF, CountrySP) %>% 
       dplyr::group_by(binomial) %>% dplyr::summarise(N = n())}
-  
+
   if(GBIF_crop=="Sea"){
     countr<-CountrySP %>% st_crop(., extent(distGBIF)) %>% dplyr::group_by() %>% dplyr::summarise(N = n())
     distGBIF<-st_difference(distGBIF, countr)}
-  
+
   
   ### Merge
   distGBIF<-distGBIF %>% dplyr::group_by(binomial) %>% dplyr::summarise(N = n())
@@ -153,7 +160,6 @@ sRL_MapDistributionGBIF<-function(dat, scientific_name, First_step, AltMIN, AltM
   distGBIF <- as.polygons(sp.range) %>% st_as_sf(.)
   }
   
-
   ### Restrict CountrySP in case the altitude reduced it a lot, and store in Storage_SP
   Storage_SP=sRL_reuse(scientific_name)
   Storage_SP$CountrySP_saved<-CountrySP
@@ -166,7 +172,7 @@ sRL_MapDistributionGBIF<-function(dat, scientific_name, First_step, AltMIN, AltM
   distGBIF$presence<-1
   distGBIF$origin<-1
   distGBIF$seasonal<-1
-  
+
   return(distGBIF)
   
 }

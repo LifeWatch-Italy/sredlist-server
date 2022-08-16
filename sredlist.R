@@ -216,7 +216,7 @@ function(scientific_name) {
   
   ### GBIF procedure 
   log_info("START - Create data")
-  dat <- sRL_createDataGBIF(scientific_name, LIM_GBIF)
+  dat <- sRL_createDataGBIF(scientific_name, config$LIM_GBIF)
   
   # ### Plot
   ggsave(paste0("resources/AOH_stored/", sub(" ", "_", scientific_name), "/Plots/plot_data.png"), plot(
@@ -375,8 +375,9 @@ function(scientific_name, Gbif_Start=-1, Gbif_Buffer=-1, Gbif_Altitude=list(), G
   
   # Transform parameters GBIF filtering
   scientific_name <- url_decode(scientific_name)
-  Gbif_Start<-revalue(as.character(Gbif_Start), c("0"="EOO", "1"="Kernel", "2"="Hydrobasins"))
+  Gbif_Start<-revalue(as.character(Gbif_Start), c("-1"="EOO", "0"="EOO", "1"="Kernel", "2"="Hydrobasins"))
   Gbif_Crop<-revalue(as.character(Gbif_Crop), c("0"="0", "1"="Land", "2"="Sea"))
+  Gbif_Buffer<-replace(Gbif_Buffer, Gbif_Buffer<0, 0)
   print(Gbif_Start)
   print(Gbif_Buffer)
   print(Gbif_Altitude)
@@ -396,14 +397,14 @@ function(scientific_name, Gbif_Start=-1, Gbif_Buffer=-1, Gbif_Altitude=list(), G
                                   AltMIN=as.numeric(Gbif_Altitude[1]), AltMAX=as.numeric(Gbif_Altitude[2]),
                                   Buffer_km2=as.numeric(Gbif_Buffer),
                                   GBIF_crop=Gbif_Crop)
-  
+  log_info("Map Distribution halfway")
   # Store and calculate area
   Storage_SP$gbif_number_saved=eval(parse(text=paste0("gbif_number_saved_", sub(" ", "_", scientific_name))))
 
   # Plot distribution
   gbif_path <- sRL_saveMapDistribution(scientific_name, distSP, gbif_nb=Storage_SP$gbif_number_saved)
   Storage_SP$CountrySP_saved<-sRL_reuse(scientific_name)$CountrySP_saved
-  
+
   ggsave(paste0("resources/AOH_stored/", sub(" ", "_", scientific_name), "/Plots/eoo.png"), plot(
     ggplot() + 
       geom_sf(data=Storage_SP$CountrySP_saved, fill="gray70")+

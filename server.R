@@ -27,7 +27,7 @@ library(R.utils)
 library(Rook) ; library(ggplot2) ; library(gridExtra) ; library(raster) ; library(plyr) ;library(dplyr) ; library(sf) ; library(rgdal) ;  library(ncdf4) ; library(ggalluvial) ; library(rredlist) ;  library(tools) # nolint
 
 ### GBIF mapping
-library(rgbif) ; library(CoordinateCleaner) ; library(rCAT) ; library(maps) ; library(countrycode); library(rnaturalearthdata); # nolint
+library(rgbif) ; library(CoordinateCleaner) ; library(rCAT) ; library(maps) ; library(countrycode); library(rnaturalearthdata); library(robis) # nolint
 library(plotly)
 library(adehabitatHR) ; library(smoothr)
 
