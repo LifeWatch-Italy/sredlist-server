@@ -375,7 +375,7 @@ function(scientific_name, Gbif_Start=-1, Gbif_Buffer=-1, Gbif_Altitude=list(), G
   
   # Transform parameters GBIF filtering
   scientific_name <- url_decode(scientific_name)
-  Gbif_Start<-revalue(as.character(Gbif_Start), c("-1"="EOO", "0"="EOO", "1"="Kernel", "2"="Hydrobasins"))
+  Gbif_Start<-revalue(as.character(Gbif_Start), c("-1"="EOO", "0"="EOO", "1"="Kernel", "2"="Hydrobasins", "3"="MCP-Hydrobasins"))
   Gbif_Crop<-revalue(as.character(Gbif_Crop), c("0"="0", "1"="Land", "2"="Sea"))
   Gbif_Buffer<-replace(Gbif_Buffer, Gbif_Buffer<0, 0)
   print(Gbif_Start)

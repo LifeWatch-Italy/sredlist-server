@@ -115,6 +115,14 @@ sRL_MapDistributionGBIF<-function(dat, scientific_name, First_step, AltMIN, AltM
     distGBIF<-subset(hydro_raw, hydro_raw$hybas_id %in% interHyd$hybas_id) # Isolate these hydrobasins
   }
   
+  if(First_step=="MCP-Hydrobasins"){
+    EOO<-st_as_sf(st_convex_hull(st_union(dat)))
+    st_geometry(EOO)<-"geometry"
+    hydro_sub<-st_crop(hydro_raw, extent(EOO))
+    interHyd<-st_join(EOO, hydro_sub, join=st_intersects) %>% subset(., is.na(.$hybas_id)==F) # Identify hydrobasins with data 
+    distGBIF<-subset(hydro_raw, hydro_raw$hybas_id %in% interHyd$hybas_id) # Isolate these hydrobasins
+  }
+  
   ### Apply buffer
   distGBIF<-st_buffer(distGBIF, Buffer_km2*1000) %>% st_as_sf()
   
