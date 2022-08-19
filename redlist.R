@@ -39,7 +39,11 @@ function(scientific_name) {
 #* @serializer png list(width = 800, height = 600)
 #* @tag RedList
 function(scientific_name) {
-  sRL_PlotHistory(sciname_fun=scientific_name)
+  Prom<-future({
+     sRL_PlotHistory(sciname_fun=scientific_name)
+   }, seed=T) 
+
+  return(Prom %...>% plot())
 }
 
 
@@ -51,6 +55,8 @@ function(scientific_name) {
 #* @tag RedList
 function(scientific_name, path = "") {
   
+  Prom<-future({
+    
   ### Filter param
   scientific_name <- url_decode(scientific_name)
   path <- ifelse(path == "", paste0(R.utils::capitalize(trim(gsub(" ", "_", scientific_name))), '_RL'), path ) # nolint
@@ -67,19 +73,26 @@ function(scientific_name, path = "") {
 
   assign(paste0("Storage_SP_", sub(" ", "_", scientific_name)), list(CountrySP_saved=CountrySP, Creation=Sys.time()), .GlobalEnv)
   
-  ### Plot the distribution
-  sf::sf_use_s2(FALSE)
+  ### Plot
   if (nrow(distSP) > 0) {
-    return(plot(ggplot() +
+    Plot_Dist<-ggplot() +
                   geom_sf(data = CountrySP, fill="gray96", col="gray50") + # nolint
                   geom_sf(data = distSP, fill = distSP$cols, col=NA) +
                   theme_void() +
-                  ggtitle("Distribution")))
+                  ggtitle("Distribution")
   } else{
-    return(plot(ggplot() +
+    Plot_Dist<-ggplot() +
                   theme_void() +
-                  ggtitle("The distribution is empty")))
+                  ggtitle("The distribution is empty")
   }
+  
+  Plot_Dist
+  }, seed=T) 
+  ### Plot the distribution
+  sf::sf_use_s2(FALSE)
+  
+  return(Prom %...>% plot())
+  
 }
 
 

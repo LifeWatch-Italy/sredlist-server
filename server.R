@@ -8,7 +8,8 @@
 
 keepyearNA_GBIF<-T
 
-
+library(promises) ; library(future)
+future::plan("multisession")
 
 
 ######################

@@ -1,9 +1,7 @@
 
 
 
-######################################
-### MODULE 1: CHARGE DISTRIBUTIONS ###
-######################################
+### M1: Charge distributions ----------------------------------------------------------------
 
 
 #* Upload Distribution species
@@ -56,7 +54,6 @@ function(scientific_name, req) {
   print(paste0("Your file is now stored in ", fn))
   return(list(path = fn))
 }
-
 
 
 
@@ -164,9 +161,8 @@ function(scientific_name, presences = list(), seasons = list() , origins = list(
 
 
 
-#########################
-### MODULE 2: MAPPING ###
-#########################
+### M2: Mapping ----------------------------------------------------------------
+
 #* GBIF year
 #* @get species/<scientific_name>/gbif-year
 #* @param scientific_name:string Scientific Name
@@ -495,6 +491,7 @@ function(scientific_name, Gbif_Smooth=-1) {
 
 
 
+### M3: EOO ----------------------------------------------------------------
 
 
 #* Estimate the Extent of Occurrence (EOO) from range
@@ -519,22 +516,23 @@ function(scientific_name, presences = list(), seasons = list() , origins = list(
   dir.create(paste0("resources/AOH_stored/", sub(" ", "_", scientific_name), "/Plots"), recursive=T)
   
   ### Plot EOO
-  log_info("START - Plot EOO")
+  log_info("START - Plot EOO \n")
   EOO <- st_as_sf(st_convex_hull(st_union(distSP))) ## Needed to avoid having different sub-polygons
   ggsave(paste0("resources/AOH_stored/", sub(" ", "_", scientific_name), "/Plots/plot_eoo.png"), plot(
     ggplot() + 
       geom_sf(data=EOO, fill="#ef3b2c", col=NA) + 
       geom_sf(data=distSP, fill="#fcbba1", col=NA) + 
       geom_sf(data=st_crop(Storage_SP$CountrySP_saved, extent(EOO)), fill=NA, col="black")+
-      ggtitle(paste0("EOO of ", scientific_name))) +
+      ggtitle(paste0("EOO of ", scientific_name)) +
       theme_bw()
-  ) # nolint
+  )) # nolint
   plot3 <- base64enc::dataURI(file = paste0("resources/AOH_stored/", sub(" ", "_", scientific_name), "/Plots/plot_eoo.png"), mime = "image/png") # nolint
-  log_info("END - Plot EOO")
+  log_info("END - Plot EOO \n")
 
   ### Calculate EOO area
   EOO_km2 <- round(as.numeric(st_area(EOO))/1000000)
-  
+
+   
   return(list(
     eoo_km2 = EOO_km2,
     plot_eoo = plot3
@@ -550,10 +548,8 @@ function(scientific_name, presences = list(), seasons = list() , origins = list(
 
 
 
+### M4: AOH ----------------------------------------------------------------
 
-##############################
-### MODULE 3: AOH ANALYSES ###
-##############################
 
 
 #* Species density preferences
@@ -828,9 +824,7 @@ function(scientific_name, GL_species=1) { # nolint
 
 
 
-#########################
-### MODULE N: OUTPUTS ###
-#########################
+### M5: Outputs ----------------------------------------------------------------
 
 
 #* Plot Red List category
@@ -953,9 +947,8 @@ function(scientific_name, aoh_lost=aoh_lost_saved, eoo_km2, aoo_km2, pop_size) {
 
 
 
-###########################################
-### OTHER FUNCTIONS (PLATFORM BUILDING) ###
-###########################################
+### MX: Other functions (platform buidling) ----------------------------------------------------------------
+
 
 
 #* All distributions of paginated species on the platform
