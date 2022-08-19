@@ -193,35 +193,43 @@ function(scientific_name) {
 #* @tag sRedList
 function(scientific_name) {return(list(Gbif_Sea = 0))}
 
-
+#* GBIF source
+#* @get species/<scientific_name>/gbif-source
+#* @param scientific_name:string Scientific Name
+#* @serializer json
+#* @tag sRedList
+function(scientific_name) {return(list(Gbif_Source = 0))}
 
 #* Global Biodiversity Information Facility Step 1 
 #* @get species/<scientific_name>/gbif
 #* @param scientific_name:string Scientific Name
+#* @param Gbif_Source:int Gbif_Source
 #* @serializer unboxedJSON
 #* @tag sRedList
-function(scientific_name) {
+function(scientific_name, Gbif_Source=-1) {
   
   ### Clean-string from user
   scientific_name <- url_decode(scientific_name)
   scientific_name <- R.utils::capitalize(trim(gsub("[[:punct:]]", " ", scientific_name))) # nolint
   print(scientific_name)
+  print(Gbif_Source)
   
   ### Create storage folder if it does not exist
   dir.create(paste0("resources/AOH_stored/", sub(" ", "_", scientific_name), "/Plots"), recursive=T)
   
   ### GBIF procedure 
   log_info("START - Create data")
-  dat <- sRL_createDataGBIF(scientific_name, config$LIM_GBIF)
+  dat <- sRL_createDataGBIF(scientific_name, config$LIM_GBIF, Gbif_Source)
   
   # ### Plot
   ggsave(paste0("resources/AOH_stored/", sub(" ", "_", scientific_name), "/Plots/plot_data.png"), plot(
     ggplot() +
       coord_fixed() +
       borders("world", colour = "gray86", fill = "gray80") +
-      geom_point(data = dat, aes(x = decimalLongitude, y = decimalLatitude), colour = "darkred", size = 1) +
-      ggtitle(paste0("Raw geo-referenced observations from GBIF (N=", nrow(dat), ")"))+
-      theme_bw() %+replace%   theme(plot.title=element_text(hjust=0.5, size=12, face="bold"))
+      geom_point(data = dat, aes(x = decimalLongitude, y = decimalLatitude, col=Source), size = 1) +
+      scale_colour_brewer(type="qual", palette=2)+
+      ggtitle(paste(names(table(dat$Source)), table(dat$Source), sep=" (") %>% paste(., collapse="), ") %>% paste0("Raw geo-referenced observations (N=", nrow(dat), ") from: ", ., ")") )+
+      theme_bw() %+replace%   theme(plot.title=element_text(hjust=0.5, size=12, face="bold"), legend.position="top")
     ), width=18, height=5.5) # nolint
   plot1 <- base64enc::dataURI(file = paste0("resources/AOH_stored/", sub(" ", "_", scientific_name), "/Plots/plot_data.png"), mime = "image/png")
   log_info("END - Create data")
@@ -229,7 +237,13 @@ function(scientific_name) {
   
   
   # Prepare countries
-  CountrySP_WGS<-st_crop(distCountries_WGS, c(xmin=min(dat$decimalLongitude), xmax=max(dat$decimalLongitude), ymin=min(dat$decimalLatitude), ymax=max(dat$decimalLatitude))) %>% st_buffer(., 0) # The buffer is needed for Zerynthia rumina, I can probably find something more clever
+  LIMS<-c(xmin=min(dat$decimalLongitude), xmax=max(dat$decimalLongitude), ymin=min(dat$decimalLatitude), ymax=max(dat$decimalLatitude))
+  LIMS<-c(LIMS["xmin"] - 0.1*abs(LIMS["xmin"]-LIMS["xmax"]),    LIMS["xmax"] + 0.1*abs(LIMS["xmin"]-LIMS["xmax"]),
+          LIMS["ymin"] - 0.1*abs(LIMS["ymin"]-LIMS["ymax"]),    LIMS["ymax"] + 0.1*abs(LIMS["ymin"]-LIMS["ymax"]))
+  CountrySP_WGS<-st_crop(distCountries_WGS, LIMS) %>% st_buffer(., 0) # The buffer is needed for Zerynthia rumina, I can probably find something more clever
+  if(nrow(CountrySP_WGS)==0){
+    Skip_country=T ; Tests_to_run=c("capitals", "centroids", "equal", "gbif", "institutions", "zeros")}else{
+      Skip_country=F; Tests_to_run=c("capitals", "centroids", "equal", "gbif", "institutions", "zeros", "seas")}
   
   # Flag observations to remove
   flags_raw <- clean_coordinates(x = dat,
@@ -238,7 +252,9 @@ function(scientific_name) {
                                  countries = "countryCode",
                                  species = "species",
                                  seas_ref=CountrySP_WGS %>% as_Spatial(.),
-                                 tests = c("capitals", "centroids", "equal", "gbif", "institutions", "zeros", "seas"))
+                                 tests = Tests_to_run)
+  if(Skip_country==T){flags_raw$.sea<-FALSE}
+  
   # Extract elevation (need to transform the CRS for it)
   log_info("START - Extracting elevation values")  
   flags_foralt<-st_geometry(st_as_sf(flags_raw,coords = c("decimalLongitude", "decimalLatitude"), crs="+proj=longlat +datum=WGS84")) %>%

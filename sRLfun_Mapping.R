@@ -2,30 +2,68 @@
 
 
 
-sRL_createDataGBIF <- function(scientific_name, LIM_GBIF) { # nolint
-  #Download data
-  dat_gbif <- rgbif::occ_search(scientificName = scientific_name, hasCoordinate = T, limit=LIM_GBIF)$data # nolint
-  dat_obis <- robis::occurrence(scientific_name)
-  dat_gbif$ID<-paste0(dat_gbif$decimalLongitude, dat_gbif$decimalLatitude, dat_gbif$year)
-  dat_obis$ID<-paste0(dat_obis$decimalLongitude, dat_obis$decimalLatitude, dat_obis$date_year)
-  dat_obis_sub<-subset(dat_obis, !dat_obis$ID %in% dat_gbif$ID)
-  dat<-rbind.fill(dat_gbif, dat_obis_sub)
+sRL_createDataGBIF <- function(scientific_name, LIM_GBIF, GBIF_SRC) { # nolint
   
-  #print(dat)
-  if (is.null(dat)) {
-    not_found("GBIF occurrences of the species could not be found! Check whether the scientific name of the species has been typed correctly!") # nolint
+  ### Reclassify GBIF_SRC
+  if(GBIF_SRC==1){GBIF_source<-c("GBIF")}
+  if(GBIF_SRC==2){GBIF_source<-c("OBIS")}
+  if(GBIF_SRC==3){GBIF_source<-c("RL")}
+  if(GBIF_SRC==4){GBIF_source<-c("GBIF", "OBIS")}
+  if(GBIF_SRC==5){GBIF_source<-c("GBIF", "RL")}
+  if(GBIF_SRC==6){GBIF_source<-c("OBIS", "RL")}
+  if(GBIF_SRC==7){GBIF_source<-c("GBIF", "OBIS", "RL")}
+
+  
+  ### Download data
+  # From GBIF
+  if("GBIF" %in% GBIF_source){
+    dat_gbif <- rgbif::occ_search(scientificName = scientific_name, hasCoordinate = T, limit=LIM_GBIF)$data # nolint
+    dat_gbif$ID<-paste0(dat_gbif$decimalLongitude, dat_gbif$decimalLatitude, dat_gbif$year)
+    dat_gbif$Source<-"GBIF"
+  } else {dat_gbif<-NULL}
+  
+  # From OBIS (removing points at same location + year)
+  if("OBIS" %in% GBIF_source){
+    dat_obis <- robis::occurrence(scientific_name)
+    dat_obis$ID<-paste0(dat_obis$decimalLongitude, dat_obis$decimalLatitude, dat_obis$date_year)
+    dat_obis$year<-dat_obis$date_year
+    dat_obis_sub<-subset(dat_obis, !dat_obis$ID %in% dat_gbif$ID)
+    dat_obis_sub$Source<-"OBIS"
+  } else {dat_obis_sub<-data.frame()}
+  
+  # From Red List point
+  if("RL" %in% GBIF_source & paste0(scientific_name, ".csv") %in% list.files(config$POINTdistribution_path)){
+    dat_RL<-read.csv(paste0(config$POINTdistribution_path, scientific_name, ".csv"))
+    dat_RL$Source<-"RL"
+    dat_RL$decimalLongitude<-dat_RL$longitude
+    dat_RL$decimalLatitude<-dat_RL$latitude
+    dat_RL$year<-dat_RL$event_year
+    dat_RL$species<-dat_RL$binomial
+    dat_RL$coordinateUncertaintyInMeters<-NA
+  } else {dat_RL<-data.frame()}
+  
+  # Return error if no data found
+  if(is.null(nrow(dat_gbif)) & nrow(dat_obis_sub)==0 & nrow(dat_RL)==0) {
+    not_found("No data found! Check whether the scientific name of the species has been typed correctly or select other data sources") # nolint
+    dat<-NULL
+  } else {
+    # Merge
+    dat<-rbind.fill(dat_gbif, dat_obis_sub, dat_RL)
+    print(paste0("Number of data: ", nrow(dat)))
   }
+  
   #Select columns of interest
   dat <- dat %>%
     dplyr::select(any_of(c("species", "decimalLongitude", "decimalLatitude", "countryCode", "individualCount", # nolint
                   "gbifID", "family", "taxonRank", "coordinateUncertaintyInMeters", "year",
-                  "basisOfRecord", "institutionCode", "datasetName")))
+                  "basisOfRecord", "institutionCode", "datasetName", "Source")))
   
   #Remove records with no spatial coordinates
   dat <- dat %>% filter(!is.na(decimalLongitude)) %>% filter(!is.na(decimalLatitude)) # nolint
   
   #Convert country code from ISO2c to ISO3c
-  dat$countryCode <-  countrycode::countrycode(dat$countryCode, origin =  'iso2c', destination = 'iso3c') # nolint
+  if(!"countryCode" %in% names(dat)){dat$countryCode<-NA} else{
+  dat$countryCode <-  countrycode::countrycode(dat$countryCode, origin =  'iso2c', destination = 'iso3c')} # nolint
   dat <- data.frame(dat)
   
   

@@ -2,6 +2,7 @@ default:
   log_dir: "logs"
   red_list_token: "9bb4facb6d23f48efbf424bb05c0c1ef1cf6f468393bc745d42179ac4aca5fee"
   distribution_path: "resources/Distributions/"
+  POINTdistribution_path: "resources/Point.distributions/"
   YearAOH2: 2020
   LIM_GBIF: 10000
   engine_AOH: "terra"
