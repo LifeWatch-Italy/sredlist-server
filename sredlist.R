@@ -436,12 +436,10 @@ function(scientific_name, Gbif_Start=-1, Gbif_Buffer=-1, Gbif_Altitude=list(), G
   Storage_SP$distSP3_saved=distSP
   Storage_SP$Crop_par<-Gbif_Crop
   assign(paste0("Storage_SP_", sub(" ", "_", scientific_name)), Storage_SP, .GlobalEnv)
-  gbif_path <- sRL_saveMapDistribution(scientific_name)
   
   return(list(
     plot_eoo = plot3,
-    gbif_data_number  = as.numeric(Storage_SP$gbif_number_saved),
-    gbif_path = gbif_path
+    gbif_data_number  = as.numeric(Storage_SP$gbif_number_saved)
   ))
   
 }
@@ -503,10 +501,14 @@ function(scientific_name, Gbif_Smooth=-1) {
   ), width=18, height=5.5) # nolint
   plot_final <- base64enc::dataURI(file = paste0("resources/AOH_stored/", sub(" ", "_", scientific_name), "/Plots/plot_final.png"), mime = "image/png") # nolint
   
+  # Save distribution in the platform
+  gbif_path <- sRL_saveMapDistribution(scientific_name)
+  
  return(list(
     plot_eoo = plot_final,
     eoo_km2 = 1, # eoo_km2 parameter is used in the client to know if we come from GBIF or RL distribution, so I have to keep it here or to change the client
-    eoo_rating = 1
+    eoo_rating = 1,
+    gbif_path = gbif_path
   ))
   
 }
