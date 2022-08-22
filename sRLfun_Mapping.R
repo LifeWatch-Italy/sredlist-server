@@ -240,7 +240,7 @@ sRL_saveMapDistribution <- function(scientific_name) {
     #dir.create(filePath)
   }
   path <- paste0(filePath, upload_folder_scientific_name, ".shp")
-  st_write(Storage_SP$distSP3_saved, path, append = FALSE)
+  st_write(Storage_SP$distSP_saved, path, append = FALSE)
   
   
   print("Write metadata file")
