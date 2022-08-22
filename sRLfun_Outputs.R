@@ -119,14 +119,73 @@ sRL_OutputRef<-function(scientific_name, AltPref_saved){
 
 
 ### Prepare distribution output shapefile
-sRL_OutputDistribution<-function(scientific_name, distSP_saved){
+sRL_OutputDistribution<-function(scientific_name){
   
-  # Charge the file with 2 sRedList references
-  distSP_SIS<-distSP_saved[, names(distSP_saved) %not in% c("cols")] # Write column names to remove from the file to download
+  distSP<-sRL_reuse(scientific_name)$distSP_saved
   
-  return(distSP_SIS)
+  # Create template
+  distSP$OBJECTID<-1:nrow(distSP)
+  distSP$sci_name<-scientific_name
+  distSIS<-distSP[, c("OBJECTID", "sci_name")]
+  distSIS[,c("presence", "origin", "seasonal", "compiler", "yrcomplied", "citation", "subspecies", "subpop", "data_sens", "sens_comm", "source", "dist_comm", "island", "tax_comm", "generalisd", "id_no", "Shape_Leng", "Shape_Area")]<-NA
+  
+  # Fill in some information
+  distSIS$yrcomplied<-Sys.time() %>% format(., "%Y")
+  distSIS$citation<-"Citation to add" # To fill
+  distSIS$source<-"sRedList platform"
+  
+  # Send geometry column at the end of the table
+  distSIS<-distSIS[, c(names(distSIS)[names(distSIS) != "geometry"], "geometry")]
+  
+  return(distSIS)
 }
 
+
+
+### Save occurrences shapefile from the GBIF procedure
+sRL_OutputOccurrences <- function(scientific_name) {
+  
+  Storage_SP<-sRL_reuse(url_decode(scientific_name))
+  
+  # Transform in lat/lon
+  dat<-Storage_SP$dat_proj_saved %>% st_transform(., "+init=epsg:4326")
+  names(dat)<-replace(names(dat), names(dat)=="objectid", "OBJECTID")
+  
+  # Create template shape
+  if(!"OBJECTID" %in% names(dat)){dat$OBJECTID<-1:nrow(dat)}
+  dat$sci_name<-scientific_name
+  dat_SIS<-dat[, c("OBJECTID", "sci_name")]
+  dat_SIS[,c("presence", "origin", "seasonal", "compiler", "yrcomplied", "citation", "dec_lat", "dec_long", "spatialref", "subspecies", "subpop", "data_sens", "sens_comm", "event_year", "source", "basisofrec", "catalog_no", "dist_comm", "island", "tax_comm", "id_no")]<-NA
+  
+  # Fill in some information
+  dat_SIS$yrcomplied<-Sys.time() %>% format(., "%Y")
+  dat_SIS$citation<-"Citation to add" # To fill
+  dat_SIS$dec_long<-st_coordinates(dat_SIS)[,1]
+  dat_SIS$dec_lat<-st_coordinates(dat_SIS)[,2]
+  dat_SIS$spatialref<-"WGS84"
+  dat_SIS$event_year<-dat$year
+  
+
+  # If data from the Red List, copy the information previously saved
+  if("RL" %in% dat$Source){
+    RL<-read.csv(paste0(config$POINTdistribution_path, scientific_name, ".csv"))
+  
+    for(COL in names(dat_SIS)[!names(dat_SIS) %in% c("OBJECTID", "sci_name", "geometry", "yrcomplied", "citation", "dec_lat", "dec_long", "spatialref")]){
+      if(COL %in% names(RL)){
+      dat_SIS[,COL]<-RL[,COL][match(dat_SIS$OBJECTID, RL$objectid)]
+    }}
+    
+  }
+  
+  # Source information for GBIF / OBIS
+  dat_SIS$source[dat$Source=="GBIF"]<-paste0("Extracted from GBIF; gbif_ID= ", dat$gbifID[dat$Source=="GBIF"])
+  dat_SIS$source[dat$Source=="OBIS"]<-paste0("Extracted from OBIS; obis_ID= ", dat$id[dat$Source=="OBIS"])
+  
+  # Send geometry column at the end of the table
+  dat_SIS<-dat_SIS[, c(names(dat_SIS)[names(dat_SIS) != "geometry"], "geometry")]
+  
+  return(dat_SIS)
+}
 
 
 

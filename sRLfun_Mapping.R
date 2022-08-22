@@ -55,8 +55,8 @@ sRL_createDataGBIF <- function(scientific_name, LIM_GBIF, GBIF_SRC) { # nolint
   #Select columns of interest
   dat <- dat %>%
     dplyr::select(any_of(c("species", "decimalLongitude", "decimalLatitude", "countryCode", "individualCount", # nolint
-                  "gbifID", "family", "taxonRank", "coordinateUncertaintyInMeters", "year",
-                  "basisOfRecord", "institutionCode", "datasetName", "Source")))
+                  "gbifID", "id", "objectid", "family", "taxonRank", "coordinateUncertaintyInMeters", "year",
+                  "basisOfRecord", "institutionCode", "datasetName", "Source", "source", "citation")))
   
   #Remove records with no spatial coordinates
   dat <- dat %>% filter(!is.na(decimalLongitude)) %>% filter(!is.na(decimalLatitude)) # nolint
@@ -123,9 +123,8 @@ sRL_SubsetGbif<-function(flags, scientific_name){
   assign(paste0("gbif_number_saved_", sub(" ", "_", scientific_name)), gbif_data_number, .GlobalEnv)
   
   # Prepare spatial points
-  dat_proj<-st_geometry(st_as_sf(dat_cl,coords = c("decimalLongitude", "decimalLatitude"), crs="+proj=longlat +datum=WGS84")) %>%
-    st_transform(., st_crs(CRSMOLL)) %>%
-    st_as_sf(.)
+  dat_proj<-st_as_sf(dat_cl,coords = c("decimalLongitude", "decimalLatitude"), crs="+proj=longlat +datum=WGS84") %>%
+    st_transform(., st_crs(CRSMOLL)) 
   
   return(dat_proj)
   
@@ -225,10 +224,13 @@ sRL_MapDistributionGBIF<-function(dat, scientific_name, First_step, AltMIN, AltM
 
 
 ### Save distribution mapped from the GBIF procedure
-sRL_saveMapDistribution <- function(scientific_name, distSP, gbif_nb) {
-  # Create a file path E.g: Distributions/Nile tilapia/Nile_tilapia_GBIF_20211207/ # nolint
+sRL_saveMapDistribution <- function(scientific_name) {
+  
+  Storage_SP<-sRL_reuse(url_decode(scientific_name))
+  
+
+  ### Create a file path E.g: Distributions/Nile tilapia/Nile_tilapia_GBIF_20211207/ # nolint
   upload_folder_scientific_name <- R.utils::capitalize(paste0(stringr::str_replace(scientific_name, " ", "_"), format(Sys.time(), "_GBIF_%Y%m%d"))) # nolint
-  # Create a file path
   filePath <- paste0(config$distribution_path, scientific_name, "/", upload_folder_scientific_name, "/") # nolint
   if (dir.exists(filePath)) {
     print("The directory exists")
@@ -238,14 +240,15 @@ sRL_saveMapDistribution <- function(scientific_name, distSP, gbif_nb) {
     #dir.create(filePath)
   }
   path <- paste0(filePath, upload_folder_scientific_name, ".shp")
-  st_write(distSP, path, append = FALSE)
+  st_write(Storage_SP$distSP3_saved, path, append = FALSE)
+  
   
   print("Write metadata file")
   text <- paste0(
     "A distribution has been stored for the species: ",
     scientific_name,
-    ".\nIt was created with the GBIF procedure from the sRedList platform, based on ", # nolint
-    gbif_nb,
+    ".\nIt was created with the mapping procedure from the sRedList platform. It is based on ", # nolint
+    paste(names(table(Storage_SP$dat_proj_saved$Source)), table(Storage_SP$dat_proj_saved$Source), sep=" (") %>% paste(., collapse="), ") %>% paste0(nrow(Storage_SP$dat_proj_saved), " raw geo-referenced observations from: ", ., ")"),
     " occurrence data downloaded from GBIF on the ",
     Sys.time(),
     " CET."
@@ -254,7 +257,6 @@ sRL_saveMapDistribution <- function(scientific_name, distSP, gbif_nb) {
   return(upload_folder_scientific_name)
   # writeLines(text, paste0(filePath, upload_folder_scientific_name, ".txt"))
 }
-
 
 
 

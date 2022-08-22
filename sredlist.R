@@ -211,7 +211,7 @@ function(scientific_name, Gbif_Source=-1) {
   LIMS<-c(xmin=min(dat$decimalLongitude), xmax=max(dat$decimalLongitude), ymin=min(dat$decimalLatitude), ymax=max(dat$decimalLatitude))
   LIMS<-c(LIMS["xmin"] - 0.1*abs(LIMS["xmin"]-LIMS["xmax"]),    LIMS["xmax"] + 0.1*abs(LIMS["xmin"]-LIMS["xmax"]),
           LIMS["ymin"] - 0.1*abs(LIMS["ymin"]-LIMS["ymax"]),    LIMS["ymax"] + 0.1*abs(LIMS["ymin"]-LIMS["ymax"]))
-  CountrySP_WGS<-st_crop(distCountries_WGS, LIMS) %>% st_buffer(., 0) # The buffer is needed for Zerynthia rumina, I can probably find something more clever
+  CountrySP_WGS<-st_crop(distCountries_WGS, LIMS) 
   if(nrow(CountrySP_WGS)==0){
     Skip_country=T ; Tests_to_run=c("capitals", "centroids", "equal", "gbif", "institutions", "zeros")}else{
       Skip_country=F; Tests_to_run=c("capitals", "centroids", "equal", "gbif", "institutions", "zeros", "seas")}
@@ -384,7 +384,7 @@ function(scientific_name) {return(list(Gbif_Crop = 0))}
 #* @param scientific_name:string Scientific Name
 #* @param Gbif_Start:int Gbif_Start
 #* @param Gbif_Buffer:int Gbif_Buffer
-#* @param Gbif_Altitude:[int] Gbif_Start
+#* @param Gbif_Altitude:[int] Gbif_Altitude
 #* @param Gbif_Crop:int Gbif_Crop
 #* @serializer unboxedJSON
 #* @tag sRedList
@@ -419,7 +419,6 @@ function(scientific_name, Gbif_Start=-1, Gbif_Buffer=-1, Gbif_Altitude=list(), G
   Storage_SP$gbif_number_saved=eval(parse(text=paste0("gbif_number_saved_", sub(" ", "_", scientific_name))))
 
   # Plot distribution
-  gbif_path <- sRL_saveMapDistribution(scientific_name, distSP, gbif_nb=Storage_SP$gbif_number_saved)
   Storage_SP$CountrySP_saved<-sRL_reuse(scientific_name)$CountrySP_saved
 
   ggsave(paste0("resources/AOH_stored/", sub(" ", "_", scientific_name), "/Plots/eoo.png"), plot(
@@ -437,6 +436,7 @@ function(scientific_name, Gbif_Start=-1, Gbif_Buffer=-1, Gbif_Altitude=list(), G
   Storage_SP$distSP3_saved=distSP
   Storage_SP$Crop_par<-Gbif_Crop
   assign(paste0("Storage_SP_", sub(" ", "_", scientific_name)), Storage_SP, .GlobalEnv)
+  gbif_path <- sRL_saveMapDistribution(scientific_name)
   
   return(list(
     plot_eoo = plot3,
@@ -879,7 +879,6 @@ function(scientific_name, eoo_km2, aoo_km2, pop_size) {
   allfields_SIS<-sRL_CreateALLFIELDS(scientific_name, aoh_lost, eoo_km2, aoo_km2, pop_size, AltPref_saved)
   countries_SIS<-sRL_OutputCountries(scientific_name, distSP_saved=Storage_SP$distSP_saved, CountrySP_saved=Storage_SP$CountrySP_saved, AltPref_saved)
   ref_SIS<-sRL_OutputRef(scientific_name, AltPref_saved)
-  distSP_SIS<-sRL_OutputDistribution(scientific_name, Storage_SP$distSP_saved)
   
   # Save csv files in a folder
   output_dir<-paste0(sub(" ", "_", scientific_name), "_sRedList")
@@ -889,8 +888,11 @@ function(scientific_name, eoo_km2, aoo_km2, pop_size) {
   write.csv(ref_SIS, paste0(output_dir, "/references.csv"), row.names = F)
   write.csv(habitats_SIS, paste0(output_dir, "/habitats.csv"), row.names = F)
   
-  # Save distribution if from GBIF
-  if(is.null(Storage_SP$gbif_number_saved)==F){st_write(distSP_SIS, paste0(output_dir, "/sRedList_Distribution_", gsub(" ", ".", scientific_name), ".shp"), append=F)}
+  # Save distribution and occurrences if from GBIF
+  if(is.null(Storage_SP$gbif_number_saved)==F){
+    st_write(sRL_OutputDistribution(scientific_name), paste0(output_dir, "/sRedList_Distribution_", gsub(" ", ".", scientific_name), ".shp"), append=F)
+    st_write(sRL_OutputOccurrences(scientific_name), paste0(output_dir, "/sRedList_Occurrences_", gsub(" ", ".", scientific_name), ".shp"), append=F)
+  }
   
   # Zip that folder and delete it + Storage_SP
   #zip(zipfile = output_dir, files = output_dir,  zip = "C:/Program Files/7-Zip/7Z", flags="a -tzip")
