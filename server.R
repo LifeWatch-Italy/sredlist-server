@@ -2,12 +2,9 @@
 # setwd("C:/Victor_local/Platform/InProgress/sredlist-server-develop")
 
 
-##################################################
-### TEMP: PARAMETERS TO INCLUDE AS INTERACTIVE ###
-##################################################
 
-keepyearNA_GBIF<-T
 
+### Set the asynchronous coding
 library(promises) ; library(future)
 future::plan("multisession")
 

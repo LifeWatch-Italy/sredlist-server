@@ -1,7 +1,7 @@
 
 
 
-### M1: Charge distributions ----------------------------------------------------------------
+# M1: Charge distributions ----------------------------------------------------------------
 
 
 #* Upload Distribution species
@@ -161,44 +161,15 @@ function(scientific_name, presences = list(), seasons = list() , origins = list(
 
 
 
-### M2: Mapping ----------------------------------------------------------------
-
-#* GBIF year
-#* @get species/<scientific_name>/gbif-year
-#* @param scientific_name:string Scientific Name
-#* @serializer json
-#* @tag sRedList
-function(scientific_name) {return(list(Gbif_Year = 1900))}
-
-#* GBIF uncertainty
-#* @get species/<scientific_name>/gbif-uncertainty
-#* @param scientific_name:string Scientific Name
-#* @serializer json
-#* @tag sRedList
-function(scientific_name) {return(list(Gbif_Uncertainty = 100))}
-
-#* GBIF Extent
-#* @get species/<scientific_name>/gbif-extent
-#* @param scientific_name:[string] Scientific Name
-#* @serializer json
-#* @tag sRedList
-function(scientific_name) {
-  Gbif_Extent = data.frame(xmin=-180, xmax=180, ymin=-90, ymax=90)
-  return(Gbif_Extent)}
-
-#* GBIF sea
-#* @get species/<scientific_name>/gbif-sea
-#* @param scientific_name:string Scientific Name
-#* @serializer json
-#* @tag sRedList
-function(scientific_name) {return(list(Gbif_Sea = 0))}
+# M2: Mapping ----------------------------------------------------------------
+## a: Download ----------------------------------------------------------------
 
 #* GBIF source
 #* @get species/<scientific_name>/gbif-source
 #* @param scientific_name:string Scientific Name
 #* @serializer json
 #* @tag sRedList
-function(scientific_name) {return(list(Gbif_Source = 0))}
+function(scientific_name) {return(list(Gbif_Source = 1))}
 
 #* Global Biodiversity Information Facility Step 1 
 #* @get species/<scientific_name>/gbif
@@ -262,6 +233,7 @@ function(scientific_name, Gbif_Source=-1) {
     st_as_sf(.)
 
   flags_raw$Alt_points=terra::extract(alt_raw, st_coordinates(flags_foralt), method="simple", list=F)$Elevation_reprojMollweide3
+  flags_raw$Alt_points<-replace(flags_raw$Alt_points, is.nan(flags_raw$Alt_points)==T, NA)
   log_info("END - Extracting elevation values")  
   
   
@@ -274,6 +246,36 @@ function(scientific_name, Gbif_Source=-1) {
 }
 
 
+## b: Filter ----------------------------------------------------------------
+#* GBIF year
+#* @get species/<scientific_name>/gbif-year
+#* @param scientific_name:string Scientific Name
+#* @serializer json
+#* @tag sRedList
+function(scientific_name) {return(list(Gbif_Year = 1900))}
+
+#* GBIF uncertainty
+#* @get species/<scientific_name>/gbif-uncertainty
+#* @param scientific_name:string Scientific Name
+#* @serializer json
+#* @tag sRedList
+function(scientific_name) {return(list(Gbif_Uncertainty = 100))}
+
+#* GBIF Extent
+#* @get species/<scientific_name>/gbif-extent
+#* @param scientific_name:[string] Scientific Name
+#* @serializer json
+#* @tag sRedList
+function(scientific_name) {
+  Gbif_Extent = data.frame(xmin=-180, xmax=180, ymin=-90, ymax=90)
+  return(Gbif_Extent)}
+
+#* GBIF sea
+#* @get species/<scientific_name>/gbif-sea
+#* @param scientific_name:string Scientific Name
+#* @serializer json
+#* @tag sRedList
+function(scientific_name) {return(list(Gbif_Sea = 0))}
 
 #* Global Biodiversity Information Facility Step 2 
 #* @get species/<scientific_name>/gbif2
@@ -302,29 +304,32 @@ function(scientific_name, Gbif_Year= -1, Gbif_Uncertainty=-1, Gbif_Extent=list()
   CountrySP_WGS<-Storage_SP$CountrySP_WGS_saved
   
   ### Subset the observations user wants to keep (can be run several times if users play with parameters)
-  flags <- sRL_cleanDataGBIF(flags_raw, as.numeric(Gbif_Year), as.numeric(Gbif_Uncertainty), keepyearNA_GBIF, Gbif_Sea, Gbif_Extent[1], Gbif_Extent[2], Gbif_Extent[3], Gbif_Extent[4])
+  flags <- sRL_cleanDataGBIF(flags_raw, as.numeric(Gbif_Year), as.numeric(Gbif_Uncertainty), keepyearNA_GBIF=T, Gbif_Sea, Gbif_Extent[1], Gbif_Extent[2], Gbif_Extent[3], Gbif_Extent[4])
   dat_proj=sRL_SubsetGbif(flags, scientific_name)
   
   # Plot
+  G1<-ggplot()+
+    coord_fixed()+
+    geom_sf(data=CountrySP_WGS, fill="gray70")+
+    geom_point(data = flags, aes(x = decimalLongitude, y = decimalLatitude, col=factor(is.na(Reason), c("FALSE", "TRUE"))), size = 1.3)+
+    scale_colour_manual(values=c("#440154ff", "#fde725ff"), name="Valid observation", drop=F)+
+    xlab("")+ylab("")+
+    theme_bw() %+replace%   theme(legend.position="bottom")
+  
+  G2<-ggplot(flags[is.na(flags$Reason)==T,])+
+    geom_histogram(aes(x=Alt_points))+
+    ggtitle(paste0("Elevation of valid observations (N=", nrow(flags[is.na(flags$Reason)==T,]), ")"))+
+    xlab("Elevation (m)")+ylab("N")+
+    labs(subtitle=paste0("Elevation ranges from ", trunc(min(flags$Alt_points[is.na(flags$Reason)==T], na.rm=T)), " to ", ceiling(max(flags$Alt_points[is.na(flags$Reason)==T], na.rm=T))))+
+    theme_minimal()
+  
+  # Save only G1 if no altitude data (eg only marine) and a grid arrange otherwise
+  if(! FALSE %in% is.na(flags_raw$Alt_points)){GTOT<-G1} else{
+    GTOT<-grid.arrange(G1, G2, layout_matrix=matrix(c(1,1,3,1,1,2,1,1,3), ncol=3, byrow=T))
+  }
+  
   ggsave(paste0("resources/AOH_stored/", sub(" ", "_", scientific_name), "/Plots/clean_coordinates.png"), 
-    
-    grid.arrange(
-    ggplot()+
-      coord_fixed()+
-      geom_sf(data=CountrySP_WGS, fill="gray70")+
-      geom_point(data = flags, aes(x = decimalLongitude, y = decimalLatitude, col=factor(is.na(Reason), c("FALSE", "TRUE"))), size = 1.3)+
-      scale_colour_manual(values=c("#440154ff", "#fde725ff"), name="Valid observation", drop=F)+
-      xlab("")+ylab("")+
-      theme_bw() %+replace%   theme(legend.position="bottom"), 
-                           
-    ggplot(flags[is.na(flags$Reason)==T,])+
-      geom_histogram(aes(x=Alt_points))+
-      ggtitle(paste0("Elevation of valid observations (N=", nrow(flags[is.na(flags$Reason)==T,]), ")"))+
-      xlab("Elevation (m)")+ylab("N")+
-      labs(subtitle=paste0("Elevation ranges from ", trunc(min(flags$Alt_points[is.na(flags$Reason)==T], na.rm=T)), " to ", ceiling(max(flags$Alt_points[is.na(flags$Reason)==T], na.rm=T))))+
-      theme_minimal()
-      
-      , layout_matrix=matrix(c(1,1,3,1,1,2,1,1,3), ncol=3, byrow=T)), width=18, height=5.5)
+    GTOT, width=18, height=5.5)
   plot2 <- base64enc::dataURI(file = paste0("resources/AOH_stored/", sub(" ", "_", scientific_name), "/Plots/clean_coordinates.png"), mime = "image/png") # nolint
   log_info("END - Clean coordinates")
   
@@ -342,7 +347,7 @@ function(scientific_name, Gbif_Year= -1, Gbif_Uncertainty=-1, Gbif_Extent=list()
 
 
 
-
+## c: Map ----------------------------------------------------------------
 #* GBIF start
 #* @get species/<scientific_name>/gbif-start
 #* @param scientific_name:string Scientific Name
@@ -441,6 +446,9 @@ function(scientific_name, Gbif_Start=-1, Gbif_Buffer=-1, Gbif_Altitude=list(), G
   
 }
 
+
+
+## d: Smooth ----------------------------------------------------------------
 #* GBIF smooth
 #* @get species/<scientific_name>/gbif-smooth
 #* @param scientific_name:string Scientific Name
@@ -507,7 +515,7 @@ function(scientific_name, Gbif_Smooth=-1) {
 
 
 
-### M3: EOO ----------------------------------------------------------------
+# M3: EOO ----------------------------------------------------------------
 
 
 #* Estimate the Extent of Occurrence (EOO) from range
@@ -564,7 +572,7 @@ function(scientific_name, presences = list(), seasons = list() , origins = list(
 
 
 
-### M4: AOH ----------------------------------------------------------------
+# M4: AOH ----------------------------------------------------------------
 
 
 
@@ -840,7 +848,7 @@ function(scientific_name, GL_species=1) { # nolint
 
 
 
-### M5: Outputs ----------------------------------------------------------------
+# M5: Outputs ----------------------------------------------------------------
 
 
 #* Plot Red List category
@@ -963,7 +971,7 @@ function(scientific_name, aoh_lost=aoh_lost_saved, eoo_km2, aoo_km2, pop_size) {
 
 
 
-### MX: Other functions (platform buidling) ----------------------------------------------------------------
+# MX: Other functions (platform buidling) ----------------------------------------------------------------
 
 
 
