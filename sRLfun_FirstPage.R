@@ -55,14 +55,14 @@ sRL_PlotHistory <- function(sciname_fun){
 sRL_ReadDistribution <- function(scientific_name, path) {
   speciesPath <- paste0(config$distribution_path, scientific_name, "/", path) # nolint
   files <- base::list.files(path = speciesPath, pattern = "\\.shp$")
-  
+
   if (length(files) == 0) {
-    not_found("Shapefile of the species does not exist!") # nolint
+    distributions<-"No dist"
+    print("Shapefile of the species does not exist!") # nolint
   } else {
     distributionPath <- paste0(speciesPath, "/", files[1]) # nolint
+    distributions <- sf::st_read(distributionPath)
   }
-  
-  distributions <- sf::st_read(distributionPath)
   
   #distributions<-st_read("Distributions/Chameleons/CHAMELEONS.shp") # nolint
   return(distributions)
@@ -127,6 +127,22 @@ sRL_PrepareCountries <- function(LIMS){
 sRL_reuse=function(scientific_name){
   eval(parse(text=paste0("Storage_SP_", sub(" ", "_", url_decode(scientific_name)))))
 }
+
+### Functions to store parameters in output
+sRL_InitLog<-function(scientific_name, DisSource){
+  output_to_save<-output
+  output_to_save$Value[output_to_save$Parameter=="Distribution_Source"]<-DisSource
+  output_to_save$Date<-Sys.Date()
+  output_to_save$Species<-scientific_name
+  
+  return(output_to_save)
+}
+
+sRL_OutLog=function(STOR, Par, Val){
+  for(i in 1:length(Par)){STOR$Output$Value[STOR$Output$Parameter==Par[i]]<-Val[i]}
+  return(STOR)
+}
+
 
 
 ### sRedList cleaning function

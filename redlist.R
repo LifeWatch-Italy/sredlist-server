@@ -40,8 +40,8 @@ function(scientific_name) {
 #* @tag RedList
 function(scientific_name) {
   Prom<-future({
-     sRL_PlotHistory(sciname_fun=scientific_name)
-   }, seed=T) 
+    sRL_PlotHistory(sciname_fun=scientific_name)
+   }, seed=T)
 
   return(Prom %...>% plot())
 }
@@ -54,46 +54,46 @@ function(scientific_name) {
 #* @serializer png list(width = 800, height = 600)
 #* @tag RedList
 function(scientific_name, path = "") {
-  
-  Prom<-future({
-    
-  ### Filter param
-  scientific_name <- url_decode(scientific_name)
-  path <- ifelse(path == "", paste0(R.utils::capitalize(trim(gsub(" ", "_", scientific_name))), '_RL'), path ) # nolint
-  
-  ### Load Distribution Species
-  distributions <- sRL_ReadDistribution(scientific_name, path)
-  
-  ### Format the distribution file
-  distSP<-sRL_PrepareDistrib(distributions, scientific_name)
-  distSP<-sRL_ColourDistrib(distSP)
-  
-  ### Format the countries shapefile and save it in the global memory (to avoid recalculating at every step)
-  CountrySP<-sRL_PrepareCountries(extent(distSP))
 
-  assign(paste0("Storage_SP_", sub(" ", "_", scientific_name)), list(CountrySP_saved=CountrySP, Creation=Sys.time()), .GlobalEnv)
+  Prom<-future({
+
+    ### Filter param
+    scientific_name <- url_decode(scientific_name)
+    path <- ifelse(path == "", paste0(R.utils::capitalize(trim(gsub(" ", "_", scientific_name))), '_RL'), path ) # nolint
   
-  ### Plot
-  if (nrow(distSP) > 0) {
-    Plot_Dist<-ggplot() +
+    ### Load Distribution Species
+    distributions <- sRL_ReadDistribution(scientific_name, path)
+
+    ### Plot (first if no distribution, then if there is one)
+    if(class(distributions)[1]=="character"){
+      Plot_Dist<-ggplot() +
+        theme_void() +
+        ggtitle("No distribution has been found")
+    } else {
+    
+      # Format the distribution file
+      distSP<-sRL_PrepareDistrib(distributions, scientific_name)
+      distSP<-sRL_ColourDistrib(distSP)
+  
+      # Format the countries shapefile and save it in the global memory (to avoid recalculating at every step)
+      CountrySP<-sRL_PrepareCountries(extent(distSP))
+      assign(paste0("Storage_SP_", sub(" ", "_", scientific_name)), list(CountrySP_saved=CountrySP, Creation=Sys.time()), .GlobalEnv)
+  
+      # Plot
+      Plot_Dist<-ggplot() +
                   geom_sf(data = CountrySP, fill="gray96", col="gray50") + # nolint
                   geom_sf(data = distSP, fill = distSP$cols, col=NA) +
                   theme_void() +
                   ggtitle("Distribution")
-  } else{
-    Plot_Dist<-ggplot() +
-                  theme_void() +
-                  ggtitle("The distribution is empty")
+      }
+  
+    Plot_Dist
+    }, seed=T) 
+  
+    ### Plot the distribution
+    return(Prom %...>% plot())
+  
   }
-  
-  Plot_Dist
-  }, seed=T) 
-  ### Plot the distribution
-  sf::sf_use_s2(FALSE)
-  
-  return(Prom %...>% plot())
-  
-}
 
 
 #* Species habitat preferences

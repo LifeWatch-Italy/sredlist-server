@@ -102,7 +102,7 @@ function(scientific_name, path = "") {
 #* @tag sRedList1
 function(scientific_name, presences = list(), seasons = list() , origins = list(), path = "") { # nolint
   
-  if(paste0("Storage_SP_", sub(" ", "_", url_decode(scientific_name))) %not in% ls(name=".GlobalEnv")){assign(paste0("Storage_SP_", sub(" ", "_", url_decode(scientific_name))), list(Creation=Sys.time()), .GlobalEnv)}
+  if(paste0("Storage_SP_", sub(" ", "_", url_decode(scientific_name))) %not in% ls(name=".GlobalEnv")){assign(paste0("Storage_SP_", sub(" ", "_", url_decode(scientific_name))), list(Creation=Sys.time(), Output=sRL_InitLog(scientific_name, DisSource = "Red List")), .GlobalEnv)}
   
   #Filter param
   scientific_name <- url_decode(scientific_name)
@@ -112,7 +112,7 @@ function(scientific_name, presences = list(), seasons = list() , origins = list(
   if (length(seasons) != 0) seasons <- as.character(seasons);
   if (length(origins) != 0) origins <- as.character(origins);
   
-  
+
   ### Load Distribution Species
   distributions <- sRL_ReadDistribution(scientific_name, path) %>% sRL_PrepareDistrib(., scientific_name)
   distSP_full <- subset(distributions, distributions$binomial == scientific_name) # nolint 
@@ -134,6 +134,8 @@ function(scientific_name, presences = list(), seasons = list() , origins = list(
   ### Prepare countries if they were not charged + crop depending on the current selection of range
   if("CountrySP_saved" %not in% names(Storage_SP)){Storage_SP$CountrySP_saved<-sRL_PrepareCountries(extent(distSP))} 
   CountrySP<-st_crop(Storage_SP$CountrySP_saved, extent(distSP))
+  Storage_SP<-sRL_OutLog(Storage_SP, c("Distribution_Presence", "Distribution_Seasonal", "Distribution_Origin"), c(paste0(presences, collapse=","), paste0(seasons, collapse=","), paste0(origins, collapse=",")))
+  Storage_SP<-sRL_OutLog(Storage_SP, "Distribution_Source", ifelse(substr(path, nchar(path)-2, nchar(path))=="_RL", "Red List", "Uploaded")) # If path ends by _RL it comes from the RL, uploaded otherwise
   assign(paste0("Storage_SP_", sub(" ", "_", scientific_name)), Storage_SP, .GlobalEnv)
   
   ### Plot
@@ -171,7 +173,7 @@ function(scientific_name, presences = list(), seasons = list() , origins = list(
 #* @tag sRedList
 function(scientific_name) {return(list(Gbif_Source = 1))}
 
-#* Global Biodiversity Information Facility Step 1 
+#* Global Biodiversity Information Facility Step 1
 #* @get species/<scientific_name>/gbif
 #* @param scientific_name:string Scientific Name
 #* @param Gbif_Source:int Gbif_Source
@@ -238,11 +240,12 @@ function(scientific_name, Gbif_Source=-1) {
   
   
   # Assign
-  assign(paste0("Storage_SP_", sub(" ", "_", scientific_name)), list(flags_raw_saved=flags_raw, CountrySP_WGS_saved=CountrySP_WGS, Creation=Sys.time()), .GlobalEnv)
+  output_to_save<-sRL_InitLog(scientific_name, DisSource = "Created") ; output_to_save$Value[output_to_save$Parameter=="Gbif_Source"]<-Gbif_Source
+  assign(paste0("Storage_SP_", sub(" ", "_", scientific_name)), list(flags_raw_saved=flags_raw, CountrySP_WGS_saved=CountrySP_WGS, Creation=Sys.time(), Output=output_to_save), .GlobalEnv)
   
   return(list(
     plot_data = plot1))
-  
+
 }
 
 
@@ -335,6 +338,7 @@ function(scientific_name, Gbif_Year= -1, Gbif_Uncertainty=-1, Gbif_Extent=list()
   
   # Assign
   Storage_SP$dat_proj_saved<-dat_proj
+  Storage_SP<-sRL_OutLog(Storage_SP, c("Gbif_Year", "Gbif_Uncertainty", "Gbif_Sea", "Gbif_Extent"), c(Gbif_Year, Gbif_Uncertainty, Gbif_Sea, paste0(Gbif_Extent, collapse=",")))
   assign(paste0("Storage_SP_", sub(" ", "_", scientific_name)), Storage_SP, .GlobalEnv)
   
   
@@ -434,7 +438,7 @@ function(scientific_name, Gbif_Start=-1, Gbif_Buffer=-1, Gbif_Altitude=list(), G
   
   # Keep distribution in memory
   Storage_SP$distSP3_saved=distSP
-  Storage_SP$Crop_par<-Gbif_Crop
+  Storage_SP<-sRL_OutLog(Storage_SP, c("Mapping_Start", "Mapping_Crop", "Mapping_Buffer", "Mapping_Altitude"), c(Gbif_Start, Gbif_Crop, Gbif_Buffer, paste0(Gbif_Altitude, collapse=",")))
   assign(paste0("Storage_SP_", sub(" ", "_", scientific_name)), Storage_SP, .GlobalEnv)
   
   return(list(
@@ -476,18 +480,20 @@ function(scientific_name, Gbif_Smooth=-1) {
   
   
   ### If smooth and the distribution should be cropped by land/sea, we crop again after smoothing
-  if(Gbif_Smooth>0 & Storage_SP$Crop_par %in% c("Land", "Sea")){
-    if(Storage_SP$Crop_par=="Land"){
+  Crop_par<-Storage_SP$Output$Value[Storage_SP$Output$Parameter=="Mapping_Crop"]
+  if(Gbif_Smooth>0 & Crop_par %in% c("Land", "Sea")){
+    if(Crop_par=="Land"){
       distSP<-st_intersection(distSP, Storage_SP$CountrySP_saved) %>% 
         dplyr::group_by(binomial) %>% dplyr::summarise(N = n())}
     
-    if(Storage_SP$Crop_par=="Sea"){
+    if(Crop_par=="Sea"){
       countr<-Storage_SP$CountrySP_saved %>% st_crop(., extent(distSP)) %>% dplyr::group_by() %>% dplyr::summarise(N = n())
       distSP<-st_difference(distSP, countr)}
   }
   
   ### Keep distribution in memory
   Storage_SP$distSP_saved=distSP
+  Storage_SP<-sRL_OutLog(Storage_SP, "Mapping_Smooth", Gbif_Smooth)
   assign(paste0("Storage_SP_", sub(" ", "_", scientific_name)), Storage_SP, .GlobalEnv)
   
   ### Plot
@@ -530,24 +536,24 @@ function(scientific_name, Gbif_Smooth=-1) {
 #* @serializer unboxedJSON
 #* @tag sRedList
 function(scientific_name, presences = list(), seasons = list() , origins = list(), path = "") { # nolint
-  
+
   #Filter param
   scientific_name <- url_decode(scientific_name)
   Storage_SP=sRL_reuse(scientific_name)
-  
+
   # Load distribution
   distSP<-Storage_SP$distSP_saved
-  
+
   # Create storage directory if it does not exist
   dir.create(paste0("resources/AOH_stored/", sub(" ", "_", scientific_name), "/Plots"), recursive=T)
-  
+
   ### Plot EOO
   log_info("START - Plot EOO \n")
   EOO <- st_as_sf(st_convex_hull(st_union(distSP))) ## Needed to avoid having different sub-polygons
   ggsave(paste0("resources/AOH_stored/", sub(" ", "_", scientific_name), "/Plots/plot_eoo.png"), plot(
-    ggplot() + 
-      geom_sf(data=EOO, fill="#ef3b2c", col=NA) + 
-      geom_sf(data=distSP, fill="#fcbba1", col=NA) + 
+    ggplot() +
+      geom_sf(data=EOO, fill="#ef3b2c", col=NA) +
+      geom_sf(data=distSP, fill="#fcbba1", col=NA) +
       geom_sf(data=st_crop(Storage_SP$CountrySP_saved, extent(EOO)), fill=NA, col="black")+
       ggtitle(paste0("EOO of ", scientific_name)) +
       theme_bw()
@@ -558,17 +564,13 @@ function(scientific_name, presences = list(), seasons = list() , origins = list(
   ### Calculate EOO area
   EOO_km2 <- round(as.numeric(st_area(EOO))/1000000)
 
-   
+
   return(list(
     eoo_km2 = EOO_km2,
     plot_eoo = plot3
   ))
-  
+
 }
-
-
-
-
 
 
 
@@ -725,6 +727,9 @@ function(scientific_name, habitats_pref= list(), altitudes_pref= list(), density
 
   AOO_km2<- sRL_areaAOH(aoh_22[[1]], SCALE="2x2")
   
+  
+  ### Save parameters and results
+  Storage_SP<-sRL_OutLog(Storage_SP, c("AOH_HabitatPreference", "AOH_ElevationPreference", "AOH_Density"), c(paste0(habitats_pref, collapse=","), paste0(altitudes_pref, collapse=","), density_pref))
   assign(paste0("Storage_SP_", sub(" ", "_", scientific_name)), Storage_SP, .GlobalEnv)
   terraOptions(tempdir=tempdir())
   rasterOptions(tmpdir=tempdir())
@@ -827,10 +832,12 @@ function(scientific_name, GL_species=1) { # nolint
   ggsave(filename = paste0("resources/AOH_stored/", sub(" ", "_", scientific_name), "/Plots/trends_aoh.png"), plot = plot(plot1))
   plot1 <- base64enc::dataURI(file = paste0("resources/AOH_stored/", sub(" ", "_", scientific_name), "/Plots/trends_aoh.png"), mime = "image/png", encoding = "base64") # nolint
   
+  ### Store parameters and results
   Storage_SP$GL_saved<-GL_species
   Storage_SP$aoh_lost_saved=round(as.numeric(AOH_lost)*100)
   Storage_SP$RangeClean_saved=Storage_SP$AOH2_saved=Storage_SP$alt_crop_saved=NULL
   Storage_SP$Year1_saved<-Year1 ; Storage_SP$Year1theo_saved<-Year1_theo
+  Storage_SP<-sRL_OutLog(Storage_SP, "AOH_GenerationLength", GL_species)
   assign(paste0("Storage_SP_", sub(" ", "_", scientific_name)), Storage_SP, .GlobalEnv)
   
   # Remove the AOH files stored
@@ -889,6 +896,7 @@ function(scientific_name, eoo_km2, aoo_km2, pop_size) {
   write.csv(countries_SIS, paste0(output_dir, "/countries.csv"), row.names = F)
   write.csv(ref_SIS, paste0(output_dir, "/references.csv"), row.names = F)
   write.csv(habitats_SIS, paste0(output_dir, "/habitats.csv"), row.names = F)
+  write.csv(Storage_SP$Output, paste0(output_dir, "/00.Output_log.csv"), row.names = F)
   
   # Save distribution and occurrences if from GBIF
   if(is.null(Storage_SP$gbif_number_saved)==F){
