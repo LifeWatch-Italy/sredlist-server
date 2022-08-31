@@ -99,11 +99,11 @@ alt_large<-raster(paste0(config$cciStack2_path, "/ElevationAgg30.tif"))
 
 # Load Crosswalk CSV and Density CSV
 density<-read.csv("Species/Density.table.csv", sep=",")
-crosswalk <- read.csv("Species/Crosswalk_CCI_IUCN.csv")
+crosswalk <- read.table("Species/Crosswalk_CCI_IUCN.txt", header=T)
 crosswalkLARGE<-read.csv("Species/Lumbierres_large_crosswalk.csv")
 GL_file<-read.csv("Species/Generation_length_sRedList.csv", sep=",")
 if(config$crosswalk == "Santini"){crosswalk_to_use<- crosswalk[is.na(crosswalk$esa_code)==F, c("iucn_code", "esa_code")] ; names(crosswalk_to_use)<-c("code", "value")}
-if(config$crosswalk == "Lumbierres"){crosswalk_to_use<- read.csv("Species/Crosswalk_CCI_IUCN_Lumbierres.csv") ; crosswalk_to_use$code<-as.character(crosswalk_to_use$code)}
+if(config$crosswalk == "Lumbierres"){crosswalk_to_use<- read.table("Species/Crosswalk_CCI_IUCN_Lumbierres.txt", dec="/", header=T) ; crosswalk_to_use$code<-as.character(crosswalk_to_use$code)}
 
 # Load the empty output log
 output<-read.csv("Species/Output log empty.csv")

@@ -90,7 +90,7 @@ iucn_code,iucn_habitat,esa_code,esa_description
 4.6,Grassland - Subtropical/Tropical Seasonally Wet/Flooded,180,"Shrub or herbaceous cover, flooded, fresh/saline/brakish water    "
 4.7,Grassland - Subtropical/Tropical High Altitude,130,Grassland          
 5.1,Wetlands (inland) - Permanent Rivers/Streams/Creeks (includes waterfalls),210,Water bodies         
-5.1,Wetlands (inland) - Tundra Wetlands (incl. pools and temporary waters from snowmelt),210,Water bodies         
+5.10,Wetlands (inland) - Tundra Wetlands (incl. pools and temporary waters from snowmelt),210,Water bodies         
 5.11,Wetlands (inland) - Alpine Wetlands (includes temporary waters from snowmelt),210,Water bodies         
 5.12,Wetlands (inland) - Geothermal Wetlands,210,Water bodies         
 5.13,Wetlands (inland) - Permanent Inland Deltas,210,Water bodies         
@@ -161,7 +161,7 @@ iucn_code,iucn_habitat,esa_code,esa_description
 14.5,Artificial/Terrestrial - Urban Areas,190,Urban areas         
 14.6,Artificial/Terrestrial - Subtropical/Tropical Heavily Degraded Former Forest,30,"Mosaic cropland (>50%) / natural vegetation (tree, shrub, herbaceous cover) (<50%)"
 15.1,Artificial/Aquatic - Water Storage Areas (over 8ha),210,Water bodies         
-15.1,Artificial/Aquatic - Karst and Other Subterranean Hydrological Systems (human-made),NA,NA
+15.18,Artificial/Aquatic - Karst and Other Subterranean Hydrological Systems (human-made),NA,NA
 15.2,Artificial/Aquatic - Ponds (below 8ha),210,Water bodies         
 15.3,Artificial/Aquatic - Aquaculture Ponds,210,Water bodies         
 15.4,Artificial/Aquatic - Salt Exploitation Sites,202,Unconsolidated bare areas        
