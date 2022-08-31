@@ -84,5 +84,35 @@ sRL_areaAOH<-function(ras, SCALE){
 }
 
 
+### AOH calculate for large range species
+sRL_largeAOH<-function(habitats_pref, altitudes_pref, rangeSP_clean, YR){
+  
+  log_info("Charge CCI_Large data")
+  if(YR==config$YearAOH2){CCI_fun<-CCI_large} else {
+    CCI_fun<-stackOpen(paste0(config$cciStack2_path, "/", YR, "/CCI_Stack_Agg30_Year", YR, ".stk"))
+  }
+  
+  log_info("START - Large: AOH")
+  
+  # Select rasters to keep
+  CCI_to_keep<-NA
+  for(i in 1:length(habitats_pref)){CCI_to_keep<-c(CCI_to_keep, crosswalkLARGE$Stack_Name[grepl(habitats_pref[i], crosswalkLARGE$Codes)])  %>% unique(.) %>% .[is.na(.)==F] %>% sort(.)}
+  CCI_suitable<-CCI_fun[[which(names(CCI_fun) %in% paste0("Agg30_CCI", YR, "_", CCI_to_keep))]]
+  print("Suitable CCI groups:") ; print(names(CCI_suitable))
+  
+  # Crop and sum CCIs  
+  CCI_crop<-crop(CCI_suitable, extent(rangeSP_clean))
+  CCI_sum<-sum(CCI_crop)
 
+  # Crop altitude and calculate AOH
+  alt_crop<-crop(alt_large, extent(rangeSP_clean))
+  alt_suitable<-(alt_crop > as.numeric(altitudes_pref[1]) & alt_crop<as.numeric(altitudes_pref[2]))
+
+  AOH<-CCI_sum*alt_suitable %>% mask(., rangeSP_clean)
+  AOH<-rast(AOH)
+  
+  log_info("END - Large: AOH")
+  
+  return(AOH)
+}
 

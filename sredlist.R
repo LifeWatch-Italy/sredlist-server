@@ -132,7 +132,7 @@ function(scientific_name, presences = list(), seasons = list() , origins = list(
   Storage_SP$distSP_saved<-distSP
   
   ### Prepare countries if they were not charged + crop depending on the current selection of range
-  if("CountrySP_saved" %not in% names(Storage_SP)){Storage_SP$CountrySP_saved<-sRL_PrepareCountries(extent(distSP))} 
+  if("CountrySP_saved" %not in% names(Storage_SP)){Storage_SP$CountrySP_saved<-sRL_PrepareCountries(extent(distSP_full))} 
   CountrySP<-st_crop(Storage_SP$CountrySP_saved, extent(distSP))
   Storage_SP<-sRL_OutLog(Storage_SP, c("Distribution_Presence", "Distribution_Seasonal", "Distribution_Origin"), c(paste0(presences, collapse=","), paste0(seasons, collapse=","), paste0(origins, collapse=",")))
   Storage_SP<-sRL_OutLog(Storage_SP, "Distribution_Source", ifelse(substr(path, nchar(path)-2, nchar(path))=="_RL", "Red List", "Uploaded")) # If path ends by _RL it comes from the RL, uploaded otherwise
@@ -646,8 +646,7 @@ function(scientific_name, habitats_pref= list(), altitudes_pref= list(), density
   print(habitats_pref)
   print(altitudes_pref)
   print(density_pref)
-  print(isGbifDistribution)
-  
+
   # Charge distribution
   distSP$binomial<-as.character(distSP$binomial)
   
@@ -670,51 +669,69 @@ function(scientific_name, habitats_pref= list(), altitudes_pref= list(), density
   dir.create(paste0(output_dir, "/Current"), recursive=T)
   dir.create(paste0(output_dir, "/Temporary"))
   do.call(file.remove, list(list.files(output_dir, full.names = TRUE, recursive=T)))
-
-  # Altitude
   terraOptions(tempdir=paste0(output_dir, "/Temporary"), memmax=config$RAMmax_GB)
   rasterOptions(tmpdir=paste0(output_dir, "/Temporary"), maxmemory=config$RAMmax_GB)
-  log_info("START - Cropping rasters")
-  alt_crop=crop(alt_raw, extent(distSP)) 
-  Storage_SP$alt_crop_saved=alt_crop
-  cci2_crop<-crop(cci2, extent(distSP))
-  gc()
-  log_info("END - Cropping rasters")
   
   
-  AOH2<-sRL_calculateAOH(rangeSP_fun=rangeSP_clean, 
+  ### SMALL-RANGES
+  AOH_type<-ifelse(as.numeric(st_area(rangeSP_clean))/10^6 < as.numeric(config$Size_LargeRange), "Small", "Large") ; print(AOH_type)
+  if(AOH_type=="Small"){
+    
+    log_info("START - Small: Cropping rasters")
+    alt_crop=crop(alt_raw, extent(distSP)) 
+    Storage_SP$alt_crop_saved=alt_crop
+    cci2_crop<-crop(cci2, extent(distSP))
+    gc()
+    log_info("END - Small: Cropping rasters")
+  
+  
+    AOH2<-sRL_calculateAOH(rangeSP_fun=rangeSP_clean, 
                          cci_fun=cci2_crop, 
                          alt_fun=alt_crop,
                          FOLDER=paste0(output_dir, "/Current"),
                          elevation_data_fun=altitudes_pref_DF)
-  Storage_SP$AOH2_saved=AOH2
+    
+    plot1 <- gplot(AOH2[[1]]) +
+      coord_fixed()+
+      geom_tile(aes(fill = as.factor(value))) +
+      scale_fill_manual(values=c("#dfc27d", "#018571", NA), labels=c("Unsuitable", "Suitable", ""), name="", na.translate=F) +
+      ggtitle("Area of Habitat in 2020") +
+      theme_void() %+replace%   theme(plot.title=element_text(hjust=0.5, size=14, face="bold"))
+    
 
+  ### LARGE-RANGES
+  } else {
+    AOH2<-sRL_largeAOH(habitats_pref, altitudes_pref, rangeSP_clean, config$YearAOH2)
+    
+    plot1 <- gplot((AOH2[[1]]/9)) + # Divide by 9 to get percents
+      coord_fixed()+
+      geom_tile(aes(fill = value)) +
+      scale_fill_gradient(low="#dfc27d", high="#018571", name="Suitability (%)", limits=c(0,100), na.value=NA)+
+      ggtitle("Area of Habitat in 2020") +
+      theme_void() %+replace%   theme(plot.title=element_text(hjust=0.5, size=14, face="bold"))
+    
+  }
   
-  
+  Storage_SP$AOH2_saved=AOH2
+  Storage_SP$AOH_type<-AOH_type
+
   # Plot
   log_info("START - Plot AOH")
-  
-  plot1 <- gplot(AOH2[[1]]) +
-    coord_fixed()+
-    geom_tile(aes(fill = as.factor(value))) +
-    scale_fill_manual(values=c("#dfc27d", "#018571", NA), labels=c("Unsuitable", "Suitable", ""), name="", na.translate=F) +
-    ggtitle("Area of Habitat in 2020") +
-    theme_void() %+replace%   theme(plot.title=element_text(hjust=0.5, size=14, face="bold"))
   
   ggsave(filename = paste0("resources/AOH_stored/", sub(" ", "_", scientific_name), "/Plots/aoh.png"), plot = plot(plot1))
   
   plot1 <- base64enc::dataURI(file = paste0("resources/AOH_stored/", sub(" ", "_", scientific_name), "/Plots/aoh.png"), mime = "image/png", encoding = "base64") # nolint
   log_info("END - Plot AOH")
   
-  AOH_km2 <-  sRL_areaAOH(AOH2[[1]], SCALE="cci")
+  AOH_km2 <-  sRL_areaAOH(AOH2[[1]], "cci") # Same scale in small or large AOH because the unit is always 1 cell of the fine raster
   Storage_SP$AOHkm2_saved<-AOH_km2
 
 
   #Calculate Area of Habitat in a resolution of 2x2km (as is the map of altitude provided), in order to use it as an upper bound of species Area of Occupancy under criterion B2 (each cell covers 4km2)
   grid22_crop<-crop(grid22, AOH2[[1]])
-  aoh_22<-resample(AOH2[[1]], grid22_crop, method="max")
+  aoh_22<-resample(AOH2[[1]], grid22_crop, method="max")>0
 
-  plot2 <- gplot(aoh_22[[1]]) +
+  plot2 <- gplot(aoh_22[[1]]>0) +
     coord_fixed()+
     geom_tile(aes(fill = factor(as.character(value), c("0", "1")))) +
     scale_fill_manual(values=c("#dfc27d", "#018571"), labels=c("Unsuitable", "Suitable"), name="", na.translate=F, drop=F) +
@@ -778,6 +795,7 @@ function(scientific_name, habitats_pref= list(), altitudes_pref= list(), density
 #* @serializer unboxedJSON
 #* @tag sRedList
 function(scientific_name, GL_species=1) { # nolint
+  
   #Filter param
   scientific_name <- url_decode(scientific_name)
   Storage_SP=sRL_reuse(scientific_name)
@@ -789,48 +807,67 @@ function(scientific_name, GL_species=1) { # nolint
   altitude_pref_DF=Storage_SP$AltPref_saved
   AOH2=Storage_SP$AOH2_saved
   AOH_km2<-Storage_SP$AOHkm2_saved
+  AOH_type<-Storage_SP$AOH_type
   
   # Charge distribution
   distSP$binomial<-as.character(distSP$binomial)
   
-  # Output directory
+  # Output directory + options
   output_dir<-paste0("resources/AOH_stored/", sub(" ", "_", scientific_name))
   dir.create(paste0(output_dir, "/Initial"))
-  
-  # Charge CCI1
   terraOptions(tempdir=paste0(output_dir, "/Temporary"), memmax=config$RAMmax_GB)
   rasterOptions(tmpdir=paste0(output_dir, "/Temporary"), maxmemory=config$RAMmax_GB)
-  log_info("START - Cropping rasters")
+  
+  # Choose year to use 
   Year1_theo<-config$YearAOH2-max(10, round(3*GL_species))
   Year1<-max(Year1_theo, 1992) ; print(Year1)
-  cci1<-rast(sub("XXXX", Year1, config$cci1_raster_path)) ; crs(cci1)<-CRSMOLL # I ensure the CRS is correctly assigned
   
-  # Crop CCI1
-  cci1_crop<-crop(cci1, extent(distSP))
-  log_info("END - Cropping rasters")
+  ### SMALL-RANGES
+  if(AOH_type=="Small"){
+    
+    # Charge and crop CCI1
+    log_info("START - Cropping rasters")
+    cci1<-rast(sub("XXXX", Year1, config$cci1_raster_path)) ; crs(cci1)<-CRSMOLL # I ensure the CRS is correctly assigned
+    cci1_crop<-crop(cci1, extent(distSP))
+    log_info("END - Cropping rasters")
   
-  # Calculate AOH
-  AOH1<-sRL_calculateAOH(rangeSP_fun=rangeSP_clean,
+    # Calculate AOH
+    AOH1<-sRL_calculateAOH(rangeSP_fun=rangeSP_clean,
                          cci_fun=cci1_crop,
                          alt_fun=alt_crop,
                          FOLDER=paste0(output_dir, "/Initial"),
                          elevation_data_fun=altitudes_pref_DF)
   
-  # Area
-  AOH_old_km2<-sRL_areaAOH(AOH1[[1]], SCALE="cci")
+   # Create plot
+    plot1 <- gplot((AOH2[[1]]*2+3)-AOH1[[1]]) + 
+      coord_fixed()+
+      geom_tile(aes(fill = factor(as.character(value), c("2", "3", "4", "5"))))+
+      scale_fill_manual(values=c("#a6611a", "gray90", "#80cdc1", "#018571"), labels=c("Newly unsuitable", "Unsuitable", "Suitable", "Newly suitable"), name="", na.translate=F, drop=F)+
+      ggtitle(paste0("Trends in Area of Habitat between ", Year1, " and ", config$YearAOH2))+
+      theme_void() %+replace%   theme(plot.title=element_text(hjust=0.5, size=14, face="bold"))
   
-  # Calculate trends in AOH and plot
-  AOH_lost<- (1-(AOH_km2/AOH_old_km2))
+   
+  } else {
+    
+    # Calculate AOH
+    AOH1<-sRL_largeAOH(habitats_pref_DF$code, altitude_pref_DF[, c("elevation_lower", "elevation_upper")], rangeSP_clean, Year1)
+    
+    # Create plot
+    plot1 <- gplot((AOH2[[1]]-AOH1[[1]])/9) + 
+      coord_fixed()+
+      geom_tile(aes(fill = value))+
+      scale_fill_gradient2(low="#8c510a", mid="azure2", midpoint=0, high="#018571", name="Suitability change (%)", limits=c(-100,100), na.value=NA)+
+      ggtitle(paste0("Trends in Area of Habitat between ", Year1, " and ", config$YearAOH2))+
+      theme_void() %+replace%   theme(plot.title=element_text(hjust=0.5, size=14, face="bold"))
+  }
   
-  plot1 <- gplot((AOH2[[1]]*2+3)-AOH1[[1]]) + 
-    coord_fixed()+
-    geom_tile(aes(fill = factor(as.character(value), c("2", "3", "4", "5"))))+
-    scale_fill_manual(values=c("#a6611a", "gray90", "#80cdc1", "#018571"), labels=c("Newly unsuitable", "Unsuitable", "Suitable", "Newly suitable"), name="", na.translate=F, drop=F)+
-    ggtitle(paste0("Trends in Area of Habitat between ", Year1, " and ", config$YearAOH2))+
-    theme_void() %+replace%   theme(plot.title=element_text(hjust=0.5, size=14, face="bold"))
-  
+  # Plot
   ggsave(filename = paste0("resources/AOH_stored/", sub(" ", "_", scientific_name), "/Plots/trends_aoh.png"), plot = plot(plot1))
   plot1 <- base64enc::dataURI(file = paste0("resources/AOH_stored/", sub(" ", "_", scientific_name), "/Plots/trends_aoh.png"), mime = "image/png", encoding = "base64") # nolint
+  
+  # Calculate area and trends
+  AOH_old_km2<-sRL_areaAOH(AOH1[[1]], SCALE="cci")
+  AOH_lost<- (1-(AOH_km2/AOH_old_km2))
   
   ### Store parameters and results
   Storage_SP$GL_saved<-GL_species

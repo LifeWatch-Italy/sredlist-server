@@ -94,10 +94,13 @@ distCountries<-st_read("Species/Map countries/Admin_dissolved_by_country_Simplif
 alt_raw <- rast(config$alt_raster_path) ; crs(alt_raw)<-CRSMOLL  # I ensure the CRS is correctly assigned (it was saved as a CRSMOLL raster)
 cci2 <- rast(config$cci2_raster_path); crs(cci2)<-CRSMOLL
 grid22<-rast("resources/EmptyGrid2x2/Empty.grid.2x2.Mollweide.tif")
+CCI_large<-stackOpen(paste0(config$cciStack2_path, "/2020/CCI_Stack_Agg30_Year2020.stk"))
+alt_large<-raster(paste0(config$cciStack2_path, "/ElevationAgg30.tif"))
 
 # Load Crosswalk CSV and Density CSV
 density<-read.csv("Species/Density.table.csv", sep=",")
 crosswalk <- read.csv("Species/Crosswalk_CCI_IUCN.csv")
+crosswalkLARGE<-read.csv("Species/Lumbierres_large_crosswalk.csv")
 GL_file<-read.csv("Species/Generation_length_sRedList.csv", sep=",")
 if(config$crosswalk == "Santini"){crosswalk_to_use<- crosswalk[is.na(crosswalk$esa_code)==F, c("iucn_code", "esa_code")] ; names(crosswalk_to_use)<-c("code", "value")}
 if(config$crosswalk == "Lumbierres"){crosswalk_to_use<- read.csv("Species/Crosswalk_CCI_IUCN_Lumbierres.csv") ; crosswalk_to_use$code<-as.character(crosswalk_to_use$code)}

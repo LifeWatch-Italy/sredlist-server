@@ -133,7 +133,7 @@ sRL_InitLog<-function(scientific_name, DisSource){
   output_to_save<-output
   output_to_save$Value[output_to_save$Parameter=="Distribution_Source"]<-DisSource
   output_to_save$Date<-Sys.Date()
-  output_to_save$Species<-scientific_name
+  output_to_save$Species<-url_decode(scientific_name)
   
   return(output_to_save)
 }
