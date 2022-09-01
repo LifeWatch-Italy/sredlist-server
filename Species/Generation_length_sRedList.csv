@@ -1213,7 +1213,7 @@
 "Arctocephalus australis Peruvian/Northern Chilean subpopulation",72050476,"11.7",1,"Mammal",11.7
 "Arctocephalus australis ssp. australis",2064,"11.7",1,"Mammal",11.7
 "Arctocephalus forsteri",41664,"9.9",1,"Mammal",9.9
-"Arctocephalus galapagoensis",2057,"8-11.7,10",1,"Mammal",NA
+"Arctocephalus galapagoensis",2057,"8-11.7,10",1,"Mammal",10
 "Arctocephalus gazella",2058,"9.1",1,"Mammal",9.1
 "Arctocephalus pusillus",2060,"9.1",1,"Mammal",9.1
 "Arctocephalus pusillus ssp. pusillus",2066,"9.1",1,"Mammal",9.1
@@ -1408,7 +1408,6 @@
 "Astrapia splendidissima",22706215,"7.9",1,"Bird",7.9
 "Astrapia stephaniae",22706222,"7.9",1,"Bird",7.9
 "Astrochelys radiata",9014,"42",1,"Reptile",42
-"Astrochelys yniphora",9016,"42years(byanalogywithA.radiata)",1,"Reptile",NA
 "Atalotriccus pilaris",22699574,"2.48",1,"Bird",2.5
 "Atelerix albiventris",40602,"3-4",1,"Mammal",3.5
 "Atelerix frontalis",2274,"3-4",1,"Mammal",3.5
@@ -1734,7 +1733,7 @@
 "Bibimys labiosus",2802,"1-2",1,"Mammal",1.5
 "Bison bison",2815,"9",1,"Mammal",9
 "Bison bonasus",2814,"12",1,"Mammal",12
-"Bitis gabonica",13300893,"5-8,6",1,"Reptile",NA
+"Bitis gabonica",13300893,"5-8,6",1,"Reptile",6
 "Bitis nasicornis",13300910,"5",1,"Reptile",5
 "Biziura lobata",22679830,"7",1,"Bird",7
 "Blanfordimys afghanus",2823,"13",1,"Mammal",13
@@ -2897,7 +2896,6 @@
 "Chalcostigma olivaceum",22688027,"4.2",1,"Bird",4.2
 "Chalcostigma ruficeps",22688024,"4.2",1,"Bird",4.2
 "Chalcostigma stanleyi",22688030,"4.2",1,"Bird",4.2
-"Chalcothore montgomeryi",60249,"Unknown",1,"Odonata",NA
 "Chalinolobus dwyeri",4414,"5.6",1,"Mammal",5.6
 "Chalinolobus picatus",4422,"5.6",1,"Mammal",5.6
 "Chalinolobus tuberculatus",4425,"12",1,"Mammal",12
@@ -3467,7 +3465,7 @@
 "Clanga pomarina",22696022,"8.57",1,"Bird",8.6
 "Clangula hyemalis",22680427,"9",1,"Bird",9
 "Claravis pretiosa",22690809,"4.3",1,"Bird",4.3
-"Clemmys guttata",4968,"15-30,25",1,"Reptile",NA
+"Clemmys guttata",4968,"15-30,25",1,"Reptile",25
 "Cleptornis marchei",22714282,"2.84",1,"Bird",2.8
 "Clibanornis dendrocolaptoides",22702639,"4.3",1,"Bird",4.3
 "Clibanornis erythrocephalus",22702956,"3.4",1,"Bird",3.4
@@ -3758,7 +3756,6 @@
 "Copsychus saularis",103893432,"2.4",1,"Bird",2.4
 "Copsychus saularis_old",22709988,"3.6",1,"Bird",3.6
 "Copsychus sechellarum",22709978,"4.5",1,"Bird",4.5
-"Cora marina",158975,"Unknown",1,"Odonata",NA
 "Coracias abyssinicus",22682865,"5.6",1,"Bird",5.6
 "Coracias affinis",22725924,"5.6",1,"Bird",5.6
 "Coracias benghalensis",22725914,"5.6",1,"Bird",5.6
@@ -4502,7 +4499,7 @@
 "Cyrtonyx ocellatus",22679717,"2.24",1,"Bird",2.2
 "Cyrtonyx sallei",22724748,"1.9",1,"Bird",1.9
 "Cystophora cristata",6204,"12.8",1,"Mammal",12.8
-"Daboia russelii",172710,"0-1,.5",1,"Reptile",NA
+"Daboia russelii",172710,"0-1,.5",1,"Reptile",0.5
 "Dacelo gaudichaud",22683199,"5.7",1,"Bird",5.7
 "Dacelo leachii",22683193,"5.7",1,"Bird",5.7
 "Dacelo novaeguineae",22683189,"5.7",1,"Bird",5.7
@@ -5247,7 +5244,7 @@
 "Empidonax virescens",22699842,"2.92",1,"Bird",2.9
 "Empidonax wrightii",22699860,"2.4",1,"Bird",2.4
 "Empidonomus varius",22700520,"3.6",1,"Bird",3.6
-"Emydoidea blandingii",7709,"36-47,40",1,"Reptile",NA
+"Emydoidea blandingii",7709,"36-47,40",1,"Reptile",40
 "Enallagma recurvatum",7720,"1",1,"Odonata",1
 "Enhydra lutris",7750,"7",1,"Mammal",7
 "Enicognathus ferrugineus",22685888,"6",1,"Bird",6
@@ -6320,7 +6317,7 @@
 "Gongylomorphus bojerii",62251,"3",1,"Reptile",3
 "Goniurosaurus hainanensis",18917694,"4",1,"Reptile",4
 "Goodfellowia miranda",22710968,"4.1",1,"Bird",4.1
-"Gopherus agassizii",97246272,"20-32,30",1,"Reptile",NA
+"Gopherus agassizii",97246272,"20-32,30",1,"Reptile",30
 "Gopherus evgoodei",90377823,"20-25",1,"Reptile",22.5
 "Gopherus flavomarginatus",9402,"40-60",1,"Reptile",50
 "Gorilla beringei",39994,"20",1,"Mammal",20
@@ -6428,7 +6425,7 @@
 "Graphiurus rupicola",9492,"2-3",1,"Mammal",2.5
 "Graptemys barbouri",9496,"20",1,"Reptile",20
 "Graptemys flavimaculata",9498,"20",1,"Reptile",20
-"Graptemys geographica",165598,"15-20,18",1,"Reptile",NA
+"Graptemys geographica",165598,"15-20,18",1,"Reptile",18
 "Graptemys gibbonsi",184436,"25",1,"Reptile",25
 "Graptemys pearlensis",184437,"25",1,"Reptile",25
 "Graueria vittata",22715019,"3.6",1,"Bird",3.6
@@ -7427,7 +7424,6 @@
 "Junco phaeonotus",103778667,"2.4",1,"Bird",2.4
 "Junco phaeonotus_old",22721107,"3.6",1,"Bird",3.6
 "Junco vulcani",22721094,"2.7",1,"Bird",2.7
-"Junix elumbis",59733,"Unknown",1,"Odonata",NA
 "Jynx ruficollis",22680689,"3.5",1,"Bird",3.5
 "Jynx torquilla",22680683,"3.5",1,"Bird",3.5
 "Kakamega poliothorax",22715933,"5.5",1,"Bird",5.5
@@ -7950,15 +7946,9 @@
 "Leptotila wellsi",22690874,"4.71",1,"Bird",4.7
 "Leptotrygon veraguensis",22690928,"5.4",1,"Bird",5.4
 "Leptotyphlops telloi",44979917,"2",1,"Reptile",2
-"Lepus alleni",41272,"unknown",1,"Mammal",NA
-"Lepus americanus",41273,"unknown",1,"Mammal",NA
-"Lepus arcticus",41274,"unknown",1,"Mammal",NA
-"Lepus brachyurus",41275,"unknown",1,"Mammal",NA
-"Lepus californicus",41276,"unknown",1,"Mammal",NA
 "Lepus callotis",11792,"2.87",1,"Mammal",2.9
 "Lepus europaeus",41280,"1",1,"Mammal",1
 "Lepus flavigularis",11790,"2.87",1,"Mammal",2.9
-"Lepus saxatilis",41285,"unknown",1,"Mammal",NA
 "Lerwa lerwa",22678649,"5",1,"Bird",5
 "Lesbia nuna",22687974,"4.2",1,"Bird",4.2
 "Lesbia victoriae",22687971,"4.2",1,"Bird",4.2
@@ -8419,7 +8409,7 @@
 "Madoqua saltiana",12668,"3.7",1,"Mammal",3.7
 "Madromys blanfordi",5512,"2",1,"Mammal",2
 "Magumma parva",22720774,"5.5",1,"Bird",5.5
-"Malaclemys terrapin",12695,"13-20,15",1,"Reptile",NA
+"Malaclemys terrapin",12695,"13-20,15",1,"Reptile",15
 "Malacochersus tornieri",12696,"15",1,"Reptile",15
 "Malacocincla abbotti",22715811,"4.9",1,"Bird",4.9
 "Malacocincla perspicillata",22715827,"4.9",1,"Bird",4.9
@@ -11619,7 +11609,6 @@
 "Phyllomys blainvillii",6977,"1-2",1,"Mammal",1.5
 "Phyllomys dasythrix",6980,"1-2",1,"Mammal",1.5
 "Phyllomys nigrispinus",6984,"1-2",1,"Mammal",1.5
-"Phyllopetalia pudu",59758,"Unknown",1,"Odonata",NA
 "Phylloscartes beckeri",22724495,"3.6",1,"Bird",3.6
 "Phylloscartes ceciliae",22699516,"2.35",1,"Bird",2.4
 "Phylloscartes difficilis",22699512,"2.26",1,"Bird",2.3
@@ -12572,7 +12561,7 @@
 "Pseudastur occidentalis",22695789,"6",1,"Bird",6
 "Pseudastur polionotus",22695795,"7.44",1,"Bird",7.4
 "Pseudelaenia leucospodia",22699251,"3.6",1,"Bird",3.6
-"Pseudemys concinna",163444,"15-30,20",1,"Reptile",NA
+"Pseudemys concinna",163444,"15-30,20",1,"Reptile",20
 "Pseudeos fuscata",22684528,"4.9",1,"Bird",4.9
 "Pseudhirundo griseopyga",22712209,"4.1",1,"Bird",4.1
 "Pseudibis davisoni",22697531,"7",1,"Bird",7
@@ -13852,7 +13841,6 @@
 "Schroederichthys saurisqualus",44586,"21",1,"Chondrichtyes",21
 "Sciaphylax castanea",22733153,"4.8",1,"Bird",4.8
 "Sciaphylax hemimelaena",22733838,"4.8",1,"Bird",4.8
-"Sciotropis lattkei",59772,"Unknown",1,"Odonata",NA
 "Scissirostrum dubium",22711001,"4.6",1,"Bird",4.6
 "Sciurocheirus alleni",8785,"4",1,"Mammal",4
 "Sciurocheirus alleni ssp. alleni",40001,"4",1,"Mammal",4
@@ -15179,8 +15167,8 @@
 "Terpsiphone rufocinerea_old",22707102,"5.8",1,"Bird",5.8
 "Terpsiphone unirufa",103715865,"5.8",1,"Bird",5.8
 "Terpsiphone viridis",22707108,"5.8",1,"Bird",5.8
-"Terrapene carolina",21641,"15-25,20",1,"Reptile",NA
-"Terrapene ornata",21644,"15-30,20",1,"Reptile",NA
+"Terrapene carolina",21641,"15-25,20",1,"Reptile",20
+"Terrapene ornata",21644,"15-30,20",1,"Reptile",20
 "Tersina viridis",22723018,"3.7",1,"Bird",3.7
 "Tesia cyaniventer",22714353,"3.6",1,"Bird",3.6
 "Tesia everetti",22714359,"3.6",1,"Bird",3.6
@@ -15476,7 +15464,7 @@
 "Toxostoma ocellatum",22711118,"3.3",1,"Bird",3.3
 "Toxostoma redivivum",22711124,"4.2",1,"Bird",4.2
 "Toxostoma rufum",22711099,"4.2",1,"Bird",4.2
-"Trachemys scripta",22028,"15-25,20",1,"Reptile",NA
+"Trachemys scripta",22028,"15-25,20",1,"Reptile",20
 "Trachylaemus goffinii",22725990,"8.5",1,"Bird",8.5
 "Trachylaemus purpuratus",22725980,"8.5",1,"Bird",8.5
 "Trachylaemus togoensis",22725996,"8.5",1,"Bird",8.5
@@ -16034,7 +16022,7 @@
 "Urotrygon rogersi",161335,"4.5",1,"Chondrichtyes",4.5
 "Urotrygon simulatrix",161394,"5",1,"Chondrichtyes",5
 "Urotrygon venezuelae",63156,"3.1",1,"Chondrichtyes",3.1
-"Ursus maritimus",22823,"9.8-13.6,11.5",1,"Mammal",NA
+"Ursus maritimus",22823,"9.8-13.6,11.5",1,"Mammal",11.5
 "Ursus thibetanus",22824,"10",1,"Mammal",10
 "Vampyressa melissa",22839,"6",1,"Mammal",6
 "Vandeleuria oleracea",22845,"2",1,"Mammal",2
@@ -16513,3 +16501,1406 @@
 "Zyzomys palatalis",23327,"2",1,"Mammal",2
 "Zyzomys pedunculatus",23324,"2",1,"Mammal",2
 "Zyzomys woodwardi",23328,"1-2",1,"Mammal",1.5
+"Acheilognathus elongatus",212,"2 - NA",6,"Actino",2
+"Acipenser naccarii",224,"20 - NA",6,"Actino",20
+"Acipenser nudiventris",225,"12-22 - NA",4,"Actino",17
+"Acipenser ruthenus",227,"10 - NA",4,"Actino",10
+"Acipenser schrenckii",228,"12-45 - NA",12,"Actino",28.5
+"Acipenser stellatus",229,"8-14 - NA",4,"Actino",11
+"Acipenser dabryanus",231,"9 - NA",4,"Actino",9
+"Acipenser gueldenstaedtii",232,"10-16 - NA",4,"Actino",13
+"Acipenser persicus",235,"12-18 - NA",4,"Actino",15
+"Acipenser sinensis",236,"16.5-20 - NA",4,"Actino",18.2
+"Acipenser mikadoi",241,"15 - NA",4,"Actino",15
+"Acipenser baerii",244,"25-30 - NA",4,"Actino",27.5
+"Haplochromis welcommei",872,"1 - NA",6,"Actino",1
+"Alosa immaculata",907,"3 - NA",4,"Actino",3
+"Alosa alabamae",908,"2 - 3-4 - NA",6,"Actino",3
+"Anabarilius polylepis",1190,"2 - NA",6,"Actino",2
+"Neoarius taylori",2111,"5 - NA",6,"Actino",5
+"Haplochromis barbarae",2193,"1 - NA",6,"Actino",1
+"Haplochromis brownae",2194,"1 - NA",6,"Actino",1
+"Haplochromis megalops",2197,"1 - NA",8,"Actino",1
+"Ataeniobius toweri",2271,"1 - NA",12,"Actino",1
+"Austroglanis barnardi",2426,"12 - NA",12,"Actino",12
+"Balistes vetula",2539,"4-8 - NA",2,"Actino",6
+"Pseudobarbus trevelyani",2573,"6 - NA",14,"Actino",6
+"Barbus tyberinus",2591,"5-8 - NA",6,"Actino",6.5
+"Bidyanus bidyanus",2804,"5.32 - NA",4,"Actino",5.3
+"Yasuhikotakia sidthimunki",2953,"4-5 - NA",4,"Actino",4.5
+"Brachionichthys hirsutus",2958,"11.5 - NA",4,"Actino",11.5
+"Laubuka caeruleostigmata",4602,"3 - NA",12,"Actino",3
+"Chetia brevis",4626,"5 - NA",12,"Actino",5
+"Chiloglanis bifurcus",4632,"3-5 - NA",12,"Actino",4
+"Chlamydogobius squamigenus",4699,"0.5 - NA",6,"Actino",0.5
+"Chlamydogobius gloveri",4700,"0.5 - NA",6,"Actino",0.5
+"Coregonus autumnalis",5363,"10 - NA",4,"Actino",10
+"Craterocephalus amniculus",5487,"1 - NA",6,"Actino",1
+"Cyprinodon diabolis",6149,"1 - NA",12,"Actino",1
+"Cyprinus carpio",6181,"4-50 - NA",4,"Actino",27
+"Tampichthys dichromus",6624,"2 - NA",12,"Actino",2
+"Haplochromis paropius",7777,"1 - NA",4,"Actino",1
+"Epinephelus drummondhayi",7854,"37 - NA",6,"Actino",37
+"Epinephelus lanceolatus",7858,"21.5 - NA",6,"Actino",21.5
+"Epinephelus marginatus",7859,"33.75 - NA",6,"Actino",33.8
+"Hyporthodus nigritus",7860,"25 - NA",6,"Actino",25
+"Hyporthodus niveatus",7861,"&lt;10years - 20 - NA",8,"Actino",20
+"Epinephelus striatus",7862,"17 - NA",6,"Actino",17
+"Fundulus lima",8708,"1-2 - NA",8,"Actino",1.5
+"Galaxias fontanus",8805,"3 - NA",10,"Actino",3
+"Galaxias johnstoni",8806,"3 - NA",10,"Actino",3
+"Galaxias parvus",8807,"2 - NA",10,"Actino",2
+"Galaxias pedderensis",8808,"2 - NA",10,"Actino",2
+"Galaxias tanycephalus",8809,"2 - NA",10,"Actino",2
+"Galaxias fuscus",8810,"8 - NA",6,"Actino",8
+"Galaxias gracilis",8812,"1 - NA",6,"Actino",1
+"Galaxias postvectis",8813,"10 - NA",10,"Actino",10
+"Galaxias rostratus",8814,"3 - NA",6,"Actino",3
+"Galaxias argenteus",8817,"10 - NA",4,"Actino",10
+"Galaxiella nigrostriata",8819,"1 - NA",6,"Actino",1
+"Galaxiella pusilla",8820,"1 - NA",6,"Actino",1
+"Galaxiella munda",8821,"1 - NA",4,"Actino",1
+"Haplochromis obtusidens",8957,"1 - NA",6,"Actino",1
+"Haplochromis lividus",9687,"1 - NA",4,"Actino",1
+"Haplochromis obliquidens",9688,"1 - NA",6,"Actino",1
+"Haplochromis paraplagiostoma",9726,"1 - NA",6,"Actino",1
+"Hippocampus capensis",10056,"1-3 - NA",7,"Actino",2
+"Hippocampus erectus",10066,"1 - NA",3,"Actino",1
+"Hippocampus hippocampus",10069,"2 - NA",4,"Actino",2
+"Hippocampus histrix",10070,"2 - NA",3,"Actino",2
+"Hippocampus ingens",10072,"0-2 - NA",4,"Actino",1
+"Hippocampus kuda",10075,"2 - NA",4,"Actino",2
+"Hippocampus reidi",10082,"1 - NA",3,"Actino",1
+NA,10084,"2 - NA",4,"Actino",2
+"Hippocampus trimaculatus",10087,"3 - NA",4,"Actino",3
+"Hippocampus whitei",10088,"0-2 - NA",3,"Actino",1
+"Hippocampus zosterae",10089,"0.33 - NA",3,"Actino",0.3
+"Haplochromis retrodens",10260,"1 - NA",6,"Actino",1
+"Huso huso",10269,"20-25 - NA",4,"Actino",22.5
+"Hypomesus transpacificus",10722,"1 - NA",8,"Actino",1
+"Hypseleotris ejuncida",10731,"1 - NA",6,"Actino",1
+"Hypseleotris kimberleyensis",10732,"1 - NA",6,"Actino",1
+"Kimberleyeleotris notata",10994,"1 - NA",6,"Actino",1
+"Haplochromis ishmaeli",11074,"1 - NA",6,"Actino",1
+"Haplochromis pharyngomylus",11075,"1 - NA",6,"Actino",1
+"Haplochromis teegelaari",11076,"1 - NA",6,"Actino",1
+"Haplochromis mylergates",11077,"1 - NA",6,"Actino",1
+"Lachnolaimus maximus",11130,"12 - NA",4,"Actino",12
+"Lepidogalaxias salamandroides",11575,"2 - NA",6,"Actino",2
+"Parabotia curtus",11661,"2.5-3 - NA",12,"Actino",2.8
+"Haplochromis maxillaris",12112,"1 - NA",4,"Actino",1
+"Lithognathus lithognathus",12137,"13 - NA",4,"Actino",13
+"Lutjanus analis",12416,"8-22 - NA",4,"Actino",15
+"Lutjanus cyanopterus",12417,"11-13 - NA",4,"Actino",12
+"Maccullochella ikei",12573,"6 - NA",12,"Actino",6
+"Maccullochella macquariensis",12574,"13 - NA",10,"Actino",13
+"Maccullochella peelii",12576,"14.39 - NA",10,"Actino",14.4
+"Macquaria australasica",12581,"14 - NA",6,"Actino",14
+"Haplochromis bicolor",12616,"1 - NA",8,"Actino",1
+"Melanotaenia eachamensis",13054,"1 - NA",10,"Actino",1
+"Melanotaenia gracilis",13062,"1 - NA",6,"Actino",1
+"Moxostoma hubbsi",13917,"20-25 - NA",12,"Actino",22.5
+"Mycteroperca jordani",14049,"&gt;10years(probably15years) - 27 - NA",8,"Actino",27
+"Mycteroperca microlepis",14050,"17 - NA",6,"Actino",17
+"Mycteroperca olfax",14051,"13.7 - NA",12,"Actino",13.7
+"Mycteroperca rosacea",14053,"8 - 12.5 - NA",8,"Actino",10.2
+"Nannatherina balstoni",14320,"1 - NA",6,"Actino",1
+"Nannoperca oxleyana",14321,"2.3 - NA",6,"Actino",2.3
+"Nemacheilus troglocataractus",14491,"10 - NA",8,"Actino",10
+"Neochanna diversus",14506,"3 - NA",12,"Actino",3
+"Neochanna apoda",14507,"4 - NA",6,"Actino",4
+"Pangasianodon gigas",15944,"35 - NA",14,"Actino",35
+"Pangasius sanitwongsei",15945,"10 - NA",12,"Actino",10
+"Paragalaxias mesotes",16109,"1 - NA",8,"Actino",1
+"Haplochromis crassilabris",16118,"1 - NA",4,"Actino",1
+"Haplochromis victoriae",16119,"1 - NA",6,"Actino",1
+"Haplochromis degeni",17586,"1 - NA",6,"Actino",1
+"Probarbus jullieni",18182,"10 - NA",14,"Actino",10
+"Probarbus labeamajor",18183,"10 - NA",4,"Actino",10
+"Probarbus labeaminor",18184,"2-3 - NA",4,"Actino",2.5
+"Haplochromis nanoserranus",18322,"1 - NA",6,"Actino",1
+"Prototroctes maraena",18383,"3 - NA",12,"Actino",3
+"Haplochromis acidens",18401,"1 - NA",6,"Actino",1
+"Psephurus gladius",18428,"9-10.5 - NA",8,"Actino",9.8
+"Pseudomugil mellis",18543,"1 - NA",10,"Actino",1
+"Pseudoscaphirhynchus hermanni",18600,"3-8 - NA",4,"Actino",5.5
+"Pseudoscaphirhynchus kaufmanni",18601,"10 - NA",4,"Actino",10
+"Haplochromis granti",18837,"1 - NA",4,"Actino",1
+"Barbodes sirang",18898,"1.9 - NA",8,"Actino",1.9
+"Barbodes lindog",18903,"1.9 - NA",8,"Actino",1.9
+"Haplochromis parorthostoma",19034,"1 - NA",6,"Actino",1
+"Millerichthys robustus",19736,"1 - NA",12,"Actino",1
+"Rutilus frisii",19782,"4-5 - NA",4,"Actino",4.5
+"Scarus guacamaia",19950,"7 - NA",6,"Actino",7
+"Scaturiginichthys vermeilipinnis",19951,"1 - NA",6,"Actino",1
+"Serranochromis meridianus",20160,"3 - NA",12,"Actino",3
+"Skiffia francesae",20285,"1 - NA",12,"Actino",1
+"Sander marinus",20861,"8 - NA",4,"Actino",8
+"Tenualosa thibaudeaui",21627,"4 - NA",4,"Actino",4
+"Thunnus alalunga",21856,"6-10 - NA",6,"Actino",8
+"Thunnus albacares",21857,"2-3 - 4-5 - NA",6,"Actino",3.5
+"Thunnus maccoyii",21858,"12 - 20 - NA",6,"Actino",16
+"Thunnus obesus",21859,"4-5 - 7 - NA",6,"Actino",5.3
+"Thunnus thynnus",21860,"7-13 - 16-19 - NA",6,"Actino",13.8
+"Totoaba macdonaldi",22003,"11.94 - 19 - NA",14,"Actino",15.5
+"Turcinoemacheilus kosswigi",22505,"1 - NA",4,"Actino",1
+"Xiphias gladius",23148,"6.5 - NA",4,"Actino",6.5
+"Xyrauchen texanus",23162,"21 - NA",14,"Actino",21
+"Haplochromis nuchisquamulatus",23165,"1 - NA",4,"Actino",1
+"Seminemacheilus lendlii",39289,"1-3 - NA",6,"Actino",2
+"Tachysurus ichikawai",39293,"3 - NA",14,"Actino",3
+"Nannoperca obscura",39301,"3 - NA",6,"Actino",3
+"Aspiolucius esocinus",39462,"10 - NA",4,"Actino",10
+"Cephalopholis boenak",39773,"6 - NA",6,"Actino",6
+"Cromileptes altivelis",39774,"11 - NA",8,"Actino",11
+"Craterocephalus fluviatilis",40692,"1 - NA",6,"Actino",1
+"Gymnocharacinus bergii",40695,"1 - NA",14,"Actino",1
+"Perca schrenkii",40709,"6 - NA",14,"Actino",6
+"Hippocampus barbouri",40802,"2 - NA",5,"Actino",2
+"Hippocampus mohnikei",41005,"1-2 - NA",4,"Actino",1.5
+"Hippocampus guttulatus",41006,"2 - NA",4,"Actino",2
+"Hippocampus algiricus",41007,"2-3 - NA",3,"Actino",2.5
+"Hippocampus comes",41008,"1.42 - NA",2,"Actino",1.4
+"Hippocampus kelloggi",41010,"2 - NA",3,"Actino",2
+"Epinephelus akaara",43974,"11 - NA",4,"Actino",11
+"Rheocles derhami",44659,"1-3.3 - NA",4,"Actino",2.1
+"Epinephelus fuscoguttatus",44673,"25.5 - NA",4,"Actino",25.5
+"Epinephelus coioides",44674,"12.5 - NA",4,"Actino",12.5
+"Hyporthodus quernus",44675,"20 - NA",4,"Actino",20
+"Epinephelus albomarginatus",44677,"14 - NA",4,"Actino",14
+"Epinephelus andersoni",44678,"7.5 - NA",4,"Actino",7.5
+"Epinephelus morio",44681,"17 - NA",4,"Actino",17
+"Mycteroperca venenosa",44683,"18 - NA",4,"Actino",18
+"Plectropomus leopardus",44684,"10.5 - NA",4,"Actino",10.5
+"Labeo victorianus",60318,"2-3.3 - NA",4,"Actino",2.6
+"Haplochromis nubilus",60340,"1 - NA",4,"Actino",1
+"Anguilla anguilla",60344,"10 - 15 - 13 - NA",10,"Actino",12.7
+"Marcusenius victoriae",60365,"1-3.3 - NA",4,"Actino",2.1
+"Xenoclarias eupogon",60380,"1-3 - NA",4,"Actino",2
+"Luciobarbus longiceps",60405,"4-5 - NA",4,"Actino",4.5
+"Enteromius choloensis",60413,"1-2 - NA",4,"Actino",1.5
+"Enteromius arcislongae",60416,"1 - NA",4,"Actino",1
+"Engraulicypris sardella",60418,"1 - NA",4,"Actino",1
+"Astatoreochromis alluaudi",60457,"1 - NA",4,"Actino",1
+"Haplochromis howesi",60535,"1 - NA",8,"Actino",1
+"Haplochromis microdon",60566,"1 - NA",8,"Actino",1
+"Haplochromis melanopterus",60567,"1 - NA",8,"Actino",1
+"Haplochromis cryptodon",60568,"1 - NA",4,"Actino",1
+"Haplochromis rufus",60569,"1 - NA",6,"Actino",1
+"Haplochromis xanthopteryx",60570,"1 - NA",6,"Actino",1
+"Haplochromis rubripinnis",60571,"1 - NA",6,"Actino",1
+"Haplochromis mbipi",60573,"1 - NA",6,"Actino",1
+"Haplochromis luteus",60574,"1 - NA",6,"Actino",1
+"Haplochromis omnicaeruleus",60576,"1 - NA",6,"Actino",1
+"Haplochromis rufocaudalis",60577,"1 - NA",6,"Actino",1
+"Haplochromis nigricans",60578,"1 - NA",6,"Actino",1
+"Haplochromis greenwoodi",60579,"1 - NA",6,"Actino",1
+"Haplochromis gigas",60580,"1 - NA",6,"Actino",1
+"Haplochromis simotes",60581,"1 - NA",6,"Actino",1
+"Haplochromis flavus",60644,"1 - NA",4,"Actino",1
+"Haplochromis chilotes",60646,"1 - NA",8,"Actino",1
+"Haplochromis chromogynos",60647,"1 - NA",8,"Actino",1
+"Haplochromis plagiodon",60648,"1 - NA",4,"Actino",1
+"Haplochromis saxicola",60661,"1 - NA",4,"Actino",1
+"Haplochromis aelocephalus",60662,"1 - NA",8,"Actino",1
+"Haplochromis riponianus",60663,"1 - NA",4,"Actino",1
+"Haplochromis xenognathus",60666,"1 - NA",4,"Actino",1
+"Haplochromis sauvagei",60667,"1 - NA",8,"Actino",1
+"Haplochromis nyererei",60668,"1 - NA",6,"Actino",1
+"Haplochromis pundamilia",60669,"1 - NA",6,"Actino",1
+"Haplochromis igneopinnis",60670,"1 - NA",6,"Actino",1
+"Haplochromis macrocephalus",60671,"1 - NA",6,"Actino",1
+"Haplochromis phytophagus",60721,"1 - NA",8,"Actino",1
+"Haplochromis pyrrhocephalus",60723,"1 - NA",8,"Actino",1
+"Haplochromis heusinkveldi",60725,"1 - NA",4,"Actino",1
+"Brycinus jacksonii",60748,"1-3.3 - NA",4,"Actino",2.1
+"Oreochromis squamipinnis",60760,"3 - NA",4,"Actino",3
+"Tropheops romandi",60803,"1 - NA",4,"Actino",1
+"Opsaridium microlepis",60844,"3 - NA",4,"Actino",3
+"Labeo mesops",60846,"3 - NA",4,"Actino",3
+"Haplochromis tweddlei",60847,"1 - NA",4,"Actino",1
+"Bagrus meridionalis",60856,"3 - NA",4,"Actino",3
+"Nyassachromis boadzulu",60859,"2 - NA",4,"Actino",2
+"Copadichromis borleyi",60860,"2 - NA",4,"Actino",2
+"Copadichromis chrysonotus",60861,"2 - NA",4,"Actino",2
+"Mchenga cyclicos",60862,"1-2 - NA",4,"Actino",1.5
+"Mchenga eucinostomus",60863,"1-2 - NA",4,"Actino",1.5
+"Copadichromis atripinnis",60864,"2 - NA",4,"Actino",2
+"Copadichromis geertsi",60865,"2-3 - NA",4,"Actino",2.5
+"Copadichromis ilesi",60866,"2-3 - NA",4,"Actino",2.5
+"Copadichromis jacksoni",60868,"2-3 - NA",4,"Actino",2.5
+"Copadichromis mbenjii",60869,"2 - NA",4,"Actino",2
+"Copadichromis mloto",60870,"2 - NA",4,"Actino",2
+"Copadichromis pleurostigma",60871,"2-3 - NA",4,"Actino",2.5
+"Copadichromis pleurostigmoides",60872,"2 - NA",4,"Actino",2
+"Nyassachromis prostoma",60873,"1-2 - NA",4,"Actino",1.5
+"Copadichromis quadrimaculatus",60874,"3 - NA",4,"Actino",3
+"Copadichromis trewavasae",60875,"2 - NA",4,"Actino",2
+"Copadichromis trimaculatus",60876,"2-3 - NA",4,"Actino",2.5
+"Copadichromis verduyni",60877,"1-2 - NA",4,"Actino",1.5
+"Mchenga thinos",60878,"1-2 - NA",4,"Actino",1.5
+"Copadichromis virginalis",60879,"3 - NA",4,"Actino",3
+"Alticorpus macrocleithrum",60882,"1-2 - NA",4,"Actino",1.5
+"Alticorpus profundicola",60883,"1-3 - NA",4,"Actino",2
+"Chilotilapia euchilus",60884,"2-3 - NA",4,"Actino",2.5
+"Chilotilapia rhoadesii",60885,"3 - NA",4,"Actino",3
+"Corematodus taeniatus",60886,"2 - NA",4,"Actino",2
+"Corematodus shiranus",60887,"3 - NA",4,"Actino",3
+"Nimbochromis linni",60888,"2-3 - NA",4,"Actino",2.5
+"Nimbochromis fuscotaeniatus",60889,"2-3 - NA",4,"Actino",2.5
+"Nimbochromis polystigma",60890,"2-3 - NA",4,"Actino",2.5
+"Nimbochromis venustus",60891,"2-3 - NA",4,"Actino",2.5
+"Dimidiochromis kiwinge",60892,"2-3 - NA",4,"Actino",2.5
+"Dimidiochromis compressiceps",60893,"2-3 - NA",4,"Actino",2.5
+"Dimidiochromis dimidiatus",60894,"2 - NA",4,"Actino",2
+"Dimidiochromis strigatus",60895,"2-3 - NA",4,"Actino",2.5
+"Ctenopharynx intermedius",60896,"2-3 - NA",4,"Actino",2.5
+"Ctenopharynx nitidus",60897,"1-2 - NA",4,"Actino",1.5
+"Ctenopharynx pictus",60898,"2 - NA",4,"Actino",2
+"Champsochromis spilorhynchus",60899,"3 - NA",4,"Actino",3
+"Cyathochromis obliquidens",60900,"1 - NA",4,"Actino",1
+"Caprichromis liemi",60901,"2-3 - NA",4,"Actino",2.5
+"Caprichromis orthognathus",60902,"2-3 - NA",4,"Actino",2.5
+"Diplotaxodon limnothrissa",60904,"1-2 - NA",4,"Actino",1.5
+"Diplotaxodon aeneus",60906,"1-2 - NA",4,"Actino",1.5
+"Diplotaxodon argenteus",60907,"2-3 - NA",4,"Actino",2.5
+"Diplotaxodon greenwoodi",60908,"2-3 - NA",4,"Actino",2.5
+"Docimodus johnstoni",60909,"2-3 - NA",4,"Actino",2.5
+"Nimbochromis livingstonii",60910,"2-3 - NA",4,"Actino",2.5
+"Naevochromis chrysogaster",60911,"2-3 - NA",4,"Actino",2.5
+"Exochochromis anagenys",60912,"2-3 - NA",4,"Actino",2.5
+"Docimodus evelynae",60915,"2-3 - NA",4,"Actino",2.5
+"Fossorochromis rostratus",60916,"3 - NA",4,"Actino",3
+"Hemitaeniochromis urotaenia",60917,"3 - NA",4,"Actino",3
+"Hemitilapia oxyrhynchus",60918,"1-2 - NA",4,"Actino",1.5
+"Lichnochromis acuticeps",60919,"3 - NA",4,"Actino",3
+"Cyrtocara moorii",60920,"2 - NA",4,"Actino",2
+"Buccochromis heterotaenia",60922,"3 - NA",4,"Actino",3
+"Buccochromis lepturus",60923,"3 - NA",4,"Actino",3
+"Buccochromis rhoadesii",60925,"3 - NA",4,"Actino",3
+"Buccochromis spectabilis",60926,"2-3 - NA",4,"Actino",2.5
+"Champsochromis caeruleus",60928,"2-3 - NA",4,"Actino",2.5
+"Pallidochromis tokolosh",60929,"2-3 - NA",4,"Actino",2.5
+"Taeniochromis holotaenia",60931,"1-2 - NA",4,"Actino",1.5
+"Aristochromis christyi",60932,"2 - NA",4,"Actino",2
+"Genyochromis mento",60933,"1 - NA",4,"Actino",1
+"Gephyrochromis moorii",60934,"1 - NA",4,"Actino",1
+"Gephyrochromis lawsi",60935,"1 - NA",4,"Actino",1
+"Labeotropheus trewavasae",60936,"1 - NA",4,"Actino",1
+"Labeotropheus fuelleborni",60937,"1 - NA",4,"Actino",1
+"Cynotilapia afra",60938,"1 - NA",4,"Actino",1
+"Cynotilapia axelrodi",60939,"1 - NA",4,"Actino",1
+"Cynotilapia zebroides",60940,"1 - NA",4,"Actino",1
+"Tyrannochromis macrostoma",60941,"3 - NA",4,"Actino",3
+"Tyrannochromis nigriventer",60942,"3 - NA",4,"Actino",3
+"Iodotropheus stuartgranti",60945,"1 - NA",4,"Actino",1
+"Trematocranus labifer",60946,"2-3 - NA",4,"Actino",2.5
+"Trematocranus microstoma",60947,"2 - NA",4,"Actino",2
+"Trematocranus placodon",60948,"2 - NA",4,"Actino",2
+"Stigmatochromis modestus",60949,"2-3 - NA",4,"Actino",2.5
+"Stigmatochromis pholidophorus",60950,"2-3 - NA",4,"Actino",2.5
+"Stigmatochromis woodi",60951,"2-3 - NA",4,"Actino",2.5
+"Tramitichromis brevis",60952,"1-2 - NA",4,"Actino",1.5
+"Tramitichromis intermedius",60953,"1-2 - NA",4,"Actino",1.5
+"Tramitichromis lituris",60954,"1-2 - NA",4,"Actino",1.5
+"Tramitichromis trilineatus",60955,"1-2 - NA",4,"Actino",1.5
+"Tramitichromis variabilis",60956,"1-2 - NA",4,"Actino",1.5
+"Taeniolethrinops cyrtonotus",60957,"1-2 - NA",4,"Actino",1.5
+"Taeniolethrinops furcicauda",60958,"2-3 - NA",4,"Actino",2.5
+"Taeniolethrinops laticeps",60959,"2-3 - NA",4,"Actino",2.5
+"Taeniolethrinops praeorbitalis",60960,"2-3 - NA",4,"Actino",2.5
+"Petrotilapia nigra",60961,"1 - NA",4,"Actino",1
+"Petrotilapia tridentiger",60962,"1 - NA",4,"Actino",1
+"Petrotilapia chrysos",60963,"1 - NA",4,"Actino",1
+"Petrotilapia genalutea",60964,"1 - NA",4,"Actino",1
+"Sciaenochromis ahli",60965,"2-3 - NA",4,"Actino",2.5
+"Sciaenochromis benthicola",60966,"2 - NA",4,"Actino",2
+"Sciaenochromis fryeri",60967,"1-2 - NA",4,"Actino",1.5
+"Mylochromis gracilis",60968,"2-3 - NA",4,"Actino",2.5
+"Sciaenochromis psammophilus",60969,"1-2 - NA",4,"Actino",1.5
+"Mylochromis spilostichus",60970,"2-3 - NA",4,"Actino",2.5
+"Rhamphochromis brevis",60971,"3 - NA",4,"Actino",3
+"Rhamphochromis ferox",60973,"2-3 - NA",4,"Actino",2.5
+"Placidochromis phenochilus",60979,"2-3 - NA",4,"Actino",2.5
+"Mylochromis subocularis",60980,"1-2 - NA",4,"Actino",1.5
+"Placidochromis electra",60981,"1-2 - NA",4,"Actino",1.5
+"Placidochromis hennydaviesae",60982,"1-2 - NA",4,"Actino",1.5
+"Placidochromis johnstoni",60983,"1-2 - NA",4,"Actino",1.5
+"Placidochromis longimanus",60984,"1-2 - NA",4,"Actino",1.5
+"Placidochromis milomo",60985,"2-3 - NA",4,"Actino",2.5
+"Aulonocara stonemani",60986,"1-2 - NA",4,"Actino",1.5
+"Nyassachromis purpurans",60989,"1-2 - NA",4,"Actino",1.5
+"Nyassachromis microcephalus",60990,"1-2 - NA",4,"Actino",1.5
+"Nyassachromis breviceps",60991,"1-2 - NA",4,"Actino",1.5
+"Nyassachromis nigritaeniatus",60992,"1-2 - NA",4,"Actino",1.5
+"Nyassachromis leuciscus",60993,"1-2 - NA",4,"Actino",1.5
+"Nyassachromis serenus",60994,"1-2 - NA",4,"Actino",1.5
+"Otopharynx argyrosoma",60995,"1-2 - NA",4,"Actino",1.5
+"Otopharynx auromarginatus",60996,"1-2 - NA",4,"Actino",1.5
+"Otopharynx brooksi",60997,"2-3 - NA",4,"Actino",2.5
+"Otopharynx decorus",60998,"1-2 - NA",4,"Actino",1.5
+"Otopharynx heterodon",60999,"1-2 - NA",4,"Actino",1.5
+"Otopharynx lithobates",61000,"1-2 - NA",4,"Actino",1.5
+"Otopharynx ovatus",61001,"2-3 - NA",4,"Actino",2.5
+"Otopharynx selenurus",61002,"2-3 - NA",4,"Actino",2.5
+"Otopharynx speciosus",61003,"2-3 - NA",4,"Actino",2.5
+"Otopharynx tetraspilus",61004,"2-3 - NA",4,"Actino",2.5
+"Otopharynx tetrastigma",61005,"1-2 - NA",4,"Actino",1.5
+"Otopharynx pachycheilus",61007,"2-3 - NA",4,"Actino",2.5
+"Mylochromis anaphyrmus",61008,"2-3 - NA",4,"Actino",2.5
+"Mylochromis balteatus",61009,"2-3 - NA",4,"Actino",2.5
+"Mylochromis epichorialis",61010,"2-3 - NA",4,"Actino",2.5
+"Mylochromis ericotaenia",61011,"1-2 - NA",4,"Actino",1.5
+"Mylochromis formosus",61012,"2-3 - NA",4,"Actino",2.5
+"Mylochromis guentheri",61013,"1-2 - NA",4,"Actino",1.5
+"Mylochromis incola",61014,"1-2 - NA",4,"Actino",1.5
+"Mylochromis labidodon",61015,"1-2 - NA",4,"Actino",1.5
+"Mylochromis lateristriga",61016,"2-3 - NA",4,"Actino",2.5
+"Mylochromis melanotaenia",61017,"1-2 - NA",4,"Actino",1.5
+"Mylochromis mola",61018,"1-2 - NA",4,"Actino",1.5
+"Mylochromis mollis",61019,"1-2 - NA",4,"Actino",1.5
+"Mylochromis plagiotaenia",61021,"1-2 - NA",4,"Actino",1.5
+"Mylochromis sphaerodon",61023,"2-3 - NA",4,"Actino",2.5
+"Alticorpus mentale",61024,"2-3 - NA",4,"Actino",2.5
+"Copadichromis azureus",61026,"2 - NA",4,"Actino",2
+"Mchenga conophoros",61027,"1-2 - NA",4,"Actino",1.5
+"Copadichromis cyaneus",61028,"2 - NA",4,"Actino",2
+"Copadichromis likomae",61029,"2 - NA",4,"Actino",2
+"Copadichromis nkatae",61030,"2 - NA",4,"Actino",2
+"Lethrinops albus",61031,"1 - NA",4,"Actino",1
+"Lethrinops altus",61032,"1-2 - NA",4,"Actino",1.5
+"Lethrinops christyi",61033,"2-3 - NA",4,"Actino",2.5
+"Lethrinops furcifer",61034,"2 - NA",4,"Actino",2
+"Lethrinops gossei",61035,"2-3 - NA",4,"Actino",2.5
+"Lethrinops lethrinus",61036,"2 - NA",4,"Actino",2
+"Lethrinops leptodon",61037,"1-2 - NA",4,"Actino",1.5
+"Lethrinops stridei",61038,"2-3 - NA",4,"Actino",2.5
+"Placidochromis polli",61039,"1-2 - NA",4,"Actino",1.5
+"Lethrinops parvidens",61040,"1-2 - NA",4,"Actino",1.5
+"Lethrinops microstoma",61042,"1-2 - NA",4,"Actino",1.5
+"Lethrinops microdon",61043,"2-3 - NA",4,"Actino",2.5
+"Lethrinops micrentodon",61044,"2-3 - NA",4,"Actino",2.5
+"Lethrinops macrophthalmus",61046,"1-2 - NA",4,"Actino",1.5
+"Lethrinops macrochir",61047,"2 - NA",4,"Actino",2
+"Lethrinops macracanthus",61048,"2-3 - NA",4,"Actino",2.5
+"Lethrinops lunaris",61049,"1-2 - NA",4,"Actino",1.5
+"Lethrinops longipinnis",61050,"2-3 - NA",4,"Actino",2.5
+"Lethrinops longimanus",61051,"2-3 - NA",4,"Actino",2.5
+"Lethrinops auritus",61052,"1 - NA",4,"Actino",1
+"Lethrinops argenteus",61053,"2-3 - NA",4,"Actino",2.5
+"Lethrinops turneri",61054,"1-2 - NA",4,"Actino",1.5
+"Aulonocara aquilonium",61055,"1 - NA",4,"Actino",1
+"Aulonocara auditor",61056,"1-2 - NA",4,"Actino",1.5
+"Aulonocara baenschi",61057,"1 - NA",4,"Actino",1
+"Aulonocara brevinidus",61058,"1 - NA",4,"Actino",1
+"Trematocranus brevirostris",61059,"2-3 - NA",4,"Actino",2.5
+"Aulonocara ethelwynnae",61060,"1 - NA",4,"Actino",1
+"Aulonocara gertrudae",61061,"1-2 - NA",4,"Actino",1.5
+"Aulonocara guentheri",61062,"2 - NA",4,"Actino",2
+"Aulonocara hueseri",61064,"1 - NA",4,"Actino",1
+"Aulonocara jacobfreibergi",61065,"1 - NA",4,"Actino",1
+"Aulonocara korneliae",61066,"1-2 - NA",4,"Actino",1.5
+"Aulonocara maylandi",61067,"1-2 - NA",4,"Actino",1.5
+"Aulonocara kandeense",61068,"1-2 - NA",4,"Actino",1.5
+"Aulonocara nyassae",61069,"1-2 - NA",4,"Actino",1.5
+"Aulonocara rostratum",61070,"2-3 - NA",4,"Actino",2.5
+"Aulonocara saulosi",61071,"1-2 - NA",4,"Actino",1.5
+"Aulonocara trematocephalum",61074,"1-2 - NA",4,"Actino",1.5
+"Protomelas annectens",61075,"2 - NA",4,"Actino",2
+"Protomelas fenestratus",61077,"1-2 - NA",4,"Actino",1.5
+"Protomelas insignis",61078,"2 - NA",4,"Actino",2
+"Protomelas kirkii",61079,"1-2 - NA",4,"Actino",1.5
+"Protomelas labridens",61080,"1-2 - NA",4,"Actino",1.5
+"Protomelas macrodon",61081,"1-2 - NA",4,"Actino",1.5
+"Protomelas marginatus",61082,"1-2 - NA",4,"Actino",1.5
+"Protomelas pleurotaenia",61083,"1-2 - NA",4,"Actino",1.5
+"Protomelas similis",61084,"1-2 - NA",4,"Actino",1.5
+"Protomelas spilonotus",61085,"2 - NA",4,"Actino",2
+"Protomelas triaenodon",61088,"1-2 - NA",4,"Actino",1.5
+"Protomelas virgatus",61089,"1-2 - NA",4,"Actino",1.5
+"Labidochromis caeruleus",61090,"1 - NA",4,"Actino",1
+"Labidochromis chisumulae",61091,"1 - NA",4,"Actino",1
+"Labidochromis flavigulis",61092,"1 - NA",4,"Actino",1
+"Labidochromis freibergi",61093,"1 - NA",4,"Actino",1
+"Labidochromis gigas",61094,"1 - NA",4,"Actino",1
+"Labidochromis heterodon",61095,"1 - NA",4,"Actino",1
+"Labidochromis ianthinus",61096,"1 - NA",4,"Actino",1
+"Labidochromis lividus",61097,"1 - NA",4,"Actino",1
+"Labidochromis maculicauda",61098,"1 - NA",4,"Actino",1
+"Labidochromis mathotho",61099,"1 - NA",4,"Actino",1
+"Labidochromis mbenjii",61100,"1 - NA",4,"Actino",1
+"Labidochromis mylodon",61101,"1 - NA",4,"Actino",1
+"Labidochromis pallidus",61102,"1 - NA",4,"Actino",1
+"Labidochromis shiranus",61103,"1 - NA",4,"Actino",1
+"Labidochromis strigatus",61104,"1 - NA",4,"Actino",1
+"Labidochromis textilis",61105,"1 - NA",4,"Actino",1
+"Labidochromis vellicans",61106,"1 - NA",4,"Actino",1
+"Labidochromis zebroides",61107,"1 - NA",4,"Actino",1
+"Melanochromis auratus",61108,"1 - NA",4,"Actino",1
+"Pseudotropheus benetos",61110,"1 - NA",4,"Actino",1
+"Pseudotropheus brevis",61111,"2 - NA",4,"Actino",2
+"Melanochromis chipokae",61112,"2 - NA",4,"Actino",2
+"Pseudotropheus cyaneorhabdos",61113,"1 - NA",4,"Actino",1
+"Melanochromis dialeptos",61114,"1 - NA",4,"Actino",1
+"Melanochromis heterochromis",61116,"1 - NA",4,"Actino",1
+"Pseudotropheus interruptus",61117,"1 - NA",4,"Actino",1
+"Labidochromis joanjohnsonae",61118,"1 - NA",4,"Actino",1
+"Pseudotropheus johannii",61119,"1 - NA",4,"Actino",1
+"Abactochromis labrosus",61120,"1 - NA",4,"Actino",1
+"Melanochromis lepidiadaptes",61121,"1-2 - NA",4,"Actino",1.5
+"Melanochromis loriae",61122,"1 - NA",4,"Actino",1
+"Melanochromis melanopterus",61123,"1-2 - NA",4,"Actino",1.5
+"Pseudotropheus perileucos",61126,"1 - NA",4,"Actino",1
+"Melanochromis robustus",61127,"1-2 - NA",4,"Actino",1.5
+"Melanochromis simulans",61128,"1-2 - NA",4,"Actino",1.5
+"Melanochromis vermivorus",61129,"1-2 - NA",4,"Actino",1.5
+"Metriaclima aurora",61131,"1 - NA",4,"Actino",1
+"Metriaclima barlowi",61132,"1 - NA",4,"Actino",1
+"Metriaclima benetos",61133,"1 - NA",4,"Actino",1
+"Metriaclima callainos",61134,"1 - NA",4,"Actino",1
+"Metriaclima chrysomallos",61135,"1 - NA",4,"Actino",1
+"Pseudotropheus crabro",61136,"2 - NA",4,"Actino",2
+"Metriaclima cyneusmarginatum",61137,"1 - NA",4,"Actino",1
+"Pseudotropheus elegans",61138,"1 - NA",4,"Actino",1
+"Metriaclima emmiltos",61139,"1 - NA",4,"Actino",1
+"Metriaclima fainzilberi",61141,"1 - NA",4,"Actino",1
+"Metriaclima greshakei",61142,"1 - NA",4,"Actino",1
+"Metriaclima hajomaylandi",61143,"1 - NA",4,"Actino",1
+"Chindongo heteropictus",61144,"1 - NA",4,"Actino",1
+"Pseudotropheus livingstonii",61145,"1 - NA",4,"Actino",1
+"Metriaclima lombardoi",61146,"1 - NA",4,"Actino",1
+"Metriaclima mbenjii",61147,"1 - NA",4,"Actino",1
+"Metriaclima phaeos",61149,"1 - NA",4,"Actino",1
+"Metriaclima xanstomachus",61154,"1 - NA",4,"Actino",1
+"Tropheops gracilior",61156,"1 - NA",4,"Actino",1
+"Tropheops macrophthalmus",61157,"1 - NA",4,"Actino",1
+"Tropheops microstoma",61158,"1 - NA",4,"Actino",1
+"Tropheops novemfasciatus",61159,"1 - NA",4,"Actino",1
+"Tropheops tropheops",61160,"1 - NA",4,"Actino",1
+"Chindongo ater",61161,"1 - NA",4,"Actino",1
+"Chindongo cyaneus",61162,"1 - NA",4,"Actino",1
+"Chindongo demasoni",61163,"1 - NA",4,"Actino",1
+"Chindongo elongatus",61164,"1 - NA",4,"Actino",1
+"Chindongo flavus",61165,"1 - NA",4,"Actino",1
+"Pseudotropheus galanos",61168,"1 - NA",4,"Actino",1
+"Chindongo longior",61169,"1 - NA",4,"Actino",1
+"Pseudotropheus lucerna",61170,"1 - NA",4,"Actino",1
+"Chindongo minutus",61171,"1 - NA",4,"Actino",1
+"Tropheops modestus",61172,"1 - NA",4,"Actino",1
+"Pseudotropheus perspicax",61173,"1 - NA",4,"Actino",1
+"Pseudotropheus purpuratus",61174,"1 - NA",4,"Actino",1
+"Chindongo saulosi",61175,"1 - NA",4,"Actino",1
+"Chindongo socolofi",61176,"1 - NA",4,"Actino",1
+"Pseudotropheus tursiops",61177,"1 - NA",4,"Actino",1
+"Pseudotropheus williamsi",61178,"2 - NA",4,"Actino",2
+"Haplochromis piceatus",61189,"1 - NA",12,"Actino",1
+"Diplotaxodon macrops",61201,"1-2 - NA",4,"Actino",1.5
+"Mchenga flavimanus",61202,"1-2 - NA",4,"Actino",1.5
+"Nothobranchius albimarginatus",61268,"0-1 - NA",4,"Actino",0.5
+"Oreochromis lidole",61276,"3 - NA",4,"Actino",3
+"Pseudophoxinus syriacus",61281,"1-3 - NA",4,"Actino",2
+"Oreochromis karongae",61293,"3 - NA",4,"Actino",3
+"Bahaba taipingensis",61334,"17 - NA",4,"Actino",17
+"Epinephelus awoara",61336,"11 - NA",4,"Actino",11
+"Epinephelus polyphekadion",61339,"23 - NA",4,"Actino",23
+"Gila robusta",62201,"17-23,23 - NA",4,"Actino",23
+"Enteromius gurneyi",63262,"3 - NA",4,"Actino",3
+"Labeobarbus nelspruitensis",63301,"5 - NA",4,"Actino",5
+"Oreochromis mossambicus",63338,"7 - NA",4,"Actino",7
+"Haplochromis prodromus",63542,"1 - NA",4,"Actino",1
+"Hyporthodus flavolimbatus",64400,"atleast10yrs - 46.5 - NA",6,"Actino",46.5
+"Mycteroperca fusca",64409,"17-22 - NA",6,"Actino",19.5
+"Mycteroperca interstitialis",64410,"&gt;10years - 22 - NA",6,"Actino",22
+"Plectropomus areolatus",64411,"&lt;10years - 7 - NA",6,"Actino",7
+"Plectropomus laevis",64412,"10 - 10-11 - NA",6,"Actino",10.3
+"Epinephelus aeneus",132722,"&lt;10years - 11",4,"Actino",11
+"Epinephelus maculatus",132723,"8 - NA",4,"Actino",8
+"Mycteroperca bonaci",132724,"&gt;10years - 19",4,"Actino",19
+"Mycteroperca phenax",132729,"16.5 - NA",4,"Actino",16.5
+"Hyporthodus acanthistius",132730,"18 - NA",4,"Actino",18
+"Cephalopholis panamensis",132733,"7-8 - NA",4,"Actino",7.5
+"Epinephelus rivulatus",132736,"12.5 - NA",4,"Actino",12.5
+"Alphestes immaculatus",132754,"4.5 - NA",4,"Actino",4.5
+"Cephalopholis hemistiktos",132759,"&lt;10years - 17.8",4,"Actino",17.8
+"Alphestes afer",132764,"5-6.5 - NA",4,"Actino",5.8
+"Epinephelus goreensis",132765,"10 - NA",4,"Actino",10
+"Epinephelus tukula",132773,"26 - NA",4,"Actino",26
+"Plectropomus oligacanthus",132776,"7.5-8 - NA",4,"Actino",7.8
+"Hyporthodus ergastularius",132795,"23 - NA",4,"Actino",23
+"Epinephelus quoyanus",132799,"8 - NA",4,"Actino",8
+"Epinephelus ongus",132804,"16.5 - NA",4,"Actino",16.5
+"Epinephelus adscensionis",132819,"&lt; 10 years - 18.5",4,"Actino",18.5
+"Epinephelus bleekeri",132826,"8 - NA",4,"Actino",8
+"Liobagrus kingi",135151,"5 - NA",4,"Actino",5
+"Sinocyclocheilus grahami",135152,"5",2,"Actino",5
+"Anabarilius alburnops",135163,"2",2,"Actino",2
+"Alburnus chalcoides",135499,"3-4 - NA",4,"Actino",3.5
+"Salmo cettii",135528,"4",2,"Actino",4
+"Alosa kessleri",135537,"5",2,"Actino",5
+"Coregonus atterensis",135554,"5",2,"Actino",5
+"Alosa killarnensis",135582,"3",2,"Actino",3
+"Coregonus candidus",135599,"5",2,"Actino",5
+"Alburnus macedonicus",135620,"4",2,"Actino",4
+"Romanogobio belingi",135668,"3",4,"Actino",3
+"Coregonus maraena",135672,"5",4,"Actino",5
+"Luciobarbus brachycephalus",135684,"10",2,"Actino",10
+"Coregonus lucinensis",135686,"3",2,"Actino",3
+"Coregonus bavaricus",135698,"10",2,"Actino",10
+"Platichthys flesus",135717,"12 - NA",4,"Actino",12
+"Cheilinus trilobatus",154623,"1-2",2,"Actino",1.5
+"Cnidoglanis macrocephalus",154627,"5",2,"Actino",5
+"Lophius gastrophysus",154649,"6",2,"Actino",6
+"Scarus prasiognathos",154676,"2-4",4,"Actino",3
+"Siganus magnificus",154703,"5",2,"Actino",5
+"Lethrinus enigmaticus",154705,"5-7",2,"Actino",6
+"Apeltes quadracus",154731,"1 - NA",4,"Actino",1
+"Pagrus auratus",154734,"10 - NA",4,"Actino",10
+"Artedielloides auriculatus",154783,"1",2,"Actino",1
+"Secutor hanedai",154802,"1-2",2,"Actino",1.5
+"Amphiprion sandaracinos",154812,"1-2",2,"Actino",1.5
+"Sardinella fijiense",154814,"1-2 - NA",4,"Actino",1.5
+"Acanthurus gahhm",154818,"1-2 - NA",4,"Actino",1.5
+"Helcogramma inclinata",154834,"1-2",2,"Actino",1.5
+"Apogon compressus",154872,"1-2",2,"Actino",1.5
+"Cynoscion acoupa",154875,"8.5 - NA",4,"Actino",8.5
+"Pomacentrus smithi",154878,"1-2",2,"Actino",1.5
+"Nemipterus virgatus",154900,"2-3",2,"Actino",2.5
+"Pseudochromis sankeyi",154931,"1-2",2,"Actino",1.5
+"Scarus oviceps",154960,"4",4,"Actino",4
+"Scarus viridifucatus",154971,"4",4,"Actino",4
+"Parablennius zvonimiri",154972,"1-2",4,"Actino",1.5
+"Eopsetta jordani",154977,"13-14 - 12",4,"Actino",13
+"Paralichthys dentatus",154983,"7",2,"Actino",7
+"Acanthistius brasilianus",154987,"4.8",2,"Actino",4.8
+"Pholis nebulosa",154991,"2-3",2,"Actino",2.5
+"Etelis carbunculus",154999,"13-15 - NA",4,"Actino",14
+"Sciades parkeri",155018,"3-5 - 11",4,"Actino",6.3
+"Coryphopterus hyalinus",155021,"1 - NA",4,"Actino",1
+"Plesiops nigricans",155042,"1-2",2,"Actino",1.5
+"Buglossidium luteum",155044,"3",2,"Actino",3
+"Pomacentrus callainus",155061,"1-2",2,"Actino",1.5
+"Pseudocyttus maculatus",155085,"34",1,"Actino",34
+"Chromis flavicauda",155098,"1-2",2,"Actino",1.5
+"Cheilodipterus singapurensis",155102,"1-2",2,"Actino",1.5
+"Lethrinus conchyliatus",155118,"3-4",2,"Actino",3.5
+"Clupea harengus",155123,"6-7",2,"Actino",6.5
+"Callionymus macclesfieldensis",155136,"2-3",2,"Actino",2.5
+"Pomadasys incisus",155182,"5",2,"Actino",5
+"Sicydium plumieri",155188,"2.5",2,"Actino",2.5
+"Coradion melanopus",155193,"1-2",2,"Actino",1.5
+"Dicologlossa cuneata",155215,"3",2,"Actino",3
+"Chromogobius quadrivittatus",155226,"2-3",4,"Actino",2.5
+"Austroglossus microlepis",155236,"5",2,"Actino",5
+"Halichoeres binotopsis",155238,"2",2,"Actino",2
+"Johnius trewavasae",155242,"1-2 - NA",4,"Actino",1.5
+"Branchiostegus japonicus",155243,"5",2,"Actino",5
+"Benthosema pterotum",155260,"0.5",2,"Actino",0.5
+"Pseudochromis dixurus",155271,"1-2",2,"Actino",1.5
+"Thryssa gautamiensis",155280,"1-2 - NA",4,"Actino",1.5
+"Mugil incilis",155291,"4",2,"Actino",4
+"Nectamia annularis",155302,"1-2",2,"Actino",1.5
+"Nectamia zebrinus",158628,"1-2",2,"Actino",1.5
+"Garra annandalei",165542,"8.51",2,"Actino",8.5
+"Chaetodon fremblii",165662,"2",2,"Actino",2
+"Chaetodon trifascialis",165712,"6",2,"Actino",6
+"Chaetodon rainfordi",165717,"6",2,"Actino",6
+"Megalobrama amblycephala",166011,"2-3",2,"Actino",2.5
+"Cirrhinus molitorella",166016,"40",2,"Actino",40
+"Bangana decorus",166033,"5",2,"Actino",5
+"Leptobotia elongata",166035,"3-5",2,"Actino",4
+"Cyprinus barbatus",166039,"2",2,"Actino",2
+"Luciocyprinus langsoni",166043,"8-10",2,"Actino",9
+"Luciobrama macrocephalus",166103,"5",2,"Actino",5
+"Carassius cuvieri",166137,"10-13",2,"Actino",11.5
+"Cyprinus fuxianensis",166157,"6-7",2,"Actino",6.5
+"Ptychidio jordani",166166,"2-3",2,"Actino",2.5
+"Anguilla japonica",166184,"10 - 8",4,"Actino",9
+"Anguilla marmorata",166189,"12 - NA",6,"Actino",12
+"Cyprinus chilia",166210,"10",2,"Actino",10
+"Cranoglanis bouderius",166213,"3-4",2,"Actino",3.5
+"Wallago attu",166468,"20 - NA",4,"Actino",20
+"Bagarius yarrelli",166503,"10 - NA",4,"Actino",10
+"Lates calcarifer",166627,"5",2,"Actino",5
+NA,166645,"15.75",2,"Actino",15.8
+"Anguilla bicolor",166894,"8 - 7 - NA",8,"Actino",7.5
+"Verasper variegatus",166966,"8.5",2,"Actino",8.5
+"Lepthoplosternum tordilho",167656,"3",2,"Actino",3
+"Osteobrama belangeri",168218,"1.5-3.3",2,"Actino",2.4
+"Raiamas guttatus",168219,"26.5-37.3",4,"Actino",31.9
+"Devario acuticephala",168248,"2.3-4.1",2,"Actino",3.2
+"Devario browni",168415,"8.0",2,"Actino",8
+"Devario kakhienensis",168443,"12.0",2,"Actino",12
+"Macrognathus morehensis",168452,"0.9-1.3",1,"Actino",1.1
+"Eleotris aquadulcis",169354,"3.4 - 3-4",4,"Actino",3.5
+"Gadopsis bispinosus",169363,"3-4 - NA",4,"Actino",3.5
+"Haplochromis crocopeplus",169464,"1 - NA",4,"Actino",1
+"Haplochromis harpakteridion",169466,"1 - NA",4,"Actino",1
+"Schistura cataracta",169539,"1-2 - NA",4,"Actino",1.5
+"Ompok leiacanthus",169541,"2 - NA",4,"Actino",2
+"Chendol lubricus",169555,"1 - NA",2,"Actino",1
+"Ompok fumidus",169559,"2 - NA",6,"Actino",2
+"Tor khudree",169609,"5-10 - NA",6,"Actino",7.5
+"Capoetobrama kuschakewitschi",169620,"4-5 - NA",4,"Actino",4.5
+"Cyprinus qionghaiensis",169621,"6-7",2,"Actino",6.5
+"Labeo potail",169627,"5 - NA",4,"Actino",5
+"Diplodus sargus",170155,"7",2,"Actino",7
+"Dentex angolensis",170158,"5",2,"Actino",5
+"Lithognathus mormyrus",170160,"5",2,"Actino",5
+"Dentex maroccanus",170166,"5",2,"Actino",5
+"Stenotomus chrysops",170168,"8",2,"Actino",8
+"Chrysoblephus laticeps",170170,"8",2,"Actino",8
+"Acanthopagrus vagus",170173,"8",2,"Actino",8
+"Diplodus capensis",170175,"6",2,"Actino",6
+"Calamus nodosus",170178,"6.6",2,"Actino",6.6
+"Chrysoblephus cristiceps",170183,"11",2,"Actino",11
+"Polysteganus praeorbitalis",170184,"6",2,"Actino",6
+"Chrysoblephus anglicus",170194,"9",2,"Actino",9
+"Lithognathus aureti",170200,"19",2,"Actino",19
+"Cymatoceps nasutus",170204,"16",2,"Actino",16
+"Polysteganus undulosus",170206,"13",2,"Actino",13
+"Pachymetopon grande",170208,"11",2,"Actino",11
+"Pachymetopon blochii",170210,"9",2,"Actino",9
+"Pterogymnus laniarius",170213,"8",2,"Actino",8
+"Archosargus probatocephalus",170223,"4.5",2,"Actino",4.5
+"Rhabdosargus globiceps",170225,"9",2,"Actino",9
+"Sparodon durbanensis",170226,"13",2,"Actino",13
+"Argyrozona argyrozona",170231,"11",2,"Actino",11
+"Acanthopagrus bifasciatus",170239,"8.5",2,"Actino",8.5
+"Pagellus bogaraveo",170244,"11",2,"Actino",11
+"Dentex dentex",170245,"12",2,"Actino",12
+"Petrus rupestris",170247,"17",2,"Actino",17
+"Argyrops filamentosus",170252,"3",2,"Actino",3
+"Chrysoblephus gibbiceps",170256,"9",2,"Actino",9
+"Chrysoblephus puniceus",170259,"5",2,"Actino",5
+"Diplodus vulgaris",170261,"9",2,"Actino",9
+"Diplodus puntazzo",170262,"6",2,"Actino",6
+"Diplodus sargus ssp. sargus",170269,"5",2,"Actino",5
+"Diplodus hottentotus",170272,"13",2,"Actino",13
+"Scomber japonicus",170306,"4-6",2,"Actino",5
+"Kajikia audax",170309,"5.3",2,"Actino",5.3
+"Katsuwonus pelamis",170310,"3-4 - NA",4,"Actino",3.5
+"Makaira nigricans",170314,"4.5-6",2,"Actino",5.2
+"Kajikia albida",170322,"4.5-6.5",2,"Actino",5.5
+"Acanthocybium solandri",170331,"3-5",2,"Actino",4
+"Istiophorus platypterus",170338,"4.3",2,"Actino",4.3
+"Thunnus orientalis",170341,"7-9 - 7.4 - 9.5-14",6,"Actino",9.4
+"Euthynnus alletteratus",170345,"4",2,"Actino",4
+"Sarda chiliensis",170352,"3-4",2,"Actino",3.5
+"Scomberomorus niphonius",170356,"2-3",2,"Actino",2.5
+"Labeo kontius",172407,"1",2,"Actino",1
+"Devario neilgherriensis",172435,".5",2,"Actino",0.5
+"Pseudetroplus maculatus",172481,"1 - NA",4,"Actino",1
+"Centropomus nigrescens",178064,"10.9-12.3 - NA",4,"Actino",11.6
+"Bihunichthys monopteroides",180651,"1",1,"Actino",1
+"Balantiocheilos ambusticauda",180665,"10",2,"Actino",10
+"Datnioides undecimradiatus",180679,"6",2,"Actino",6
+"Protosalanx chinensis",180684,"1",2,"Actino",1
+"Pangasianodon hypophthalmus",180689,"10-15",2,"Actino",12.5
+"Bangana behri",180773,"10",2,"Actino",10
+"Pterocryptis inusitata",180781,"2",2,"Actino",2
+"Schistura kohchangensis",180826,"1-2",2,"Actino",1.5
+"Betta smaragdina",180827,"2",2,"Actino",2
+"Mystus bimaculatus",180853,"3",2,"Actino",3
+"Oreoglanis lepturus",180856,"2",2,"Actino",2
+"Cirrhinus microlepis",180904,"3-4",2,"Actino",3.5
+"Rhinogobius lineatus",180953,"1",2,"Actino",1
+"Datnioides pulcher",180969,"10",2,"Actino",10
+"Schistura atra",181006,"1",2,"Actino",1
+"Poropuntius lobocheiloides",181020,"2-3",4,"Actino",2.5
+"Chaca bankanensis",181055,"1 - NA",6,"Actino",1
+"Nagaichthys filipes",181062,"1",1,"Actino",1
+"Rhinogobius albimaculatus",181070,"1",2,"Actino",1
+"Schistura nudidorsum",181092,"1-2",2,"Actino",1.5
+"Chendol keelini",181104,"1",1,"Actino",1
+"Labeo pierrei",181106,"7",2,"Actino",7
+"Onychostoma meridionale",181113,"2",2,"Actino",2
+"Oreoglanis hypsiurus",181122,"2",2,"Actino",2
+"Indostomus spinosus",181146,"2",2,"Actino",2
+"Schistura bairdi",181190,"4",2,"Actino",4
+"Hypsibarbus lagleri",181214,"5",2,"Actino",5
+"Poropuntius consternans",181216,"2-3",4,"Actino",2.5
+"Clarias meladerma",181250,"4 - NA",6,"Actino",4
+"Homaloptera parclitella",181256,"1 - NA",4,"Actino",1
+"Kryptopterus macrocephalus",181264,"2 - NA",6,"Actino",2
+"Channa bankanensis",181283,"2",2,"Actino",2
+"Pangasius krempfi",181328,"7",2,"Actino",7
+"Tilapia sparrmanii",181777,"1-2 - NA",6,"Actino",1.5
+"Oreochromis shiranus",182001,"3",2,"Actino",3
+"Serranochromis robustus",183133,"3 - NA",4,"Actino",3
+"Anguilla mossambica",183155,"10",4,"Actino",10
+"Cynoscion othonopterus",183682,"5 - NA",4,"Actino",5
+"Paralabrax albomaculatus",183769,"5",2,"Actino",5
+"Engraulis ringens",183775,"2.5 - NA",4,"Actino",2.5
+"Xystreurys liolepis",183928,"9 - NA",4,"Actino",9
+"Pisodonophis daspilotus",183962,"5-7",2,"Actino",6
+"Notropis topeka",184092,"1-2 - NA",4,"Actino",1.5
+"Iberochondrostoma lemmingii",184444,"2-3",2,"Actino",2.5
+"Lupinoblennius paivai",185152,"1-2",2,"Actino",1.5
+"Lethrinops mylodon",185645,"2-3",2,"Actino",2.5
+"Haplochromis niloticus",185804,"1 - NA",4,"Actino",1
+"Haplochromis vanoijeni",185807,"1",2,"Actino",1
+"Haplochromis dolichorhynchus",185808,"1",2,"Actino",1
+"Haplochromis hiatus",185809,"1",2,"Actino",1
+"Haplochromis empodisma",185810,"1",2,"Actino",1
+"Haplochromis tridens",185811,"1",2,"Actino",1
+"Haplochromis tanaos",185812,"1",2,"Actino",1
+"Haplochromis goldschmidti",185814,"1",4,"Actino",1
+"Haplochromis bwathondii",185815,"1",2,"Actino",1
+"Haplochromis ushindi",185816,"2",2,"Actino",2
+"Haplochromis melichrous",185817,"1",2,"Actino",1
+"Haplochromis iris",185818,"1",2,"Actino",1
+"Haplochromis cinctus",185819,"1",2,"Actino",1
+"Haplochromis theliodon",185821,"1",2,"Actino",1
+"Haplochromis sp. nov. 'Blue Rockpicker'",185822,"1 - NA",6,"Actino",1
+"Haplochromis coprologus",185823,"1",2,"Actino",1
+"Haplochromis fischeri",185824,"1",2,"Actino",1
+"Haplochromis melanopus",185825,"1",2,"Actino",1
+"Haplochromis sphex",185826,"1",2,"Actino",1
+"Haplochromis fusiformis",185827,"1",4,"Actino",1
+"Haplochromis cinereus",185828,"1",2,"Actino",1
+"Haplochromis chlorochrous",185829,"1",2,"Actino",1
+"Haplochromis pallidus",185832,"1",2,"Actino",1
+"Haplochromis teunisrasi",185833,"1",2,"Actino",1
+"Haplochromis macrops",185834,"1",2,"Actino",1
+"Haplochromis cryptogramma",185835,"1",2,"Actino",1
+NA,185836,"1",2,"Actino",1
+"Haplochromis plutonius",185838,"1",2,"Actino",1
+"Haplochromis parvidens",185839,"1",2,"Actino",1
+"Haplochromis argens",185840,"1 - NA",4,"Actino",1
+"Haplochromis labriformis",185841,"1",4,"Actino",1
+"Haplochromis cronus",185842,"1",2,"Actino",1
+"Haplochromis obesus",185843,"1",2,"Actino",1
+"Haplochromis bareli",185844,"1",2,"Actino",1
+"Haplochromis laparogramma",185845,"1 - NA",4,"Actino",1
+"Haplochromis antleter",185846,"1",2,"Actino",1
+"Haplochromis maisomei",185847,"1",2,"Actino",1
+"Haplochromis eutaenia",185848,"1",2,"Actino",1
+"Haplochromis cnester",185849,"1",2,"Actino",1
+"Haplochromis katunzii",185850,"1",2,"Actino",1
+"Haplochromis tyrianthinus",185853,"1",2,"Actino",1
+"Haplochromis azureus",185854,"1",4,"Actino",1
+"Haplochromis sulphureus",185855,"1",2,"Actino",1
+"Haplochromis lacrimosus",185856,"1",2,"Actino",1
+"Haplochromis thereuterion",185857,"1",2,"Actino",1
+"Haplochromis pancitrinus",185858,"1",2,"Actino",1
+"Haplochromis ptistes",185859,"1",2,"Actino",1
+"Haplochromis humilior",185861,"1",2,"Actino",1
+"Haplochromis erythrocephalus",185862,"1",2,"Actino",1
+"Gramma loreto",185921,"1.40",2,"Actino",1.4
+"Coryphopterus thrix",185952,"1",2,"Actino",1
+"Coryphopterus eidolon",185954,"1",2,"Actino",1
+"Coryphopterus tortugae",185955,"1",2,"Actino",1
+"Coryphopterus venezuelae",185956,"1",2,"Actino",1
+"Coryphopterus lipernes",185958,"1",2,"Actino",1
+"Coryphopterus personatus",185960,"1",2,"Actino",1
+"Coryphopterus alloides",185961,"1",2,"Actino",1
+"Crenimugil seheli",186086,"6.5",2,"Actino",6.5
+"Prochilodus vimboides",186365,"5",2,"Actino",5
+"Lophiosilurus alexandri",186399,"30-40",2,"Actino",35
+"Conorhynchos conirostris",187028,"10",2,"Actino",10
+"Austrolebias viarius",187245,"1",2,"Actino",1
+"Coris bulbifrons",187392,"13",2,"Actino",13
+"Tautoga onitis",187479,"15",2,"Actino",15
+"Bodianus frenchii",187506,"20-25",2,"Actino",22.5
+"Achoerodus gouldii",187520,"25",2,"Actino",25
+"Achoerodus viridis",187572,"15",2,"Actino",15
+"Labrus viridis",187654,"8.5",2,"Actino",8.5
+"Yasuhikotakia nigrolineata",187923,"5-8",2,"Actino",6.5
+"Trichopodus leerii",187958,"3-5",4,"Actino",4
+"Sewellia marmorata",188036,"3-5",2,"Actino",4
+"Silurichthys indragiriensis",188041,"2",2,"Actino",2
+"Yasuhikotakia splendida",188044,"3",2,"Actino",3
+"Amblyglyphidodon batunai",188528,"3-4",2,"Actino",3.5
+"Amphiprion akallopisos",188538,"3-4",2,"Actino",3.5
+"Amblyglyphidodon ternatensis",188546,"3-4",2,"Actino",3.5
+"Hucho taimen",188631,"17",4,"Actino",17
+"Haemulon plumierii",190132,"4-9",2,"Actino",6.5
+"Brevoortia tyrannus",190134,"6.5",2,"Actino",6.5
+"Rhomboplites aurorubens",190138,"6-14",2,"Actino",10
+"Lutjanus buccanella",190170,"5-6",2,"Actino",5.5
+"Caulolatilus microps",190191,"9.75",2,"Actino",9.8
+"Haemulon album",190206,"5-6",2,"Actino",5.5
+"Bagre bagre",190228,"9.6",2,"Actino",9.6
+"Pomatomus saltatrix",190279,"5-8",2,"Actino",6.5
+"Etelis oculatus",190309,"15.5",2,"Actino",15.5
+"Scophthalmus aquosus",190417,"5",2,"Actino",5
+"Mola mola",190422,"8-10",1,"Actino",9
+"Chlorurus bowersi",190711,"4",4,"Actino",4
+"Sparisoma amplum",190723,"5-6",4,"Actino",5.5
+"Sparisoma frondosum",190724,"8-9",4,"Actino",8.5
+"Chlorurus bleekeri",190744,"4",4,"Actino",4
+"Scarus trispinosus",190748,"7-10",4,"Actino",8.5
+"Scarus zelindae",190760,"7.5-8",4,"Actino",7.8
+"Scarus hypselopterus",190761,"4",4,"Actino",4
+"Atractosteus spatula",191024,"20",2,"Actino",20
+"Anguilla rostrata",191108,"12",4,"Actino",12
+"Chirostoma aculeatum",191129,"10",2,"Actino",10
+"Chirostoma humboldtianum",191154,"3-5",2,"Actino",4
+"Dorosoma petenense",191211,"1.5 - NA",4,"Actino",1.5
+"Catostomus insignis",191236,"9-10 - NA",4,"Actino",9.5
+"Algansea barbata",191250,"1",2,"Actino",1
+"Algansea lacustris",191251,"3",2,"Actino",3
+"Notropis calientis",191275,"2.5-3",2,"Actino",2.8
+"Yuriria alta",191297,"1-10",2,"Actino",5.5
+"Cyprinodon albivelis",191301,"2",2,"Actino",2
+"Allodontichthys tamazulae",191371,"2",2,"Actino",2
+"Allodontichthys zonistius",191372,"2",2,"Actino",2
+"Alloophorus robustus",191692,"5",2,"Actino",5
+"Allotoca goslinei",191696,"2",2,"Actino",2
+"Chapalichthys encaustus",191700,"4",2,"Actino",4
+"Ilyodon furcidens",191711,"2",2,"Actino",2
+"Xenotoca variata",191719,"3-4",2,"Actino",3.5
+"Megalops atlanticus",191823,"12.7 - NA",4,"Actino",12.7
+"Mayaheros beani",191844,"1.7-2.3",2,"Actino",2
+"Gobiodon brochus",193050,"0.5-3",2,"Actino",1.8
+"Gobiodon acicularis",193147,"3",2,"Actino",3
+"Gobiodon axillaris",193222,"0.5-3",2,"Actino",1.8
+"Cynoscion nebulosus",193266,"6.5",4,"Actino",6.5
+"Leiostomus xanthurus",193267,"3.5",4,"Actino",3.5
+"Micropogonias undulatus",193268,"5 - 9",4,"Actino",7
+"Sciaenops ocellatus",193270,"32",4,"Actino",32
+"Takifugu chinensis",193605,"4",1,"Actino",4
+"Balistes punctatus",193700,"6-7",1,"Actino",6.5
+"Balistes capriscus",193736,"4-8",1,"Actino",6
+"Pristipomoides filamentosus",194331,"3.3",2,"Actino",3.3
+"Lutjanus dodecacanthoides",194340,"1.6",2,"Actino",1.6
+"Ocyurus chrysurus",194341,"11-12",2,"Actino",11.5
+"Lutjanus synagris",194344,"5-6",2,"Actino",5.5
+"Pristipomoides auricilla",194351,"2.4",2,"Actino",2.4
+"Lutjanus campechanus",194365,"22",2,"Actino",22
+"Lutjanus madras",194369,"1.6",2,"Actino",1.6
+"Aprion virescens",194379,"6.7",2,"Actino",6.7
+"Etelis coruscans",194382,"2.5",2,"Actino",2.5
+"Lutjanus carponotatus",194384,"11",2,"Actino",11
+"Lutjanus gibbus",194385,"2.1",2,"Actino",2.1
+"Lutjanus vivanus",194406,"10-17",2,"Actino",13.5
+"Brachydeuterus auritus",194413,"4",2,"Actino",4
+"Plectorhinchus sordidus",194435,"8",2,"Actino",8
+"Sprattus fuegensis",195021,"3-4 - NA",4,"Actino",3.5
+"Engraulis anchoita",195023,"3-4 - 2-4",4,"Actino",3.2
+"Salilota australis",195036,"10",2,"Actino",10
+"Patagonotothen ramsayi",195069,"10",2,"Actino",10
+"Cynoscion guatucupa",195073,"6-8",2,"Actino",7
+NA,195074,"3-7",2,"Actino",5
+"Menticirrhus americanus",195075,"NA - 3.5",4,"Actino",3.5
+"Micropogonias furnieri",195076,"NA - 22-24",4,"Actino",23
+"Umbrina canosai",195077,"14",2,"Actino",14
+"Acanthistius patachonicus",195078,"28.5",2,"Actino",28.5
+"Paralichthys isosceles",195087,"4.75",2,"Actino",4.8
+"Paralichthys orbignyanus",195088,"5-10",2,"Actino",7.5
+"Paralichthys patagonicus",195089,"10-11",2,"Actino",10.5
+"Xystreurys rasilis",195090,"7",2,"Actino",7
+"Hippocampus patagonicus",195100,"0.5-1.5",1,"Actino",1
+"Epinephelus quinquefasciatus",195292,"21.5 - NA",4,"Actino",21.5
+"Epinephelus itajara",195409,"13.5 - 21.5",4,"Actino",17.5
+"Anguilla australis",195502,"20",2,"Actino",20
+"Anguilla celebesensis",195503,"8",4,"Actino",8
+"Anguilla megastoma",196301,"10",4,"Actino",10
+"Anguilla obscura",196302,"6",4,"Actino",6
+"Anguilla reinhardtii",196303,"24",2,"Actino",24
+"Fundulus xenica",196677,"0.1-1",2,"Actino",0.6
+"Fundulus jenkinsi",196678,"1-3",2,"Actino",2
+"Neoarius coatesi",196863,"3-7",2,"Actino",5
+"Anguilla dieffenbachii",197276,"34",2,"Actino",34
+"Galaxias brevipinnis",197277,"8",4,"Actino",8
+"Galaxias fasciatus",197278,"7",2,"Actino",7
+"Galaxias maculatus",197279,"1",4,"Actino",1
+"Galaxias anomalus",197286,"2",2,"Actino",2
+"Galaxias cobitinis",197288,"1",2,"Actino",1
+"Galaxias divergens",197291,"2",2,"Actino",2
+"Galaxias paucispondylus",197296,"2-3",2,"Actino",2.5
+"Galaxias prognathus",197297,"2",2,"Actino",2
+"Galaxias pullus",197298,"8",2,"Actino",8
+"Galaxias vulgaris",197299,"3",2,"Actino",3
+"Neochanna heleios",197300,"4",2,"Actino",4
+"Gobiomorphus basalis",197317,"4",2,"Actino",4
+"Gobiomorphus breviceps",197318,"3",2,"Actino",3
+"Gobiomorphus cotidianus",197319,"2",2,"Actino",2
+"Gobiomorphus hubbsi",197321,"1-2",2,"Actino",1.5
+"Gobiomorphus huttoni",197322,"1-2",2,"Actino",1.5
+"Retropinna retropinna",197325,"1.5",2,"Actino",1.5
+"Cheimarrichthys fosteri",197330,"2-3",2,"Actino",2.5
+"Merluccius merluccius",198562,"3.5-11",2,"Actino",7.2
+"Sardina pilchardus",198580,"5-6",2,"Actino",5.5
+"Sardinella aurita",198581,"4",2,"Actino",4
+"Sardinella maderensis",198582,"3",2,"Actino",3
+"Lophius budegassa",198609,"19",2,"Actino",19
+"Lophius piscatorius",198610,"18",2,"Actino",18
+"Seriola dumerili",198643,"6.5",2,"Actino",6.5
+"Trachurus trachurus",198647,"11-18,11-12",2,"Actino",11.5
+"Sciaena umbra",198707,"5 - 17",4,"Actino",11
+"Umbrina cirrosa",198709,"9.5",2,"Actino",9.5
+"Lepidorhombus boscii",198729,"7",2,"Actino",7
+"Lepidorhombus whiffiagonis",198730,"8",2,"Actino",8
+"Scophthalmus maximus",198731,"9",2,"Actino",9
+"Scophthalmus rhombus",198732,"7",2,"Actino",7
+"Nerophis ophidion",198764,"1",2,"Actino",1
+"Anguilla borneensis",198973,"6",4,"Actino",6
+"Alosa aestivalis",201946,"5-6",2,"Actino",5.5
+"Cynoglossus macrostomus",202038,"2",2,"Actino",2
+"Paralichthys lethostigma",202632,"5 - NA",4,"Actino",5
+"Hucho bleekeri",13151680,"17",2,"Actino",17
+"Schistura afasciata",15141984,"3-4",2,"Actino",3.5
+"Schistura anambarensis",15142004,"3",2,"Actino",3
+"Schistura arifi",15142027,"3",2,"Actino",3
+"Hemiramphus balao",15521875,"0.3",2,"Actino",0.3
+"Hemiramphus brasiliensis",15521927,"0.2",2,"Actino",0.2
+"Coryphaenoides rupestris",15522149,"20",2,"Actino",20
+"Merluccius senegalensis",15522229,"3-3.5",2,"Actino",3.2
+"Beryx splendens",16425354,"6",2,"Actino",6
+"Centropristis striata",16435325,"5",2,"Actino",5
+"Merluccius bilinearis",16466393,"5-7",2,"Actino",6
+"Lopholatilus chamaeleonticeps",16545046,"16",2,"Actino",16
+"Lethrinus mahsena",16720057,"15",2,"Actino",15
+"Pollachius pollachius",18125103,"4-7",2,"Actino",5.5
+"Lebetus scorpioides",18159823,"1.3",2,"Actino",1.3
+"Pseudupeneus prayensis",18177478,"2-3",2,"Actino",2.5
+"Microstomus kitt",18227047,"9",2,"Actino",9
+"Spinachia spinachia",18257762,"1-2",2,"Actino",1.5
+"Entelurus aequoreus",18258072,"2.5",1,"Actino",2.5
+"Nerophis lumbriciformis",18258202,"1",2,"Actino",1
+"Anguilla luzonensis",18435966,"8",4,"Actino",8
+"Platichthys stellatus",19014407,"10 - NA",4,"Actino",10
+"Carasobarbus kosswigi",19161434,"1-3",2,"Actino",2
+"Arabibarbus grypus",19171241,"8",2,"Actino",8
+"Luciobarbus esocinus",19378572,"14",2,"Actino",14
+"Luciobarbus subquincunciatus",19383549,"8",2,"Actino",8
+"Luciobarbus xanthopterus",19383627,"8",2,"Actino",8
+"Oxynoemacheilus eregliensis",19412704,"1-3",2,"Actino",2
+"Oxynoemacheilus germencicus",19413937,"1-3",2,"Actino",2
+"Squalius kottelati",19451947,"7",2,"Actino",7
+"Salmo coruhensis",19516809,"5",2,"Actino",5
+"Pungitius sinensis",19915743,"3-3.5",2,"Actino",3.2
+"Gasterosteus wheatlandi",19922686,"1",2,"Actino",1
+"Decapterus maruadsi",20431525,"3",2,"Actino",3
+"Pseudocaranx georgianus",20434340,"10",2,"Actino",10
+"Trachinotus botla",20436632,"3.5",2,"Actino",3.5
+"Trachurus declivis",20437665,"8.5",2,"Actino",8.5
+"Trachurus indicus",20437726,"3.5",2,"Actino",3.5
+"Trachurus japonicus",20437783,"3",2,"Actino",3
+"Trachurus novaezelandiae",20437921,"7-14",2,"Actino",10.5
+"Trachurus capensis",21113101,"5",2,"Actino",5
+"Trachurus trecae",21113110,"3-4",2,"Actino",3.5
+"Drepane africana",21115107,"3-4",2,"Actino",3.5
+"Emmelichthys nitidus",21128487,"12",2,"Actino",12
+"Galeoides decadactylus",21132319,"4",2,"Actino",4
+"Pentanemus quinquarius",21132344,"3",2,"Actino",3
+"Allocyttus verrucosus",21133195,"31.5",1,"Actino",31.5
+"Gobiodon reticulatus",46084436,"0.5-3",2,"Actino",1.8
+"Nemipterus japonicus",46086928,"3",2,"Actino",3
+"Scolopsis taeniata",46087177,"3",2,"Actino",3
+"Atractosteus tristoechus",46104013,"15.5-39",2,"Actino",27.2
+"Lupinoblennius vinctus",46104077,"2",2,"Actino",2
+"Cynoscion regalis",46104933,"7.25",2,"Actino",7.2
+"Menticirrhus littoralis",46105545,"NA - 5.5",4,"Actino",5.5
+"Syngnathus fuscus",47153773,"1",1,"Actino",1
+"Argyrosomus coronus",49145114,"8.65",2,"Actino",8.7
+"Argyrosomus inodorus",49145334,"12",2,"Actino",12
+"Argyrosomus japonicus",49145403,"23",2,"Actino",23
+"Argyrosomus thorpei",49145628,"7.75",2,"Actino",7.8
+NA,49145820,"5-6",2,"Actino",5.5
+"Larimichthys crocea",49182559,"15.5",2,"Actino",15.5
+"Larimichthys polyactis",49182929,"11",2,"Actino",11
+"Macrodon atricauda",49184328,"5-7",2,"Actino",6
+"Pentheroscion mbizi",49188668,"2-3",4,"Actino",2.5
+"Protonibea diacanthus",49188717,"9.5",2,"Actino",9.5
+"Pseudotolithus senegalensis",49217798,"3-8 - 6-12",4,"Actino",7.2
+"Pseudotolithus senegallus",49217962,"3-8,3 - 12",4,"Actino",7.5
+"Pseudotolithus typus",49218074,"3-8 - NA",4,"Actino",5.5
+"Characidium pellucidum",49829506,"1",2,"Actino",1
+"Carnegiella myersi",49829602,"1",2,"Actino",1
+"Microschemobrycon melanotus",49829651,"1",2,"Actino",1
+"Moenkhausia robertsi",49829698,"1",2,"Actino",1
+"Hemigrammus rodwayi",49829773,"2",2,"Actino",2
+"Pimelodus grosskopfii",49829828,"5",2,"Actino",5
+"Brycon moorei",49829863,"3-4",2,"Actino",3.5
+"Steindachnerina argentea",49829972,"1",2,"Actino",1
+"Leporinus muyscorum",49829991,"0.5",2,"Actino",0.5
+"Ichthyoelephas longirostris",49830164,"5",2,"Actino",5
+"Rhamdella montana",49830172,"3",2,"Actino",3
+"Hypostomus wilsoni",49830320,"5",2,"Actino",5
+"Hemigrammus cylindricus",49830516,"2",2,"Actino",2
+"Knodus breviceps",49830653,"1",2,"Actino",1
+"Laimosemion altivelis",53846612,"2",2,"Actino",2
+"Tor remadevii",56096394,"7",2,"Actino",7
+"Alticorpus geoffreyi",57482316,"1-2",2,"Actino",1.5
+"Aulonocara koningsi",57482541,"1-2",2,"Actino",1.5
+"Copadichromis chizumuluensis",57482783,"2",2,"Actino",2
+"Copadichromis cyanocephalus",57482786,"1-2",2,"Actino",1.5
+"Copadichromis diplostigma",57482794,"2",2,"Actino",2
+"Copadichromis insularis",57482804,"2",2,"Actino",2
+"Copadichromis melas",57482813,"1-2",2,"Actino",1.5
+"Copadichromis parvus",57482891,"1-2",2,"Actino",1.5
+"Metriaclima pulpican",57483047,"1",2,"Actino",1
+"Hemitaeniochromis brachyrhynchus",57484235,"2-3",2,"Actino",2.5
+"Metriaclima flavifemina",57484421,"1",2,"Actino",1
+"Metriaclima glaucos",57484459,"1",2,"Actino",1
+"Metriaclima mossambicum",57484477,"1",2,"Actino",1
+"Metriaclima nkhunguense",57484524,"1",2,"Actino",1
+"Metriaclima sciasma",57484574,"1",2,"Actino",1
+"Metriaclima xanthos",57484643,"1",2,"Actino",1
+"Melanochromis kaskazini",57486659,"1-2",2,"Actino",1.5
+"Melanochromis mossambiquensis",57486681,"1",2,"Actino",1
+"Melanochromis mpoto",57486702,"1-2",2,"Actino",1.5
+"Melanochromis wochepa",57486708,"1",2,"Actino",1
+"Cynotilapia aurifrons",57487001,"1",2,"Actino",1
+"Mylochromis chekopae",57487029,"2-3",2,"Actino",2.5
+"Mylochromis ensatus",57487062,"2-3",2,"Actino",2.5
+"Otopharynx antron",57487270,"1-2",2,"Actino",1.5
+"Otopharynx spelaeotes",57487283,"1-2",2,"Actino",1.5
+"Petrotilapia flaviventris",57487521,"1",2,"Actino",1
+"Petrotilapia microgalana",57487729,"1",2,"Actino",1
+"Petrotilapia mumboensis",57487735,"1",2,"Actino",1
+"Petrotilapia palingnathos",57487931,"1",2,"Actino",1
+"Petrotilapia pyroscelos",57487935,"1",2,"Actino",1
+"Petrotilapia xanthos",57487939,"1",2,"Actino",1
+"Placidochromis acuticeps",57487952,"1-2",2,"Actino",1.5
+"Placidochromis acutirostris",57488066,"1-2",2,"Actino",1.5
+"Placidochromis argyrogaster",57488071,"1-2",2,"Actino",1.5
+"Placidochromis boops",57488076,"1-2",2,"Actino",1.5
+"Placidochromis borealis",57488090,"1-2",2,"Actino",1.5
+"Placidochromis chilolae",57488111,"1-2",2,"Actino",1.5
+"Placidochromis communis",57488118,"1-2",2,"Actino",1.5
+"Placidochromis domirae",57488134,"1-2",2,"Actino",1.5
+"Placidochromis ecclesi",57488139,"1-2",2,"Actino",1.5
+"Placidochromis elongatus",57488162,"1-2",2,"Actino",1.5
+"Placidochromis fuscus",57488191,"1-2",2,"Actino",1.5
+"Placidochromis intermedius",57488222,"1-2",2,"Actino",1.5
+"Placidochromis koningsi",57488227,"1-2",2,"Actino",1.5
+"Placidochromis lineatus",57488243,"1-2",2,"Actino",1.5
+"Placidochromis longirostris",57488249,"1-2",2,"Actino",1.5
+"Placidochromis longus",57488261,"1-2",2,"Actino",1.5
+"Placidochromis lukomae",57488269,"1-2",2,"Actino",1.5
+"Placidochromis macroceps",57488302,"1-2",2,"Actino",1.5
+"Placidochromis macrognathus",57488417,"1-2",2,"Actino",1.5
+"Placidochromis mbunoides",57488437,"1-2",2,"Actino",1.5
+"Placidochromis minor",57488459,"1-2",2,"Actino",1.5
+"Placidochromis minutus",57488463,"1-2",2,"Actino",1.5
+"Placidochromis msakae",57488590,"1-2",2,"Actino",1.5
+"Placidochromis nigribarbis",57488628,"1-2",2,"Actino",1.5
+"Placidochromis nkhatae",57488655,"1-2",2,"Actino",1.5
+"Placidochromis nkhotakotae",57488667,"1-2",2,"Actino",1.5
+"Placidochromis obscurus",57488682,"1-2",2,"Actino",1.5
+"Placidochromis ordinarius",57488700,"1-2",2,"Actino",1.5
+"Placidochromis orthognathus",57488723,"1-2",2,"Actino",1.5
+"Placidochromis pallidus",57488728,"1-2",2,"Actino",1.5
+"Placidochromis platyrhynchos",57488742,"1-2",2,"Actino",1.5
+"Placidochromis rotundifrons",57488846,"1-2",2,"Actino",1.5
+"Placidochromis trewavasae",57488944,"1-2",2,"Actino",1.5
+"Placidochromis turneri",57488996,"1-2",2,"Actino",1.5
+"Placidochromis vulgaris",57489009,"1-2",2,"Actino",1.5
+"Stigmatochromis macrorhynchos",57490650,"1-2",2,"Actino",1.5
+"Stigmatochromis melanchros",57490674,"2-3",2,"Actino",2.5
+"Enteromius seymouri",57498955,"3",2,"Actino",3
+"Metriaclima lanisticola",57506413,"1",2,"Actino",1
+"Stigmatochromis pleurospilus",57506473,"1-2",2,"Actino",1.5
+"Alticorpus peterdaviesi",57540405,"1-2",2,"Actino",1.5
+"Pseudoplatystoma magdaleniatum",58439165,"4.4",2,"Actino",4.4
+"Evynnis cardinalis",59034974,"13",2,"Actino",13
+"Cynopotamus atratoensis",61660542,"3",2,"Actino",3
+"Astyanax integer",61662529,"1",2,"Actino",1
+"Hyphessobrycon mavro",61662610,"1",2,"Actino",1
+"Anguilla bengalensis",61668607,"12",4,"Actino",12
+"Hypoptychus dybowskii",65134839,"1",2,"Actino",1
+"Maroubra perserrata",65370433,"1",1,"Actino",1
+"Syngnathus leptorhynchus",65374916,"2",1,"Actino",2
+"Vanacampus phillipi",65375571,"1",1,"Actino",1
+"Gobiodon ceramensis",68330723,"0.5-3",2,"Actino",1.8
+"Gobiodon erythrospilus",68330883,"0.5-3",2,"Actino",1.8
+"Parupeneus porphyreus",69182988,"2-3.5",2,"Actino",2.8
+"Oxymonacanthus longirostris",70010721,"2",1,"Actino",2
+"Harpadon nehereus",75143569,"3",2,"Actino",3
+"Thamnaconus modestus",75556671,"3.5-4.5",1,"Actino",4
+"Pomadasys commersonnii",77129706,"9",2,"Actino",9
+"Nelusetta ayraud",79802460,"4.25-4.5",1,"Actino",4.4
+"Oxymonacanthus halli",79802677,"2",1,"Actino",2
+"Zoogoneticus purhepechus",82627914,"2",2,"Actino",2
+"Percalates novemaculeata",83130397,"13.5",2,"Actino",13.5
+"Prochilodus mariae",85281866,"2",2,"Actino",2
+"Semaprochilodus kneri",85281941,"2",2,"Actino",2
+"Semaprochilodus laticeps",85281990,"2",2,"Actino",2
+"Nanobagrus immaculatus",91182854,"1",2,"Actino",1
+"Pseudomystus funebris",91183311,"1",2,"Actino",1
+"Pseudomystus heokhuii",91183344,"1",2,"Actino",1
+"Ompok borneensis",91211911,"2 - NA",4,"Actino",2
+"Ompok weberi",91212116,"1",2,"Actino",1
+"Silurichthys phaiosoma",91213383,"1",2,"Actino",1
+"Clarias intermedius",91226472,"1 - NA",4,"Actino",1
+"Channa pleurophthalma",91345419,"2",2,"Actino",2
+"Clupeonella engrauliformis",98471289,"4-5",2,"Actino",4.5
+"Clupeonella grimmi",98471433,"3-4",2,"Actino",3.5
+NA,98735334,"2",2,"Actino",2
+"Sardinella tawilis",98836352,"3",2,"Actino",3
+"Coilia mystus",98894402,"3",2,"Actino",3
+"Coilia nasus",98895427,"3",2,"Actino",3
+"Hippocampus spinosissimus",107259870,"2",1,"Actino",2
+"Pseudobarbus sp. nov. 'keiskamma'",109421254,"4",2,"Actino",4
+"Gymnogobius isaza",110461312,"1",2,"Actino",1
+"Paracentropogon longispinis",114180459,"275.5",2,"Actino",275.5
+"Cobitis delicata",114827383,"6",2,"Actino",6
+"Metriaclima lundoense",115866950,"1",2,"Actino",1
+"Metriaclima midomo",115867013,"1",2,"Actino",1
+"Metriaclima nigrodorsalis",115867306,"1",2,"Actino",1
+"Metriaclima pambazuko",115867472,"1",2,"Actino",1
+"Metriaclima tarakiki",115873649,"1",2,"Actino",1
+"Hemigrammocypris neglectus",116029799,"1-2",2,"Actino",1.5
+"Diplotaxodon altus",117643983,"2-3",2,"Actino",2.5
+"Diplotaxodon longimaxilla",117644040,"2-3",2,"Actino",2.5
+"Chindongo bellicosus",117644195,"1",2,"Actino",1
+"Cynotilapia chilundu",117808095,"1",2,"Actino",1
+"Labeotropheus chlorosiglos",117808957,"1",2,"Actino",1
+"Labeotropheus simoneae",117809022,"1",2,"Actino",1
+"Metriaclima flavicauda",117809499,"1",2,"Actino",1
+"Pseudotropheus fuscus",117849489,"1",2,"Actino",1
+"Rhamphochromis woodi",117849934,"3",2,"Actino",3
+"Rhamphochromis esox",117849983,"2-3",2,"Actino",2.5
+"Rhamphochromis longiceps",117850029,"1-2",2,"Actino",1.5
+"Tropheops biriwira",117850663,"1",2,"Actino",1
+"Tropheops kamtambo",117850714,"1",2,"Actino",1
+"Tropheops kumwera",117850739,"1",2,"Actino",1
+"Epinephelus chlorostigma",118358386,"18",2,"Actino",18
+"Plectropomus marisrubri",118360372,"12",2,"Actino",12
+"Aulonocara stuartgranti",120689838,"1-2",2,"Actino",1.5
+"Buccochromis nototaenia",120690256,"3",2,"Actino",3
+"Diplotaxodon ecclesi",120692798,"1-2",2,"Actino",1.5
+"Protomelas ornatus",120692926,"2-3",2,"Actino",2.5
+"Iodotropheus sprengerae",120695830,"1",2,"Actino",1
+"Labeotropheus artatorostris",120696049,"1",2,"Actino",1
+"Lethrinops marginatus",120696704,"1-2",2,"Actino",1.5
+"Taeniolethrinops macrorhynchus",120728128,"2-3",2,"Actino",2.5
+"Protomelas taeniolatus",120730332,"1-2",2,"Actino",1.5
+"Mylochromis melanonotus",120730440,"2-3",2,"Actino",2.5
+"Metriaclima usisyae",120732502,"1",2,"Actino",1
+"Metriaclima zebra",120778360,"1",2,"Actino",1
+"Metriaclima pyrsonotos",120818022,"1",2,"Actino",1
+"Rhinogobius biwaensis",122055606,"1.5",2,"Actino",1.5
+"Tandanus tandanus",122902003,"6.3",2,"Actino",6.3
+"Tandanus bostocki",122902058,"6",2,"Actino",6
+"Galaxias aequipinnis",122902229,"3",2,"Actino",3
+"Galaxias auratus",122902289,"3",2,"Actino",3
+"Galaxias brevissimus",122902298,"4",2,"Actino",4
+"Galaxias gunaikurnai",122902325,"2-4,3",2,"Actino",3
+"Galaxias lanceolatus",122902334,"2-4,3",2,"Actino",3
+"Galaxias longifundus",122902339,"2-4,3",2,"Actino",3
+"Galaxias mcdowalli",122902356,"2-4,3",2,"Actino",3
+"Galaxias mungadhan",122902464,"2-3",2,"Actino",2.5
+"Galaxias supremus",122903211,"4",2,"Actino",4
+"Galaxiella toourtkoourt",122904035,"1",2,"Actino",1
+"Lovettia sealii",122904059,"1",2,"Actino",1
+"Paragalaxias dissimilis",122904093,"2",2,"Actino",2
+"Paragalaxias eleotroides",122904106,"2",2,"Actino",2
+"Paragalaxias julianus",122904234,"2",2,"Actino",2
+"Craterocephalus cuneiceps",122905722,"2",2,"Actino",2
+"Melanotaenia duboulayi",122905910,"1",2,"Actino",1
+"Melanotaenia fluviatilis",122905924,"1",2,"Actino",1
+"Melanotaenia utcheensis",122906035,"1",2,"Actino",1
+"Ambassis agrammus",122906114,"1",2,"Actino",1
+"Maccullochella mariensis",122906177,"13",2,"Actino",13
+"Nannoperca pygmaea",122906197,"2",2,"Actino",2
+"Melanotaenia sp. nov. 'Malanda'",123321483,"1",2,"Actino",1
+"Melanotaenia sp. nov. 'Running River'",123321496,"1",2,"Actino",1
+"Hypseleotris sp. nov. 'bald'",123321717,"1",2,"Actino",1
+"Saurida wanieso",123354833,"4.5",2,"Actino",4.5
+"Galaxias occidentalis",123355786,"3",2,"Actino",3
+"Rhadinocentrus ornatus",123357268,"1",2,"Actino",1
+"Bostockia porosa",123358443,"3",2,"Actino",3
+"Gadopsis marmoratus",123358463,"6",2,"Actino",6
+"Gadopsis sp. nov. 'Western Victoria'",123358527,"6",2,"Actino",6
+"Macquaria ambigua",123358536,"11",2,"Actino",11
+"Nannoperca australis",123358579,"3",2,"Actino",3
+"Nannoperca vittata",123358592,"2",2,"Actino",2
+"Brachiopsilus ziebelli",123423098,"11.5",2,"Actino",11.5
+"Thymichthys politus",123423510,"11.5",2,"Actino",11.5
+"Gobiodon fulvus",123434761,"0.5-3",2,"Actino",1.8
+"Metriaclima koningsi",124556154,"1",2,"Actino",1
+"Tor putitora",126319882,"7",2,"Actino",7
+"Bangana gedrosicus",128717870,"6",2,"Actino",6
+"Barilius pakistanicus",128718120,"3",2,"Actino",3
+"Glyptothorax punjabensis",128723247,"3-4",2,"Actino",3.5
+"Glyptothorax stocki",128723276,"3",2,"Actino",3
+"Glyptothorax sufii",128723334,"3",2,"Actino",3
+"Labeo caeruleus",128723364,"4",2,"Actino",4
+"Mystus horai",128723603,"4",2,"Actino",4
+"Paraschistura alepidota",128723728,"3-4",2,"Actino",3.5
+"Paraschistura lepidocaulis",128723830,"3",2,"Actino",3
+"Paraschistura microlabra",128724058,"3",2,"Actino",3
+"Paraschistura naseeri",128724324,"3",2,"Actino",3
+"Paraschistura prashari",128724377,"3",2,"Actino",3
+"Paraschistura punjabensis",128724472,"3",2,"Actino",3
+"Ptychobarbus conirostris",128724579,"4-5",2,"Actino",4.5
+"Puntius punjabensis",128724607,"6",2,"Actino",6
+"Schistura curtistigma",128724786,"3",2,"Actino",3
+"Schistura harnaiensis",128724945,"3",2,"Actino",3
+"Schistura kohatensis",128725184,"3",2,"Actino",3
+"Schistura machensis",128725247,"3",2,"Actino",3
+"Schistura macrolepis",128725353,"3",2,"Actino",3
+"Schistura pakistanica",128725392,"3",2,"Actino",3
+"Schistura shadiwalensis",128725476,"3",2,"Actino",3
+"Schizocypris brucei",128725505,"3-4",2,"Actino",3.5
+"Tariqilabeo diplochilus",128727175,"3",2,"Actino",3
+"Tariqilabeo macmahoni",128727229,"4",2,"Actino",4
+"Triplophysa choprai",128727303,"4-5",2,"Actino",4.5
+"Triplophysa kashmirensis",128727508,"2",2,"Actino",2
+"Galaxias sp. nov. 'Hunter'",128972888,"4",2,"Actino",4
+"Galaxias sp. nov. 'Yalmy'",128972900,"3",2,"Actino",3
+"Galaxias sp. nov. 'Morwell'",128972916,"2-4,3",2,"Actino",3
+"Galaxias sp. nov. 'Moroka'",128972928,"2-4,3",2,"Actino",3
+"Trematocranus pachychilus",129252382,"2",2,"Actino",2
+"Ilyodon whitei",132521900,"2",2,"Actino",2
+"Goodea atripinnis",133768576,"5",2,"Actino",5
+"Aguarunichthys tocantinsensis",134658891,"9",2,"Actino",9
+"Brycon gouldingi",134695006,"7-8",2,"Actino",7.5
+"Epinephelus bruneus",135381188,"10",2,"Actino",10
+"Melanochromis baliodigma",135682612,"1",2,"Actino",1
+"Oreinus dainellii",136801378,"4",2,"Actino",4
+"Triplophysa marmorata",136801450,"4",2,"Actino",4
+"Glyptothorax amnestus",138477843,"1",2,"Actino",1
+"Ossubtus xinguense",140552163,"6",2,"Actino",6
+"Synchiropus splendidus",141481104,"8",2,"Actino",8
+"Brachyistius frenatus",141481252,"1",2,"Actino",1
+"Embiotoca lateralis",141481460,"7",2,"Actino",7
+"Gobiodon aoyagii",141483785,"0.5-2",2,"Actino",1.2
+"Embiotoca jacksoni",141748350,"2",2,"Actino",2
+"Thymallus aeliani",146280943,"5",2,"Actino",5
+"Cynoglossus abbreviatus",146946640,"4.4",2,"Actino",4.4
+"Cynoglossus joyneri",146946749,"3.4",2,"Actino",3.4
+"Scleropages formosus",152320185,"4-7",2,"Actino",5.5
+"Triplophysa paradoxa",156721009,"6",2,"Actino",6
+"Triplophysa sewerzowi",156721428,"3",2,"Actino",3
+"Triplophysa coniptera",156722271,"4",2,"Actino",4
+"Triplophysa dorsalis",156722500,"5",2,"Actino",5
+"Triplophysa labiata",156722567,"5",2,"Actino",5
+"Triplophysa strauchii",156722955,"5",2,"Actino",5
+"Dzihunia amudarjensis",156725073,"3",2,"Actino",3
+"Cottus spinulosus",156726301,"4",2,"Actino",4
+"Leuciscus lehmanni",156738072,"4",2,"Actino",4
+"Leuciscus lindbergi",156738646,"5",2,"Actino",5
+"Petroleuciscus squaliusculus",156741963,"3-4",2,"Actino",3.5
+"Phoxinus brachyurus",156742076,"3",2,"Actino",3
+"Phoxinus issykkulensis",156742102,"3",2,"Actino",3
+"Schizothorax argentatus",156744412,"6",2,"Actino",6
+"Schizothorax pseudoaksaiensis",156752554,"8",2,"Actino",8
+"Brachymystax savinovi",156767157,"12",2,"Actino",12
+NA,158620855,"5.1",2,"Actino",5.1
+NA,158624557,"19",2,"Actino",19
+NA,158624714,"13",2,"Actino",13
+"Clidoderma asperrimum",158624882,"12.5",2,"Actino",12.5
+"Dexistes rikuzenius",158625076,"7.5-8",2,"Actino",7.8
+NA,158625197,"19",2,"Actino",19
+"Eopsetta grigorjewi",158625391,"6",2,"Actino",6
+"Glyptocephalus stelleri",158625557,"7",2,"Actino",7
+NA,158625570,"11-12",2,"Actino",11.5
+"Hippoglossoides dubius",158625603,"13-17",2,"Actino",15
+NA,158625653,"14-15",2,"Actino",14.5
+NA,158625699,"6",2,"Actino",6
+NA,158625914,"14",2,"Actino",14
+NA,158625941,"19",2,"Actino",19
+NA,158626318,"7",2,"Actino",7
+"Platichthys bicoloratus",158631336,"8",2,"Actino",8
+NA,158631442,"14",2,"Actino",14
+NA,158631806,"14-15",2,"Actino",14.5
+NA,158631834,"19",2,"Actino",19
+NA,158631929,"13",2,"Actino",13
+"Myzopsetta punctatissima",158632011,"8",2,"Actino",8
+"Limanda sakhalinensis",158632105,"13",2,"Actino",13
+"Liopsetta pinnifasciata",158632261,"8",2,"Actino",8
+"Microstomus achne",158632464,"7",2,"Actino",7
+NA,158632595,"24",2,"Actino",24
+NA,158632774,"9",2,"Actino",9
+NA,158632875,"17",2,"Actino",17
+"Pleuronichthys cornutus",158633070,"4",2,"Actino",4
+NA,158633105,"8.5",2,"Actino",8.5
+NA,158633166,"7",2,"Actino",7
+"Pseudopleuronectes herzensteini",158637142,"6",2,"Actino",6
+"Pseudopleuronectes obscurus",158637179,"6",2,"Actino",6
+"Pseudopleuronectes schrenki",158637216,"7",2,"Actino",7
+"Pseudopleuronectes yokohamae",158637499,"6",2,"Actino",6
+"Glyptocephalus kitaharae",158637575,"6-7",2,"Actino",6.5
+"Verasper moseri",158637880,"6",2,"Actino",6
+"Champsocephalus esox",159100452,"4-6",2,"Actino",5
+"Patagonotothen tessellata",159145356,"5",2,"Actino",5
+"Pogonias courbina",159145751,"28",2,"Actino",28
+"Leiopotherapon plumbeus",162161619,"1.4",2,"Actino",1.4
+"Atractoscion aequidens",162708774,"5-7",2,"Actino",6
+"Pogonias cromis",162912433,"36.5",2,"Actino",36.5
+"Triplophysa hazaraensis",169388855,"3",2,"Actino",3
+"Triplophysa naziri",169388991,"3",2,"Actino",3
+"Glyptothorax naziri",169389308,"3",2,"Actino",3
+"Schizothorax eurystomus",169838369,"9",2,"Actino",9
+"Dzihunia ilan",169839865,"3",2,"Actino",3
+"Triplophysa kafirnigani",169840070,"5",2,"Actino",5
+"Craterocephalus laisapi",170810729,"1",2,"Actino",1
+NA,173830260,"1",2,"Actino",1
+NA,173832388,"1",2,"Actino",1
+NA,175716353,"1",2,"Actino",1
+"Deuterodon mutator",175723586,"2",2,"Actino",2
+"Astyanax myersi",175723696,"1",2,"Actino",1
+"Astyanax scintillans",175723727,"1",2,"Actino",1
+"Astyanax siapae",175723771,"2",2,"Actino",2
+"Astyanax venezuelae",175723950,"1",2,"Actino",1
+"Aulixidens eugeniae",175724021,"2",2,"Actino",2
+"Brachychalcinus orbicularis",175960637,"2",2,"Actino",2
+"Knodus alpha",175960684,"1",2,"Actino",1
+"Knodus cinarucoensis",175960717,"1",2,"Actino",1
+"Bryconamericus cismontanus",175960795,"0.5",2,"Actino",0.5
+"Hemibrycon cristiani",175960835,"2",2,"Actino",2
+"Bryconamericus macarenae",175960932,"2",2,"Actino",2
+"Bryconamericus macrophthalmus",175960952,"2",2,"Actino",2
+"Bryconamericus singularis",175961057,"2",2,"Actino",2
+"Bryconamericus subtilisform",175961085,"2",2,"Actino",2
+"Ceratobranchia joanae",175961126,"2",2,"Actino",2
+"Charax apurensis",175961154,"3",2,"Actino",3
+"Charax notulatus",175961218,"3",2,"Actino",3
+"Corynopoma riisei",175961354,"0.33",2,"Actino",0.3
+"Creagrutus ephippiatus",175962417,"2",2,"Actino",2
+"Creagrutus machadoi",175962462,"2",2,"Actino",2
+"Creagrutus maculosus",175962504,"2",2,"Actino",2
+"Creagrutus magoi",175962541,"2",2,"Actino",2
+"Ctenobrycon oliverai",175963091,"2",2,"Actino",2
+"Cynopotamus bipunctatus",175963124,"2",2,"Actino",2
+"Gephyrocharax valencia",175963161,"0.33",2,"Actino",0.3
+"Hemigrammus erythrozonus",175965508,"2",2,"Actino",2
+"Hyphessobrycon albolineatus",175965898,"2",2,"Actino",2
+"Hyphessobrycon eos",175966213,"1",2,"Actino",1
+"Hyphessobrycon saizi",175966406,"1",2,"Actino",1
+"Jupiaba mucronata",175966474,"1",2,"Actino",1
+"Jupiaba pinnata",175966521,"1",2,"Actino",1
+"Markiana geayi",175967031,"0.33",2,"Actino",0.3
+"Moenkhausia browni",175967525,"1",2,"Actino",1
+"Moenkhausia eigenmanni",175967614,"1",2,"Actino",1
+"Moenkhausia shideleri",175967743,"1",2,"Actino",1
+"Phenacogaster microstictus",175969495,"1",2,"Actino",1
+"Phenacogaster prolata",175969516,"1",2,"Actino",1
+"Pristella maxillaris",175969814,"1",2,"Actino",1
+"Roeboides araguaito",175970777,"2",2,"Actino",2
+"Roeboides numerosus",175971044,"2",2,"Actino",2
+"Cichlasoma orinocense",175979454,"1",2,"Actino",1
+"Crenicichla geayi",176001460,"1",2,"Actino",1
+"Melanocharacidium compressum",176002730,"1",2,"Actino",1
+"Curimata cerasina",176002745,"2",2,"Actino",2
+"Cyphocharax meniscaprorus",176002773,"1",2,"Actino",1
+"Steindachnerina pupula",176002884,"1",2,"Actino",1
+"Nannostomus bifasciatus",176012794,"1",2,"Actino",1
+"Nannostomus espei",176012820,"1",2,"Actino",1
+NA,176031809,"1",2,"Actino",1
+"Austrofundulus transilis",176032598,"1",2,"Actino",1
+"Gnatholebias zonatus",176033139,"1",2,"Actino",1
+"Rachovia maculipinnis",176033878,"1",2,"Actino",1
+"Renova oscari",176034415,"1",2,"Actino",1
+"Terranatos dolichopterus",176034772,"1",2,"Actino",1
+"Metynnis orinocensis",176034886,"3",2,"Actino",3
+"Serrasalmus irritans",176038538,"1",2,"Actino",1
+"Serrasalmus medinai",176038795,"1",2,"Actino",1
+"Astyanax metae",176090885,"1",2,"Actino",1
+"Astyanax superbus",176090962,"1",2,"Actino",1
+"Hemibrycon guejarensis",176091773,"2",2,"Actino",2
+"Hemigrammus iota",176092015,"2",2,"Actino",2
+"Hemigrammus rubrostriatus",176092119,"2",2,"Actino",2
+"Hyphessobrycon minor",176092299,"1",2,"Actino",1
+"Hyphessobrycon rheophilus",176092383,"1",2,"Actino",1
+"Moenkhausia surinamensis",176093031,"1",2,"Actino",1
+"Phenacogaster carteri",176095651,"1",2,"Actino",1
+"Pristella ariporo",176102916,"1",2,"Actino",1
+"Serrapinnus gracilis",176103249,"1",2,"Actino",1
+"Nannostomus nigrotaeniatus",176108574,"1",2,"Actino",1
+"Lucifuga dentata",178290336,"10-40",2,"Actino",25
