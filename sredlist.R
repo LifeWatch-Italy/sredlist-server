@@ -171,7 +171,25 @@ function(scientific_name, presences = list(), seasons = list() , origins = list(
 #* @param scientific_name:string Scientific Name
 #* @serializer json
 #* @tag sRedList
-function(scientific_name) {return(list(Gbif_Source = 1))}
+function(scientific_name) {
+  log_info("START source")
+  scientific_name<-url_decode(scientific_name)
+  
+  # Check if the species is in the RL points folder
+  RL<-scientific_name %in% sub(".csv", "", list.files("resources/Point.distributions"))
+  
+  # Is the species likely marine
+  TAXO<-speciesRL[speciesRL$scientific_name==scientific_name,]
+  Marine <- ifelse(nrow(TAXO)==0, F, TAXO$marine_system[1])
+  
+  SRC<-1 # Only GBIF
+  if(RL==T & Marine==T){SRC=7}
+  if(RL==F & Marine==T){SRC=4}
+  if(RL==T & Marine==F){SRC=5}
+  
+  print(SRC)
+  
+  return(list(Gbif_Source = SRC))}
 
 #* Global Biodiversity Information Facility Step 1
 #* @get species/<scientific_name>/gbif
@@ -937,8 +955,8 @@ function(scientific_name, eoo_km2, aoo_km2, pop_size) {
   
   # Save distribution and occurrences if from GBIF
   if(is.null(Storage_SP$gbif_number_saved)==F){
-    st_write(sRL_OutputDistribution(scientific_name), paste0(output_dir, "/sRedList_Distribution_", gsub(" ", ".", scientific_name), ".shp"), append=F)
-    st_write(sRL_OutputOccurrences(scientific_name), paste0(output_dir, "/sRedList_Occurrences_", gsub(" ", ".", scientific_name), ".shp"), append=F)
+    st_write(sRL_OutputDistribution(scientific_name), paste0(output_dir, "/sRedList_", gsub(" ", ".", scientific_name), "_Distribution.shp"), append=F)
+    st_write(sRL_OutputOccurrences(scientific_name), paste0(output_dir, "/sRedList_", gsub(" ", ".", scientific_name), "_Occurrences.shp"), append=F)
   }
   
   # Zip that folder and delete it + Storage_SP
