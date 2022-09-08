@@ -210,7 +210,7 @@ function(scientific_name, Gbif_Source=-1) {
   
   ### GBIF procedure 
   log_info("START - Create data")
-  dat <- sRL_createDataGBIF(scientific_name, config$LIM_GBIF, Gbif_Source)
+  dat <- sRL_createDataGBIF(scientific_name, Gbif_Source)
   
   # ### Plot
   ggsave(paste0("resources/AOH_stored/", sub(" ", "_", scientific_name), "/Plots/plot_data.png"), plot(

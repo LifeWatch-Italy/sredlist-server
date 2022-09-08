@@ -2,7 +2,7 @@
 
 
 
-sRL_createDataGBIF <- function(scientific_name, LIM_GBIF, GBIF_SRC) { # nolint
+sRL_createDataGBIF <- function(scientific_name, GBIF_SRC) { # nolint
   
   ### Reclassify GBIF_SRC
   if(GBIF_SRC==1){GBIF_source<-c("GBIF")}
@@ -17,8 +17,17 @@ sRL_createDataGBIF <- function(scientific_name, LIM_GBIF, GBIF_SRC) { # nolint
   ### Download data
   # From GBIF
   if("GBIF" %in% GBIF_source){
-    dat_gbif <- rgbif::occ_search(scientificName = scientific_name, hasCoordinate = T, limit=LIM_GBIF)$data # nolint
-    dat_gbif$ID<-paste0(dat_gbif$decimalLongitude, dat_gbif$decimalLatitude, dat_gbif$year)
+    
+    #Calculate the total number of data in GBIF
+    OCC<-occ_count(taxonKey=name_backbone(name=scientific_name)$speciesKey, georeferenced = TRUE)
+    
+    if(OCC < config$LIM_GBIF){ # Download all data or structure download if more than LIM_GBIF
+        dat_gbif <- rgbif::occ_search(scientificName = scientific_name, hasCoordinate = T, limit=config$LIM_GBIF)$data # nolint
+    } else{
+        dat_gbif <- sRL_StructureGBIF(scientificName = scientific_name)
+    }
+    
+        dat_gbif$ID<-paste0(dat_gbif$decimalLongitude, dat_gbif$decimalLatitude, dat_gbif$year)
     dat_gbif$Source<-"GBIF"
   } else {dat_gbif<-NULL}
   
@@ -71,6 +80,83 @@ sRL_createDataGBIF <- function(scientific_name, LIM_GBIF, GBIF_SRC) { # nolint
 }
 
 
+
+
+### Function to download GBIF in a spatially structured manner (to avoid big sampling biases)
+sRL_StructureGBIF<-function(scientificName){
+  
+  ##### DEFINE THE SAMPLING PATTERN
+  ### Map density of observations and extract coordinates
+  Fetch<-mvt_fetch(taxonKey = keySP<-name_backbone(name=scientificName)$speciesKey, srs = "EPSG:4326", format="@4x.png") 
+  coords<-as.data.frame(st_coordinates(Fetch))
+  coords$tot<-Fetch$total
+  
+  ### Extract extent to define grid size
+  DeltaX<-max(coords$X, na.rm=T)-min(coords$X, na.rm=T)
+  DeltaY<-max(coords$Y, na.rm=T)-min(coords$Y, na.rm=T)
+  
+  ### Fix cell size
+  # Maximum size cell in degrees
+  Max_Cell=10 
+  
+  # If extent is small, cut the grid in ca. 100 square cells
+  if(max(DeltaX, DeltaY) < (10*Max_Cell)){
+    NX<- round(10*DeltaX / sqrt(DeltaX*DeltaY)) # Calculates the number of cells to have in one row so that we end up with ca. 100 square cells
+    NY<- round(10*DeltaY / sqrt(DeltaX*DeltaY))
+    Lon_breaks<-seq((min(coords$X, na.rm=T)-1), max(coords$X, na.rm=T), length.out=(NX+1))
+    Lat_breaks<-seq((min(coords$Y, na.rm=T)-1), max(coords$Y, na.rm=T), length.out=(NY+1))
+    
+    # If extent is large, cut the grid in Max_Cell square cells
+  } else{
+    Lon_breaks<-seq((min(coords$X, na.rm=T)-1), max(coords$X, na.rm=T)+1, length.out=ceiling(DeltaX/Max_Cell))
+    Lat_breaks<-seq((min(coords$Y, na.rm=T)-1), max(coords$Y, na.rm=T)+1, length.out=ceiling(DeltaY/Max_Cell))
+  }
+  
+  ### Cut density lon/lat and create group names
+  coords$Lon_group<-coords$X %>% cut(., breaks=Lon_breaks, labels=paste0("X", 1:(length(Lon_breaks)-1)))
+  coords$Lat_group<-coords$Y %>% cut(., breaks=Lat_breaks, labels=paste0("Y", 1:(length(Lat_breaks)-1)))
+  coords$Group<-paste(coords$Lon_group, coords$Lat_group, sep="/")
+  
+  
+  
+  ##### CREATE DOWNLOAD TABLE
+  TAB<-ddply(coords, .(Lon_group, Lat_group), function(x){data.frame(
+    N=sum(x$tot, na.rm=T),
+    Group=paste0(x$Lon_group[1], x$Lat_group[1])
+  )}) %>% subset(., .$N>0)
+  
+  # Extract coordinates (min and max) from Group names and cuts of lon/lat and add in TAB
+  eval(parse(text=paste("TAB$Lon_min<-revalue(TAB$Lon_group, c(", paste0("'X", 1:(length(Lon_breaks)-1), "'=Lon_breaks[", 1:(length(Lon_breaks)-1), "]", collapse=","), ")) %>% as.character(.) %>% as.numeric(.)")))
+  eval(parse(text=paste("TAB$Lon_max<-revalue(TAB$Lon_group, c(", paste0("'X", 1:(length(Lon_breaks)-1), "'=Lon_breaks[", 2:length(Lon_breaks), "]", collapse=","), ")) %>% as.character(.) %>% as.numeric(.)")))
+  eval(parse(text=paste("TAB$Lat_min<-revalue(TAB$Lat_group, c(", paste0("'Y", 1:(length(Lat_breaks)-1), "'=Lat_breaks[", 1:(length(Lat_breaks)-1), "]", collapse=","), ")) %>% as.character(.) %>% as.numeric(.)")))
+  eval(parse(text=paste("TAB$Lat_max<-revalue(TAB$Lat_group, c(", paste0("'Y", 1:(length(Lat_breaks)-1), "'=Lat_breaks[", 2:length(Lat_breaks), "]", collapse=","), ")) %>% as.character(.) %>% as.numeric(.)")))
+  
+  # Determine number of data to download per group to sum at LIM_GBIF
+  TAB$N_download<-ifelse(TAB$N < (config$LIM_GBIF/nrow(TAB)), TAB$N, NA)
+  TAB$N_download[is.na(TAB$N_download)]<-round((config$LIM_GBIF-sum(TAB$N_download, na.rm=T))/nrow(TAB[is.na(TAB$N_download),]))
+  
+  
+  ##### STRUCTURE DOWNLOAD
+  # Download one data (just for structure)
+  dat_structured<-rgbif::occ_search(scientificName = scientificName, hasCoordinate = T, limit=1)$data 
+  
+  # Download group per group
+  for(GR in 1:nrow(TAB)){
+    dat_GR<-rgbif::occ_search(scientificName = scientificName, 
+                              hasCoordinate = T, 
+                              limit=TAB$N_download[GR], 
+                              decimalLongitude=paste(TAB$Lon_min[GR], TAB$Lon_max[GR], sep=","), 
+                              decimalLatitude=paste(TAB$Lat_min[GR], TAB$Lat_max[GR], sep=",")
+    )$data 
+    
+    if(is.null(nrow(dat_GR))==F){dat_structured<-rbind.fill(dat_structured, dat_GR)}
+  }
+  
+  # Merge
+  dat_structured<-dat_structured[2:nrow(dat_structured),]
+  
+  return(dat_structured)
+}
 
 
 ### Function that subsets the observations to flag

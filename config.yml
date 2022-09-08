@@ -4,7 +4,7 @@ default:
   distribution_path: "resources/Distributions/"
   POINTdistribution_path: "resources/Point.distributions/"
   YearAOH2: 2020
-  LIM_GBIF: 10000
+  LIM_GBIF: 2000
   Size_LargeRange: 10000
   engine_AOH: "terra"
   crosswalk: "Lumbierres"
