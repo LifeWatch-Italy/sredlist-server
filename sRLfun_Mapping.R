@@ -22,7 +22,7 @@ sRL_createDataGBIF <- function(scientific_name, GBIF_SRC) { # nolint
     OCC<-occ_count(taxonKey=name_backbone(name=scientific_name)$speciesKey, georeferenced = TRUE)
     
     if(OCC < config$LIM_GBIF){ # Download all data or structure download if more than LIM_GBIF
-        dat_gbif <- rgbif::occ_search(scientificName = scientific_name, hasCoordinate = T, limit=config$LIM_GBIF)$data # nolint
+        dat_gbif <- rgbif::occ_data(scientificName=scientific_name, hasCoordinate = T, limit=config$LIM_GBIF)$data # occ_data is faster than occ_search because it omits some columns
     } else{
         dat_gbif <- sRL_StructureGBIF(scientificName = scientific_name)
     }
@@ -87,7 +87,7 @@ sRL_StructureGBIF<-function(scientificName){
   
   ##### DEFINE THE SAMPLING PATTERN
   ### Map density of observations and extract coordinates
-  Fetch<-mvt_fetch(taxonKey = keySP<-name_backbone(name=scientificName)$speciesKey, srs = "EPSG:4326", format="@4x.png") 
+  Fetch<-mvt_fetch(taxonKey = name_backbone(name=scientificName)$speciesKey, srs = "EPSG:4326", format="@4x.png") 
   coords<-as.data.frame(st_coordinates(Fetch))
   coords$tot<-Fetch$total
   
@@ -137,12 +137,12 @@ sRL_StructureGBIF<-function(scientificName){
   
   
   ##### STRUCTURE DOWNLOAD
-  # Download one data (just for structure)
-  dat_structured<-rgbif::occ_search(scientificName = scientificName, hasCoordinate = T, limit=1)$data 
+  # Download one data (just for column names)
+  dat_structured<-rgbif::occ_data(scientificName=scientificName, hasCoordinate = T, limit=1)$data 
   
   # Download group per group
   for(GR in 1:nrow(TAB)){
-    dat_GR<-rgbif::occ_search(scientificName = scientificName, 
+    dat_GR<-rgbif::occ_data(scientificName=scientificName,
                               hasCoordinate = T, 
                               limit=TAB$N_download[GR], 
                               decimalLongitude=paste(TAB$Lon_min[GR], TAB$Lon_max[GR], sep=","), 
