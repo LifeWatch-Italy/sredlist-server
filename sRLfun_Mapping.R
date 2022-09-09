@@ -228,6 +228,10 @@ sRL_MapDistributionGBIF<-function(dat, scientific_name, First_step, AltMIN, AltM
   }
   
   if(First_step=="Kernel"){
+    # Remove duplicate points (points with same lon/lat)
+    dat_subsample<-distinct(dat, as.character(geometry), .keep_all=T) 
+
+    # Calculate kernels
     kernel.ref <- kernelUD(as_Spatial(dat), h = "href")  # href = the reference bandwidth
     distGBIF <- getverticeshr(kernel.ref, percent = 99) %>% st_as_sf(.)
   }

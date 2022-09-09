@@ -474,7 +474,7 @@ function(scientific_name, Gbif_Start=-1, Gbif_Buffer=-1, Gbif_Altitude=list(), G
 #* @param scientific_name:string Scientific Name
 #* @serializer json
 #* @tag sRedList
-function(scientific_name) {return(list(Gbif_Smooth = 3))}
+function(scientific_name) {return(list(Gbif_Smooth = 0))}
 
 #* Global Biodiversity Information Facility 4 (smooth)
 #* @get species/<scientific_name>/gbif4
