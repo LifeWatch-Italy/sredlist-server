@@ -19,7 +19,7 @@ sRL_createDataGBIF <- function(scientific_name, GBIF_SRC) { # nolint
   if("GBIF" %in% GBIF_source){
     
     #Calculate the total number of data in GBIF
-    OCC<-occ_count(taxonKey=name_backbone(name=scientific_name)$speciesKey, georeferenced = TRUE)
+    OCC<-occ_count(taxonKey=name_backbone(name=scientific_name)$usageKey, georeferenced = TRUE)
     
     if(OCC < config$LIM_GBIF){ # Download all data or structure download if more than LIM_GBIF
         dat_gbif <- rgbif::occ_data(scientificName=scientific_name, hasCoordinate = T, limit=config$LIM_GBIF)$data # occ_data is faster than occ_search because it omits some columns
@@ -87,7 +87,7 @@ sRL_StructureGBIF<-function(scientificName){
   
   ##### DEFINE THE SAMPLING PATTERN
   ### Map density of observations and extract coordinates
-  Fetch<-mvt_fetch(taxonKey = name_backbone(name=scientificName)$speciesKey, srs = "EPSG:4326", format="@4x.png") 
+  Fetch<-mvt_fetch(taxonKey = name_backbone(name=scientificName)$usageKey, srs = "EPSG:4326", format="@4x.png") 
   coords<-as.data.frame(st_coordinates(Fetch))
   coords$tot<-Fetch$total
   

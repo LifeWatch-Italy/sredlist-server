@@ -220,7 +220,7 @@ function(scientific_name, Gbif_Source=-1) {
       geom_point(data = dat, aes(x = decimalLongitude, y = decimalLatitude, col=Source), size = 1) +
       scale_colour_brewer(type="qual", palette=2)+
       ggtitle(paste(names(table(dat$Source)), table(dat$Source), sep=" (") %>% paste(., collapse="), ") %>% paste0("Raw geo-referenced observations (N=", nrow(dat), ") from: ", ., ")") )+
-      theme_bw() %+replace%   theme(plot.title=element_text(hjust=0.5, size=12, face="bold"), legend.position="top")
+      sRLTheme_maps %+replace%   theme(legend.position="top")
     ), width=18, height=5.5) # nolint
   plot1 <- base64enc::dataURI(file = paste0("resources/AOH_stored/", sub(" ", "_", scientific_name), "/Plots/plot_data.png"), mime = "image/png")
   log_info("END - Create data")
@@ -335,7 +335,7 @@ function(scientific_name, Gbif_Year= -1, Gbif_Uncertainty=-1, Gbif_Extent=list()
     geom_point(data = flags, aes(x = decimalLongitude, y = decimalLatitude, col=factor(is.na(Reason), c("FALSE", "TRUE"))), size = 1.3)+
     scale_colour_manual(values=c("#440154ff", "#fde725ff"), name="Valid observation", drop=F)+
     xlab("")+ylab("")+
-    theme_bw() %+replace%   theme(legend.position="bottom")
+    sRLTheme_maps %+replace%   theme(legend.position="top")
   
   G2<-ggplot(flags[is.na(flags$Reason)==T,])+
     geom_histogram(aes(x=Alt_points))+
@@ -449,7 +449,7 @@ function(scientific_name, Gbif_Start=-1, Gbif_Buffer=-1, Gbif_Altitude=list(), G
       geom_sf(data = distSP, fill="darkred") + 
       geom_sf(data=dat_proj)+
       ggtitle("")+
-      theme_bw()
+      sRLTheme_maps
   ), width=18, height=5.5) # nolint
   plot3 <- base64enc::dataURI(file = paste0("resources/AOH_stored/", sub(" ", "_", scientific_name), "/Plots/eoo.png"), mime = "image/png") # nolint
   log_info("END - Maps the distribution")
@@ -521,7 +521,7 @@ function(scientific_name, Gbif_Smooth=-1) {
       geom_sf(data = distSP, fill="darkred") + 
       geom_sf(data=Storage_SP$dat_proj_saved)+
       ggtitle("")+
-      theme_bw()
+      sRLTheme_maps
   ), width=18, height=5.5) # nolint
   plot_final <- base64enc::dataURI(file = paste0("resources/AOH_stored/", sub(" ", "_", scientific_name), "/Plots/plot_final.png"), mime = "image/png") # nolint
   
@@ -574,8 +574,8 @@ function(scientific_name, presences = list(), seasons = list() , origins = list(
       geom_sf(data=distSP, fill="#fcbba1", col=NA) +
       geom_sf(data=st_crop(Storage_SP$CountrySP_saved, extent(EOO)), fill=NA, col="black")+
       ggtitle(paste0("EOO of ", scientific_name)) +
-      theme_bw()
-  )) # nolint
+      sRLTheme_maps
+  ), width=6, height=6) # nolint
   plot3 <- base64enc::dataURI(file = paste0("resources/AOH_stored/", sub(" ", "_", scientific_name), "/Plots/plot_eoo.png"), mime = "image/png") # nolint
   log_info("END - Plot EOO \n")
 
@@ -595,7 +595,7 @@ function(scientific_name, presences = list(), seasons = list() , origins = list(
 
 
 # M4: AOH ----------------------------------------------------------------
-
+## a: Data APIs ----------------------------------------------------------------
 
 
 #* Species density preferences
@@ -628,7 +628,7 @@ function(scientific_name) {
 }
 
 
-
+## b: Current AOH ----------------------------------------------------------------
 #* Estimate the Area of Habitat (AOH)
 #* @get species/<scientific_name>/analysis/aoh
 #* @param scientific_name:string Scientific Name
@@ -692,7 +692,8 @@ function(scientific_name, habitats_pref= list(), altitudes_pref= list(), density
   
   
   ### SMALL-RANGES
-  AOH_type<-ifelse(as.numeric(st_area(rangeSP_clean))/10^6 < as.numeric(config$Size_LargeRange), "Small", "Large") ; print(AOH_type)
+  Range_size<-as.numeric(st_area(rangeSP_clean))/10^6 ; print(Range_size)
+  AOH_type<-ifelse(Range_size < as.numeric(config$Size_LargeRange), "Small", "Large") ; print(AOH_type)
   if(AOH_type=="Small"){
     
     log_info("START - Small: Cropping rasters")
@@ -714,7 +715,7 @@ function(scientific_name, habitats_pref= list(), altitudes_pref= list(), density
       geom_tile(aes(fill = as.factor(value))) +
       scale_fill_manual(values=c("#dfc27d", "#018571", NA), labels=c("Unsuitable", "Suitable", ""), name="", na.translate=F) +
       ggtitle("Area of Habitat in 2020") +
-      theme_void() %+replace%   theme(plot.title=element_text(hjust=0.5, size=14, face="bold"))
+      sRLTheme_maps
     
 
   ### LARGE-RANGES
@@ -726,7 +727,7 @@ function(scientific_name, habitats_pref= list(), altitudes_pref= list(), density
       geom_tile(aes(fill = value)) +
       scale_fill_gradient(low="#dfc27d", high="#018571", name="Suitability (%)", limits=c(0,100), na.value=NA)+
       ggtitle("Area of Habitat in 2020") +
-      theme_void() %+replace%   theme(plot.title=element_text(hjust=0.5, size=14, face="bold"))
+      sRLTheme_maps
     
   }
   
@@ -736,7 +737,7 @@ function(scientific_name, habitats_pref= list(), altitudes_pref= list(), density
   # Plot
   log_info("START - Plot AOH")
   
-  ggsave(filename = paste0("resources/AOH_stored/", sub(" ", "_", scientific_name), "/Plots/aoh.png"), plot = plot(plot1))
+  ggsave(filename = paste0("resources/AOH_stored/", sub(" ", "_", scientific_name), "/Plots/aoh.png"), plot = plot(plot1), width=6, height=6)
   
   plot1 <- base64enc::dataURI(file = paste0("resources/AOH_stored/", sub(" ", "_", scientific_name), "/Plots/aoh.png"), mime = "image/png", encoding = "base64") # nolint
   log_info("END - Plot AOH")
@@ -753,11 +754,11 @@ function(scientific_name, habitats_pref= list(), altitudes_pref= list(), density
     coord_fixed()+
     geom_tile(aes(fill = factor(as.character(value), c("0", "1")))) +
     scale_fill_manual(values=c("#dfc27d", "#018571"), labels=c("Unsuitable", "Suitable"), name="", na.translate=F, drop=F) +
-    ggtitle("Area of Habitat (2x2km)") +
-    theme_void() %+replace%   theme(plot.title=element_text(hjust=0.5, size=14, face="bold"))
+    labs(title="Area of Habitat (2x2km)", subtitle="Likely slightly overestimated (using a 10x10km aggregate raster)")+
+    sRLTheme_maps
   
   
-  ggsave(filename = paste0("resources/AOH_stored/", sub(" ", "_", scientific_name), "/Plots/aoo.png"), plot = plot(plot2))
+  ggsave(filename = paste0("resources/AOH_stored/", sub(" ", "_", scientific_name), "/Plots/aoo.png"), plot = plot(plot2), width=6, height=6)
   plot2 <- base64enc::dataURI(file = paste0("resources/AOH_stored/", sub(" ", "_", scientific_name), "/Plots/aoo.png"), mime = "image/png", encoding = "base64") # nolint
 
   AOO_km2<- sRL_areaAOH(aoh_22[[1]], SCALE="2x2")
@@ -798,7 +799,7 @@ function(scientific_name, habitats_pref= list(), altitudes_pref= list(), density
 
 
 
-
+## c: Trends in AOH ----------------------------------------------------------------
 #* Estimate trends in AOH as a proxy of population trends (Criterion A2)
 #* @get species/<scientific_name>/analysis/trends-aoh
 #* @param scientific_name:string Scientific Name
@@ -862,7 +863,7 @@ function(scientific_name, GL_species=1) { # nolint
       geom_tile(aes(fill = factor(as.character(value), c("2", "3", "4", "5"))))+
       scale_fill_manual(values=c("#a6611a", "gray90", "#80cdc1", "#018571"), labels=c("Newly unsuitable", "Unsuitable", "Suitable", "Newly suitable"), name="", na.translate=F, drop=F)+
       ggtitle(paste0("Trends in Area of Habitat between ", Year1, " and ", config$YearAOH2))+
-      theme_void() %+replace%   theme(plot.title=element_text(hjust=0.5, size=14, face="bold"))
+      sRLTheme_maps
   
    
   } else {
@@ -876,11 +877,11 @@ function(scientific_name, GL_species=1) { # nolint
       geom_tile(aes(fill = value))+
       scale_fill_gradient2(low="#8c510a", mid="azure2", midpoint=0, high="#018571", name="Suitability change (%)", limits=c(-100,100), na.value=NA)+
       ggtitle(paste0("Trends in Area of Habitat between ", Year1, " and ", config$YearAOH2))+
-      theme_void() %+replace%   theme(plot.title=element_text(hjust=0.5, size=14, face="bold"))
+      sRLTheme_maps
   }
   
   # Plot
-  ggsave(filename = paste0("resources/AOH_stored/", sub(" ", "_", scientific_name), "/Plots/trends_aoh.png"), plot = plot(plot1))
+  ggsave(filename = paste0("resources/AOH_stored/", sub(" ", "_", scientific_name), "/Plots/trends_aoh.png"), plot = plot(plot1), width=6, height=6)
   plot1 <- base64enc::dataURI(file = paste0("resources/AOH_stored/", sub(" ", "_", scientific_name), "/Plots/trends_aoh.png"), mime = "image/png", encoding = "base64") # nolint
   
   # Calculate area and trends
@@ -908,6 +909,9 @@ function(scientific_name, GL_species=1) { # nolint
   ))
   
 }
+
+
+
 
 
 

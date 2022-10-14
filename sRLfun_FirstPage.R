@@ -5,6 +5,16 @@
 `%not in%` <- function (x, table) is.na(match(x, table, nomatch=NA_integer_)) # nolint
 
 
+##############################################
+### PERSONALISED THEMES FOR PLATFORM PLOTS ###
+##############################################
+sRLTheme_maps<-theme_void() %+replace%   theme(
+  plot.title=element_text(hjust=0.5, size=14, face="bold"),
+  plot.background=element_rect(fill="white", colour=NA)
+  )
+
+
+
 
 ##############################################
 ### Function to capitalise scientific name ###
