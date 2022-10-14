@@ -109,6 +109,8 @@ function(scientific_name) {
   return(hab_pref)
 }
 
+
+
 #* Species altitude preferences
 #* @get species/<scientific_name>/altitude-preferences
 #* @param scientific_name:string Scientific Name
@@ -127,11 +129,33 @@ function(scientific_name) {
     alt_pref<-list(name=scientific_name, result=sRL_PrepareAltitudeFile(scientific_name, altitudes_pref=c(NA,NA)))
   }
 
+  
   # If no altitude preference, take from raster
   if(is.na(alt_pref$result$elevation_lower+alt_pref$result$elevation_upper)){
-    EXTR<-round(exactextractr::exact_extract(alt_raw, Storage_SP$distSP_saved, c("min", "max")))
-    if(is.na(alt_pref$result$elevation_lower)==T){alt_pref$result$elevation_lower<-min(EXTR$min, na.rm=T)}
-    if(is.na(alt_pref$result$elevation_upper)==T){alt_pref$result$elevation_upper<-max(EXTR$max, na.rm=T)}
+    
+    ### Small ranges
+    Range_size<-as.numeric(sum(st_area(Storage_SP$distSP_saved)))/(10^6)
+    
+    if(Range_size < as.numeric(config$Size_LargeRange)){
+      log_info("Run altitude extract (Small range)")
+      EXTR<-round(exactextractr::exact_extract(alt_raw, Storage_SP$distSP_saved, c("min", "max")))
+      if(is.na(alt_pref$result$elevation_lower)==T){alt_pref$result$elevation_lower<-min(EXTR$min, na.rm=T)}
+      if(is.na(alt_pref$result$elevation_upper)==T){alt_pref$result$elevation_upper<-max(EXTR$max, na.rm=T)}
+    }
+    
+    ### Large range
+    if(Range_size >= as.numeric(config$Size_LargeRange)){
+      log_info("Run altitude extract (Large range)")
+
+      if(is.na(alt_pref$result$elevation_lower)==T){
+        EXTR_min<-exactextractr::exact_extract(Alt1010_min, Storage_SP$distSP_saved, "min")
+        alt_pref$result$elevation_lower<-trunc(min(EXTR_min, na.rm=T))
+        }
+      if(is.na(alt_pref$result$elevation_upper)==T){
+        EXTR_max<-exactextractr::exact_extract(Alt1010_max, Storage_SP$distSP_saved, "max")
+        alt_pref$result$elevation_upper<-ceiling(max(EXTR_max, na.rm=T))
+        }
+    }
   }
 
   # If something remains NA -> 0, 9000

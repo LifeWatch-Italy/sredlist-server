@@ -98,6 +98,11 @@ grid22<-rast("resources/EmptyGrid2x2/Empty.grid.2x2.Mollweide.tif")
 CCI_large<-stackOpen(paste0(config$cciStack2_path, "/2020/CCI_Stack_Agg30_Year2020.stk"))
 alt_large<-raster(paste0(config$cciStack2_path, "/ElevationAgg30.tif"))
 
+# Load Elevation at 10x10km scale to extract elevation preference for large range species, one aggregated with min value, one aggregated with max value (to be sure to be conservative)
+Alt1010_min<-raster(paste0(config$cciStack2_path, "/ElevationAgg30_MINIMUM.tif"))
+Alt1010_max<-raster(paste0(config$cciStack2_path, "/ElevationAgg30_MAXIMUM.tif"))
+
+
 # Load Crosswalk CSV and Density CSV
 density<-read.csv("Species/Density.table.csv", sep=",")
 crosswalk <- read.table("Species/Crosswalk_CCI_IUCN.txt", header=T)
