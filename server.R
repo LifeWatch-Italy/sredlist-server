@@ -35,6 +35,7 @@ library(rasterVis)
 library(readr)
 library(aoh)
 library(terra)
+library(scales)
 
 
 #####################################

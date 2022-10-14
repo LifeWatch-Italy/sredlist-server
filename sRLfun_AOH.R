@@ -116,3 +116,10 @@ sRL_largeAOH<-function(habitats_pref, altitudes_pref, rangeSP_clean, YR){
   return(AOH)
 }
 
+
+
+
+### Log-scale for colour plot in Large Trends
+colour_bidirect_scale <- trans_new("logpeps",
+                             function(x) {sign(x)*sqrt(abs(x))},
+                             function(x) {sign(x)*(abs(x)^2)}) 
