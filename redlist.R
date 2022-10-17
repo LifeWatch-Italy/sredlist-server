@@ -84,7 +84,7 @@ function(scientific_name, path = "") {
                   geom_sf(data = CountrySP, fill="gray96", col="gray50") + # nolint
                   geom_sf(data = distSP, fill = distSP$cols, col=NA) +
                   theme_void() +
-                  ggtitle("Distribution")
+                  ggtitle("")
       }
   
     Plot_Dist
