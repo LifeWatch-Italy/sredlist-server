@@ -106,11 +106,37 @@ sRL_OutputCountries<-function(scientific_name, distSP_saved, CountrySP_saved, Al
 ### Prepare references output csv
 sRL_OutputRef<-function(scientific_name, AltPref_saved){
 
-  # Charge the file with 2 sRedList references
+  # Charge the file with sRedList reference
   ref_SIS<-read.csv("Species/SIS_references_empty.csv")
+  
+  Storage_SP=sRL_reuse(url_decode(scientific_name))
+  if("dat_proj_saved" %in% names(Storage_SP)){
+    
+    # Add rgbif if used
+    if("GBIF" %in% Storage_SP$dat_proj_saved$Source){
+      ROW<-(nrow(ref_SIS)+1)
+      ref_SIS[ROW,]<-NA
+      ref_SIS$author[ROW]<-"Chamberlain S, Barve V, Mcglinn D, Oldoni D, Desmet P, Geffert L, Ram K"
+      ref_SIS$title[ROW]<-"rgbif: Interface to the Global Biodiversity Information Facility API_. R package version 3.7.2, <https://CRAN.R-project.org/package=rgbif>"
+      ref_SIS$type[ROW]<-"R package"
+      ref_SIS$year[ROW]<-2017
+    }
+
+  # Add robis if used
+    if("OBIS" %in% Storage_SP$dat_proj_saved$Source){
+      ROW<-(nrow(ref_SIS)+1)
+      ref_SIS[ROW,]<-NA
+      ref_SIS$author[ROW]<-"Provoost, P., Bosch, S."
+      ref_SIS$title[ROW]<-"robis: Ocean Biodiversity Information System (OBIS) Client. R package version 2.8.2. url: https://CRAN.R-project.org/package=robis"
+      ref_SIS$type[ROW]<-"R package"
+      ref_SIS$year[ROW]<-2021
+    }  
+  }
+  
+  # Add species name / taxonid
   ref_SIS$internal_taxon_name<-scientific_name
   ref_SIS$internal_taxon_id<-AltPref_saved$taxonid[1]
-  
+    
   return(ref_SIS)
 }
 
@@ -159,12 +185,12 @@ sRL_OutputOccurrences <- function(scientific_name) {
   
   # Fill in some information
   dat_SIS$yrcomplied<-Sys.time() %>% format(., "%Y")
-  dat_SIS$citation<-"Citation to add" # To fill
   dat_SIS$dec_long<-st_coordinates(dat_SIS)[,1]
   dat_SIS$dec_lat<-st_coordinates(dat_SIS)[,2]
   dat_SIS$spatialref<-"WGS84"
   dat_SIS$event_year<-dat$year
-  
+  dat_SIS$citation<-dat$citation
+
 
   # If data from the Red List, copy the information previously saved
   if("RL" %in% dat$Source){

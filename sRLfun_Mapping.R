@@ -27,9 +27,19 @@ sRL_createDataGBIF <- function(scientific_name, GBIF_SRC) { # nolint
         dat_gbif <- sRL_StructureGBIF(scientificName = scientific_name)
     }
     
-        dat_gbif$ID<-paste0(dat_gbif$decimalLongitude, dat_gbif$decimalLatitude, dat_gbif$year)
+    dat_gbif$ID<-paste0(dat_gbif$decimalLongitude, dat_gbif$decimalLatitude, dat_gbif$year)
     dat_gbif$Source<-"GBIF"
-  } else {dat_gbif<-NULL}
+    
+    # Extract citation (once per dataset then match)
+    dat_gbif$citation<-NA
+    datasets<-data.frame(Dataset=levels(as.factor(dat_gbif$datasetKey)), citation=NA)
+    for(i in 1:nrow(datasets)){
+      datasets$citation[i]<-as.character(unlist(gbif_citation(datasets$Dataset[i]))[2])
+      }
+    dat_gbif$citation<-datasets$citation[match(dat_gbif$datasetKey, datasets$Dataset)]
+    
+    
+    } else {dat_gbif<-NULL}
   
   # From OBIS (removing points at same location + year)
   if("OBIS" %in% GBIF_source){
@@ -38,6 +48,7 @@ sRL_createDataGBIF <- function(scientific_name, GBIF_SRC) { # nolint
     dat_obis$year<-dat_obis$date_year
     dat_obis_sub<-subset(dat_obis, !dat_obis$ID %in% dat_gbif$ID)
     dat_obis_sub$Source<-"OBIS"
+    dat_obis_sub$citation<-dat_obis_sub$bibliographicCitation
   } else {dat_obis_sub<-data.frame()}
   
   # From Red List point
