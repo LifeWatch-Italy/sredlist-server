@@ -876,12 +876,10 @@ function(scientific_name, GL_species=1) { # nolint
     plot1 <- gplot((AOH2[[1]]-AOH1[[1]])/9) + 
       coord_fixed()+
       geom_tile(aes(fill = value))+
-      scale_fill_gradient2(low="#8c510a", mid="azure2", midpoint=0, high="#018571", name="Suitability change (%)", limits=c(-100,100), na.value=NA, trans=colour_bidirect_scale)+
+      scale_fill_gradient2(low="#8c510a", mid="azure2", midpoint=0, high="#018571", name="Suitability change (%)", limits=c(-100,100), na.value=NA, trans=colour_bidirect_scale, breaks=c(-100, -50, -10, 0, 10, 50, 100))+
       ggtitle(paste0("Trends in Area of Habitat between ", Year1, " and ", config$YearAOH2))+
       sRLTheme_maps
   }
-  
-  Storage_SP$AOHTRENDS<-(AOH2[[1]]-AOH1[[1]])/9
   
   # Plot
   ggsave(filename = paste0("resources/AOH_stored/", sub(" ", "_", scientific_name), "/Plots/trends_aoh.png"), plot = plot(plot1), width=6, height=6)
