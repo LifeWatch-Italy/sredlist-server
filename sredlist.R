@@ -252,7 +252,7 @@ function(scientific_name, Gbif_Source=-1) {
     st_transform(., st_crs(CRSMOLL)) %>%
     st_as_sf(.)
 
-  flags_raw$Alt_points=terra::extract(alt_raw, st_coordinates(flags_foralt), method="simple", list=F)$Elevation_reprojMollweide3
+  flags_raw$Alt_points=terra::extract(alt_raw, st_coordinates(flags_foralt), method="simple")$Elevation_reprojMollweide3
   flags_raw$Alt_points<-replace(flags_raw$Alt_points, is.nan(flags_raw$Alt_points)==T, NA)
   log_info("END - Extracting elevation values")  
   
