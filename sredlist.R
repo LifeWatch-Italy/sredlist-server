@@ -246,15 +246,15 @@ function(scientific_name, Gbif_Source=-1) {
                                  tests = Tests_to_run)
   if(Skip_country==T){flags_raw$.sea<-FALSE}
   
-  # Extract elevation (need to transform the CRS for it)
-  log_info("START - Extracting elevation values")  
-  flags_foralt<-st_geometry(st_as_sf(flags_raw,coords = c("decimalLongitude", "decimalLatitude"), crs="+proj=longlat +datum=WGS84")) %>%
-    st_transform(., st_crs(CRSMOLL)) %>%
-    st_as_sf(.)
-
-  flags_raw$Alt_points=terra::extract(alt_raw, st_coordinates(flags_foralt), method="simple")$Elevation_reprojMollweide3
-  flags_raw$Alt_points<-replace(flags_raw$Alt_points, is.nan(flags_raw$Alt_points)==T, NA)
-  log_info("END - Extracting elevation values")  
+  # # Extract elevation (need to transform the CRS for it)
+  # log_info("START - Extracting elevation values")  
+  # flags_foralt<-st_geometry(st_as_sf(flags_raw,coords = c("decimalLongitude", "decimalLatitude"), crs="+proj=longlat +datum=WGS84")) %>%
+  #   st_transform(., st_crs(CRSMOLL)) %>%
+  #   st_as_sf(.)
+  # 
+  # flags_raw$Alt_points=terra::extract(alt_raw, st_coordinates(flags_foralt), method="simple")$Elevation_reprojMollweide3
+  # flags_raw$Alt_points<-replace(flags_raw$Alt_points, is.nan(flags_raw$Alt_points)==T, NA)
+  # log_info("END - Extracting elevation values")  
   
   
   # Assign
@@ -298,71 +298,53 @@ function(scientific_name) {
 #* @tag sRedList
 function(scientific_name) {return(list(Gbif_Sea = 0))}
 
-#* Global Biodiversity Information Facility Step 2 
+#* Global Biodiversity Information Facility Step 2
 #* @get species/<scientific_name>/gbif2
 #* @param scientific_name:string Scientific Name
 #* @param Gbif_Year:int Gbif_Year
 #* @param Gbif_Uncertainty:int Gbif_Uncertainty
 #* @param Gbif_Extent:[int] Gbif_Extent
 #* @param Gbif_Sea:int Gbif_Sea
-#* @serializer unboxedJSON
+#* @serializer htmlwidget
 #* @tag sRedList
 function(scientific_name, Gbif_Year= -1, Gbif_Uncertainty=-1, Gbif_Extent=list(), Gbif_Sea=-1) {
   
-  # Transform parameters GBIF filtering
+  log_info("START - GBIF Step 2")
+  
+  ### Transform parameters GBIF filtering
+  scientific_name <- url_decode(scientific_name)
   print(Gbif_Year)
   print(Gbif_Uncertainty)
-  print(Gbif_Extent)
-  
-  Gbif_Extent<-as.numeric(Gbif_Extent)
-  
-  ### Clean-string from user
-  scientific_name <- url_decode(scientific_name)
+  Gbif_Extent<-as.numeric(Gbif_Extent) ; print(Gbif_Extent)
   
   ### Charge downloaded data
   Storage_SP<-sRL_reuse(scientific_name)
   flags_raw<-Storage_SP$flags_raw_saved
-  CountrySP_WGS<-Storage_SP$CountrySP_WGS_saved
   
   ### Subset the observations user wants to keep (can be run several times if users play with parameters)
   flags <- sRL_cleanDataGBIF(flags_raw, as.numeric(Gbif_Year), as.numeric(Gbif_Uncertainty), keepyearNA_GBIF=T, Gbif_Sea, Gbif_Extent[1], Gbif_Extent[2], Gbif_Extent[3], Gbif_Extent[4])
   dat_proj=sRL_SubsetGbif(flags, scientific_name)
   
-  # Plot
-  G1<-ggplot()+
-    coord_fixed()+
-    geom_sf(data=CountrySP_WGS, fill="gray70")+
-    geom_point(data = flags, aes(x = decimalLongitude, y = decimalLatitude, col=factor(is.na(Reason), c("FALSE", "TRUE"))), size = 1.3)+
-    scale_colour_manual(values=c("#440154ff", "#fde725ff"), name="Valid observation", drop=F)+
-    xlab("")+ylab("")+
-    sRLTheme_maps %+replace%   theme(legend.position="top")
-  
-  G2<-ggplot(flags[is.na(flags$Reason)==T,])+
-    geom_histogram(aes(x=Alt_points))+
-    ggtitle(paste0("Elevation of valid observations (N=", nrow(flags[is.na(flags$Reason)==T,]), ")"))+
-    xlab("Elevation (m)")+ylab("N")+
-    labs(subtitle=paste0("Elevation ranges from ", trunc(min(flags$Alt_points[is.na(flags$Reason)==T], na.rm=T)), " to ", ceiling(max(flags$Alt_points[is.na(flags$Reason)==T], na.rm=T))))+
-    theme_minimal()
-  
-  # Save only G1 if no altitude data (eg only marine) and a grid arrange otherwise
-  if(! FALSE %in% is.na(flags_raw$Alt_points)){GTOT<-G1} else{
-    GTOT<-grid.arrange(G1, G2, layout_matrix=matrix(c(1,1,3,1,1,2,1,1,3), ncol=3, byrow=T))
-  }
-  
-  ggsave(paste0("resources/AOH_stored/", sub(" ", "_", scientific_name), "/Plots/clean_coordinates.png"), 
-    GTOT, width=18, height=5.5)
-  plot2 <- base64enc::dataURI(file = paste0("resources/AOH_stored/", sub(" ", "_", scientific_name), "/Plots/clean_coordinates.png"), mime = "image/png") # nolint
-  log_info("END - Clean coordinates")
-  
-  # Assign
+  ### Assign in Storage_SP
   Storage_SP$dat_proj_saved<-dat_proj
+  Storage_SP$flags<-flags
   Storage_SP<-sRL_OutLog(Storage_SP, c("Gbif_Year", "Gbif_Uncertainty", "Gbif_Sea", "Gbif_Extent"), c(Gbif_Year, Gbif_Uncertainty, Gbif_Sea, paste0(Gbif_Extent, collapse=",")))
   assign(paste0("Storage_SP_", sub(" ", "_", scientific_name)), Storage_SP, .GlobalEnv)
   
+  log_info("END - GBIF Step 2")
   
-  return(list(
-    plot_clean_coordinates = plot2
-  ))
+  return(
+    leaflet(flags) %>%
+      addTiles() %>%
+      addCircleMarkers(lng=flags$decimalLongitude,
+                       lat=flags$decimalLatitude,
+                       color=ifelse(is.na(flags$Reason)==T, "#fde725ff", "#440154ff"),
+                       fillOpacity=0.5,
+                       stroke=F,
+                       popup=flags$PopText,
+                       radius=8) %>%
+      addLegend(position="bottomleft", colors=c('#fde725ff', '#440154ff'), labels=c("Valid", "Not valid"))
+  )
   
 }
 

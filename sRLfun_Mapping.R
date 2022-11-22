@@ -22,24 +22,25 @@ sRL_createDataGBIF <- function(scientific_name, GBIF_SRC) { # nolint
     OCC<-occ_count(taxonKey=name_backbone(name=scientific_name)$usageKey, georeferenced = TRUE)
     
     if(OCC < config$LIM_GBIF){ # Download all data or structure download if more than LIM_GBIF
-        dat_gbif <- rgbif::occ_data(scientificName=scientific_name, hasCoordinate = T, limit=config$LIM_GBIF)$data # occ_data is faster than occ_search because it omits some columns
+      dat_gbif <- rgbif::occ_data(scientificName=scientific_name, hasCoordinate = T, limit=config$LIM_GBIF)$data # occ_data is faster than occ_search because it omits some columns
     } else{
-        dat_gbif <- sRL_StructureGBIF(scientificName = scientific_name)
+      dat_gbif <- sRL_StructureGBIF(scientificName = scientific_name)
     }
     
     dat_gbif$ID<-paste0(dat_gbif$decimalLongitude, dat_gbif$decimalLatitude, dat_gbif$year)
     dat_gbif$Source<-"GBIF"
+    dat_gbif$Link<-paste0("https://gbif.org/occurrence/", dat_gbif$gbifID)
     
     # Extract citation (once per dataset then match)
     dat_gbif$citation<-NA
     datasets<-data.frame(Dataset=levels(as.factor(dat_gbif$datasetKey)), citation=NA)
     for(i in 1:nrow(datasets)){
       datasets$citation[i]<-as.character(unlist(gbif_citation(datasets$Dataset[i]))[2])
-      }
+    }
     dat_gbif$citation<-datasets$citation[match(dat_gbif$datasetKey, datasets$Dataset)]
     
     
-    } else {dat_gbif<-NULL}
+  } else {dat_gbif<-NULL}
   
   # From OBIS (removing points at same location + year)
   if("OBIS" %in% GBIF_source){
@@ -49,6 +50,8 @@ sRL_createDataGBIF <- function(scientific_name, GBIF_SRC) { # nolint
     dat_obis_sub<-subset(dat_obis, !dat_obis$ID %in% dat_gbif$ID)
     dat_obis_sub$Source<-"OBIS"
     dat_obis_sub$citation<-dat_obis_sub$bibliographicCitation
+    dat_obis_sub$Link<-paste0("https://obis.org/taxon/", dat_obis_sub$aphiaID[1])
+    dat_obis_sub$gbifID<-dat_obis_sub$occurrenceID
   } else {dat_obis_sub<-data.frame()}
   
   # From Red List point
@@ -60,6 +63,8 @@ sRL_createDataGBIF <- function(scientific_name, GBIF_SRC) { # nolint
     dat_RL$year<-dat_RL$event_year
     dat_RL$species<-dat_RL$binomial
     dat_RL$coordinateUncertaintyInMeters<-NA
+    dat_RL$gbifID<-dat_RL$objectid
+    dat_RL$Link<-NA
   } else {dat_RL<-data.frame()}
   
   # Return error if no data found
@@ -72,21 +77,20 @@ sRL_createDataGBIF <- function(scientific_name, GBIF_SRC) { # nolint
     print(paste0("Number of data: ", nrow(dat)))
   }
   
-  #Select columns of interest
+  # Select columns of interest
   dat <- dat %>%
     dplyr::select(any_of(c("species", "decimalLongitude", "decimalLatitude", "countryCode", "individualCount", # nolint
-                  "gbifID", "id", "objectid", "family", "taxonRank", "coordinateUncertaintyInMeters", "year",
-                  "basisOfRecord", "institutionCode", "datasetName", "Source", "source", "citation")))
+                           "gbifID", "id", "objectid", "family", "taxonRank", "coordinateUncertaintyInMeters", "year",
+                           "basisOfRecord", "institutionCode", "datasetName", "Source", "source", "citation", "Link")))
   
-  #Remove records with no spatial coordinates
+  # Remove records with no spatial coordinates
   dat <- dat %>% filter(!is.na(decimalLongitude)) %>% filter(!is.na(decimalLatitude)) # nolint
   
-  #Convert country code from ISO2c to ISO3c
+  # Convert country code from ISO2c to ISO3c
   if(!"countryCode" %in% names(dat)){dat$countryCode<-NA} else{
-  dat$countryCode <-  countrycode::countrycode(dat$countryCode, origin =  'iso2c', destination = 'iso3c')} # nolint
+    dat$countryCode <-  countrycode::countrycode(dat$countryCode, origin =  'iso2c', destination = 'iso3c')} # nolint
   dat <- data.frame(dat)
-  
-  
+
   return(dat)
 }
 
@@ -201,6 +205,13 @@ sRL_cleanDataGBIF <- function(flags, year_GBIF, uncertainty_GBIF, keepyearNA_GBI
           paste(collapse="; ")
       }}
   )
+  
+  # Prepare the box popup for the leaflet map
+  flags$PopText<- paste0("<b>", revalue(as.character(is.na(flags$Reason)), c("TRUE"="VALID OBSERVATION", "FALSE"="NOT VALID OBSERVATION")),"</b>", "<br>", "<br>",
+                       "<b>","Source: ","</b>", flags$Source, "<br>",
+                       "<b>","Observation ID: ","</b>", ifelse(is.na(flags$Link)==F, paste0("<a href='", flags$Link, "' target='_blank'>", flags$gbifID, "</a>"), flags$gbifID), "<br>",
+                       "<b>","Year: ","</b>", flags$year, "<br>")
+  flags$PopText[is.na(flags$Reason)==F]<-paste0(flags$PopText[is.na(flags$Reason)==F], "<b>","Reason flagged: ","</b>", flags$Reason[is.na(flags$Reason)==F], "<br>")
   
   return(flags)
   
