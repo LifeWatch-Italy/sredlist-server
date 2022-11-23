@@ -48,3 +48,7 @@ invalid_extension <- function(file) {
   message=paste0("The following file has an invalid format: ", file)
   api_error(message = message, status = 400)
 }
+
+no_habitat_pref <- function(message = "At least one suitable habitat must be selected") {
+  api_error(message = message, status = 400)
+}

@@ -629,6 +629,8 @@ function(scientific_name, habitats_pref= list(), altitudes_pref= list(), density
   sRL_cleaningMemory(Time_limit=90)
   log_info("END - Cleaning memory")
   
+  if(length(habitats_pref)==0){no_habitat_pref("No habitat preference selected")}
+  
   #Filter param
   scientific_name <- url_decode(scientific_name)
   Storage_SP=sRL_reuse(scientific_name)
