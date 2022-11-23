@@ -11,20 +11,15 @@ error_handler <- function(req, res, err) {
     # Read Error Message in Response Object
     res$status <- 500
     messageBody <- paste0("Internal server error: ", err$message) # nolint
-    #res$body <- "{\"status\":500,\"message\":\"Internal server error.\"}"
-    res$body <- sprintf(
-      "{\"status\":%d,\"message\":\"%s\"}", 500, messageBody
-    )
     # Print the internal error so we can see it from the server side. A more
     # robust implementation would use proper logging.
     log_error(err$message)
+    list(error = messageBody)
   } else {
     # We know that the message is intended to be user-facing.
     res$status <- err$status
-    res$body <- sprintf(
-      "{\"status\":%d,\"message\":\"%s\"}", err$status, err$message
-    )
     log_error('{req$PATH_INFO} : {err$message}') # nolint
+    list(error = err$message)
   }
 }
 
