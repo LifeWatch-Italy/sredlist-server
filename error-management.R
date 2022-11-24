@@ -47,3 +47,8 @@ invalid_extension <- function(file) {
 no_habitat_pref <- function(message = "At least one suitable habitat must be selected") {
   api_error(message = message, status = 400)
 }
+
+no_gbif_data <- function() {
+  api_error(message = "All records have been excluded in Step 2", status = 400)
+}
+

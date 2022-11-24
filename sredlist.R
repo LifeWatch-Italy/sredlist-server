@@ -411,6 +411,7 @@ function(scientific_name, Gbif_Start=-1, Gbif_Buffer=-1, Gbif_Altitude=list(), G
   # Get back GBIF observations
   Storage_SP=sRL_reuse(scientific_name)
   dat_proj=Storage_SP$dat_proj_saved
+  if(nrow(dat_proj)==0){no_gbif_data()}
   
   
   # Create distribution
