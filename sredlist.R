@@ -781,7 +781,24 @@ function(scientific_name, habitats_pref= list(), altitudes_pref= list(), density
 }
 
 
+#* Prepare AOH marginal (aohPREP)
+#* @get species/<scientific_name>/analysis/aohPREP
+#* @param scientific_name:string Scientific Name
+#* @param habitats_pref:[str] habitats_pref
+#* @param altitudes_pref:[int] altitudes_pref
+#* @param density_pref:numeric density_pref
+#* @param isGbifDistribution:boolean isGbifDistribution
+#* @param path:string Distribution Folder default RedList
+#* @serializer unboxedJSON
+#* @tag sRedList
+function(scientific_name, habitats_pref= list(), altitudes_pref= list(), density_pref= -1, isGbifDistribution = FALSE, path = "") { # nolint    
+  print(scientific_name)
+  print(habitats_pref)
+  print(habitats_pref_MARGINAL)
+  print(altitudes_pref)
+  print(density_pref)
 
+}
 
 
 
