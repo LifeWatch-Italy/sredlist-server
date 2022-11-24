@@ -14,12 +14,12 @@ error_handler <- function(req, res, err) {
     # Print the internal error so we can see it from the server side. A more
     # robust implementation would use proper logging.
     log_error(err$message)
-    list(error = messageBody)
+    list(message = messageBody)
   } else {
     # We know that the message is intended to be user-facing.
     res$status <- err$status
     log_error('{req$PATH_INFO} : {err$message}') # nolint
-    list(error = err$message)
+    list(message = err$message)
   }
 }
 
