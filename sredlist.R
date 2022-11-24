@@ -785,13 +785,14 @@ function(scientific_name, habitats_pref= list(), altitudes_pref= list(), density
 #* @get species/<scientific_name>/analysis/aohPREP
 #* @param scientific_name:string Scientific Name
 #* @param habitats_pref:[str] habitats_pref
+#* @param habitats_pref_MARGINAL:[str] habitats_pref_MARGINAL
 #* @param altitudes_pref:[int] altitudes_pref
 #* @param density_pref:numeric density_pref
 #* @param isGbifDistribution:boolean isGbifDistribution
 #* @param path:string Distribution Folder default RedList
 #* @serializer unboxedJSON
 #* @tag sRedList
-function(scientific_name, habitats_pref= list(), altitudes_pref= list(), density_pref= -1, isGbifDistribution = FALSE, path = "") { # nolint    
+function(scientific_name, habitats_pref= list(), habitats_pref_MARGINAL=list(), altitudes_pref= list(), density_pref= -1, isGbifDistribution = FALSE, path = "") { # nolint    
   print(scientific_name)
   print(habitats_pref)
   print(habitats_pref_MARGINAL)
