@@ -87,9 +87,9 @@ convert_empty <- function(string) {
 speciesRL <- read.csv("Species/species-all-page.csv") # nolint
 
 # Load Map countries
-distCountries_notsimplif <- st_read("Species/Map countries/Admin_dissolved_by_country_MOLLWEIDE.shp")  ; st_crs(distCountries_notsimplif)<-CRSMOLL
-distCountries_WGS <- st_read("Species/Map countries/Admin_dissolved_by_country_Simplif_0.005.shp")
-distCountries<-st_read("Species/Map countries/Admin_dissolved_by_country_Simplif_0.005MOLLWEIDE.shp") ; st_crs(distCountries)<-CRSMOLL
+distCountries_notsimplif <- st_read("Species/Map countries/Red_List_countries_Simplif_0.01MOLLWEIDE.shp")  ; st_crs(distCountries_notsimplif)<-CRSMOLL
+distCountries_WGS <- st_read("Species/Map countries/Red_List_countries_Simplif0.001.shp")
+distCountries<-st_read("Species/Map countries/Red_List_countries_Simplif_0.001MOLLWEIDE.shp") ; st_crs(distCountries)<-CRSMOLL
 
 # Load ESA land cover data from 2020 and altitude data
 alt_raw <- rast(config$alt_raster_path) ; crs(alt_raw)<-CRSMOLL  # I ensure the CRS is correctly assigned (it was saved as a CRSMOLL raster)
