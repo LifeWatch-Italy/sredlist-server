@@ -44,8 +44,8 @@ invalid_extension <- function(file) {
   api_error(message = message, status = 400)
 }
 
-no_habitat_pref <- function(message = "At least one suitable habitat must be selected") {
-  api_error(message = message, status = 400)
+no_habitat_pref <- function() {
+  api_error(message = "At least one suitable habitat must be selected", status = 400)
 }
 
 no_gbif_data <- function() {

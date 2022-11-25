@@ -630,7 +630,7 @@ function(scientific_name, habitats_pref= list(), altitudes_pref= list(), density
   sRL_cleaningMemory(Time_limit=90)
   log_info("END - Cleaning memory")
   
-  if(length(habitats_pref)==0){no_habitat_pref("No habitat preference selected")}
+  if(length(habitats_pref)==0){no_habitat_pref()}
   
   #Filter param
   scientific_name <- url_decode(scientific_name)
@@ -698,8 +698,8 @@ function(scientific_name, habitats_pref= list(), altitudes_pref= list(), density
     
     plot1 <- gplot(AOH2[[1]]) +
       coord_fixed()+
-      geom_tile(aes(fill = as.factor(value))) +
-      scale_fill_manual(values=c("#dfc27d", "#018571", NA), labels=c("Unsuitable", "Suitable", ""), name="", na.translate=F) +
+      geom_tile(aes(fill = factor(value, levels=c("0", "1")))) +
+      scale_fill_manual(values=c("#dfc27d", "#018571", NA), labels=c("Unsuitable", "Suitable", ""), name="", na.translate=F, drop=F) +
       ggtitle("Area of Habitat in 2020") +
       sRLTheme_maps
     
