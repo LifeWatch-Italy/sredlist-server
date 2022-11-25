@@ -344,7 +344,8 @@ function(scientific_name, Gbif_Year= -1, Gbif_Uncertainty=-1, Gbif_Extent=list()
                        popup=flags$PopText,
                        radius=8) %>%
       addLegend(position="bottomleft", colors=c('#fde725ff', '#440154ff'), labels=c("Valid", "Not valid")) %>%
-      addMouseCoordinates()
+      addMouseCoordinates() %>%
+      addScaleBar(position = "bottomright")
   )
   
 }
