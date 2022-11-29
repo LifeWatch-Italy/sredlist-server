@@ -10,6 +10,7 @@
 ##############################################
 sRLTheme_maps<-theme_void() %+replace%   theme(
   plot.title=element_text(hjust=0.5, size=14, face="bold"),
+  plot.subtitle=element_text(hjust=0.5),
   plot.background=element_rect(fill="white", colour=NA)
   )
 
