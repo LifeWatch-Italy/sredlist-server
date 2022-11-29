@@ -1027,7 +1027,7 @@ function(scientific_name, habitats_pref= list(), habitats_pref_MARGINAL=list(), 
 
   
   ### Save parameters and results
-  Storage_SP<-sRL_OutLog(Storage_SP, c("AOH_HabitatPreference", "AOH_ElevationPreference", "AOH_Density"), c(paste0(habitats_pref, collapse=","), paste0(altitudes_pref, collapse=","), density_pref))
+  Storage_SP<-sRL_OutLog(Storage_SP, c("AOH_HabitatPreference", "AOH_MarginalHabitatPreference", "AOH_ElevationPreference", "AOH_Density"), c(paste0(habitats_pref, collapse=","), paste0(habitats_pref_MARGINAL, collapse=","), paste0(altitudes_pref, collapse=", "), density_pref))
   assign(paste0("Storage_SP_", sub(" ", "_", scientific_name)), Storage_SP, .GlobalEnv)
   terraOptions(tempdir=tempdir())
   rasterOptions(tmpdir=tempdir())
