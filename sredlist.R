@@ -1276,7 +1276,7 @@ function(scientific_name, eoo_km2, aoo_km2, pop_size) {
   #Filter param
   scientific_name <- url_decode(scientific_name)
   Storage_SP=sRL_reuse(scientific_name)
-  aoh_lost<-ifelse(Storage_SP$Uncertain=="Uncertain_no", Storage_SP$aoh_lost_saved, paste(Storage_SP$aoh_lost_saved, Storage_SP$aoh_lostOPT_saved, sep="-"))
+  aoh_lost<-ifelse(Storage_SP$Uncertain=="Uncertain_no", Storage_SP$aoh_lost_saved, paste(Storage_SP$aoh_lost_saved, Storage_SP$aoh_lostOPT_saved, sep="/"))
   
   
   # Calculate criteria

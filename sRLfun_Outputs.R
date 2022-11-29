@@ -7,7 +7,7 @@ sRL_CalculateCriteria<- function(aoh_lost, eoo_km2, aoo_km2, pop_size){
   criteria <- data.frame(Crit=c("A2", 'A2', "B1", "B1", "B2", "B2", "C1", "C1", "D", "D"), Scenario=rep(c("Pessimistic", "Optimistic"), 5), Value=NA) ; criteria$Value=factor(criteria$Value, c("LC/NT", "VU", "EN", "CR"), ordered=T) # nolint
 
   # A2
-  aoh_lost_processed<-unlist(strsplit(as.character(aoh_lost), "-")) %>% as.numeric(.)
+  aoh_lost_processed<-unlist(strsplit(as.character(aoh_lost), "/")) %>% as.numeric(.)
   criteria$Value[criteria$Crit=="A2"] <- cut(as.numeric(aoh_lost_processed), breaks=c(-Inf, 30, 50, 80, 100), labels=c("LC/NT", "VU", "EN", "CR")) # nolint
 
   # B1
@@ -65,10 +65,20 @@ sRL_CreateALLFIELDS <- function(scientific_name, aoh_lost, eoo_km2, aoo_km2, pop
   allfields$AOO.justification<-"The AOO has been estimated on the sRedList Platform by rescaling the Area of Habitat to a 2x2km2 grid"
 
   # Decline for A2
-  # allfields$PopulationReductionPast.range<-abs(aoh_lost)
-  # allfields$PopulationReductionPast.direction<-revalue(as.character(sign(aoh_lost)), c("1"="Reduction", "-1"="Increase", "0"=NA))
-  # Justif.3gen<-ifelse(Storage_SP$Year1_saved>Storage_SP$Year1theo_saved, paste0(" (which is ", (Storage_SP$Year1_saved-Storage_SP$Year1theo_saved), " years less than 3 generations)"),  " (which corresponds to the maximum between 10 years / 3 generations)")
-  # allfields$PopulationReductionPast.justification<-allfields$PopulationDeclineGenerations3.justification<-paste0("The decline has been measured from the sRedList platform as the decline in Area of Habitat between ", Storage_SP$Year1_saved, " and ",  config$YearAOH2, Justif.3gen)
+  aoh_lost_processed<-unlist(strsplit(as.character(aoh_lost), "/")) %>% as.numeric(.)
+  
+  if(length(aoh_lost_processed)==1 | sign(aoh_lost_processed[1])==sign(aoh_lost_processed[2])){ # If only one estimate or two of the same sign, keep uncertainty
+    allfields$PopulationReductionPast.range<-paste(sort(abs(aoh_lost_processed)), collapse="-")
+    allfields$PopulationReductionPast.direction<-revalue(as.character(sign(aoh_lost_processed[1])), c("1"="Reduction", "-1"="Increase", "0"=NA))
+    } else{ # If two estimates with different signs, I keep the minimum and put 0 as maximum
+    allfields$PopulationReductionPast.range<-paste(c(0, abs(min(aoh_lost_processed))), collapse="-")
+    allfields$PopulationReductionPast.direction<-"Reduction"
+    
+  }
+  
+  Justif.3gen<-ifelse(Storage_SP$Year1_saved>Storage_SP$Year1theo_saved, paste0(" (which is ", (Storage_SP$Year1_saved-Storage_SP$Year1theo_saved), " years less than 3 generations)"),  " (which corresponds to the maximum between 10 years / 3 generations)")
+  allfields$PopulationReductionPast.justification<-allfields$PopulationDeclineGenerations3.justification<-paste0("The decline has been measured from the sRedList platform as the decline in Area of Habitat between ", Storage_SP$Year1_saved, " and ",  config$YearAOH2, Justif.3gen)
+  
   
   # Decline for C1
   allfields$PopulationDeclineGenerations3.range<-ifelse(aoh_lost>=0, aoh_lost, 0)
