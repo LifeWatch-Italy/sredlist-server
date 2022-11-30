@@ -884,13 +884,18 @@ function(scientific_name, habitats_pref= list(), habitats_pref_MARGINAL=list(), 
       if("elevation_lowerEXTREME" %in% names(altitudes_pref_DF)){rangeSP_cleanOPT$elevation_lower<-altitudes_pref_DF$elevation_lowerEXTREME[1]}
       if("elevation_upperEXTREME" %in% names(altitudes_pref_DF)){rangeSP_cleanOPT$elevation_upper<-altitudes_pref_DF$elevation_upperEXTREME[1]}
       
-      # Calculate optimistic AOH
-      AOH2_opt<-sRL_calculateAOH(rangeSP_fun=rangeSP_cleanOPT, 
+      # Calculate optimistic AOH: but if marginal habitats all point at CCI modalities already included with habitats_pref and elevation are not different, I use AOH2 directly as there won't be any difference
+      if(length(unique(crosswalk_to_use$value[crosswalk_to_use$code %in% habitats_pref]))==length(unique(crosswalk_to_use$value[crosswalk_to_use$code %in% c(habitats_pref, habitats_pref_MARGINAL)])) & !"elevation_lowerEXTREME" %in% names(altitudes_pref_DF) & !"elevation_upperEXTREME" %in% names(altitudes_pref_DF)){
+            AOH2_opt<-AOH2; log_info("Identical AOH, no need to calculate")} else{
+      
+            AOH2_opt<-sRL_calculateAOH(rangeSP_fun=rangeSP_cleanOPT, 
                                  cci_fun=cci2_crop, 
                                  alt_fun=alt_crop,
                                  FOLDER=paste0(output_dir, "/Current_optimistic"),
                                  elevation_data_fun=altitudes_pref_DF)
-    }
+            log_info("Optimistic AOH calculated")
+        }
+      }
     
     ### PLOTS
     # Only pessimistic scenario
@@ -942,10 +947,17 @@ function(scientific_name, habitats_pref= list(), habitats_pref_MARGINAL=list(), 
       
     } else{
       
+      ## Calculate optimistic AOH
       alt_pref_extreme<-c(min(c(altitudes_pref_DF$elevation_lower, altitudes_pref_DF$elevation_lowerEXTREME), na.rm=T),
                           max(c(altitudes_pref_DF$elevation_upper, altitudes_pref_DF$elevation_upperEXTREME), na.rm=T)) ; print(alt_pref_extreme)
       
-      AOH2_opt<-sRL_largeAOH(c(habitats_pref, habitats_pref_MARGINAL), alt_pref_extreme, rangeSP_clean, config$YearAOH2)
+      # If there is no need to calculate a new one (no new CCI modalities or no new elevation limits, use the last one)
+      if(length(unique(crosswalk_to_use$value[crosswalk_to_use$code %in% habitats_pref]))==length(unique(crosswalk_to_use$value[crosswalk_to_use$code %in% c(habitats_pref, habitats_pref_MARGINAL)])) & !"elevation_lowerEXTREME" %in% names(altitudes_pref_DF) & !"elevation_upperEXTREME" %in% names(altitudes_pref_DF)){
+          AOH2_opt<-AOH2; log_info("Identical AOH, no need to calculate")} else{
+          
+          AOH2_opt<-sRL_largeAOH(c(habitats_pref, habitats_pref_MARGINAL), alt_pref_extreme, rangeSP_clean, config$YearAOH2)
+          log_info("Optimistic AOH calculated")
+      }
       
       plot1 <- grid.arrange(
         gplot((AOH2[[1]]/9)) + # Divide by 9 to get percents
