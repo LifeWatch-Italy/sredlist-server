@@ -934,6 +934,7 @@ function(scientific_name, GL_species=1) { # nolint
   AOH2=Storage_SP$AOH2_saved
   AOH_km2<-Storage_SP$AOHkm2_saved
   AOH_type<-Storage_SP$AOH_type
+  rangeSP_cleanOPT=Storage_SP$RangeCleanOPT_saved
   
   # Charge distribution
   distSP$binomial<-as.character(distSP$binomial)
@@ -968,7 +969,7 @@ function(scientific_name, GL_species=1) { # nolint
       if("elevation_lowerEXTREME" %in% names(altitude_pref_DF)){rangeSP_cleanOPT$elevation_lower<-altitude_pref_DF$elevation_lowerEXTREME[1]}
       if("elevation_upperEXTREME" %in% names(altitude_pref_DF)){rangeSP_cleanOPT$elevation_upper<-altitude_pref_DF$elevation_upperEXTREME[1]}
       
-      AOH1_opt<-sRL_calculateAOH(rangeSP_fun=Storage_SP$RangeCleanOPT_saved,
+      AOH1_opt<-sRL_calculateAOH(rangeSP_fun=rangeSP_cleanOPT,
                            cci_fun=cci1_crop,
                            alt_fun=alt_crop,
                            FOLDER=paste0(output_dir, "/Initial_optimistic"),
