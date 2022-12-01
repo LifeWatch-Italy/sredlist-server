@@ -767,7 +767,7 @@ function(scientific_name, habitats_pref= list(), habitats_pref_MARGINAL=list(), 
     ### LARGE-RANGES
   } else {
     
-    AOH2<-sRL_largeAOH(habitats_pref, altitudes_pref, rangeSP_clean, config$YearAOH2)
+    AOH2<-sRL_largeAOH(habitats_pref, altitudes_pref_DF[, c("elevation_lower", "elevation_upper")], rangeSP_clean, config$YearAOH2)
     
     if(Uncertain=="Uncertain_no"){
       plot1 <- plot(gplot((AOH2[[1]]/9)) + # Divide by 9 to get percents
