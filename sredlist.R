@@ -592,7 +592,7 @@ function(scientific_name) {
   #Filter param
   scientific_name <- url_decode(scientific_name)
   return(list(
-    density = density$Density[density$Species == scientific_name] %>% round(., 2) %>% paste(., collapse="-")
+    density = density$Density[density$Species == scientific_name] %>% mean(., na.rm=T) %>% round(., 2)
   ));
 }
 
