@@ -591,8 +591,12 @@ function(scientific_name, presences = list(), seasons = list() , origins = list(
 function(scientific_name) {
   #Filter param
   scientific_name <- url_decode(scientific_name)
+  
+  density = density$Density[density$Species == scientific_name]
+  if(length(density)>1){density<-mean(density, na.rm=T) %>% round(., 2)}
+  
   return(list(
-    density = density$Density[density$Species == scientific_name] %>% mean(., na.rm=T) %>% round(., 2)
+    density=density
   ));
 }
 
