@@ -526,7 +526,42 @@ function(scientific_name, Gbif_Smooth=-1) {
 
 
 
-# M3: EOO ----------------------------------------------------------------
+
+
+
+
+
+# M3: Countries of Occurrence ----------------------------------------------------------------
+
+#* Countries of occurrence
+#* @get species/<scientific_name>/analysis/coo
+#* @param scientific_name:string Scientific Name
+#* @serializer htmlwidget
+#* @tag sRedList
+function(scientific_name) {
+  
+  scientific_name <- url_decode(scientific_name)
+  
+  return(
+    leaflet(data.frame(x=c(1,2), y=c(1,2))) %>%
+      addTiles() %>%
+      addCircleMarkers(lng=c(1,2),
+                       lat=c(1,2)) %>%
+      addMouseCoordinates() %>%
+      addScaleBar(position = "bottomright")
+  )
+  
+}
+
+
+
+
+
+
+
+
+
+# M4: EOO ----------------------------------------------------------------
 
 
 #* Estimate the Extent of Occurrence (EOO) from range
@@ -579,7 +614,7 @@ function(scientific_name, presences = list(), seasons = list() , origins = list(
 
 
 
-# M4: AOH ----------------------------------------------------------------
+# M5: AOH ----------------------------------------------------------------
 ## a: Data APIs ----------------------------------------------------------------
 
 
@@ -1106,7 +1141,7 @@ function(scientific_name, GL_species=1) { # nolint
 
 
 
-# M5: Optional analyses ----------------------------------------------------------------
+# M6: Optional analyses ----------------------------------------------------------------
 
 
 ## a: Fragmentation -------------------------------
@@ -1185,7 +1220,7 @@ function(scientific_name, RSproduct = "") { # nolint
 
 
 
-# M6: Outputs ----------------------------------------------------------------
+# M7: Outputs ----------------------------------------------------------------
 
 
 #* Plot Red List category
