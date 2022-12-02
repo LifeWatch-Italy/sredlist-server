@@ -1106,9 +1106,86 @@ function(scientific_name, GL_species=1) { # nolint
 
 
 
+# M5: Optional analyses ----------------------------------------------------------------
 
 
-# M5: Outputs ----------------------------------------------------------------
+## a: Fragmentation -------------------------------
+#* Species dispersion preferences
+#* @get species/<scientific_name>/dispersion-preferences
+#* @param scientific_name:string Scientific Name
+#* @serializer json
+#* @tag sRedList
+function(scientific_name) {
+  #Filter param
+  scientific_name <- url_decode(scientific_name)
+  
+  dispersion = 500
+  
+  return(list(
+    dispersion=dispersion
+  ));
+}
+
+
+#* Plot fragmentation
+#* @get species/<scientific_name>/analysis/fragmentation
+#* @param scientific_name:string Scientific Name
+#* @param dispersion:string dispersion
+#* @serializer png list(width = 800, height = 600)
+#* @tag sRedList
+function(scientific_name, dispersion="-1") {
+  
+  Prom<-future({
+    
+      # Plot
+      Plot_Fragm<-ggplot()+geom_point(data=data.frame(x=1,y=1), aes(x,y))+ggtitle(dispersion)
+    
+      Plot_Fragm
+  }, seed=T) 
+  
+  ### Plot the distribution
+  return(Prom %...>% plot())
+  
+}
+
+
+
+
+
+## b: Remote sensing products ---------------------------
+
+#* Calculate trends in RS products
+#* @get species/<scientific_name>/analysis/RS_analysis
+#* @param scientific_name:string Scientific Name
+#* @param RSproduct:string RSproduct
+#* @serializer unboxedJSON
+#* @tag sRedList
+function(scientific_name, RSproduct = "") { # nolint    
+  
+  scientific_name=url_decode(scientific_name)
+  print(RSproduct)
+  GG<-ggplot()+geom_point(data=data.frame(x=1,y=1), aes(x,y))+ggtitle(RSproduct)
+  
+  ggsave(filename = paste0("resources/AOH_stored/", sub(" ", "_", scientific_name), "/Plots/RS_plot.png"), plot = plot(GG), width=6, height=6)
+  RS_plot <- base64enc::dataURI(file = paste0("resources/AOH_stored/", sub(" ", "_", scientific_name), "/Plots/RS_plot.png"), mime = "image/png", encoding = "base64") # nolint
+  
+  
+  return(list(
+    RS_plot=RS_plot,
+    RS_current="1-2",
+    RS_trends="-18%",
+    RS_timewindow="2000 - 2020"
+  ))
+
+}
+
+
+
+
+
+
+
+# M6: Outputs ----------------------------------------------------------------
 
 
 #* Plot Red List category
