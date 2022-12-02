@@ -592,8 +592,8 @@ function(scientific_name) {
   #Filter param
   scientific_name <- url_decode(scientific_name)
   
-  density = density$Density[density$Species == scientific_name]
-  if(length(density)>1){density<-mean(density, na.rm=T) %>% round(., 2)}
+  density = density$Density[density$Species == scientific_name] %>% round(., 2)
+  if(length(density)>1){density<-mean(density, na.rm=T)}
   
   return(list(
     density=density
@@ -886,7 +886,7 @@ function(scientific_name, habitats_pref= list(), habitats_pref_MARGINAL=list(), 
   if (density_pref[1] != '-1') {
     density_pref <- unlist(strsplit(as.character(density_pref), "-")) %>% as.numeric(.) ; print(density_pref) # Density_pref has one value if certain, 2 values otherwise
     
-    if(Uncertain=="Uncertain_no"){pop_size <- paste(AOH_km2 * density_pref, collapse="-")} # Multiplies AOH by both density estimates (or one if only one available)
+    if(Uncertain=="Uncertain_no"){pop_size <- paste(round(AOH_km2 * density_pref), collapse="-")} # Multiplies AOH by both density estimates (or one if only one available)
     if(Uncertain=="Uncertain_yes"){pop_size <- paste(c(round(AOH_km2 * min(density_pref)), round(AOH_km2_opt * max(density_pref))), collapse="-")} # Multiplies pessimistic aoh by pessimistic density, optimistic AOH by optimistic density (or a single density if only one provided)
     print(pop_size)
   }
@@ -1090,7 +1090,7 @@ function(scientific_name, GL_species=1) { # nolint
                    paste(ceiling(AOH_old_km2), ceiling(AOH_old_km2OPT), sep="-"))
   
   Out_loss<-ifelse(Storage_SP$Uncertain=="Uncertain_no", 
-                   paste0(Year1, "-", config$YearAOH2, ": ", revalue(as.factor(sign(AOH_lost)), c("-1"="AOH gain of ", "1"="AOH loss of ", "0"="AOH loss of ")), abs(AOH_lost)), # Give trend in AOH rather than loss,
+                   paste0(Year1, "-", config$YearAOH2, ": ", revalue(as.factor(sign(AOH_lost)), c("-1"="AOH gain of ", "1"="AOH loss of ", "0"="AOH loss of ")), abs(AOH_lost), "%"), # Give trend in AOH rather than loss,
                    paste0(Year1, "-", config$YearAOH2, ": ", revalue(as.factor(sign(AOH_lost)), c("-1"="AOH gain of ", "1"="AOH loss of ", "0"="AOH loss of ")), abs(as.numeric(AOH_lost)), "% (Pessimistic) or ", revalue(as.factor(sign(AOH_lostOPT)), c("-1"="AOH gain of ", "1"="AOH loss of ", "0"="AOH loss of ")), abs(AOH_lostOPT), "% (Optimistic)")
   )
   
