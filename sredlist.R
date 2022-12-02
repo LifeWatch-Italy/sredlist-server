@@ -536,11 +536,13 @@ function(scientific_name, Gbif_Smooth=-1) {
 #* Countries of occurrence
 #* @get species/<scientific_name>/analysis/coo
 #* @param scientific_name:string Scientific Name
+#* @param domain_pref:[str] domain_pref
 #* @serializer htmlwidget
 #* @tag sRedList
-function(scientific_name) {
+function(scientific_name, domain_pref=list()) {
   
   scientific_name <- url_decode(scientific_name)
+  print(domain_pref)
   
   return(
     leaflet(data.frame(x=c(1,2), y=c(1,2))) %>%
