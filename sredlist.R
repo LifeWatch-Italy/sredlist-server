@@ -783,25 +783,13 @@ function(scientific_name, habitats_pref= list(), habitats_pref_MARGINAL=list(), 
     
     # Both scenario
     if(Uncertain=="Uncertain_yes"){
-      plot1 <-grid.arrange( 
-        
-        gplot(AOH2[[1]]) +
-          coord_fixed()+
-          geom_tile(aes(fill = factor(value, levels=c("0", "1")))) +
-          scale_fill_manual(values=c("#dfc27d", "#018571", NA), labels=c("Unsuitable", "Suitable", ""), name="", na.translate=F, drop=F) +
-          ggtitle("Pessimistic AOH") +
-          labs(subtitle= "(marginal habitats / extreme elevations excluded)") +
-          sRLTheme_maps,
-        
-        gplot(AOH2_opt[[1]]) +
-          coord_fixed()+
-          geom_tile(aes(fill = factor(value, levels=c("0", "1")))) +
-          scale_fill_manual(values=c("#dfc27d", "#018571", NA), labels=c("Unsuitable", "Suitable", ""), name="", na.translate=F, drop=F) +
-          ggtitle("Optimistic AOH") +
-          labs(subtitle= "(marginal habitats / extreme elevations included)") +
-          sRLTheme_maps,
-        
-        top=paste0("Area of Habitat in ", config$YearAOH2), ncol=1)
+
+      plot1<-gplot(AOH2[[1]]+AOH2_opt[[1]])+
+        coord_fixed()+
+        geom_tile(aes(fill = factor(value, levels=c("0", "1", "2")))) +
+        scale_fill_manual(values=c("#FBCB3C", "#54B967", "#004D40", NA), labels=c("Unsuitable", "Unknown", "Suitable", ""), name="", na.translate=F, drop=F) +
+        ggtitle(paste0("Area of Habitat in ", config$YearAOH2)) +
+        sRLTheme_maps
     }
     
     
@@ -861,7 +849,7 @@ function(scientific_name, habitats_pref= list(), habitats_pref_MARGINAL=list(), 
   # Plot AOH and calculate area
   log_info("START - Plot AOH")
   
-  ggsave(filename = paste0("resources/AOH_stored/", sub(" ", "_", scientific_name), "/Plots/aoh.png"), plot = plot1, width=6, height=ifelse(Uncertain=="Uncertain_no", 6, 10))
+  ggsave(filename = paste0("resources/AOH_stored/", sub(" ", "_", scientific_name), "/Plots/aoh.png"), plot = plot1, width=6, height=ifelse(Uncertain=="Uncertain_no" | AOH_type=="Small", 6, 10))
   plot1 <- base64enc::dataURI(file = paste0("resources/AOH_stored/", sub(" ", "_", scientific_name), "/Plots/aoh.png"), mime = "image/png", encoding = "base64") # nolint
   log_info("END - Plot AOH")
   
@@ -886,6 +874,16 @@ function(scientific_name, habitats_pref= list(), habitats_pref_MARGINAL=list(), 
   if(Uncertain=="Uncertain_yes"){
     aoh_22_opt<-resample(AOH2_opt[[1]], grid22_crop, method="max")>0
     
+    # Plot on a single plot if small range, on two if large range
+    if(AOH_type=="Small"){
+      plot2<-gplot((aoh_22[[1]]>0)+(aoh_22_opt[[1]]>0))+
+        coord_fixed()+
+        geom_tile(aes(fill = factor(value, levels=c("0", "1", "2")))) +
+        scale_fill_manual(values=c("#FBCB3C", "#54B967", "#004D40", NA), labels=c("Unsuitable", "Unknown", "Suitable", ""), name="", na.translate=F, drop=F) +
+        ggtitle("Area of Habitat (2x2km); Likely slightly overestimated") +
+        sRLTheme_maps
+      
+    } else{
     plot2 <- grid.arrange(
       gplot(aoh_22[[1]]>0) +
         coord_fixed()+
@@ -903,8 +901,9 @@ function(scientific_name, habitats_pref= list(), habitats_pref_MARGINAL=list(), 
       
       top="Area of Habitat (2x2km); Likely slightly overestimated", ncol=1)
   }
+  }
 
-  ggsave(filename = paste0("resources/AOH_stored/", sub(" ", "_", scientific_name), "/Plots/aoo.png"), plot = plot2, width=6, height=ifelse(Uncertain=="Uncertain_no", 6, 10))
+  ggsave(filename = paste0("resources/AOH_stored/", sub(" ", "_", scientific_name), "/Plots/aoo.png"), plot = plot2, width=6, height=ifelse(Uncertain=="Uncertain_no" | AOH_type=="Small", 6, 10))
   plot2 <- base64enc::dataURI(file = paste0("resources/AOH_stored/", sub(" ", "_", scientific_name), "/Plots/aoo.png"), mime = "image/png", encoding = "base64") # nolint
 
   AOO_km2<- sRL_areaAOH(aoh_22[[1]], SCALE="2x2")
@@ -1069,7 +1068,7 @@ function(scientific_name, GL_species=1) { # nolint
       alt_pref_extreme<-c(min(c(altitude_pref_DF$elevation_lower, altitude_pref_DF$elevation_lowerEXTREME), na.rm=T),
                           max(c(altitude_pref_DF$elevation_upper, altitude_pref_DF$elevation_upperEXTREME), na.rm=T)) ; print(alt_pref_extreme)
 
-      AOH1_opt<-sRL_largeAOH(habitats_pref_DF$code, alt_pref_extreme, rangeSP_clean, config$YearAOH2)
+      AOH1_opt<-sRL_largeAOH(habitats_pref_DF$code, alt_pref_extreme, rangeSP_clean, Year1)
 
       plot1 <- grid.arrange(
         gplot((AOH2[[1]]-AOH1[[1]])/9) + # Divide by 9 to get percents

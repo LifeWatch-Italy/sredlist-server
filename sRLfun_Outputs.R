@@ -48,8 +48,8 @@ sRL_CreateALLFIELDS <- function(scientific_name, aoh_lost, eoo_km2, aoo_km2, pop
   allfields$internal_taxon_name<-AltPref_saved$scientific_name[1]
   allfields$assessment_id<-NA
   
-  allfields$ElevationLower.limit<-AltPref_saved$elevation_lower[1]
-  allfields$ElevationUpper.limit<-AltPref_saved$elevation_upper[1]
+  allfields$ElevationLower.limit<-paste0(c(AltPref_saved$elevation_lowerEXTREME[1], AltPref_saved$elevation_lower[1]), collapse="-")
+  allfields$ElevationUpper.limit<-paste0(c(AltPref_saved$elevation_upper[1], AltPref_saved$elevation_upperEXTREME[1]), collapse="-")
   
   ### Save parameters from analyses
   
