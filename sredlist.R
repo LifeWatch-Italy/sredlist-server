@@ -908,7 +908,7 @@ function(scientific_name, habitats_pref= list(), habitats_pref_MARGINAL=list(), 
 
   AOO_km2<- sRL_areaAOH(aoh_22[[1]], SCALE="2x2")
   if(Uncertain=="Uncertain_yes"){AOO_km2_opt<- sRL_areaAOH(aoh_22_opt[[1]], SCALE="2x2")}
-
+  Storage_SP$density_saved<-density_pref
   
   ### Save parameters and results
   Storage_SP<-sRL_OutLog(Storage_SP, c("AOH_HabitatPreference", "AOH_MarginalHabitatPreference", "AOH_ElevationPreference", "AOH_Density"), c(paste0(habitats_pref, collapse=","), paste0(habitats_pref_MARGINAL, collapse=","), paste0(altitudes_pref, collapse=", "), density_pref))
@@ -1109,16 +1109,10 @@ function(scientific_name, GL_species=1) { # nolint
   Storage_SP$GL_saved<-GL_species
   Storage_SP$aoh_lost_saved=AOH_lost
   if(Storage_SP$Uncertain=="Uncertain_yes"){Storage_SP$aoh_lostOPT_saved=AOH_lostOPT}
-  Storage_SP$RangeClean_saved=Storage_SP$AOH2_saved=Storage_SP$alt_crop_saved=NULL
+  Storage_SP$RangeClean_saved<-Storage_SP$alt_crop_saved<-NULL
   Storage_SP$Year1_saved<-Year1 ; Storage_SP$Year1theo_saved<-Year1_theo
   Storage_SP<-sRL_OutLog(Storage_SP, "AOH_GenerationLength", GL_species)
   assign(paste0("Storage_SP_", sub(" ", "_", scientific_name)), Storage_SP, .GlobalEnv)
-  
-  # Remove the AOH files stored
-  unlink(output_dir, recursive=T)
-  terraOptions(tempdir=tempdir())
-  rasterOptions(tmpdir=tempdir())
-  gc()
   
   # Output to return
   Out_area<-ifelse(Storage_SP$Uncertain=="Uncertain_no", 
@@ -1152,10 +1146,9 @@ function(scientific_name, GL_species=1) { # nolint
 #* @serializer json
 #* @tag sRedList
 function(scientific_name) {
-  #Filter param
-  scientific_name <- url_decode(scientific_name)
   
-  dispersion = 500
+  dispersion=500
+  
   
   return(list(
     dispersion=dispersion
@@ -1171,17 +1164,51 @@ function(scientific_name) {
 #* @tag sRedList
 function(scientific_name, dispersion="-1") {
   
-  Prom<-future({
+  #Prom<-future({
     
-      # Plot
-      Plot_Fragm<-ggplot()+geom_point(data=data.frame(x=1,y=1), aes(x,y))+ggtitle(dispersion)
+    ### Filter param
+    scientific_name<-url_decode(scientific_name)
+    Storage_SP<-sRL_reuse(scientific_name)
+    aoh<-Storage_SP$AOH2_saved[[1]]
+    aoh_type<-Storage_SP$AOH_type
+    dispersion<-as.numeric(dispersion) ; print(dispersion)
     
-      Plot_Fragm
-  }, seed=T) 
+    # Error if no density parameter
+    density_sp<-Storage_SP$density_saved %>% as.numeric(.) ; print(density_sp)
+    if(density_sp=="-1"){no_density_data()}
+      
+    ### Calculate fragmentation
+    res<-sRL_fragmentation(aoh, dispersion, density_sp)
+    
+    
+    ### Plots
+    # AOH and clusters
+    aohDF<-as.data.frame(aoh, xy = TRUE); names(aohDF)[3]<-"lyr1"
+    G1<-ggplot() + 
+      geom_tile(data = aohDF, aes(x = x, y = y, fill = factor(lyr1, levels=c("0", "1"))), alpha = 0.5, show.legend=F)+
+      geom_sf(data=st_transform(res$clusters, crs(aoh)), fill=NA)+
+      ggtitle(paste0("Population fragmentation in ", nrow(res$clusters), " clusters"))+
+      scale_fill_manual(values=c("#dfc27d", "#018571", NA), labels=c("Unsuitable", "Suitable", ""), name="", na.translate=F, drop=F) +
+      sRLTheme_maps
+    
+    # Cumulative fragmentation
+    G2<-ggplot(res$prop.fragm)+
+      geom_step(aes(x=pop, y=CumSum), col="darkred", lwd=2)+
+      geom_vline(xintercept=c(100,500 ,1000, 5000) %>% .[.<max(res$prop.fragm$pop)])+
+      geom_hline(yintercept=0.5, linetype="dashed")+
+      xlab("How many individuals do you consider to be a 'small' population?")+ylab("Proportion of the population that is fragmented")+
+      ylim(c(0,1))+
+      theme_minimal()
+    
+    Plot_Fragm<-grid.arrange(G1, G2, ncol=2)
+    
+    #Plot_Fragm
+    
+  #}, seed=T) 
   
   ### Plot the distribution
-  return(Prom %...>% plot())
-  
+  #return(Prom %...>% plot())
+  return(Plot_Fragm)
 }
 
 
@@ -1274,6 +1301,11 @@ function(scientific_name, eoo_km2, aoo_km2, pop_size) {
   unlink(output_dir, recursive=T)
   eval(parse(text=paste0("rm(Storage_SP_", sub(" ", "_", scientific_name), ", envir=.GlobalEnv)")))  # Removes Storage_SP
   
+  # Remove the AOH files stored
+  unlink(paste0("resources/AOH_stored/", sub(" ", "_", scientific_name)), recursive=T)
+  terraOptions(tempdir=tempdir())
+  rasterOptions(tmpdir=tempdir())
+  gc()
   
   # Plot
   return(plot(
