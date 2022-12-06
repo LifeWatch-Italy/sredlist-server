@@ -6,17 +6,19 @@ sRL_CalculateCriteria<- function(aoh_lost, eoo_km2, aoo_km2, pop_size){
 
   criteria <- data.frame(Crit=c("A2", 'A2', "B1", "B1", "B2", "B2", "C1", "C1", "D", "D"), Scenario=rep(c("Pessimistic", "Optimistic"), 5), Value=NA) ; criteria$Value=factor(criteria$Value, c("LC/NT", "VU", "EN", "CR"), ordered=T) # nolint
 
-  # A2
-  aoh_lost_processed<-unlist(strsplit(as.character(aoh_lost), "/")) %>% as.numeric(.)
-  criteria$Value[criteria$Crit=="A2"] <- cut(as.numeric(aoh_lost_processed), breaks=c(-Inf, 30, 50, 80, 100), labels=c("LC/NT", "VU", "EN", "CR")) # nolint
-
   # B1
   criteria$Value[criteria$Crit=="B1"] <- cut(as.numeric(eoo_km2), breaks=c(0, 100, 5000, 20000, Inf), labels=rev(c("LC/NT", "VU", "EN", "CR")), include.lowest=T) # nolint
+  
+  if(is.na(aoh_lost)==F){
+    # A2
+    aoh_lost_processed<-unlist(strsplit(as.character(aoh_lost), "/")) %>% as.numeric(.)
+    criteria$Value[criteria$Crit=="A2"] <- cut(as.numeric(aoh_lost_processed), breaks=c(-Inf, 30, 50, 80, 100), labels=c("LC/NT", "VU", "EN", "CR")) # nolint
 
-  # B2
-  aoo_processed<-unlist(strsplit(as.character(aoo_km2), "-")) %>% as.numeric(.)
-  criteria$Value[criteria$Crit=="B2"] <- cut(as.numeric(aoo_processed), breaks=c(0, 10, 500, 2000, Inf), labels=rev(c("LC/NT", "VU", "EN", "CR")), include.lowest=T) # nolint
-
+    # B2
+    aoo_processed<-unlist(strsplit(as.character(aoo_km2), "-")) %>% as.numeric(.)
+    criteria$Value[criteria$Crit=="B2"] <- cut(as.numeric(aoo_processed), breaks=c(0, 10, 500, 2000, Inf), labels=rev(c("LC/NT", "VU", "EN", "CR")), include.lowest=T) # nolint
+  }
+  
   # C1 (only for VU for now)
   # if(aoh_lost>=10){criteria$Value[criteria$Crit=="C1"]<-cut(as.numeric(Pop_size), breaks=c(0, 10000, Inf), labels=rev(c("LC/NT", "VU")))} else {criteria$Value[criteria$Crit=="C1"]<-"LC/NT"}
   
@@ -60,6 +62,7 @@ sRL_CreateALLFIELDS <- function(scientific_name, aoh_lost, eoo_km2, aoo_km2, pop
   allfields$EOO.range<-eoo_km2
   allfields$EOO.justification<-"The EOO has been estimated on the sRedList Platform"
   
+  if(is.na(aoh_lost)==F){
   # AOO
   allfields$AOO.range<-aoo_km2
   allfields$AOO.justification<-"The AOO has been estimated on the sRedList Platform by rescaling the Area of Habitat to a 2x2km2 grid"
@@ -78,10 +81,10 @@ sRL_CreateALLFIELDS <- function(scientific_name, aoh_lost, eoo_km2, aoo_km2, pop
   
   Justif.3gen<-ifelse(Storage_SP$Year1_saved>Storage_SP$Year1theo_saved, paste0(" (which is ", (Storage_SP$Year1_saved-Storage_SP$Year1theo_saved), " years less than 3 generations)"),  " (which corresponds to the maximum between 10 years / 3 generations)")
   allfields$PopulationReductionPast.justification<-allfields$PopulationDeclineGenerations3.justification<-paste0("The decline has been measured from the sRedList platform as the decline in Area of Habitat between ", Storage_SP$Year1_saved, " and ",  config$YearAOH2, Justif.3gen)
-  
+  }
   
   # Decline for C1
-  allfields$PopulationDeclineGenerations3.range<-ifelse(aoh_lost>=0, aoh_lost, 0)
+  #allfields$PopulationDeclineGenerations3.range<-ifelse(aoh_lost>=0, aoh_lost, 0)
  
     
   # Population size (only if positive, i.e. if an estimate of density has been provided)
