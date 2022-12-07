@@ -372,4 +372,60 @@ sRL_saveMapDistribution <- function(scientific_name) {
 
 
 
+### Function COO countries of occurrence
+sRL_cooExtract<-function(distSP, domain_pref){
+  
+  ### Prepare COO terrestrial and freshwater
+  if("Terrestrial" %in% domain_pref | "Freshwater" %in% domain_pref){
+    
+    # Extract list of countries
+    coo<-coo_raw
+    inter<-st_intersects(distSP, coo) %>% as.data.frame()
+    coo$Dist_row<-inter$row.id[match(rownames(coo), inter$col.id)]
+    coo$presence<-distSP$presence[match(coo$Dist_row, rownames(distSP))]
+    coo$origin<-distSP$origin[match(coo$Dist_row, rownames(distSP))]
+    coo$seasonal<-distSP$seasonal[match(coo$Dist_row, rownames(distSP))]
+    
+    # Prepare plot attributed
+    coo$Level0_occupied<-NA ; for(i in 1:nrow(coo)){coo$Level0_occupied[i]<-max(c(0,coo$presence[coo$SIS_name0==coo$SIS_name0[i]]), na.rm=T)>=1}
+    coo$Level1_occupied<-is.na(coo$Dist_row)==F
+    
+    coo$Popup<-paste0("<b> National entity: ","</b>", coo$SIS_name0, ifelse(coo$Level0_occupied==T, " (Occupied)", " (Empty)"), "<br>", "<br>",
+                      "<b> Subnational entity: ","</b>", coo$SIS_name1, ifelse(is.na(coo$SIS_name1)==T, "", ifelse(coo$Level1_occupied==T, " (Occupied)", " (Empty)")), "<br>")
+    
+    coo$Domain<-"Terrestrial"
+  }
+  
+  
+  ### Prepare COO marine
+  if("Marine" %in% domain_pref){
+    
+    # Extract list of countries
+    eez<-eez_raw
+    inter<-st_intersects(distSP, eez) %>% as.data.frame()
+    eez$Dist_row<-inter$row.id[match(rownames(eez), inter$col.id)]
+    eez$presence<-distSP$presence[match(eez$Dist_row, rownames(distSP))]
+    eez$origin<-distSP$origin[match(eez$Dist_row, rownames(distSP))]
+    eez$seasonal<-distSP$seasonal[match(eez$Dist_row, rownames(distSP))]
+    
+    
+    # Prepare plot attributes
+    eez$Level0_occupied<-NA ; for(i in 1:nrow(eez)){eez$Level0_occupied[i]<-max(c(0,eez$presence[eez$SIS_name0==eez$SIS_name0[i]]), na.rm=T)>=1}
+    eez$Level1_occupied<-is.na(eez$Dist_row)==F
+    
+    eez$Popup<-paste0("<b>", "Marine EEZ","</b>", "<br>", "<br>",
+                      "<b> National entity: ","</b>", eez$SIS_name0, ifelse(eez$Level0_occupied==T, " (Occupied)", " (Empty)"), "<br>", "<br>",
+                      "<b> Subnational entity: ","</b>", eez$SIS_name1, ifelse(is.na(eez$SIS_name1)==T, "", ifelse(eez$Level1_occupied==T, " (Occupied)", " (Empty)")), "<br>")
+    
+    eez$Domain="Marine"
+  }
+  
+  
+  ### Merge and return
+  if(!"Marine" %in% domain_pref){return(coo)}
+  if("Marine" %in% domain_pref & length(domain_pref)==1){return(eez)}
+  if("Marine" %in% domain_pref & ("Terrestrial" %in% domain_pref | "Freshwater" %in% domain_pref)){return(rbind(coo, eez))}
+  
+}
+
 

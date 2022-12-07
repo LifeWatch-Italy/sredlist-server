@@ -541,16 +541,45 @@ function(scientific_name, Gbif_Smooth=-1) {
 #* @tag sRedList
 function(scientific_name, domain_pref=list()) {
   
-  scientific_name <- url_decode(scientific_name)
+  tic()
+  
+  # Filter parameters
+  scientific_name<-url_decode(scientific_name)
+  Storage_SP<-sRL_reuse(scientific_name)
+  rownames(coo_raw)<-1:nrow(coo_raw)
+  distSP<-Storage_SP$distSP_saved
+  domain_pref<-revalue(as.character(domain_pref), c("1"="Terrestrial", "2"="Marine", "3"="Freshwater"))
   print(domain_pref)
   
+  # Prepare distribution and calculate COO
+  distSP<-distSP %>% dplyr::group_by(origin, presence, seasonal) %>% dplyr::summarise(N= n()) %>% st_transform(., st_crs(coo_raw))
+  distWGS<-st_transform(distSP, st_crs(coo_raw))
+  coo<-sRL_cooExtract(distSP, domain_pref)
+  
+  
+  # Create table of colours / labels and assign colours
+  col.df<-data.frame(
+    Code=c("MarineFALSEFALSE", "MarineTRUEFALSE", "MarineTRUETRUE", "TerrestrialFALSEFALSE", "TerrestrialTRUEFALSE", "TerrestrialTRUETRUE"),
+    Col=c("#D2D2D2", "#9595C3", "#5757A9", "white", "#F17777", "#8C2316"),
+    Label=c("Empty (marine)", "Subnational empty (marine)", "Occupied (marine)", "Empty (terrestrial)", "Subnational empty (terrestrial)", "Occupied (terrestrial)")
+  )
+  
+  coo$colour<-paste0(coo$Domain, coo$Level0_occupied, coo$Level1_occupied) 
+  coo$colour<-col.df$Col[match(coo$colour, col.df$Code)]
+  
+  toc()
+  
+  # Plot
   return(
-    leaflet(data.frame(x=c(1,2), y=c(1,2))) %>%
-      addTiles() %>%
-      addCircleMarkers(lng=c(1,2),
-                       lat=c(1,2)) %>%
-      addMouseCoordinates() %>%
-      addScaleBar(position = "bottomright")
+    leaflet() %>%
+      setView(lat = 10, lng = 0, zoom = 2) %>%
+      addPolygons(data=coo,
+                color=ifelse(coo$Level0_occupied==T, "black", "grey"),
+                fillColor=coo$colour,
+                popup=coo$Popup,
+                stroke=T, weight=2, fillOpacity=1) %>%
+      addPolygons(data=distWGS, color="#D69F32", fillOpacity=0.4) %>%
+      addLegend(position="bottomleft", colors=c(col.df$Col[col.df$Col %in% coo$colour], "#D69F32"), labels=c(col.df$Label[col.df$Col %in% coo$colour], "Distribution"), opacity=1)
   )
   
 }

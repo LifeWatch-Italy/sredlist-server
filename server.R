@@ -90,6 +90,8 @@ speciesRL <- read.csv("Species/species-all-page.csv") # nolint
 distCountries_notsimplif <- st_read("Species/Map countries/Red_List_countries_Simplif_0.01MOLLWEIDE.shp")  ; st_crs(distCountries_notsimplif)<-CRSMOLL
 distCountries_WGS <- st_read("Species/Map countries/Red_List_countries_Simplif0.001.shp")
 distCountries<-st_read("Species/Map countries/Red_List_countries_Simplif_0.001MOLLWEIDE.shp") ; st_crs(distCountries)<-CRSMOLL
+coo_raw<-read_sf("Species/Map countries/Red_List_countries_Simplif_coo_0.05.shp")
+eez_raw<-read_sf("Species/Map countries/Red_List_EEZ_Simplif_coo_0.05.shp")
 
 # Load ESA land cover data from 2020 and altitude data
 alt_raw <- rast(config$alt_raster_path) ; crs(alt_raw)<-CRSMOLL  # I ensure the CRS is correctly assigned (it was saved as a CRSMOLL raster)
