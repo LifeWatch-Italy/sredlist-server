@@ -98,13 +98,13 @@ sRL_CreateALLFIELDS <- function(scientific_name, aoh_lost, eoo_km2, aoo_km2, pop
 
 
 ### Prepare countries output csv
-sRL_OutputCountries<-function(scientific_name, distSP_saved, CountrySP_saved, AltPref_saved){
+sRL_OutputCountries<-function(scientific_name, countries, AltPref_saved){
   
-  # Charge the file with 2 sRedList references
-  countries_inters<-st_join(distSP_saved, CountrySP_saved, join=st_intersects)$SIS_name0 %>% unique(.)
+  # Assign the name to provide (SIS_name1 if available, SIS_name2 otherwise)
+  countries$Name<-ifelse(is.na(countries$SIS_name1), countries$SIS_name0, countries$SIS_name1)
   
   # Prepare file
-  CO_SIS<-data.frame(CountryOccurrence.CountryOccurrenceSubfield.CountryOccurrenceName=countries_inters)
+  CO_SIS<-data.frame(CountryOccurrence.CountryOccurrenceSubfield.CountryOccurrenceName=countries$Name)
     
   CO_SIS$CountryOccurrence.CountryOccurrenceSubfield.CountryOccurrenceLookup=NA
   CO_SIS$CountryOccurrence.CountryOccurrenceSubfield.formerlyBred=NA

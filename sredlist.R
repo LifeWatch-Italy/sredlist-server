@@ -567,6 +567,10 @@ function(scientific_name, domain_pref=list()) {
   coo$colour<-paste0(coo$Domain, coo$Level0_occupied, coo$Level1_occupied) 
   coo$colour<-col.df$Col[match(coo$colour, col.df$Code)]
   
+  # Save for SIS
+  Storage_SP$countries_SIS<-sRL_OutputCountries(scientific_name, subset(coo, coo$presence>0), Storage_SP$AltPref_saved)
+  assign(paste0("Storage_SP_", sub(" ", "_", scientific_name)), Storage_SP, .GlobalEnv)
+  
   # Plot
   return(
     leaflet() %>%
@@ -1191,18 +1195,15 @@ function(scientific_name) {
 function(scientific_name, dispersion="-1") {
   
   #Prom<-future({
-    
+  
     ### Filter param
     scientific_name<-url_decode(scientific_name)
     Storage_SP<-sRL_reuse(scientific_name)
     aoh<-Storage_SP$AOH2_saved[[1]]
     aoh_type<-Storage_SP$AOH_type
     dispersion<-as.numeric(dispersion) ; print(dispersion)
-    
-    # Error if no density parameter
     density_sp<-Storage_SP$density_saved %>% as.numeric(.) ; print(density_sp)
-    if(density_sp=="-1"){no_density_data()}
-      
+
     ### Calculate fragmentation
     res<-sRL_fragmentation(aoh, dispersion, density_sp)
     
@@ -1305,7 +1306,7 @@ function(scientific_name, eoo_km2, aoo_km2, pop_size) {
   habitats_SIS=Storage_SP$habitats_SIS[,6:13] ; habitats_SIS$assessment_id<-NA ; habitats_SIS$internal_taxon_id<-NA
 
   allfields_SIS<-sRL_CreateALLFIELDS(scientific_name, aoh_lost, eoo_km2, aoo_km2, pop_size, AltPref_saved)
-  countries_SIS<-sRL_OutputCountries(scientific_name, distSP_saved=Storage_SP$distSP_saved, CountrySP_saved=Storage_SP$CountrySP_saved, AltPref_saved)
+  countries_SIS<-Storage_SP$countries_SIS
   ref_SIS<-sRL_OutputRef(scientific_name, AltPref_saved)
   
   # Save csv files in a folder

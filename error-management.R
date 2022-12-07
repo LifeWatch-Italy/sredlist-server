@@ -52,8 +52,4 @@ no_gbif_data <- function() {
   api_error(message = "All records have been excluded in Step 2", status = 400)
 }
 
-no_density_data <- function() {
-  api_error(message = "You need to define a population density in AOH step", status = 400)
-}
-
 
