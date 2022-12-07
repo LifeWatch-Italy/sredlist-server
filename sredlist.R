@@ -540,9 +540,7 @@ function(scientific_name, Gbif_Smooth=-1) {
 #* @serializer htmlwidget
 #* @tag sRedList
 function(scientific_name, domain_pref=list()) {
-  
-  tic()
-  
+
   # Filter parameters
   scientific_name<-url_decode(scientific_name)
   Storage_SP<-sRL_reuse(scientific_name)
@@ -556,6 +554,8 @@ function(scientific_name, domain_pref=list()) {
   distWGS<-st_transform(distSP, st_crs(coo_raw))
   coo<-sRL_cooExtract(distSP, domain_pref)
   
+  # Simplify distribution if large distribution
+  if((extent(distWGS)@xmax-extent(distWGS)@xmin)>50){distWGS<-st_simplify(distWGS, dTolerance=0.05)}
   
   # Create table of colours / labels and assign colours
   col.df<-data.frame(
@@ -566,8 +566,6 @@ function(scientific_name, domain_pref=list()) {
   
   coo$colour<-paste0(coo$Domain, coo$Level0_occupied, coo$Level1_occupied) 
   coo$colour<-col.df$Col[match(coo$colour, col.df$Code)]
-  
-  toc()
   
   # Plot
   return(
@@ -581,7 +579,6 @@ function(scientific_name, domain_pref=list()) {
       addPolygons(data=distWGS, color="#D69F32", fillOpacity=0.4) %>%
       addLegend(position="bottomleft", colors=c(col.df$Col[col.df$Col %in% coo$colour], "#D69F32"), labels=c(col.df$Label[col.df$Col %in% coo$colour], "Distribution"), opacity=1)
   )
-  
 }
 
 
