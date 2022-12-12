@@ -208,8 +208,12 @@ function(scientific_name, Gbif_Source=-1, Uploaded_Records="") {
   print(scientific_name)
   print(Gbif_Source)
   
-  # Uploaded Records (it's a list with 1 element being the title of the uploaded csv file)
-  Uploaded_Records<-Uploaded_Records[[1]]
+  # Uploaded Records (it's a list with 1 element being the title of the uploaded csv file); I edit the csv if separator not good
+  Uploaded_Records<-Uploaded_Records[[1]] 
+  if(ncol(Uploaded_Records)==1){print("CSV with wrong separator with ; separator"); Uploaded_Records<-Uploaded_Records %>% separate(col=names(Uploaded_Records)[1], into=unlist(strsplit(names(Uploaded_Records), ";")), sep=";")}
+  if(ncol(Uploaded_Records)==1){print("CSV with wrong separator with tab separator"); Uploaded_Records<-Uploaded_Records %>% separate(col=names(Uploaded_Records)[1], into=unlist(strsplit(names(Uploaded_Records), "\t")), sep="\t")}
+  if(ncol(Uploaded_Records)==1){wrong_csv_upload()}
+  Uploaded_Records$longitude<-as.numeric(Uploaded_Records$longitude) ; Uploaded_Records$latitude<-as.numeric(Uploaded_Records$latitude)
   print(Uploaded_Records)
 
   ### Create storage folder if it does not exist
@@ -268,8 +272,9 @@ function(scientific_name, Gbif_Source=-1, Uploaded_Records="") {
   output_to_save<-sRL_InitLog(scientific_name, DisSource = "Created") ; output_to_save$Value[output_to_save$Parameter=="Gbif_Source"]<-Gbif_Source
   assign(paste0("Storage_SP_", sub(" ", "_", scientific_name)), list(flags_raw_saved=flags_raw, CountrySP_WGS_saved=CountrySP_WGS, Creation=Sys.time(), Output=output_to_save), .GlobalEnv)
 
+  
   return(list(
-    plot_data = plot1))
+   plot_data = plot1))
   
 }
 
