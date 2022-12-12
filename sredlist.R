@@ -1184,7 +1184,7 @@ function(scientific_name, GL_species=1) { # nolint
 #* @tag sRedList
 function(scientific_name) {
   
-  dispersion=500
+  dispersion=10
   
   
   return(list(
@@ -1208,7 +1208,7 @@ function(scientific_name, dispersion="-1") {
     Storage_SP<-sRL_reuse(scientific_name)
     aoh<-Storage_SP$AOH2_saved[[1]]
     aoh_type<-Storage_SP$AOH_type
-    dispersion<-as.numeric(dispersion) ; print(dispersion)
+    dispersion<-as.numeric(dispersion)*1000 ; print(dispersion)
     density_sp<-Storage_SP$density_saved %>% as.numeric(.) ; print(density_sp)
 
     ### Calculate fragmentation
