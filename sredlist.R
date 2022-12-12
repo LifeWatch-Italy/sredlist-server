@@ -1151,7 +1151,7 @@ function(scientific_name, GL_species=1) { # nolint
   Storage_SP$GL_saved<-GL_species
   Storage_SP$aoh_lost_saved=AOH_lost
   if(Storage_SP$Uncertain=="Uncertain_yes"){Storage_SP$aoh_lostOPT_saved=AOH_lostOPT}
-  Storage_SP$RangeClean_saved<-Storage_SP$alt_crop_saved<-NULL
+  Storage_SP$alt_crop_saved<-NULL
   Storage_SP$Year1_saved<-Year1 ; Storage_SP$Year1theo_saved<-Year1_theo
   Storage_SP<-sRL_OutLog(Storage_SP, "AOH_GenerationLength", GL_species)
   assign(paste0("Storage_SP_", sub(" ", "_", scientific_name)), Storage_SP, .GlobalEnv)
@@ -1264,21 +1264,21 @@ function(scientific_name, dispersion="-1") {
 #* @tag sRedList
 function(scientific_name, RSproduct = "") { # nolint    
   
-  scientific_name=url_decode(scientific_name)
+  # Charge parameters
+  scientific_name<-url_decode(scientific_name)
+  Storage_SP<-sRL_reuse(scientific_name)
+  distSP<-Storage_SP$RangeClean_saved
+  GL<-Storage_SP$GL_saved
   print(RSproduct)
-  GG<-ggplot()+geom_point(data=data.frame(x=1,y=1), aes(x,y))+ggtitle(RSproduct)
   
-  ggsave(filename = paste0("resources/AOH_stored/", sub(" ", "_", scientific_name), "/Plots/RS_plot.png"), plot = plot(GG), width=6, height=6)
-  RS_plot <- base64enc::dataURI(file = paste0("resources/AOH_stored/", sub(" ", "_", scientific_name), "/Plots/RS_plot.png"), mime = "image/png", encoding = "base64") # nolint
-  
-  
-  return(list(
-    RS_plot=RS_plot,
-    RS_current="1-2",
-    RS_trends="-18%",
-    RS_timewindow="2000 - 2020"
-  ))
+  # Run functions to calculate trends
+  if(RSproduct=="Human_density"){List_trendsRS<-sRL_CalcHumandensity(distSP, GL)}
+  if(RSproduct=="Forest_cover"){List_trendsRS<-sRL_CalcForestchange(distSP, GL)}
+  if(RSproduct=="NDVI"){List_trendsRS<-sRL_CalcNDVIchange(distSP, GL)}
 
+  # Return
+  return(List_trendsRS)
+  
 }
 
 
