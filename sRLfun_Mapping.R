@@ -2,7 +2,7 @@
 
 
 
-sRL_createDataGBIF <- function(scientific_name, GBIF_SRC) { # nolint
+sRL_createDataGBIF <- function(scientific_name, GBIF_SRC, Uploaded_Records) { # nolint
   
   ### Reclassify GBIF_SRC
   if(GBIF_SRC==1){GBIF_source<-c("GBIF")}
@@ -28,7 +28,7 @@ sRL_createDataGBIF <- function(scientific_name, GBIF_SRC) { # nolint
     }
     
     dat_gbif$ID<-paste0(dat_gbif$decimalLongitude, dat_gbif$decimalLatitude, dat_gbif$year)
-    dat_gbif$Source<-"GBIF"
+    dat_gbif$Source_type<-"GBIF"
     dat_gbif$Link<-paste0("https://gbif.org/occurrence/", dat_gbif$gbifID)
     
     # Extract citation (once per dataset then match)
@@ -48,7 +48,7 @@ sRL_createDataGBIF <- function(scientific_name, GBIF_SRC) { # nolint
     dat_obis$ID<-paste0(dat_obis$decimalLongitude, dat_obis$decimalLatitude, dat_obis$date_year)
     dat_obis$year<-dat_obis$date_year
     dat_obis_sub<-subset(dat_obis, !dat_obis$ID %in% dat_gbif$ID)
-    dat_obis_sub$Source<-"OBIS"
+    dat_obis_sub$Source_type<-"OBIS"
     dat_obis_sub$citation<-dat_obis_sub$bibliographicCitation
     dat_obis_sub$Link<-paste0("https://obis.org/taxon/", dat_obis_sub$aphiaID[1])
     dat_obis_sub$gbifID<-dat_obis_sub$occurrenceID
@@ -57,7 +57,7 @@ sRL_createDataGBIF <- function(scientific_name, GBIF_SRC) { # nolint
   # From Red List point
   if("RL" %in% GBIF_source & paste0(scientific_name, ".csv") %in% list.files(config$POINTdistribution_path)){
     dat_RL<-read.csv(paste0(config$POINTdistribution_path, scientific_name, ".csv"))
-    dat_RL$Source<-"RL"
+    dat_RL$Source_type<-"RL"
     dat_RL$decimalLongitude<-dat_RL$longitude
     dat_RL$decimalLatitude<-dat_RL$latitude
     dat_RL$year<-dat_RL$event_year
@@ -67,13 +67,28 @@ sRL_createDataGBIF <- function(scientific_name, GBIF_SRC) { # nolint
     dat_RL$Link<-NA
   } else {dat_RL<-data.frame()}
   
+  
+  # From uploaded data
+  if(!is.null(nrow(Uploaded_Records))){
+    dat_upload<-Uploaded_Records
+    dat_upload$Source_type<-"Uploaded"
+    dat_upload$decimalLongitude<-dat_upload$longitude
+    dat_upload$decimalLatitude<-dat_upload$latitude
+    dat_upload$year<-dat_upload$event_year
+    dat_upload$species<-dat_upload$binomial
+    dat_upload$coordinateUncertaintyInMeters<-NA
+    dat_upload$gbifID<-dat_upload$objectid
+    dat_upload$Link<-NA
+  } else {dat_upload<-data.frame()}
+
+  
   # Return error if no data found
-  if(is.null(nrow(dat_gbif)) & nrow(dat_obis_sub)==0 & nrow(dat_RL)==0) {
+  if(is.null(nrow(dat_gbif)) & nrow(dat_obis_sub)==0 & nrow(dat_RL)==0  & nrow(dat_upload)==0) {
     not_found("No data found! Check whether the scientific name of the species has been typed correctly or select other data sources") # nolint
     dat<-NULL
   } else {
     # Merge
-    dat<-rbind.fill(dat_gbif, dat_obis_sub, dat_RL)
+    dat<-rbind.fill(dat_gbif, dat_obis_sub, dat_RL, dat_upload)
     print(paste0("Number of data: ", nrow(dat)))
   }
   
@@ -81,7 +96,7 @@ sRL_createDataGBIF <- function(scientific_name, GBIF_SRC) { # nolint
   dat <- dat %>%
     dplyr::select(any_of(c("species", "decimalLongitude", "decimalLatitude", "countryCode", "individualCount", # nolint
                            "gbifID", "id", "objectid", "family", "taxonRank", "coordinateUncertaintyInMeters", "year",
-                           "basisOfRecord", "institutionCode", "datasetName", "Source", "source", "citation", "Link")))
+                           "basisOfRecord", "institutionCode", "datasetName", "Source", "Source_type", "source", "citation", "Link")))
   
   # Remove records with no spatial coordinates
   dat <- dat %>% filter(!is.na(decimalLongitude)) %>% filter(!is.na(decimalLatitude)) # nolint
@@ -208,7 +223,7 @@ sRL_cleanDataGBIF <- function(flags, year_GBIF, uncertainty_GBIF, keepyearNA_GBI
   
   # Prepare the box popup for the leaflet map
   flags$PopText<- paste0("<b>", revalue(as.character(is.na(flags$Reason)), c("TRUE"="VALID OBSERVATION", "FALSE"="NOT VALID OBSERVATION")),"</b>", "<br>", "<br>",
-                       "<b>","Source: ","</b>", flags$Source, "<br>",
+                       "<b>","Source: ","</b>", flags$Source_type, "<br>",
                        "<b>","Observation ID: ","</b>", ifelse(is.na(flags$Link)==F, paste0("<a href='", flags$Link, "' target='_blank'>", flags$gbifID, "</a>"), flags$gbifID), "<br>",
                        "<b>","Year: ","</b>", flags$year, "<br>")
   flags$PopText[is.na(flags$Reason)==F]<-paste0(flags$PopText[is.na(flags$Reason)==F], "<b>","Reason flagged: ","</b>", flags$Reason[is.na(flags$Reason)==F], "<br>")
@@ -360,7 +375,7 @@ sRL_saveMapDistribution <- function(scientific_name) {
     "A distribution has been stored for the species: ",
     scientific_name,
     ".\nIt was created with the mapping procedure from the sRedList platform. It is based on ", # nolint
-    paste(names(table(Storage_SP$dat_proj_saved$Source)), table(Storage_SP$dat_proj_saved$Source), sep=" (") %>% paste(., collapse="), ") %>% paste0(nrow(Storage_SP$dat_proj_saved), " raw geo-referenced observations from: ", ., ")"),
+    paste(names(table(Storage_SP$dat_proj_saved$Source_type)), table(Storage_SP$dat_proj_saved$Source_type), sep=" (") %>% paste(., collapse="), ") %>% paste0(nrow(Storage_SP$dat_proj_saved), " raw geo-referenced observations from: ", ., ")"),
     " occurrence data downloaded from GBIF on the ",
     Sys.time(),
     " CET."

@@ -10,11 +10,10 @@ sRL_fragmentation<-function(aoh, aoh_type, dispersion, density_sp){
     ### Create patches and remove unique cells
     patch<-patches(aoh, zeroAsNA=T) %>% as.polygons(.) %>% st_as_sf(.) %>% st_transform(crs=CRSMOLL)
     patch$Area<-st_area(patch) %>% as.numeric(.)/1000000
-    patch<-subset(patch, patch$Area>0.12) # Removes all unique cells (usually around 0.09km2 but little variance so I chose a threshold a bit higher to be sure)
 
 
     ### Buffer by dispersal distance and cluster
-    buffer<-st_buffer(patch, dispersion)
+    buffer<-st_buffer(patch, (dispersion/2)) # Dispersal should be divided by 2 as buffers are applied to all polygons
     buffer$Cluster<-st_intersects(buffer, st_cast(st_union(buffer),"POLYGON")) %>% unlist(.) %>% as.factor(.) # Gives unique identifier to chains of overlapping polygons
     clusters<-buffer %>% dplyr::group_by(Cluster) %>% dplyr::summarise(N=n(), aoh_sum=sum(Area))
 

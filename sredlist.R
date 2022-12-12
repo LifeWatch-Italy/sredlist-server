@@ -192,50 +192,57 @@ function(scientific_name) {
   return(list(Gbif_Source = SRC))}
 
 #* Global Biodiversity Information Facility Step 1
-#* @get species/<scientific_name>/gbif
+#* @post species/<scientific_name>/gbif
 #* @param scientific_name:string Scientific Name
 #* @param Gbif_Source:int Gbif_Source
+#* @parser multi
+#* @parser csv
+#* @param Uploaded_Records:file A file
 #* @serializer unboxedJSON
 #* @tag sRedList
-function(scientific_name, Gbif_Source=-1) {
-  
+function(scientific_name, Gbif_Source=-1, Uploaded_Records="") {
+
   ### Clean-string from user
   scientific_name <- url_decode(scientific_name)
   scientific_name <- R.utils::capitalize(trim(gsub("[[:punct:]]", " ", scientific_name))) # nolint
   print(scientific_name)
   print(Gbif_Source)
   
+  # Uploaded Records (it's a list with 1 element being the title of the uploaded csv file)
+  Uploaded_Records<-Uploaded_Records[[1]]
+  print(Uploaded_Records)
+
   ### Create storage folder if it does not exist
   dir.create(paste0("resources/AOH_stored/", sub(" ", "_", scientific_name), "/Plots"), recursive=T)
-  
-  ### GBIF procedure 
+
+  ### GBIF procedure
   log_info("START - Create data")
-  dat <- sRL_createDataGBIF(scientific_name, Gbif_Source)
-  
+  dat <- sRL_createDataGBIF(scientific_name, Gbif_Source, Uploaded_Records)
+
   # ### Plot
   ggsave(paste0("resources/AOH_stored/", sub(" ", "_", scientific_name), "/Plots/plot_data.png"), plot(
     ggplot() +
       coord_fixed() +
       borders("world", colour = "gray86", fill = "gray80") +
-      geom_point(data = dat, aes(x = decimalLongitude, y = decimalLatitude, col=Source), size = 1) +
-      scale_colour_brewer(type="qual", palette=2)+
-      ggtitle(paste(names(table(dat$Source)), table(dat$Source), sep=" (") %>% paste(., collapse="), ") %>% paste0("Raw geo-referenced observations (N=", nrow(dat), ") from: ", ., ")") )+
+      geom_point(data = dat, aes(x = decimalLongitude, y = decimalLatitude, col=Source_type), size = 1) +
+      scale_colour_brewer(type="qual", palette=2, name="Source")+
+      ggtitle(paste(names(table(dat$Source_type)), table(dat$Source_type), sep=" (") %>% paste(., collapse="), ") %>% paste0("Raw geo-referenced observations (N=", nrow(dat), ") from: ", ., ")") )+
       sRLTheme_maps %+replace%   theme(legend.position="top")
     ), width=18, height=5.5) # nolint
   plot1 <- base64enc::dataURI(file = paste0("resources/AOH_stored/", sub(" ", "_", scientific_name), "/Plots/plot_data.png"), mime = "image/png")
   log_info("END - Create data")
   log_info("START - Clean coordinates")
-  
-  
+
+
   # Prepare countries
   LIMS<-c(xmin=min(dat$decimalLongitude), xmax=max(dat$decimalLongitude), ymin=min(dat$decimalLatitude), ymax=max(dat$decimalLatitude))
   LIMS<-c(LIMS["xmin"] - 0.1*abs(LIMS["xmin"]-LIMS["xmax"]),    LIMS["xmax"] + 0.1*abs(LIMS["xmin"]-LIMS["xmax"]),
           LIMS["ymin"] - 0.1*abs(LIMS["ymin"]-LIMS["ymax"]),    LIMS["ymax"] + 0.1*abs(LIMS["ymin"]-LIMS["ymax"]))
-  CountrySP_WGS<-st_crop(distCountries_WGS, LIMS) 
+  CountrySP_WGS<-st_crop(distCountries_WGS, LIMS)
   if(nrow(CountrySP_WGS)==0){
     Skip_country=T ; Tests_to_run=c("capitals", "centroids", "equal", "gbif", "institutions", "zeros")}else{
       Skip_country=F; Tests_to_run=c("capitals", "centroids", "equal", "gbif", "institutions", "zeros", "seas")}
-  
+
   # Flag observations to remove
   flags_raw <- clean_coordinates(x = dat,
                                  lon = "decimalLongitude",
@@ -245,25 +252,25 @@ function(scientific_name, Gbif_Source=-1) {
                                  seas_ref=CountrySP_WGS %>% as_Spatial(.),
                                  tests = Tests_to_run)
   if(Skip_country==T){flags_raw$.sea<-FALSE}
-  
+
   # # Extract elevation (need to transform the CRS for it)
-  # log_info("START - Extracting elevation values")  
+  # log_info("START - Extracting elevation values")
   # flags_foralt<-st_geometry(st_as_sf(flags_raw,coords = c("decimalLongitude", "decimalLatitude"), crs="+proj=longlat +datum=WGS84")) %>%
   #   st_transform(., st_crs(CRSMOLL)) %>%
   #   st_as_sf(.)
-  # 
+  #
   # flags_raw$Alt_points=terra::extract(alt_raw, st_coordinates(flags_foralt), method="simple")$Elevation_reprojMollweide3
   # flags_raw$Alt_points<-replace(flags_raw$Alt_points, is.nan(flags_raw$Alt_points)==T, NA)
-  # log_info("END - Extracting elevation values")  
-  
-  
+  # log_info("END - Extracting elevation values")
+
+
   # Assign
   output_to_save<-sRL_InitLog(scientific_name, DisSource = "Created") ; output_to_save$Value[output_to_save$Parameter=="Gbif_Source"]<-Gbif_Source
   assign(paste0("Storage_SP_", sub(" ", "_", scientific_name)), list(flags_raw_saved=flags_raw, CountrySP_WGS_saved=CountrySP_WGS, Creation=Sys.time(), Output=output_to_save), .GlobalEnv)
-  
+
   return(list(
     plot_data = plot1))
-
+  
 }
 
 
@@ -1190,7 +1197,7 @@ function(scientific_name) {
 #* @get species/<scientific_name>/analysis/fragmentation
 #* @param scientific_name:string Scientific Name
 #* @param dispersion:string dispersion
-#* @serializer png list(width = 800, height = 600)
+#* @serializer png list(width = 1200, height = 600)
 #* @tag sRedList
 function(scientific_name, dispersion="-1") {
   
@@ -1205,7 +1212,7 @@ function(scientific_name, dispersion="-1") {
     density_sp<-Storage_SP$density_saved %>% as.numeric(.) ; print(density_sp)
 
     ### Calculate fragmentation
-    res<-sRL_fragmentation(aoh, dispersion, density_sp)
+    res<-sRL_fragmentation(aoh, aoh_type, dispersion, density_sp)
     
     
     ### Plots
