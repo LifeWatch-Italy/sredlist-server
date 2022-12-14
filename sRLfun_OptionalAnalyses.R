@@ -39,7 +39,7 @@ sRL_fragmentation<-function(aoh, aoh_type, dispersion, density_sp){
 
 
 # sRL_CalcHumandensity
-sRL_CalcHumandensity<-function(distSP, GL){
+sRL_CalcHumandensity<-function(scientific_name, distSP, GL){
   
   ### Charge recent human layer
   Year2<-2020
@@ -90,7 +90,7 @@ sRL_CalcHumandensity<-function(distSP, GL){
   
   ### Return
   return(list(
-    RS_prodname="Human density",
+    RS_prodname=RS_name,
     RS_plot=RS_plot,
     RS_current=paste0(RS_current, " (median Ind/km2)"),
     RS_trends=paste0(RS_trends, " (median change in Ind/km2)"),
@@ -103,21 +103,64 @@ sRL_CalcHumandensity<-function(distSP, GL){
 
 
 # sRL_CalcForestchange
-sRL_CalcForestchange<-function(distSP, GL){
+sRL_CalcForestchange<-function(scientific_name, distSP){
 
+  ### Charge forest layers
+  forest1<-rast(sub("XXXX", 2000, config$ForestAgg_path))
+  forest2<-rast(sub("XXXX", 2022, config$ForestAgg_path))
+  
+  ### Mask
+  distSP<-st_transform(distSP, st_crs(forest1))
+  forest1_crop<-crop(forest1, distSP) %>% mask(., distSP)
+  forest2_crop<-crop(forest2, distSP) %>% mask(., distSP)
+  forest_change<-forest2_crop-forest1_crop
+  
+  ### Plots
+  RS_name="Forest cover"
+  
+  GG_RS=grid.arrange(
+    
+    gplot(forest2_crop)+
+      coord_fixed()+
+      geom_tile(aes(fill = value)) +
+      scale_fill_viridis_c(option="viridis", na.value = "white", name="%")+
+      ggtitle(paste0("In 2022")) +
+      sRLTheme_maps,
+    
+    gplot(forest_change)+
+      coord_fixed()+
+      geom_tile(aes(fill = value)) +
+      scale_fill_gradient2(low="#8c510a", mid="azure2", midpoint=0, high="#018571", name="%", na.value="white")+
+      ggtitle(paste0("Change 2000-2022")) +
+      sRLTheme_maps
+    
+    ,ncol=2, top=RS_name
+  )
+  
+  ggsave(filename = paste0("resources/AOH_stored/", sub(" ", "_", scientific_name), "/Plots/RS_plot.png"), plot = GG_RS, width=10, height=6)
+  RS_plot <- base64enc::dataURI(file = paste0("resources/AOH_stored/", sub(" ", "_", scientific_name), "/Plots/RS_plot.png"), mime = "image/png", encoding = "base64") # nolint
+  
+  
+  ### Calculate outputs
+  RS_current<-exact_extract(forest2_crop, distSP, "median") %>% round(.)
+  RS_trends<-exact_extract(forest_change, distSP, "median") %>% round(.)
+  RS_timewindow<-"2000-2022"
+  
+  
   ### Return
   return(list(
-    RS_plot=NULL,
-    RS_current=NA,
-    RS_trends=NA,
-    RS_timewindow=NA
+    RS_prodname=RS_name,
+    RS_plot=RS_plot,
+    RS_current=paste0(RS_current, " (median coverage (%))"),
+    RS_trends=paste0(RS_trends, " (median change in coverage)"),
+    RS_timewindow=RS_timewindow
   ))
   
 }
 
 
 # sRL_CalcNDVIchange
-sRL_CalcNDVIchange<-function(distSP, GL){
+sRL_CalcNDVIchange<-function(scientific_name, distSP, GL){
   
   ### Return
   return(list(

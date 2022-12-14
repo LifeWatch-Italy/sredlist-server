@@ -1272,9 +1272,9 @@ function(scientific_name, RSproduct = "") { # nolint
   print(RSproduct)
   
   # Run functions to calculate trends
-  if(RSproduct=="Human_density"){List_trendsRS<-sRL_CalcHumandensity(distSP, GL)}
-  if(RSproduct=="Forest_cover"){List_trendsRS<-sRL_CalcForestchange(distSP, GL)}
-  if(RSproduct=="NDVI"){List_trendsRS<-sRL_CalcNDVIchange(distSP, GL)}
+  if(RSproduct=="Human_density"){List_trendsRS<-sRL_CalcHumandensity(scientific_name, distSP, GL)}
+  if(RSproduct=="Forest_cover"){List_trendsRS<-sRL_CalcForestchange(scientific_name, distSP)}
+  if(RSproduct=="NDVI"){List_trendsRS<-sRL_CalcNDVIchange(scientific_name, distSP, GL)}
 
   # Return
   return(List_trendsRS)

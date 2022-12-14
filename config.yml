@@ -20,7 +20,8 @@ default:
   cci2_raster_path: "C:/Victor_local/Platform/InProgress/Large_Files/CCI2020_reprojMollweide.tif"
   cciStack2_path: "C:/Victor_local/Platform/InProgress/Large_Files/RasterAggregated"
   hydrobasins_path: "C:/Victor_local/Platform/Inprogress/Large_Files/HydroBASINS_level08_w_attributes_2021_05/HydroBASINS_level08_w_attributes_2021_05.shp"
-  Human_density_path: "C:/Victor_local/Platform/InProgress/Large_Files/Human_density/gpw_v4_population_density_rev11_XXXX_2pt5_min.tif"
+  Human_density_path: "C:/Victor_local/Platform/InProgress/Large_Files/Human_Density/gpw_v4_population_density_rev11_XXXX_2pt5_min.tif"
+  ForestAgg_path: "C:/Victor_local/Platform/InProgress/Large_Files/Forest_Agg/Merged_Forest_XXXX.tif"
   #Production
   #alt_raster_path: "resources/GLOBEelevation/Elevation_MollweidePlatform.tif"
   #cci1_raster_path: "resources/ESA-CCI/CCIXXXX_reprojMollweide.tif"
