@@ -208,13 +208,15 @@ function(scientific_name, Gbif_Source=-1, Uploaded_Records="") {
   print(scientific_name)
   print(Gbif_Source)
   
-  # Uploaded Records (it's a list with 1 element being the title of the uploaded csv file); I edit the csv if separator not good
-  Uploaded_Records<-Uploaded_Records[[1]] 
-  if(ncol(Uploaded_Records)==1){print("CSV with wrong separator with ; separator"); Uploaded_Records<-Uploaded_Records %>% separate(col=names(Uploaded_Records)[1], into=unlist(strsplit(names(Uploaded_Records), ";")), sep=";")}
-  if(ncol(Uploaded_Records)==1){print("CSV with wrong separator with tab separator"); Uploaded_Records<-Uploaded_Records %>% separate(col=names(Uploaded_Records)[1], into=unlist(strsplit(names(Uploaded_Records), "\t")), sep="\t")}
-  if(ncol(Uploaded_Records)==1){wrong_csv_upload()}
-  Uploaded_Records$longitude<-as.numeric(Uploaded_Records$longitude) ; Uploaded_Records$latitude<-as.numeric(Uploaded_Records$latitude)
-  print(Uploaded_Records)
+  # Uploaded Records if we uploaded data (it's a list with 1 element being the title of the uploaded csv file); I edit the csv if separator not good
+  if(Uploaded_Records != ""){
+    Uploaded_Records<-Uploaded_Records[[1]] 
+    if(ncol(Uploaded_Records)==1){print("CSV with wrong separator with ; separator"); Uploaded_Records<-Uploaded_Records %>% separate(col=names(Uploaded_Records)[1], into=unlist(strsplit(names(Uploaded_Records), ";")), sep=";")}
+    if(ncol(Uploaded_Records)==1){print("CSV with wrong separator with tab separator"); Uploaded_Records<-Uploaded_Records %>% separate(col=names(Uploaded_Records)[1], into=unlist(strsplit(names(Uploaded_Records), "\t")), sep="\t")}
+    if(ncol(Uploaded_Records)==1){wrong_csv_upload()}
+    Uploaded_Records$longitude<-as.numeric(Uploaded_Records$longitude) ; Uploaded_Records$latitude<-as.numeric(Uploaded_Records$latitude)
+    print(Uploaded_Records)
+  }
 
   ### Create storage folder if it does not exist
   dir.create(paste0("resources/AOH_stored/", sub(" ", "_", scientific_name), "/Plots"), recursive=T)
