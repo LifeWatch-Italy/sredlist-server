@@ -1601,3 +1601,128 @@ function(scientific_name) {
     
   }else { not_found("Species distribution not exist!") } # nolint
 }
+
+
+
+
+#* Merge ZIP files
+#* @post assessment/merge-zip
+#* @param Uploaded_Zips:[file] A zip files
+#* @serializer  contentType list(type="application/octet-stream")
+#* @tag sRedList
+function(Uploaded_Zips=list()) {
+  print(names(Uploaded_Zips))
+  assign("Test", Uploaded_Zips, .GlobalEnv)
+  
+  # Error if not all zips
+  extensions<-substr(names(Uploaded_Zips), nchar(names(Uploaded_Zips))-3, nchar(names(Uploaded_Zips))) %>% unique(.)
+  if(length(extensions)>1 | !".zip" %in% extensions){wrong_zip_extension()}
+  
+  # Create a folder to store results
+  Zip_Path<-paste0("Unzipped", sample(1:1000,1))
+  unlink(Zip_Path, recursive=T)
+  dir.create(Zip_Path)
+  
+  # Unzip loop
+  for(i in 1:length(Uploaded_Zips)){
+    writeBin(object=Uploaded_Zips[[i]], con=paste0(Zip_Path, "/Zip", i, ".zip"))
+    unzip(paste0(Zip_Path, "/Zip", i, ".zip"), exdir=Zip_Path)
+    unlink(paste0(Zip_Path, "/Zip", i, ".zip"))
+  }
+  
+  ### MERGE
+  # Merge habitats
+  Hab_files<-list.files(Zip_Path, recursive = T)[grepl('habitats.csv', list.files(Zip_Path, recursive = T))] %>% paste0(Zip_Path, "/", .)
+  
+  eval(parse(text=
+               paste0("habitatsM<-rbind(",
+                      paste0("read.csv(Hab_files[", 1:length(Hab_files), "])", collapse=','),")"
+               )))
+  
+  
+  # Merge countries
+  Coun_files<-list.files(Zip_Path, recursive = T)[grepl('countries.csv', list.files(Zip_Path, recursive = T))] %>% paste0(Zip_Path, "/", .)
+  
+  eval(parse(text=
+               paste0("countriesM<-rbind(",
+                      paste0("read.csv(Coun_files[", 1:length(Coun_files), "])", collapse=','),")"
+               )))
+  
+  # Merge references
+  Ref_files<-list.files(Zip_Path, recursive = T)[grepl('references.csv', list.files(Zip_Path, recursive = T))] %>% paste0(Zip_Path, "/", .)
+  
+  eval(parse(text=
+               paste0("referencesM<-rbind(",
+                      paste0("read.csv(Ref_files[", 1:length(Ref_files), "])", collapse=','),")"
+               )))
+  
+  # Merge allfields
+  All_files<-list.files(Zip_Path, recursive = T)[grepl('allfields.csv', list.files(Zip_Path, recursive = T))] %>% paste0(Zip_Path, "/", .)
+  
+  eval(parse(text=
+               paste0("allfieldsM<-rbind(",
+                      paste0("read.csv(All_files[", 1:length(All_files), "])", collapse=','),")"
+               )))
+  
+  
+  # Merge log
+  Log_files<-list.files(Zip_Path, recursive = T)[grepl('00.Output_log.csv', list.files(Zip_Path, recursive = T))] %>% paste0(Zip_Path, "/", .)
+  
+  eval(parse(text=
+               paste0("LogM<-rbind(",
+                      paste0("read.csv(Log_files[", 1:length(Log_files), "])", collapse=','),")"
+               )))
+  
+  
+  # Merge Distributions
+  if(TRUE %in% grepl('_Distribution.shp', list.files(Zip_Path, recursive = T))){
+    
+    Dist_files<-list.files(Zip_Path, recursive = T)[grepl('_Distribution.shp', list.files(Zip_Path, recursive = T))] %>% paste0(Zip_Path, "/", .)
+    
+    eval(parse(text=
+                 paste0("DistM<-rbind(",
+                        paste0("st_read(Dist_files[", 1:length(Dist_files), "])", collapse=','),")"
+                 )))
+  }
+  
+  # Merge Occurrences
+  if(TRUE %in% grepl('_Occurrences.shp', list.files(Zip_Path, recursive = T))){
+    
+    Occ_files<-list.files(Zip_Path, recursive = T)[grepl('_Occurrences.shp', list.files(Zip_Path, recursive = T))] %>% paste0(Zip_Path, "/", .)
+    
+    eval(parse(text=
+                 paste0("OccM<-rbind(",
+                        paste0("st_read(Occ_files[", 1:length(Occ_files), "])", collapse=','),")"
+                 )))
+  }
+  
+  
+  
+  ### Save in a merged ZIP file
+  output_dir<-paste0(Zip_Path, "/Output")
+  dir.create(output_dir)
+  write.csv(allfieldsM, paste0(output_dir, "/allfields.csv"), row.names = F)
+  write.csv(countriesM, paste0(output_dir, "/countries.csv"), row.names = F)
+  write.csv(referencesM, paste0(output_dir, "/references.csv"), row.names = F)
+  write.csv(habitatsM, paste0(output_dir, "/habitats.csv"), row.names = F)
+  write.csv(LogM, paste0(output_dir, "/00.Output_log.csv"), row.names = F)
+  
+  # Save distribution and occurrences if from GBIF
+  if("DistM" %in% ls()){
+    st_write(DistM, paste0(output_dir, "/sRedList_Distribution.shp"), append=F)
+    st_write(OccM, paste0(output_dir, "/sRedList_Occurrences.shp"), append=F)
+  }
+  
+  # Zip that folder and delete it
+  Zip_name<-Sys.time() %>% gsub("-", "_", .) %>% gsub(" ", "_", .) %>% gsub (":", "_", .) %>% paste0(Zip_Path, "/sRedList_mergedZIP_", ., ".zip")
+  zip(zipfile = Zip_name, files = paste0(Zip_Path, "/Output/", list.files(output_dir)))
+  zip_to_extract<-readBin(Zip_name, Zip_Path, n = file.info(Zip_name)$size)
+  unlink(Zip_Path, recursive=T)
+  print(Zip_Path)
+  print(Zip_name)
+  
+  return(zip_to_extract)
+}
+
+
+

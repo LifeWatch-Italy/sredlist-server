@@ -56,4 +56,9 @@ wrong_csv_upload <- function() {
   api_error(message = "The csv uploaded is invalid. Check the separator you used.", status=400)
 }
 
+wrong_zip_extension<-function() {
+  api_error(message = "Only provide files with extension .zip", status=400)
+}
+
+
 

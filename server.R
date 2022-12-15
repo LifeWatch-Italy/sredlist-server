@@ -149,8 +149,8 @@ pr$registerHooks(
   )
 )
 
-#bytes = 10MB
-options_plumber(maxRequestSize = 10000000)
+#bytes = 40MB
+options_plumber(maxRequestSize = 40000000)
 pr %>% pr_hook("exit", function() {
   print("Bye bye from sRedList!")
 }) %>% pr_run(port = 8000, host = "0.0.0.0") # nolint

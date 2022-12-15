@@ -84,7 +84,7 @@ sRL_CalcHumandensity<-function(scientific_name, distSP, GL){
   
   ### Calculate outputs
   RS_current<-exact_extract(human2_crop, distSP, "median") %>% round(.)
-  RS_trends<-exact_extract(human_change, distSP, "median") %>% round(.)
+  RS_trends<-exact_extract(human_change, distSP, "median") %>% round(.) # Would be nice to give an absolute number of individuals instead
   RS_timewindow<-paste(Year1, Year2, sep="-")
   
   
@@ -123,7 +123,7 @@ sRL_CalcForestchange<-function(scientific_name, distSP){
     gplot(forest2_crop)+
       coord_fixed()+
       geom_tile(aes(fill = value)) +
-      scale_fill_viridis_c(option="viridis", na.value = "white", name="%")+
+      scale_fill_viridis_c(option="viridis", na.value = "white", name="%", limits=c(0,100))+
       ggtitle(paste0("In 2022")) +
       sRLTheme_maps,
     
@@ -142,8 +142,10 @@ sRL_CalcForestchange<-function(scientific_name, distSP){
   
   
   ### Calculate outputs
-  RS_current<-exact_extract(forest2_crop, distSP, "median") %>% round(.)
-  RS_trends<-exact_extract(forest_change, distSP, "median") %>% round(.)
+  RS_current<-exact_extract(forest2_crop, distSP, "mean") %>% round(.)
+  Sum1<-exact_extract(forest1_crop, distSP, "sum")
+  Sum2<-exact_extract(forest2_crop, distSP, "sum")
+  RS_trends<-(Sum2-Sum1)/Sum1
   RS_timewindow<-"2000-2022"
   
   
@@ -151,8 +153,8 @@ sRL_CalcForestchange<-function(scientific_name, distSP){
   return(list(
     RS_prodname=RS_name,
     RS_plot=RS_plot,
-    RS_current=paste0(RS_current, " (median coverage (%))"),
-    RS_trends=paste0(RS_trends, " (median change in coverage)"),
+    RS_current=paste0(RS_current, "%"),
+    RS_trends=paste0(RS_trends, " %"),
     RS_timewindow=RS_timewindow
   ))
   
