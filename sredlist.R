@@ -1612,8 +1612,7 @@ function(scientific_name) {
 #* @tag sRedList
 function(Uploaded_Zips=list()) {
   print(names(Uploaded_Zips))
-  assign("Test", Uploaded_Zips, .GlobalEnv)
-  
+
   # Error if not all zips
   extensions<-substr(names(Uploaded_Zips), nchar(names(Uploaded_Zips))-3, nchar(names(Uploaded_Zips))) %>% unique(.)
   if(length(extensions)>1 | !".zip" %in% extensions){wrong_zip_extension()}
@@ -1699,26 +1698,24 @@ function(Uploaded_Zips=list()) {
   
   
   ### Save in a merged ZIP file
-  output_dir<-paste0(Zip_Path, "/Output")
-  dir.create(output_dir)
-  write.csv(allfieldsM, paste0(output_dir, "/allfields.csv"), row.names = F)
-  write.csv(countriesM, paste0(output_dir, "/countries.csv"), row.names = F)
-  write.csv(referencesM, paste0(output_dir, "/references.csv"), row.names = F)
-  write.csv(habitatsM, paste0(output_dir, "/habitats.csv"), row.names = F)
-  write.csv(LogM, paste0(output_dir, "/00.Output_log.csv"), row.names = F)
+  unlink(paste0(Zip_Path, "/", list.files(Zip_Path)), recursive=T)
+  write.csv(allfieldsM, paste0(Zip_Path, "/allfields.csv"), row.names = F)
+  write.csv(countriesM, paste0(Zip_Path, "/countries.csv"), row.names = F)
+  write.csv(referencesM, paste0(Zip_Path, "/references.csv"), row.names = F)
+  write.csv(habitatsM, paste0(Zip_Path, "/habitats.csv"), row.names = F)
+  write.csv(LogM, paste0(Zip_Path, "/00.Output_log.csv"), row.names = F)
   
   # Save distribution and occurrences if from GBIF
   if("DistM" %in% ls()){
-    st_write(DistM, paste0(output_dir, "/sRedList_Distribution.shp"), append=F)
-    st_write(OccM, paste0(output_dir, "/sRedList_Occurrences.shp"), append=F)
+    st_write(DistM, paste0(Zip_Path, "/sRedList_Distribution.shp"), append=F)
+    st_write(OccM, paste0(Zip_Path, "/sRedList_Occurrences.shp"), append=F)
   }
   
   # Zip that folder and delete it
   Zip_name<-Sys.time() %>% gsub("-", "_", .) %>% gsub(" ", "_", .) %>% gsub (":", "_", .) %>% paste0(Zip_Path, "/sRedList_mergedZIP_", ., ".zip")
-  zip(zipfile = Zip_name, files = paste0(Zip_Path, "/Output/", list.files(output_dir)))
-  zip_to_extract<-readBin(Zip_name, Zip_Path, n = file.info(Zip_name)$size)
+  zip(zipfile = Zip_name, files = paste0(Zip_Path, "/", list.files(Zip_Path)))
+  zip_to_extract<-readBin(Zip_name, "raw", n = file.info(Zip_name)$size)
   unlink(Zip_Path, recursive=T)
-  print(Zip_Path)
   print(Zip_name)
   
   return(zip_to_extract)
