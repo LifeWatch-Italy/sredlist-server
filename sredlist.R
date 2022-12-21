@@ -1153,7 +1153,6 @@ function(scientific_name, GL_species=1) { # nolint
   Storage_SP$GL_saved<-GL_species
   Storage_SP$aoh_lost_saved=AOH_lost
   if(Storage_SP$Uncertain=="Uncertain_yes"){Storage_SP$aoh_lostOPT_saved=AOH_lostOPT}
-  Storage_SP$alt_crop_saved<-NULL
   Storage_SP$Year1_saved<-Year1 ; Storage_SP$Year1theo_saved<-Year1_theo
   Storage_SP<-sRL_OutLog(Storage_SP, "AOH_GenerationLength", GL_species)
   assign(paste0("Storage_SP_", sub(" ", "_", scientific_name)), Storage_SP, .GlobalEnv)
@@ -1168,11 +1167,25 @@ function(scientific_name, GL_species=1) { # nolint
                    paste0(Year1, "-", config$YearAOH2, ": ", revalue(as.factor(sign(AOH_lost)), c("-1"="AOH gain of ", "1"="AOH loss of ", "0"="AOH loss of ")), abs(as.numeric(AOH_lost)), "% (Pessimistic) or ", revalue(as.factor(sign(AOH_lostOPT)), c("-1"="AOH gain of ", "1"="AOH loss of ", "0"="AOH loss of ")), abs(AOH_lostOPT), "% (Optimistic)")
   )
   
-  return(list(
+  
+  # With extrapolation
+  FACT_Extrap<-(config$YearAOH2-Year1_theo)/(config$YearAOH2-Year1) # Exponential extrapolation (formula from guidelines)
+  Out_loss_extrap<-ifelse(Year1==Year1_theo, "", 
+        ifelse(Storage_SP$Uncertain=="Uncertain_no", 
+              paste0(Year1_theo, "-", config$YearAOH2, ": ", revalue(as.factor(sign(AOH_lost)), c("-1"="AOH gain of ", "1"="AOH loss of ", "0"="AOH loss of ")), round(abs(100*(1-(1-AOH_lost/100)^FACT_Extrap))), "%"), # Give trend in AOH rather than loss,
+              paste0(Year1_theo, "-", config$YearAOH2, ": ", revalue(as.factor(sign(AOH_lost)), c("-1"="AOH gain of ", "1"="AOH loss of ", "0"="AOH loss of ")), round(abs(100*(1-(1-as.numeric(AOH_lost)/100)^FACT_Extrap))), "% (Pessimistic) or ", revalue(as.factor(sign(AOH_lostOPT)), c("-1"="AOH gain of ", "1"="AOH loss of ", "0"="AOH loss of ")), round(abs(100*(1-(1-AOH_lostOPT/100)^FACT_Extrap))), "% (Optimistic)")
+  ))
+  
+  
+  ### Return
+  LIST<-list(
     aoh_lost_km2 = Out_area,
     aoh_lost = Out_loss,
     plot_trends_aoh = plot1
-  ))
+  )
+  if(Out_loss_extrap != ""){LIST$aoh_lost_extrap = Out_loss_extrap}
+  
+  return(LIST)
   
 }
 
