@@ -83,17 +83,19 @@ sRL_CalcHumandensity<-function(scientific_name, distSP, GL){
   
   
   ### Calculate outputs
-  RS_current<-exact_extract(human2_crop, distSP, "median") %>% round(.)
-  RS_trends<-exact_extract(human_change, distSP, "median") %>% round(.) # Would be nice to give an absolute number of individuals instead
+  RS_current<-exact_extract(human2_crop, distSP, "median") 
+  RS_old<-exact_extract(human1_crop, distSP, "median") # Would be nice to give an absolute number of individuals instead
   RS_timewindow<-paste(Year1, Year2, sep="-")
-  
+  RS_trendsABS<-RS_current-RS_old
+  RS_trendsREL<-(RS_current-RS_old)/RS_current
   
   ### Return
   return(list(
     RS_prodname=RS_name,
     RS_plot=RS_plot,
-    RS_current=paste0(RS_current, " (median Ind/km2)"),
-    RS_trends=paste0(RS_trends, " (median change in Ind/km2)"),
+    RS_current=paste0(round(RS_current), " (median Ind/km2)"),
+    RS_trendsABS=paste0(round(RS_trendsABS), " (Ind/km2)"),
+    RS_trendsREL=paste0(100*round(RS_trendsREL, 3), " % change in median"),
     RS_timewindow=RS_timewindow
   ))
   
@@ -142,10 +144,10 @@ sRL_CalcForestchange<-function(scientific_name, distSP){
   
   
   ### Calculate outputs
-  RS_current<-exact_extract(forest2_crop, distSP, "mean") %>% round(.)
-  Sum1<-exact_extract(forest1_crop, distSP, "sum")
-  Sum2<-exact_extract(forest2_crop, distSP, "sum")
-  RS_trends<-(Sum2-Sum1)/Sum1
+  RS_current<-exact_extract(forest2_crop, distSP, "mean") 
+  RS_old<-exact_extract(forest1_crop, distSP, "mean")
+  RS_trendsABS<-(RS_current-RS_old)
+  RS_trendsREL<-(RS_current-RS_old)/RS_old
   RS_timewindow<-"2000-2022"
   
   
@@ -153,8 +155,9 @@ sRL_CalcForestchange<-function(scientific_name, distSP){
   return(list(
     RS_prodname=RS_name,
     RS_plot=RS_plot,
-    RS_current=paste0(RS_current, "%"),
-    RS_trends=paste0(RS_trends, " %"),
+    RS_current=paste0(round(RS_current,1), "%"),
+    RS_trendsABS=paste0(round(RS_trendsABS,1), " %"),
+    RS_trendsREL=paste0(100*round(RS_trendsREL,3), " %"),
     RS_timewindow=RS_timewindow
   ))
   
