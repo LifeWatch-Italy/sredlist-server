@@ -46,7 +46,7 @@ sRL_CalcHumandensity<-function(scientific_name, distSP, GL){
   human2<-rast(gsub("XXXX", Year2, config$Human_density_path))
   
   ### Charge old human layer
-  Year1_theo<-Year2 - 3*GL
+  Year1_theo<-min(Year2 - 3*GL, Year2-10) # Takes the year that is 3 GL or 10 years before
   Year1<-c(2000, 2005, 2010, 2015, 2020)[which(abs(Year1_theo-c(2000, 2005, 2010, 2015, 2020))==min(abs(Year1_theo-c(2000, 2005, 2010, 2015, 2020))))][1]
   human1<-rast(gsub("XXXX", Year1, config$Human_density_path))
   
