@@ -60,5 +60,8 @@ wrong_zip_extension<-function() {
   api_error(message = "Only provide files with extension .zip", status=400)
 }
 
+no_coords_update <- function() {
+  api_error(message = "longitude and latitude columns were not found in uploaded data", status = 400)
+}
 
 

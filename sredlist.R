@@ -214,7 +214,13 @@ function(scientific_name, Gbif_Source=-1, Uploaded_Records="") {
     if(ncol(Uploaded_Records)==1){print("CSV with wrong separator with ; separator"); Uploaded_Records<-Uploaded_Records %>% separate(col=names(Uploaded_Records)[1], into=unlist(strsplit(names(Uploaded_Records), ";")), sep=";")}
     if(ncol(Uploaded_Records)==1){print("CSV with wrong separator with tab separator"); Uploaded_Records<-Uploaded_Records %>% separate(col=names(Uploaded_Records)[1], into=unlist(strsplit(names(Uploaded_Records), "\t")), sep="\t")}
     if(ncol(Uploaded_Records)==1){wrong_csv_upload()}
+    
+    # Check longitude and latitude are provided
+    if(! "latitude" %in% names(Uploaded_Records)){names(Uploaded_Records)<-replace(names(Uploaded_Records), names(Uploaded_Records) %in% c("y", "Y", "Latitude", "lat", "Lat"), "latitude")}
+    if(! "longitude" %in% names(Uploaded_Records)){names(Uploaded_Records)<-replace(names(Uploaded_Records), names(Uploaded_Records) %in% c("x", "X", "Longitude", "lon", "Lon"), "longitude")}
+    if((! "longitude" %in% names(Uploaded_Records)) | (! "latitude" %in% names(Uploaded_Records))){no_coords_update()}
     Uploaded_Records$longitude<-as.numeric(Uploaded_Records$longitude) ; Uploaded_Records$latitude<-as.numeric(Uploaded_Records$latitude)
+    
     print(Uploaded_Records)
   }
 
@@ -1248,10 +1254,11 @@ function(scientific_name, dispersion="-1") {
     # Cumulative fragmentation
     G2<-ggplot(res$prop.fragm)+
       geom_step(aes(x=pop, y=CumSum), col="darkred", lwd=2)+
-      geom_vline(xintercept=c(100,500 ,1000, 5000) %>% .[.<max(res$prop.fragm$pop)])+
+      geom_vline(xintercept=min(res$prop.fragm$pop[res$prop.fragm$prop.pop>0.5], na.rm=T), linetype="dashed")+
       geom_hline(yintercept=0.5, linetype="dashed")+
       xlab("How many individuals do you consider to be a 'small' population?")+ylab("Proportion of the population that is fragmented")+
       ylim(c(0,1))+
+      labs(subtitle=paste0("Fragmented if you consider that a population with ", round(min(res$prop.fragm$pop[res$prop.fragm$prop.pop>0.5], na.rm=T)), " individuals is 'small'"))+
       theme_minimal()
     
     Plot_Fragm<-grid.arrange(G1, G2, ncol=2)
