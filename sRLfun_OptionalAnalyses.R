@@ -18,17 +18,23 @@ sRL_fragmentation<-function(aoh, aoh_type, dispersion, density_sp){
     clusters<-buffer %>% dplyr::group_by(Cluster) %>% dplyr::summarise(N=n(), aoh_sum=sum(Area))
 
 
-    ### Calculate density per cluster
-    clusters$pop<-as.numeric(clusters$aoh_sum)*density_sp
-    clusters<-subset(clusters, clusters$pop>2) # Remove clusters with too few individuals. TO DECIDE WITH LUCA
+    ### Calculate density per cluster + Remove clusters with too few individuals.
+    density_sp<-density_sp %>% strsplit(., "-") %>% unlist(.) %>% as.numeric(.) ; print(density_sp)
+    clusters$pop<-as.numeric(clusters$aoh_sum)*density_sp[1] ; clusters$pop<-replace(clusters$pop, clusters$pop<2, 0)
+    if(length(density_sp)>1){clusters$pop2<-as.numeric(clusters$aoh_sum)*density_sp[2] ; clusters$pop2<-replace(clusters$pop2, clusters$pop2<2, 0)}
 
 
     ### Calculate cumulative sum depending on minimum viable range
     prop.fragm<-clusters[order(clusters$pop, decreasing=F),]
-    prop.fragm<-rbind(data.frame(Cluster=0, N=NA, aoh_sum=0, geometry=NA, pop=0), prop.fragm)
-    prop.fragm$prop.pop=prop.fragm$pop/sum(prop.fragm$pop)
+    df_to_add<-data.frame(Cluster=0, N=NA, aoh_sum=0, geometry=NA, pop=0) ; if(length(density_sp)>1){df_to_add$pop2=0}
+    prop.fragm<-rbind(df_to_add, prop.fragm)
+    prop.fragm$prop.pop=prop.fragm$pop/sum(prop.fragm$pop, na.rm=T)
     prop.fragm$CumSum=cumsum(prop.fragm$prop.pop)
     prop.fragm[(nrow(prop.fragm)+1),c("pop", "CumSum")]<-c(2*max(prop.fragm$pop, na.rm=T), 1)
+    if(length(density_sp)>1){prop.fragm$prop.pop2=prop.fragm$pop2/sum(prop.fragm$pop2, na.rm=T)
+                             prop.fragm$CumSum2=cumsum(prop.fragm$prop.pop2)
+                             prop.fragm[(nrow(prop.fragm)),c("pop", "pop2", "CumSum2")]<-c(2*max(prop.fragm$pop2, na.rm=T), 2*max(prop.fragm$pop2, na.rm=T), 1)
+    }
 
     # Return
     return(list(clusters=clusters, prop.fragm=prop.fragm))

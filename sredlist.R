@@ -1235,10 +1235,9 @@ function(scientific_name, dispersion="-1") {
     aoh<-Storage_SP$AOH2_saved[[1]]
     aoh_type<-Storage_SP$AOH_type
     dispersion<-as.numeric(dispersion)*1000 ; print(dispersion)
-    density_sp<-Storage_SP$density_saved %>% as.numeric(.) ; print(density_sp)
 
     ### Calculate fragmentation
-    res<-sRL_fragmentation(aoh, aoh_type, dispersion, density_sp)
+    res<-sRL_fragmentation(aoh, aoh_type, dispersion, Storage_SP$density_saved)
     
     
     ### Plots
@@ -1251,15 +1250,28 @@ function(scientific_name, dispersion="-1") {
       scale_fill_manual(values=c("#dfc27d", "#018571", NA), labels=c("Unsuitable", "Suitable", ""), name="", na.translate=F, drop=F) +
       sRLTheme_maps
     
-    # Cumulative fragmentation
-    G2<-ggplot(res$prop.fragm)+
-      geom_step(aes(x=pop, y=CumSum), col="darkred", lwd=2)+
-      geom_vline(xintercept=min(res$prop.fragm$pop[res$prop.fragm$prop.pop>0.5], na.rm=T), linetype="dashed")+
-      geom_hline(yintercept=0.5, linetype="dashed")+
-      xlab("How many individuals do you consider to be a 'small' population?")+ylab("Proportion of the population that is fragmented")+
-      ylim(c(0,1))+
-      labs(subtitle=paste0("Fragmented if you consider that a population with ", round(min(res$prop.fragm$pop[res$prop.fragm$prop.pop>0.5], na.rm=T)), " individuals is 'small'"))+
-      theme_minimal()
+    # Cumulative fragmentation (depends if one or two density estimates)
+    if(! "pop2" %in% names(res$prop.fragm)){
+      G2<-ggplot(res$prop.fragm)+
+        geom_step(aes(x=pop, y=CumSum), col="darkred", lwd=2)+
+        geom_vline(xintercept=min(res$prop.fragm$pop[res$prop.fragm$prop.pop>0.5], na.rm=T), linetype="dashed")+
+        geom_hline(yintercept=0.5, linetype="dashed")+
+        xlab("How many individuals do you consider to be a 'small' population?")+ylab("Proportion of the population that is fragmented")+
+        ylim(c(0,1))+
+        labs(subtitle=paste0("Fragmented if you consider that a population with ", round(min(res$prop.fragm$pop[res$prop.fragm$prop.pop>0.5], na.rm=T)), " individuals is 'small'"))+
+        theme_minimal()
+    } else {
+      G2<-ggplot(res$prop.fragm)+
+        geom_step(aes(x=pop2, y=CumSum), col="coral2", lwd=2)+
+        geom_step(aes(x=pop, y=CumSum), col="darkred", lwd=2)+
+        geom_vline(xintercept=min(res$prop.fragm$pop[res$prop.fragm$prop.pop>0.5], na.rm=T), linetype="dashed")+
+        geom_vline(xintercept=min(res$prop.fragm$pop2[res$prop.fragm$prop.pop2>0.5], na.rm=T), linetype="dashed")+
+        geom_hline(yintercept=0.5, linetype="dashed")+
+        xlab("How many individuals do you consider to be a 'small' population?")+ylab("Proportion of the population that is fragmented")+
+        ylim(c(0,1))+
+        labs(subtitle=paste0("Fragmented if you consider that a population with ", round(min(res$prop.fragm$pop[res$prop.fragm$prop.pop>0.5], na.rm=T)), "-", round(min(res$prop.fragm$pop2[res$prop.fragm$prop.pop2>0.5], na.rm=T)), " individuals is 'small'"))+
+        theme_minimal()
+      }
     
     Plot_Fragm<-grid.arrange(G1, G2, ncol=2)
     
