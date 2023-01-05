@@ -379,7 +379,7 @@ function(scientific_name, Gbif_Year= -1, Gbif_Uncertainty=-1, Gbif_Extent=list()
 #* @param scientific_name:string Scientific Name
 #* @serializer json
 #* @tag sRedList
-function(scientific_name) {return(list(Gbif_Start = 0))}
+function(scientific_name) {return(list(Gbif_Start = "start_empty"))}
 
 #* GBIF buffer
 #* @get species/<scientific_name>/gbif-buffer
@@ -414,11 +414,10 @@ function(scientific_name) {return(list(Gbif_Crop = 0))}
 #* @param Gbif_Crop:int Gbif_Crop
 #* @serializer unboxedJSON
 #* @tag sRedList
-function(scientific_name, Gbif_Start=-1, Gbif_Buffer=-1, Gbif_Altitude=list(), Gbif_Crop=-1) {
+function(scientific_name, Gbif_Start="", Gbif_Buffer=-1, Gbif_Altitude=list(), Gbif_Crop=-1) {
   
   # Transform parameters GBIF filtering
   scientific_name <- url_decode(scientific_name)
-  Gbif_Start<-revalue(as.character(Gbif_Start), c("-1"="EOO", "0"="EOO", "1"="Kernel", "2"="Hydrobasins", "3"="MCP-Hydrobasins"))
   Gbif_Crop<-revalue(as.character(Gbif_Crop), c("0"="0", "1"="Land", "2"="Sea"))
   Gbif_Buffer<-replace(Gbif_Buffer, Gbif_Buffer<0, 0)
   print(Gbif_Start)

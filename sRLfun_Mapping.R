@@ -258,13 +258,13 @@ sRL_SubsetGbif<-function(flags, scientific_name){
 ### Create Distribution map from GBIF data
 sRL_MapDistributionGBIF<-function(dat, scientific_name, First_step, AltMIN, AltMAX, Buffer_km2, GBIF_crop){
 
-  ### The first step must be EOO, or Kernel, or Hydrobasins
-  if(First_step=="EOO"){
+  ### The first step can be mcp, kernel, alpha, hydro, hydroMCP
+  if(First_step=="mcp" | First_step==""){
     distGBIF<-st_as_sf(st_convex_hull(st_union(dat)))
     st_geometry(distGBIF)<-"geometry" # Rename the variable including geometry
   }
   
-  if(First_step=="Kernel"){
+  if(First_step=="kernel"){
     # Remove duplicate points (points with same lon/lat)
     dat_subsample<-distinct(dat, as.character(geometry), .keep_all=T) 
 
@@ -273,17 +273,17 @@ sRL_MapDistributionGBIF<-function(dat, scientific_name, First_step, AltMIN, AltM
     distGBIF <- getverticeshr(kernel.ref, percent = 99) %>% st_as_sf(.)
   }
   
-  if(First_step=="Hydrobasins"){
+  if(First_step=="hydro"){
     hydro_sub<-st_crop(hydro_raw, extent(dat))
     interHyd<-st_join(dat, hydro_sub, join=st_intersects) %>% subset(., is.na(.$hybas_id)==F) # Identify hydrobasins with data 
     distGBIF<-subset(hydro_raw, hydro_raw$hybas_id %in% interHyd$hybas_id) # Isolate these hydrobasins
   }
   
-  if(First_step=="MCP-Hydrobasins"){
-    EOO<-st_as_sf(st_convex_hull(st_union(dat)))
-    st_geometry(EOO)<-"geometry"
-    hydro_sub<-st_crop(hydro_raw, extent(EOO))
-    interHyd<-st_join(EOO, hydro_sub, join=st_intersects) %>% subset(., is.na(.$hybas_id)==F) # Identify hydrobasins with data 
+  if(First_step=="hydroMCP"){
+    mcp<-st_as_sf(st_convex_hull(st_union(dat)))
+    st_geometry(mcp)<-"geometry"
+    hydro_sub<-st_crop(hydro_raw, extent(mcp))
+    interHyd<-st_join(mcp, hydro_sub, join=st_intersects) %>% subset(., is.na(.$hybas_id)==F) # Identify hydrobasins with data 
     distGBIF<-subset(hydro_raw, hydro_raw$hybas_id %in% interHyd$hybas_id) # Isolate these hydrobasins
   }
   
