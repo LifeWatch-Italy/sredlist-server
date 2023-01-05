@@ -308,15 +308,8 @@ function(scientific_name) {return(list(Gbif_Uncertainty = 100))}
 #* @serializer json
 #* @tag sRedList
 function(scientific_name) {
-  Gbif_Extent = data.frame(xmin=-180, xmax=180, ymin=-90, ymax=90)
+  Gbif_Extent = data.frame(xmin=-10, xmax=180, ymin=-90, ymax=90)
   return(Gbif_Extent)}
-
-#* GBIF sea
-#* @get species/<scientific_name>/gbif-sea
-#* @param scientific_name:string Scientific Name
-#* @serializer json
-#* @tag sRedList
-function(scientific_name) {return(list(Gbif_Sea = 0))}
 
 #* Global Biodiversity Information Facility Step 2
 #* @get species/<scientific_name>/gbif2
@@ -324,10 +317,10 @@ function(scientific_name) {return(list(Gbif_Sea = 0))}
 #* @param Gbif_Year:int Gbif_Year
 #* @param Gbif_Uncertainty:int Gbif_Uncertainty
 #* @param Gbif_Extent:[int] Gbif_Extent
-#* @param Gbif_Sea:int Gbif_Sea
+#* @param Gbif_Sea:string Gbif_Sea
 #* @serializer htmlwidget
 #* @tag sRedList
-function(scientific_name, Gbif_Year= -1, Gbif_Uncertainty=-1, Gbif_Extent=list(), Gbif_Sea=-1) {
+function(scientific_name, Gbif_Year= -1, Gbif_Uncertainty=-1, Gbif_Extent=list(), Gbif_Sea="") {
   
   log_info("START - GBIF Step 2")
   
@@ -336,6 +329,7 @@ function(scientific_name, Gbif_Year= -1, Gbif_Uncertainty=-1, Gbif_Extent=list()
   print(Gbif_Year)
   print(Gbif_Uncertainty)
   Gbif_Extent<-as.numeric(Gbif_Extent) ; print(Gbif_Extent)
+  print(Gbif_Sea)
   
   ### Charge downloaded data
   Storage_SP<-sRL_reuse(scientific_name)
@@ -379,7 +373,7 @@ function(scientific_name, Gbif_Year= -1, Gbif_Uncertainty=-1, Gbif_Extent=list()
 #* @param scientific_name:string Scientific Name
 #* @serializer json
 #* @tag sRedList
-function(scientific_name) {return(list(Gbif_Start = "start_empty"))}
+function(scientific_name) {return(list(Gbif_Start = ""))}
 
 #* GBIF buffer
 #* @get species/<scientific_name>/gbif-buffer
@@ -397,28 +391,20 @@ function(scientific_name) {
   Gbif_Altitude = data.frame(AltMIN=0, AltMAX=4000)
   return(Gbif_Altitude)}
 
-#* GBIF crop
-#* @get species/<scientific_name>/gbif-crop
-#* @param scientific_name:string Scientific Name
-#* @serializer json
-#* @tag sRedList
-function(scientific_name) {return(list(Gbif_Crop = 0))}
-
 
 #* Global Biodiversity Information Facility step 3
 #* @get species/<scientific_name>/gbif3
 #* @param scientific_name:string Scientific Name
-#* @param Gbif_Start:int Gbif_Start
+#* @param Gbif_Start:string Gbif_Start
 #* @param Gbif_Buffer:int Gbif_Buffer
 #* @param Gbif_Altitude:[int] Gbif_Altitude
-#* @param Gbif_Crop:int Gbif_Crop
+#* @param Gbif_Crop:string Gbif_Crop
 #* @serializer unboxedJSON
 #* @tag sRedList
-function(scientific_name, Gbif_Start="", Gbif_Buffer=-1, Gbif_Altitude=list(), Gbif_Crop=-1) {
+function(scientific_name, Gbif_Start="", Gbif_Buffer=-1, Gbif_Altitude=list(), Gbif_Crop="") {
   
   # Transform parameters GBIF filtering
   scientific_name <- url_decode(scientific_name)
-  Gbif_Crop<-revalue(as.character(Gbif_Crop), c("0"="0", "1"="Land", "2"="Sea"))
   Gbif_Buffer<-replace(Gbif_Buffer, Gbif_Buffer<0, 0)
   print(Gbif_Start)
   print(Gbif_Buffer)

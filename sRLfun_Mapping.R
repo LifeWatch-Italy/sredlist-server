@@ -195,8 +195,8 @@ sRL_cleanDataGBIF <- function(flags, year_GBIF, uncertainty_GBIF, keepyearNA_GBI
   flags$.summary<-NULL
   
   ### Change flagging for sea
-  if(sea_GBIF==0){flags$.sea<-NULL} # If Sea=0, we should not select data based on sea
-  if(sea_GBIF==2){flags$.sea<-revalue(as.character(flags$.sea), c("TRUE"="FALSE", "FALSE"="TRUE"))} %>% as.factor(.) # If Sea=2, we keep only seas (so we flag land)
+  if(sea_GBIF==""){flags$.sea<-NULL} # If Sea=0, we should not select data based on sea
+  if(sea_GBIF=="excludeland"){flags$.sea<-revalue(as.character(flags$.sea), c("TRUE"="FALSE", "FALSE"="TRUE"))} %>% as.factor(.) # If Sea=2, we keep only seas (so we flag land)
   
   ### Add flagging for year and uncertainty
   flags$.year <- flags$year > year_GBIF
@@ -298,11 +298,11 @@ sRL_MapDistributionGBIF<-function(dat, scientific_name, First_step, AltMIN, AltM
   distGBIF$binomial=scientific_name
   
   # Remove land or sea if requested
-  if(GBIF_crop=="Land"){
+  if(GBIF_crop=="cropland"){
     distGBIF<-st_intersection(distGBIF, CountrySP) %>% 
       dplyr::group_by(binomial) %>% dplyr::summarise(N = n())}
 
-  if(GBIF_crop=="Sea"){
+  if(GBIF_crop=="cropsea"){
     countr<-CountrySP %>% st_crop(., extent(distGBIF)) %>% dplyr::group_by() %>% dplyr::summarise(N = n())
     distGBIF<-st_difference(distGBIF, countr)}
 
