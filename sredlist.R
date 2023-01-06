@@ -371,12 +371,13 @@ function(scientific_name) {
 #* @get species/<scientific_name>/gbif3
 #* @param scientific_name:string Scientific Name
 #* @param Gbif_Start:string Gbif_Start
+#* @param Gbif_Param:[int] Gbif_Param
 #* @param Gbif_Buffer:int Gbif_Buffer
 #* @param Gbif_Altitude:[int] Gbif_Altitude
 #* @param Gbif_Crop:string Gbif_Crop
 #* @serializer unboxedJSON
 #* @tag sRedList
-function(scientific_name, Gbif_Start="", Gbif_Buffer=-1, Gbif_Altitude=list(), Gbif_Crop="") {
+function(scientific_name, Gbif_Start="", Gbif_Param=list(), Gbif_Buffer=-1, Gbif_Altitude=list(), Gbif_Crop="") {
   
   # Transform parameters GBIF filtering
   scientific_name <- url_decode(scientific_name)
@@ -385,6 +386,7 @@ function(scientific_name, Gbif_Start="", Gbif_Buffer=-1, Gbif_Altitude=list(), G
   print(Gbif_Buffer)
   print(Gbif_Altitude)
   print(Gbif_Crop)
+  Gbif_Param<-as.numeric(Gbif_Param) ; print(Gbif_Param)
   
   #GBIF STEP 3: Map distribution from GBIF
   log_info("START - Maps the distribution")
@@ -400,7 +402,8 @@ function(scientific_name, Gbif_Start="", Gbif_Buffer=-1, Gbif_Altitude=list(), G
                                   First_step=Gbif_Start,
                                   AltMIN=as.numeric(Gbif_Altitude[1]), AltMAX=as.numeric(Gbif_Altitude[2]),
                                   Buffer_km2=as.numeric(Gbif_Buffer),
-                                  GBIF_crop=Gbif_Crop)
+                                  GBIF_crop=Gbif_Crop,
+                                  Gbif_Param=Gbif_Param)
   log_info("Map Distribution halfway")
   # Store and calculate area
   Storage_SP$gbif_number_saved=eval(parse(text=paste0("gbif_number_saved_", sub(" ", "_", scientific_name))))

@@ -246,7 +246,7 @@ sRL_SubsetGbif<-function(flags, scientific_name){
 
 
 ### Create Distribution map from GBIF data
-sRL_MapDistributionGBIF<-function(dat, scientific_name, First_step, AltMIN, AltMAX, Buffer_km2, GBIF_crop){
+sRL_MapDistributionGBIF<-function(dat, scientific_name, First_step, AltMIN, AltMAX, Buffer_km2, GBIF_crop, Gbif_Param){
 
   ### The first step can be mcp, kernel, alpha, hydro, hydroMCP
   if(First_step=="mcp" | First_step==""){
@@ -260,7 +260,15 @@ sRL_MapDistributionGBIF<-function(dat, scientific_name, First_step, AltMIN, AltM
 
     # Calculate kernels
     kernel.ref <- kernelUD(as_Spatial(dat), h = "href")  # href = the reference bandwidth
-    distGBIF <- getverticeshr(kernel.ref, percent = 99) %>% st_as_sf(.)
+    distGBIF <- getverticeshr(kernel.ref, percent = 100*Gbif_Param[1]) %>% st_as_sf(.)
+  }
+  
+  if(First_step=="alpha"){
+      Par_alpha<-Gbif_Param[2]
+      EX<-extent(dat)
+      distGBIF<-convexHull(dat, alpha = Par_alpha * 0.1 * sqrt((EX@xmin-EX@xmax)^2 + (EX@ymin-EX@ymax)^2), sp = FALSE)
+      st_crs(distGBIF)<-st_crs(dat)
+      
   }
   
   if(First_step=="hydro"){
