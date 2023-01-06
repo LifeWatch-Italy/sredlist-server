@@ -166,41 +166,16 @@ function(scientific_name, presences = list(), seasons = list() , origins = list(
 # M2: Mapping ----------------------------------------------------------------
 ## a: Download ----------------------------------------------------------------
 
-#* GBIF source
-#* @get species/<scientific_name>/gbif-source
-#* @param scientific_name:string Scientific Name
-#* @serializer json
-#* @tag sRedList
-function(scientific_name) {
-  log_info("START source")
-  scientific_name<-url_decode(scientific_name)
-  
-  # Check if the species is in the RL points folder
-  RL<-scientific_name %in% sub(".csv", "", list.files("resources/Point.distributions"))
-  
-  # Is the species likely marine
-  TAXO<-speciesRL[speciesRL$scientific_name==scientific_name,]
-  Marine <- ifelse(nrow(TAXO)==0, F, TAXO$marine_system[1])
-  
-  SRC<-1 # Only GBIF
-  if(RL==T & Marine==T){SRC=7}
-  if(RL==F & Marine==T){SRC=4}
-  if(RL==T & Marine==F){SRC=5}
-  
-  print(SRC)
-  
-  return(list(Gbif_Source = SRC))}
-
 #* Global Biodiversity Information Facility Step 1
 #* @post species/<scientific_name>/gbif
 #* @param scientific_name:string Scientific Name
-#* @param Gbif_Source:int Gbif_Source
+#* @param Gbif_Source:[string] Gbif_Source
 #* @parser multi
 #* @parser csv
 #* @param Uploaded_Records:file A file
 #* @serializer unboxedJSON
 #* @tag sRedList
-function(scientific_name, Gbif_Source=-1, Uploaded_Records="") {
+function(scientific_name, Gbif_Source=list(), Uploaded_Records="") {
 
   ### Clean-string from user
   scientific_name <- url_decode(scientific_name)
@@ -308,7 +283,7 @@ function(scientific_name) {return(list(Gbif_Uncertainty = 100))}
 #* @serializer json
 #* @tag sRedList
 function(scientific_name) {
-  Gbif_Extent = data.frame(xmin=-10, xmax=180, ymin=-90, ymax=90)
+  Gbif_Extent = data.frame(xmin=-180, xmax=180, ymin=-90, ymax=90)
   return(Gbif_Extent)}
 
 #* Global Biodiversity Information Facility Step 2

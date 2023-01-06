@@ -4,19 +4,9 @@
 
 sRL_createDataGBIF <- function(scientific_name, GBIF_SRC, Uploaded_Records) { # nolint
   
-  ### Reclassify GBIF_SRC
-  if(GBIF_SRC==1){GBIF_source<-c("GBIF")}
-  if(GBIF_SRC==2){GBIF_source<-c("OBIS")}
-  if(GBIF_SRC==3){GBIF_source<-c("RL")}
-  if(GBIF_SRC==4){GBIF_source<-c("GBIF", "OBIS")}
-  if(GBIF_SRC==5){GBIF_source<-c("GBIF", "RL")}
-  if(GBIF_SRC==6){GBIF_source<-c("OBIS", "RL")}
-  if(GBIF_SRC==7){GBIF_source<-c("GBIF", "OBIS", "RL")}
-
-  
   ### Download data
   # From GBIF
-  if("GBIF" %in% GBIF_source){
+  if(GBIF_SRC[1]==1){
     
     #Calculate the total number of data in GBIF
     OCC<-occ_count(taxonKey=name_backbone(name=scientific_name)$usageKey, georeferenced = TRUE)
@@ -43,7 +33,7 @@ sRL_createDataGBIF <- function(scientific_name, GBIF_SRC, Uploaded_Records) { # 
   } else {dat_gbif<-NULL}
   
   # From OBIS (removing points at same location + year)
-  if("OBIS" %in% GBIF_source){
+  if(GBIF_SRC[2]==1){
     dat_obis <- robis::occurrence(scientific_name)
     dat_obis$ID<-paste0(dat_obis$decimalLongitude, dat_obis$decimalLatitude, dat_obis$date_year)
     dat_obis$year<-dat_obis$date_year
@@ -55,7 +45,7 @@ sRL_createDataGBIF <- function(scientific_name, GBIF_SRC, Uploaded_Records) { # 
   } else {dat_obis_sub<-data.frame()}
   
   # From Red List point
-  if("RL" %in% GBIF_source & paste0(scientific_name, ".csv") %in% list.files(config$POINTdistribution_path)){
+  if(GBIF_SRC[3]==1 & paste0(scientific_name, ".csv") %in% list.files(config$POINTdistribution_path)){
     dat_RL<-read.csv(paste0(config$POINTdistribution_path, scientific_name, ".csv"))
     dat_RL$Source_type<-"RL"
     dat_RL$decimalLongitude<-dat_RL$longitude
