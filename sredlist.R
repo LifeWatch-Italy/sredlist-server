@@ -1296,7 +1296,27 @@ function(scientific_name, RSproduct = "") { # nolint
 #* @param pop_size:int Pop_size
 #* @serializer png list(width = 800, height = 600)
 #* @tag sRedList
-function(scientific_name, eoo_km2, aoo_km2, pop_size) {
+function(scientific_name, eoo_km2, aoo_km2, pop_size, 
+         Extreme_EOO, Extreme_AOO, Extreme_Pop, Extreme_NLoc, Extreme_NSub, Extreme_EOO_justif, Extreme_AOO_justif, Extreme_Pop_justif, Extreme_NLoc_justif, Extreme_NSub_justif,
+         Continuing_EOO, Continuing_AOO, Continuing_Hab, Continuing_Pop, Continuing_NLoc, Continuing_NSub, Continuing_EOO_justif, Continuing_AOO_justif, Continuing_Hab_justif, Continuing_Pop_justif, Continuing_NLoc_justif, Continuing_NSub_justif,
+         locationNumber,	locationNumber_justif, locationSub,	locationSub_justif,	Num_Largest, OneSubpop,	VeryRestricted,	VeryRestricted_justif,
+         populationTrend, currentTrends_basis, currentTrends_years, futureTrends_quality, futureTrends_basis, futureTrends, futureTrends_justif, ongoingTrends_NY, ongoingTrends_basis, ongoingTrends_reversible, ongoingTrends_understood, ongoingTrends_ceased, ongoingTrends, ongoingTrends_justif
+         ) {
+  
+  log_info("Pop")
+  print(locationNumber)
+  print(populationTrend)
+  
+  log_info("Extreme fluctuations")
+  print(Extreme_EOO) ; print(Extreme_AOO) ; print(Extreme_Pop) ; print(Extreme_NLoc) ; print(Extreme_NSub)
+  print(Extreme_EOO_justif) ; print(Extreme_AOO_justif) ; print(Extreme_Pop_justif) ; print(Extreme_NLoc_justif) ; print(Extreme_NSub_justif)
+  
+  log_info("Continuing declines")
+  print(Continuing_EOO) ; print(Continuing_AOO) ; print(Continuing_Hab) ; print(Continuing_Pop) ; print(Continuing_NLoc) ; print(Continuing_NSub)
+  print(Continuing_EOO_justif) ; print(Continuing_AOO_justif) ; print(Continuing_Hab_justif) ; print(Continuing_Pop_justif) ; print(Continuing_NLoc_justif) ; print(Continuing_NSub_justif)
+  
+  log_info("Over")
+  
   
   #Filter param
   scientific_name <- url_decode(scientific_name)
