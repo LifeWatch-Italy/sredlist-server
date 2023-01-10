@@ -1297,10 +1297,12 @@ function(scientific_name, RSproduct = "") { # nolint
 #* @serializer png list(width = 800, height = 600)
 #* @tag sRedList
 function(scientific_name, eoo_km2, aoo_km2, pop_size, 
+         pastTrends_qual, pastTrends_basis, pastTrends_reversible, pastTrends_understood, pastTrends_ceased, fragment,
          Extreme_EOO, Extreme_AOO, Extreme_Pop, Extreme_NLoc, Extreme_NSub, Extreme_EOO_justif, Extreme_AOO_justif, Extreme_Pop_justif, Extreme_NLoc_justif, Extreme_NSub_justif,
          Continuing_EOO, Continuing_AOO, Continuing_Hab, Continuing_Pop, Continuing_NLoc, Continuing_NSub, Continuing_EOO_justif, Continuing_AOO_justif, Continuing_Hab_justif, Continuing_Pop_justif, Continuing_NLoc_justif, Continuing_NSub_justif,
          locationNumber,	locationNumber_justif, locationSub,	locationSub_justif,	Num_Largest, OneSubpop,	VeryRestricted,	VeryRestricted_justif,
-         populationTrend, currentTrends_basis, currentTrends_years, futureTrends_quality, futureTrends_basis, futureTrends, futureTrends_justif, ongoingTrends_NY, ongoingTrends_basis, ongoingTrends_reversible, ongoingTrends_understood, ongoingTrends_ceased, ongoingTrends, ongoingTrends_justif
+         populationTrend, currentTrends_basis, currentTrends_years, futureTrends_quality, futureTrends_basis, futureTrends, futureTrends_justif, ongoingTrends_NY, ongoingTrends_basis, ongoingTrends_reversible, ongoingTrends_understood, ongoingTrends_ceased, ongoingTrends, ongoingTrends_justif,
+         C_igen_value, C_igen_qual, C_igen_justif, C_iigen_value, C_iigen_qual, C_iigen_justif, C_iiigen_value, C_iiigen_qual, C_iiigen_justif
          ) {
   
   log_info("Pop")
