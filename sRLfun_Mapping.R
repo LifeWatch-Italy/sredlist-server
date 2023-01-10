@@ -430,7 +430,7 @@ sRL_cooExtract<-function(distSP, domain_pref){
                       "<b> National entity: ","</b>", eez$SIS_name0, ifelse(eez$Level0_occupied==T, " (Occupied)", " (Empty)"), "<br>", "<br>",
                       "<b> Subnational entity: ","</b>", eez$SIS_name1, ifelse(is.na(eez$SIS_name1)==T, "", ifelse(eez$Level1_occupied==T, " (Occupied)", " (Empty)")), "<br>")
     
-    eez$Domain="Marine"
+    eez$Domain="Marine" ; eez$Tol<-eez$Aire<-NA
   }
   
   

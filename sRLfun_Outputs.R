@@ -100,6 +100,7 @@ sRL_CreateALLFIELDS <- function(scientific_name, aoh_lost, eoo_km2, aoo_km2, pop
 ### Prepare countries output csv
 sRL_OutputCountries<-function(scientific_name, countries, AltPref_saved){
   
+  if(nrow(countries)==0){CO_SIS<-data.frame()} else{
   # Assign the name to provide (SIS_name1 if available, SIS_name2 otherwise)
   countries$Name<-ifelse(is.na(countries$SIS_name1), countries$SIS_name0, countries$SIS_name1)
   
@@ -114,6 +115,7 @@ sRL_OutputCountries<-function(scientific_name, countries, AltPref_saved){
   CO_SIS$assessment_id=NA
   CO_SIS$internal_taxon_id=AltPref_saved$taxonid[1]
   CO_SIS$internal_taxon_name=scientific_name
+  }
   
   return(CO_SIS)
 }
