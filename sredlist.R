@@ -1286,6 +1286,18 @@ function(scientific_name, RSproduct = "") { # nolint
 
 # M7: Outputs ----------------------------------------------------------------
 
+#* Upload all parameters
+#* @get species/<scientific_name>/species/final-estimates
+#* @param scientific_name:string Scientific Name
+#* @serializer unboxedJSON
+#* @tag sRedList
+function(){
+  
+  Estimates<-data.frame(T1="test_from_R", T2="test2 from R")
+  
+  return(list(T1="test_from_R", T2="test_from_R2"))
+}
+
 
 #* Plot Red List category
 #* @get species/<scientific_name>/assessment/red-list-criteria
@@ -1297,7 +1309,7 @@ function(scientific_name, RSproduct = "") { # nolint
 #* @serializer png list(width = 800, height = 600)
 #* @tag sRedList
 function(scientific_name, eoo_km2, aoo_km2, pop_size, 
-         pastTrends_qual, pastTrends_basis, pastTrends_reversible, pastTrends_understood, pastTrends_ceased, fragment,
+         Estimates, pastTrends_qual, pastTrends_basis, pastTrends_reversible, pastTrends_understood, pastTrends_ceased, fragment,
          Extreme_EOO, Extreme_AOO, Extreme_Pop, Extreme_NLoc, Extreme_NSub, Extreme_EOO_justif, Extreme_AOO_justif, Extreme_Pop_justif, Extreme_NLoc_justif, Extreme_NSub_justif,
          Continuing_EOO, Continuing_AOO, Continuing_Hab, Continuing_Pop, Continuing_NLoc, Continuing_NSub, Continuing_EOO_justif, Continuing_AOO_justif, Continuing_Hab_justif, Continuing_Pop_justif, Continuing_NLoc_justif, Continuing_NSub_justif,
          locationNumber,	locationNumber_justif, locationSub,	locationSub_justif,	Num_Largest, OneSubpop,	VeryRestricted,	VeryRestricted_justif,
@@ -1308,6 +1320,7 @@ function(scientific_name, eoo_km2, aoo_km2, pop_size,
   log_info("Pop")
   print(locationNumber)
   print(populationTrend)
+  print(Estimates)
   
   log_info("Extreme fluctuations")
   print(Extreme_EOO) ; print(Extreme_AOO) ; print(Extreme_Pop) ; print(Extreme_NLoc) ; print(Extreme_NSub)
