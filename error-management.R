@@ -64,4 +64,8 @@ no_coords_update <- function() {
   api_error(message = "longitude and latitude columns were not found in uploaded data", status = 400)
 }
 
+no_countries_crop <- function() {
+  api_error(message = "This country is not in the list of Red List countries, check names on the interactive map", status = 400)
+}
+
 

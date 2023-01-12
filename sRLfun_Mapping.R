@@ -442,3 +442,36 @@ sRL_cooExtract<-function(distSP, domain_pref){
 }
 
 
+### Function to crop a country for National Red Listing
+sRL_CropCountry<-function(distSP, domain_pref, Crop_Country){
+
+  # Europe
+  Crop_Country1<-c()
+  if(Crop_Country=="Europe"){
+    Crop_Country<-c("Albania", "Andorra", "Austria", "Belarus", "Belgium", "Bosnia and Herzegovina", "Bulgaria", "Croatia", "Cyprus", "Czechia", "Denmark", "Estonia", "Finland", "France", "Germany", "Greece", "Hungary", "Iceland", "Ireland", "Italy", "Latvia", "Liechtenstein", "Lithuania", "Luxembourg", "Malta", "Moldova, Republic of", "Monaco", "Montenegro", "Netherlands", "North Macedonia", "Norway", "Poland", "Portugal", "Romania", "San Marino", "Serbia", "Slovakia", "Slovenia", "Spain", "Sweden", "Switzerland", "Ukraine", "United Kingdom of Great Britain and Northern Ireland")
+    Crop_Country1<-c("European Russia", "Türkiye-in-Europe") # For Europe I need to include Eastern Russia and Eastern Turkey, I list them in Crop_Country1 which is empty for non European National assessments
+  }
+  
+  
+  # Select countries depending on domain preferences
+  if("Marine" %in% domain_pref){eez_Sub<-subset(eez_raw, eez_raw$SIS_name0 %in% Crop_Country | eez_raw$SIS_name1 %in% Crop_Country1) %>% st_transform(., CRSMOLL)}
+  cou_Sub<-subset(coo_raw, (coo_raw$SIS_name0 %in% Crop_Country) | (coo_raw$SIS_name1 %in% Crop_Country1)) %>% st_transform(., CRSMOLL)
+  if("Marine" %in% domain_pref & length(domain_pref)==1){eez_Sub}
+  if(!"Marine" %in% domain_pref){country_sub<-cou_Sub}
+  if("Marine" %in% domain_pref & ("Terrestrial" %in% domain_pref | "Freshwater" %in% domain_pref)){
+    cou_Sub$Aire<-cou_Sub$Tol<-NULL
+    country_sub<-rbind(eez_Sub, cou_Sub)
+  }
+  country_sub<-country_sub %>% dplyr::group_by() %>% dplyr::summarise(N= n()) 
+  
+
+  
+  # Crop the distribution
+  distSP_crop<-st_intersection(distSP, country_sub)
+
+  # Return
+  return(distSP_crop)
+}
+
+
+

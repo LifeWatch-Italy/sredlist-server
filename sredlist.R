@@ -130,6 +130,7 @@ function(scientific_name, presences = list(), seasons = list() , origins = list(
   
   ### Save the distribution in memory
   Storage_SP$distSP_saved<-distSP
+  Storage_SP$distSP_savedORIGINAL <- distSP # I need to save it twice for country croping for National RL
   
   ### Prepare countries if they were not charged + crop depending on the current selection of range
   if("CountrySP_saved" %not in% names(Storage_SP)){Storage_SP$CountrySP_saved<-sRL_PrepareCountries(extent(distSP_full))} 
@@ -478,7 +479,8 @@ function(scientific_name, Gbif_Smooth=-1) {
   }
   
   ### Keep distribution in memory
-  Storage_SP$distSP_saved=distSP
+  Storage_SP$distSP_saved <- distSP
+  Storage_SP$distSP_savedORIGINAL <- distSP # I need to save it twice for country croping for National RL
   Storage_SP<-sRL_OutLog(Storage_SP, "Mapping_Smooth", Gbif_Smooth)
   assign(paste0("Storage_SP_", sub(" ", "_", scientific_name)), Storage_SP, .GlobalEnv)
   
@@ -522,15 +524,23 @@ function(scientific_name, Gbif_Smooth=-1) {
 #* @param domain_pref:[str] domain_pref
 #* @serializer htmlwidget
 #* @tag sRedList
-function(scientific_name, domain_pref=list()) {
+function(scientific_name, domain_pref=list(), Crop_Country="") {
 
   # Filter parameters
   scientific_name<-url_decode(scientific_name)
   Storage_SP<-sRL_reuse(scientific_name)
   rownames(coo_raw)<-1:nrow(coo_raw)
-  distSP<-Storage_SP$distSP_saved
+  distSP<-Storage_SP$distSP_savedORIGINAL
   domain_pref<-revalue(as.character(domain_pref), c("1"="Terrestrial", "2"="Marine", "3"="Freshwater"))
   print(domain_pref)
+  print(Crop_Country)
+  
+  # Crop for National Red Listing
+  if(Crop_Country != ""){
+    if(!Crop_Country %in% c(distCountries$SIS_name0, "Europe")){no_countries_crop()} else{
+    distSP<-sRL_CropCountry(distSP, domain_pref, Crop_Country)
+    Storage_SP$distSP_saved<-distSP
+    }}
   
   # Prepare distribution and calculate COO
   distSP<-distSP %>% dplyr::group_by(origin, presence, seasonal) %>% dplyr::summarise(N= n()) %>% st_transform(., st_crs(coo_raw))
