@@ -253,7 +253,7 @@ function(scientific_name, Gbif_Source=list(), Uploaded_Records="") {
 
 
   # Assign
-  output_to_save<-sRL_InitLog(scientific_name, DisSource = "Created") ; output_to_save$Value[output_to_save$Parameter=="Gbif_Source"]<-Gbif_Source
+  output_to_save<-sRL_InitLog(scientific_name, DisSource = "Created") ; output_to_save$Value[output_to_save$Parameter=="Gbif_Source"]<-paste0(ifelse(Gbif_Source[1]==1, "GBIF ", ""), ifelse(Gbif_Source[2]==1, "OBIS ", ""), ifelse(Gbif_Source[3]==1, "Red_List ", ""), ifelse(is.null(nrow(Uploaded_Records)), "", "Uploaded"))
   assign(paste0("Storage_SP_", sub(" ", "_", scientific_name)), list(flags_raw_saved=flags_raw, CountrySP_WGS_saved=CountrySP_WGS, Creation=Sys.time(), Output=output_to_save), .GlobalEnv)
 
   
@@ -425,7 +425,7 @@ function(scientific_name, Gbif_Start="", Gbif_Param=list(), Gbif_Buffer=-1, Gbif
   
   # Keep distribution in memory
   Storage_SP$distSP3_saved=distSP
-  Storage_SP<-sRL_OutLog(Storage_SP, c("Mapping_Start", "Mapping_Crop", "Mapping_Buffer", "Mapping_Altitude"), c(Gbif_Start, Gbif_Crop, Gbif_Buffer, paste0(Gbif_Altitude, collapse=",")))
+  Storage_SP<-sRL_OutLog(Storage_SP, c("Mapping_Start", "Mapping_Crop", "Mapping_Buffer", "Mapping_Altitude", "Kernel_parameter", "Alpha_parameter"), c(Gbif_Start, Gbif_Crop, Gbif_Buffer, paste0(Gbif_Altitude, collapse=","), ifelse(Gbif_Start=="kernel", Gbif_Param[1], NA), ifelse(Gbif_Start=="alpha", Gbif_Param[1], NA)))
   assign(paste0("Storage_SP_", sub(" ", "_", scientific_name)), Storage_SP, .GlobalEnv)
   
   return(list(
@@ -540,6 +540,7 @@ function(scientific_name, domain_pref=list(), Crop_Country="") {
     if(!Crop_Country %in% c(distCountries$SIS_name0, "Europe")){no_countries_crop()} else{
     distSP<-sRL_CropCountry(distSP, domain_pref, Crop_Country)
     Storage_SP$distSP_saved<-distSP
+    Storage_SP<-sRL_OutLog(Storage_SP, "Crop_Country", Crop_Country)
     }}
   
   # Prepare distribution and calculate COO
@@ -934,7 +935,7 @@ function(scientific_name, habitats_pref= list(), habitats_pref_MARGINAL=list(), 
   Storage_SP$density_saved<-density_pref
   
   ### Save parameters and results
-  Storage_SP<-sRL_OutLog(Storage_SP, c("AOH_HabitatPreference", "AOH_MarginalHabitatPreference", "AOH_ElevationPreference", "AOH_Density"), c(paste0(habitats_pref, collapse=","), paste0(habitats_pref_MARGINAL, collapse=","), paste0(altitudes_pref, collapse=", "), density_pref))
+  Storage_SP<-sRL_OutLog(Storage_SP, c("AOH_HabitatPreference", "AOH_MarginalHabitatPreference", "AOH_ElevationPreference", "AOH_Density"), c(paste0(habitats_pref, collapse=","), paste0(habitats_pref_MARGINAL, collapse=","), paste0(altitudes_pref, collapse=", "), ifelse(density_pref=='-1', NA, density_pref)))
   assign(paste0("Storage_SP_", sub(" ", "_", scientific_name)), Storage_SP, .GlobalEnv)
   terraOptions(tempdir=tempdir())
   rasterOptions(tmpdir=tempdir())
@@ -1319,7 +1320,8 @@ function(){
 #* @serializer png list(width = 800, height = 600)
 #* @tag sRedList
 function(scientific_name, eoo_km2, aoo_km2, pop_size, 
-         Estimates, pastTrends_qual, pastTrends_basis, pastTrends_reversible, pastTrends_understood, pastTrends_ceased, fragment,
+         #Estimates, 
+         pastTrends_qual, pastTrends_basis, pastTrends_reversible, pastTrends_understood, pastTrends_ceased, fragment,
          Extreme_EOO, Extreme_AOO, Extreme_Pop, Extreme_NLoc, Extreme_NSub, Extreme_EOO_justif, Extreme_AOO_justif, Extreme_Pop_justif, Extreme_NLoc_justif, Extreme_NSub_justif,
          Continuing_EOO, Continuing_AOO, Continuing_Hab, Continuing_Pop, Continuing_NLoc, Continuing_NSub, Continuing_EOO_justif, Continuing_AOO_justif, Continuing_Hab_justif, Continuing_Pop_justif, Continuing_NLoc_justif, Continuing_NSub_justif,
          locationNumber,	locationNumber_justif, locationSub,	locationSub_justif,	Num_Largest, OneSubpop,	VeryRestricted,	VeryRestricted_justif,
@@ -1330,7 +1332,7 @@ function(scientific_name, eoo_km2, aoo_km2, pop_size,
   log_info("Pop")
   print(locationNumber)
   print(populationTrend)
-  print(Estimates)
+  #print(Estimates)
   
   log_info("Extreme fluctuations")
   print(Extreme_EOO) ; print(Extreme_AOO) ; print(Extreme_Pop) ; print(Extreme_NLoc) ; print(Extreme_NSub)

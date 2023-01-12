@@ -114,7 +114,7 @@ if(config$crosswalk == "Santini"){crosswalk_to_use<- crosswalk[is.na(crosswalk$e
 if(config$crosswalk == "Lumbierres"){crosswalk_to_use<- read.table("Species/Crosswalk_CCI_IUCN_Lumbierres.txt", dec="/", header=T) ; crosswalk_to_use$code<-as.character(crosswalk_to_use$code)}
 
 # Load the empty output log
-output<-read.csv("Species/Output log empty.csv", sep="\t")
+output<-read.csv("Species/Output log empty.csv")
 
 # Load Hydrobasins map
 #hydro_raw<-st_read(config$hydrobasins_path) %>% st_transform(., crs=CRSMOLL)
