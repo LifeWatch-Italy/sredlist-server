@@ -129,7 +129,7 @@ sRL_OutputRef<-function(scientific_name, AltPref_saved){
   # Charge the file with sRedList reference
   ref_SIS<-read.csv("Species/SIS_references_empty.csv")
   
-  Storage_SP=sRL_reuse(url_decode(scientific_name))
+  Storage_SP=sRL_reuse(sRL_decode(scientific_name))
   if("dat_proj_saved" %in% names(Storage_SP)){
     
     # Add rgbif if used
@@ -191,7 +191,7 @@ sRL_OutputDistribution<-function(scientific_name){
 ### Save occurrences shapefile from the GBIF procedure
 sRL_OutputOccurrences <- function(scientific_name) {
   
-  Storage_SP<-sRL_reuse(url_decode(scientific_name))
+  Storage_SP<-sRL_reuse(sRL_decode(scientific_name))
   
   # Transform in lat/lon
   dat<-Storage_SP$dat_proj_saved %>% st_transform(., "+init=epsg:4326")

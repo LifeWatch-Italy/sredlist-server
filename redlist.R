@@ -58,7 +58,7 @@ function(scientific_name, path = "") {
   Prom<-future({
 
     ### Filter param
-    scientific_name <- url_decode(scientific_name)
+    scientific_name <- sRL_decode(scientific_name)
     path <- ifelse(path == "", paste0(R.utils::capitalize(trim(gsub(" ", "_", scientific_name))), '_RL'), path ) # nolint
   
     ### Load Distribution Species
@@ -104,7 +104,7 @@ function(scientific_name, path = "") {
 function(scientific_name) {
   
   # Filter param
-  scientific_name <- url_decode(scientific_name)
+  scientific_name <- sRL_decode(scientific_name)
   hab_pref <- rl_habitats(scientific_name, key = config$red_list_token)#$result
   return(hab_pref)
 }
@@ -120,7 +120,7 @@ function(scientific_name) {
   log_info("START - Altitude extract")
 
   #Filter param
-  scientific_name <- url_decode(scientific_name)
+  scientific_name <- sRL_decode(scientific_name)
   Storage_SP=sRL_reuse(scientific_name)
 
   #Extract alt_pref

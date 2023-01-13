@@ -351,7 +351,7 @@ sRL_MapDistributionGBIF<-function(dat, scientific_name, First_step, AltMIN, AltM
 ### Save distribution mapped from the GBIF procedure
 sRL_saveMapDistribution <- function(scientific_name) {
   
-  Storage_SP<-sRL_reuse(url_decode(scientific_name))
+  Storage_SP<-sRL_reuse(sRL_decode(scientific_name))
   
 
   ### Create a file path E.g: Distributions/Nile tilapia/Nile_tilapia_GBIF_20211207/ # nolint

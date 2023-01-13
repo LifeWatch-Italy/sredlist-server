@@ -12,7 +12,7 @@
 #* @parser multi
 #* @tag sRedList1
 function(scientific_name, req) {
-  scientific_name <- url_decode(scientific_name)
+  scientific_name <- sRL_decode(scientific_name)
   scientific_name <- R.utils::capitalize(trim(gsub("[[:punct:]]", " ", scientific_name))) # nolint
   
   # Required for multiple file uploads
@@ -64,7 +64,7 @@ function(scientific_name, req) {
 #* @tag sRedList1
 function(scientific_name, path = "") {
   
-  scientific_name <- url_decode(scientific_name)
+  scientific_name <- sRL_decode(scientific_name)
   path <- ifelse(path == "", paste0(R.utils::capitalize(trim(gsub(" ", "_", scientific_name))), '_RL'), path ) # nolint
   
   speciesPath <- paste0(config$distribution_path, scientific_name, "/", path) # nolint
@@ -102,10 +102,10 @@ function(scientific_name, path = "") {
 #* @tag sRedList1
 function(scientific_name, presences = list(), seasons = list() , origins = list(), path = "") { # nolint
   
-  if(paste0("Storage_SP_", sub(" ", "_", url_decode(scientific_name))) %not in% ls(name=".GlobalEnv")){assign(paste0("Storage_SP_", sub(" ", "_", url_decode(scientific_name))), list(Creation=Sys.time(), Output=sRL_InitLog(scientific_name, DisSource = "Red List")), .GlobalEnv)}
+  if(paste0("Storage_SP_", sub(" ", "_", sRL_decode(scientific_name))) %not in% ls(name=".GlobalEnv")){assign(paste0("Storage_SP_", sub(" ", "_", sRL_decode(scientific_name))), list(Creation=Sys.time(), Output=sRL_InitLog(scientific_name, DisSource = "Red List")), .GlobalEnv)}
   
   #Filter param
-  scientific_name <- url_decode(scientific_name)
+  scientific_name <- sRL_decode(scientific_name)
   Storage_SP=sRL_reuse(scientific_name)
   path <- ifelse(path == "", paste0(R.utils::capitalize(trim(gsub(" ", "_", scientific_name))), '_RL'), path ) # nolint
   if (length(presences) != 0) presences <- as.character(presences);
@@ -179,8 +179,7 @@ function(scientific_name, presences = list(), seasons = list() , origins = list(
 function(scientific_name, Gbif_Source=list(), Uploaded_Records="") {
 
   ### Clean-string from user
-  scientific_name <- url_decode(scientific_name)
-  scientific_name <- R.utils::capitalize(trim(gsub("[[:punct:]]", " ", scientific_name))) # nolint
+  scientific_name <- sRL_decode(scientific_name)
   print(scientific_name)
   print(Gbif_Source)
   
@@ -301,7 +300,7 @@ function(scientific_name, Gbif_Year= -1, Gbif_Uncertainty=-1, Gbif_Extent=list()
   log_info("START - GBIF Step 2")
   
   ### Transform parameters GBIF filtering
-  scientific_name <- url_decode(scientific_name)
+  scientific_name <- sRL_decode(scientific_name)
   print(Gbif_Year)
   print(Gbif_Uncertainty)
   Gbif_Extent<-as.numeric(Gbif_Extent) ; print(Gbif_Extent)
@@ -381,7 +380,7 @@ function(scientific_name) {
 function(scientific_name, Gbif_Start="", Gbif_Param=list(), Gbif_Buffer=-1, Gbif_Altitude=list(), Gbif_Crop="") {
   
   # Transform parameters GBIF filtering
-  scientific_name <- url_decode(scientific_name)
+  scientific_name <- sRL_decode(scientific_name)
   Gbif_Buffer<-replace(Gbif_Buffer, Gbif_Buffer<0, 0)
   print(Gbif_Start)
   print(Gbif_Buffer)
@@ -454,7 +453,7 @@ function(scientific_name) {return(list(Gbif_Smooth = 0))}
 function(scientific_name, Gbif_Smooth=-1) {
   
   ### Transform parameters GBIF filtering
-  scientific_name <- url_decode(scientific_name)
+  scientific_name <- sRL_decode(scientific_name)
   Storage_SP=sRL_reuse(scientific_name)
   
   ### Smooth if parameter >0
@@ -527,7 +526,7 @@ function(scientific_name, Gbif_Smooth=-1) {
 function(scientific_name, domain_pref=list(), Crop_Country="") {
 
   # Filter parameters
-  scientific_name<-url_decode(scientific_name)
+  scientific_name<-sRL_decode(scientific_name)
   Storage_SP<-sRL_reuse(scientific_name)
   rownames(coo_raw)<-1:nrow(coo_raw)
   distSP<-Storage_SP$distSP_savedORIGINAL
@@ -602,7 +601,7 @@ function(scientific_name, domain_pref=list(), Crop_Country="") {
 function(scientific_name, presences = list(), seasons = list() , origins = list(), path = "") { # nolint
 
   #Filter param
-  scientific_name <- url_decode(scientific_name)
+  scientific_name <- sRL_decode(scientific_name)
   Storage_SP=sRL_reuse(scientific_name)
 
   # Load distribution
@@ -651,7 +650,7 @@ function(scientific_name, presences = list(), seasons = list() , origins = list(
 #* @tag sRedList
 function(scientific_name) {
   #Filter param
-  scientific_name <- url_decode(scientific_name)
+  scientific_name <- sRL_decode(scientific_name)
   
   density = density$Density[density$Species == scientific_name] %>% round(., 2)
   if(length(density)>1){density<-mean(density, na.rm=T)}
@@ -669,7 +668,7 @@ function(scientific_name) {
 #* @tag sRedList
 function(scientific_name) {
   #Filter param
-  scientific_name <- url_decode(scientific_name)
+  scientific_name <- sRL_decode(scientific_name)
 
   # If value in GL_file we take it, otherwise default=1
   GL_species = ifelse(scientific_name %in% GL_file$internal_taxon_name, GL_file$GL_estimate[GL_file$internal_taxon_name==scientific_name][1], 1)
@@ -700,7 +699,7 @@ function(scientific_name, habitats_pref= list(), habitats_pref_MARGINAL=list(), 
   if(length(habitats_pref)==0){no_habitat_pref()}
   
   #Filter param
-  scientific_name <- url_decode(scientific_name)
+  scientific_name <- sRL_decode(scientific_name)
   Storage_SP=sRL_reuse(scientific_name)
   distSP=Storage_SP$distSP_saved
   
@@ -987,7 +986,7 @@ function(scientific_name, habitats_pref= list(), habitats_pref_MARGINAL=list(), 
 function(scientific_name, GL_species=1) { # nolint
   
   #Filter param
-  scientific_name <- url_decode(scientific_name)
+  scientific_name <- sRL_decode(scientific_name)
   Storage_SP=sRL_reuse(scientific_name)
   GL_species<-as.numeric(GL_species)
   distSP=Storage_SP$distSP_saved
@@ -1204,7 +1203,7 @@ function(scientific_name, dispersion="-1") {
   #Prom<-future({
   
     ### Filter param
-    scientific_name<-url_decode(scientific_name)
+    scientific_name<-sRL_decode(scientific_name)
     Storage_SP<-sRL_reuse(scientific_name)
     aoh<-Storage_SP$AOH2_saved[[1]]
     aoh_type<-Storage_SP$AOH_type
@@ -1273,7 +1272,7 @@ function(scientific_name, dispersion="-1") {
 function(scientific_name, RSproduct = "") { # nolint    
   
   # Charge parameters
-  scientific_name<-url_decode(scientific_name)
+  scientific_name<-sRL_decode(scientific_name)
   Storage_SP<-sRL_reuse(scientific_name)
   distSP<-Storage_SP$RangeClean_saved
   GL<-Storage_SP$GL_saved
@@ -1346,7 +1345,7 @@ function(scientific_name, eoo_km2, aoo_km2, pop_size,
   
   
   #Filter param
-  scientific_name <- url_decode(scientific_name)
+  scientific_name <- sRL_decode(scientific_name)
   Storage_SP=sRL_reuse(scientific_name)
   aoh_lost<-ifelse("aoh_lost_saved" %in% names(Storage_SP), 
     ifelse(Storage_SP$Uncertain=="Uncertain_no", Storage_SP$aoh_lost_saved, paste(Storage_SP$aoh_lost_saved, Storage_SP$aoh_lostOPT_saved, sep="/")),
@@ -1414,7 +1413,7 @@ function(scientific_name, eoo_km2, aoo_km2, pop_size,
 #* @serializer contentType list(type="application/octet-stream")
 #* @tag sRedList
 function(scientific_name) {
-  scientific_name <- url_decode(scientific_name)
+  scientific_name <- sRL_decode(scientific_name)
   
   # Prepare the ZIP to return
   zip_to_extract<-readBin(paste0(gsub(" ", "_", scientific_name), "_sRedList.zip"), "raw", n = file.info(paste0(gsub(" ", "_", scientific_name), "_sRedList.zip"))$size)
@@ -1439,7 +1438,7 @@ function(scientific_name) {
 #* @tag sRedList
 function(scientific_name, aoh_lost=aoh_lost_saved, eoo_km2, aoo_km2, pop_size) {
   #Filter param
-  scientific_name <- url_decode(scientific_name)
+  scientific_name <- sRL_decode(scientific_name)
   
   # Calculate criteria
   criteria<-sRL_CalculateCriteria(aoh_lost, eoo_km2, aoo_km2, pop_size)
@@ -1575,7 +1574,7 @@ function(scientific_name) {
 #* @serializer unboxedJSON
 #* @tag sRedList
 function(scientific_name, file_name, path, type) {
-  scientific_name <- url_decode(scientific_name)
+  scientific_name <- sRL_decode(scientific_name)
   file_name <- url_decode(file_name)
   path <- url_decode(path)
   type <- url_decode(type)
@@ -1604,7 +1603,7 @@ function(scientific_name, file_name, path, type) {
 #* @tag sRedList
 function(scientific_name) {
   #Filter param
-  scientific_name <- url_decode(scientific_name)
+  scientific_name <- sRL_decode(scientific_name)
   if (scientific_name %in% list.files(config$distribution_path)) { # nolint
     distributions <- list()
     for(distributionFolder in list.files(paste0(config$distribution_path, scientific_name))) { # nolint

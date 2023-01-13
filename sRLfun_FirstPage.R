@@ -136,7 +136,7 @@ sRL_PrepareCountries <- function(LIMS){
 
 ### Function to reuse past calculated and stored values
 sRL_reuse=function(scientific_name){
-  eval(parse(text=paste0("Storage_SP_", sub(" ", "_", url_decode(scientific_name)))))
+  eval(parse(text=paste0("Storage_SP_", sub(" ", "_", sRL_decode(scientific_name)))))
 }
 
 ### Functions to store parameters in output
@@ -144,7 +144,7 @@ sRL_InitLog<-function(scientific_name, DisSource){
   output_to_save<-output
   output_to_save$Value[output_to_save$Parameter=="Distribution_Source"]<-DisSource
   output_to_save$Date<-Sys.Date()
-  output_to_save$Species<-url_decode(scientific_name)
+  output_to_save$Species<-sRL_decode(scientific_name)
   
   return(output_to_save)
 }
@@ -219,5 +219,13 @@ sRL_cleaningMemory<-function(Time_limit){
 }
 
 
+
+
+### Function sRL_decode : it combines url_decode and control of the case of scientific name
+sRL_decode<-function(scientific_name){
+  scientific_name<-url_decode(scientific_name)
+  scientific_name<-paste0(toupper(substr(scientific_name, 1, 1)), tolower(substr(scientific_name, 2, 200)))
+  return(scientific_name)
+}
 
 
