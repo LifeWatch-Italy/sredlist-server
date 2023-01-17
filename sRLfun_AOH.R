@@ -104,6 +104,7 @@ sRL_largeAOH<-function(habitats_pref, altitudes_pref, rangeSP_clean, YR){
   log_info("Charge CCI_Large data")
   if(YR==config$YearAOH2){CCI_fun<-CCI_large} else {
     CCI_fun<-stackOpen(paste0(config$cciStack2_path, "/", YR, "/CCI_Stack_Agg30_Year", YR, ".stk"))
+    names(CCI_fun)<-read.table(paste0(config$cciStack2_path, "/", YR, "/CCI_Stack_Agg30_Year", YR, ".stk"))[,1] %>% gsub(config$cciStack2_path, "", .) %>% substr(., 7, (nchar(.)-4)) # I have to rename them because update in raster package made a change in the names. I checked that the order of the rasters in Stack were the same as in the .stk file
   }
   
   log_info("START - Large AOH function")
