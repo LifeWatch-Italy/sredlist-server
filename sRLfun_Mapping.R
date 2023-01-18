@@ -13,12 +13,13 @@ sRL_createDataGBIF <- function(scientific_name, GBIF_SRC, Uploaded_Records) { # 
     
     if(OCC < config$LIM_GBIF){ # Download all data or structure download if more than LIM_GBIF
       dat_gbif <- rgbif::occ_data(scientificName=scientific_name, hasCoordinate = T, limit=config$LIM_GBIF)$data # occ_data is faster than occ_search because it omits some columns
+      dat_gbif$Source_type<-"GBIF"
     } else{
       dat_gbif <- sRL_StructureGBIF(scientificName = scientific_name)
+      dat_gbif$Source_type<-"GBIF sample"
     }
     
     dat_gbif$ID<-paste0(dat_gbif$decimalLongitude, dat_gbif$decimalLatitude, dat_gbif$year)
-    dat_gbif$Source_type<-"GBIF"
     dat_gbif$Link<-paste0("https://gbif.org/occurrence/", dat_gbif$gbifID)
     
     # Extract citation (once per dataset then match)
