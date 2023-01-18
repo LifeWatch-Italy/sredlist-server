@@ -408,7 +408,8 @@ function(scientific_name, Gbif_Start="", Gbif_Param=list(), Gbif_Buffer=-1, Gbif
   log_info("Map Distribution halfway")
   # Store and calculate area
   Storage_SP$gbif_number_saved=nrow(dat_proj)
-
+  Storage_SP$CountrySP_saved<-st_crop(distCountries, extent(distSP))
+  
   # Plot distribution
   ggsave(paste0("resources/AOH_stored/", sub(" ", "_", scientific_name), "/Plots/eoo.png"), plot(
     ggplot() + 
@@ -452,29 +453,43 @@ function(scientific_name) {return(list(Gbif_Smooth = 0))}
 function(scientific_name, Gbif_Smooth=-1) {
   
   ### Transform parameters GBIF filtering
+  log_info("Start GBIF 4")
   scientific_name <- sRL_decode(scientific_name)
   Storage_SP=sRL_StoreRead(scientific_name)
-  log_info("Start GBIF 4")
+  Crop_par<-Storage_SP$Output$Value[Storage_SP$Output$Parameter=="Mapping_Crop"]
   
   ### Smooth if parameter >0
   Gbif_Smooth=as.numeric(Gbif_Smooth) ; print(Gbif_Smooth)
   if(Gbif_Smooth>0){
-  distSP<-smooth(Storage_SP$distSP3_saved, method = "ksmooth", smoothness=Gbif_Smooth, max_distance=10000)} else{
+    
+    if(Crop_par %in% c("cropland", "cropsea")){
+      distSP<-sRL_MapDistributionGBIF(Storage_SP$dat_proj_saved, scientific_name,
+                                    First_step=Storage_SP$Output$Value[Storage_SP$Output$Parameter=="Mapping_Start"],
+                                    AltMIN=Storage_SP$Output$Value[Storage_SP$Output$Parameter=="Mapping_Altitude"] %>% strsplit(., ",") %>% unlist(.) %>% as.numeric(.) %>% .[1], 
+                                    AltMAX=Storage_SP$Output$Value[Storage_SP$Output$Parameter=="Mapping_Altitude"] %>% strsplit(., ",") %>% unlist(.) %>% as.numeric(.) %>% .[2],
+                                    Buffer_km2=as.numeric(Storage_SP$Output$Value[Storage_SP$Output$Parameter=="Mapping_Buffer"]),
+                                    GBIF_crop="",
+                                    Gbif_Param=c(as.numeric(Storage_SP$Output$Value[Storage_SP$Output$Parameter=="Kernel_parameter"]), as.numeric(Storage_SP$Output$Value[Storage_SP$Output$Parameter=="Alpha_parameter"])))
+    } else {distSP<-Storage_SP$distSP3_saved}
+    distSP<-smooth(distSP, method = "ksmooth", smoothness=Gbif_Smooth, max_distance=10000)} else{
     distSP<-Storage_SP$distSP3_saved
   }
   distSP<-st_make_valid(distSP)
   
   
   ### If smooth and the distribution should be cropped by land/sea, we crop again after smoothing
-  Crop_par<-Storage_SP$Output$Value[Storage_SP$Output$Parameter=="Mapping_Crop"]
-  if(Gbif_Smooth>0 & Crop_par %in% c("Land", "Sea")){
-    if(Crop_par=="Land"){
-      distSP<-st_intersection(distSP, Storage_SP$CountrySP_saved) %>% 
+  if(Gbif_Smooth>0 & Crop_par %in% c("cropland", "cropsea")){
+    CountrySP<-Storage_SP$CountrySP_saved
+    
+    if(Crop_par=="cropland"){
+      distSP<-st_intersection(distSP, CountrySP) %>% 
         dplyr::group_by(binomial) %>% dplyr::summarise(N = n())}
     
-    if(Crop_par=="Sea"){
-      countr<-Storage_SP$CountrySP_saved %>% st_crop(., extent(distSP)) %>% dplyr::group_by() %>% dplyr::summarise(N = n())
+    if(Crop_par=="cropsea"){
+      countr<-CountrySP %>% st_crop(., extent(distSP)) %>% dplyr::group_by() %>% dplyr::summarise(N = n())
       distSP<-st_difference(distSP, countr)}
+    
+    distSP$id_no<-NA; distSP$seasonal<-distSP$origin<-distSP$presence<-1
   }
   
   ### Keep distribution in memory
