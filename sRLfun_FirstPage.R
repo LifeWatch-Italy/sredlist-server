@@ -45,14 +45,14 @@ sRL_PlotHistory <- function(sciname_fun){
     historic$Cat <- factor(historic$Cat, c("LC", "NT", "DD", "old", "VU", "EN", "CR", "EW", "EX")) # nolint
     historic$year <- as.numeric(historic$year)
     
-    return(plot(ggplot()+
+    return(ggplot()+
                   geom_line(data=historic[historic$Cat != "old",], aes(x = year, y = as.numeric(Cat)), size = 0.5) +
                   geom_point(data=historic, aes(x = year, col = Cat, y = Cat), shape = 15, size = 5, show.legend = F) + # nolint
                   scale_colour_manual(values=rev(c("#000000ff", "#542344ff", "#d81e05ff", "#fc7f3fff", "#f9e814ff", "#bcbddc", "#d1d1c6ff", "#cce226ff", "#60c659ff")), name="", drop=FALSE) + # nolint
                   scale_y_discrete(rev(levels(historic$Cat)), drop=FALSE, name="Extinction risk") + # nolint
                   theme_minimal() %+replace% theme(axis.text=element_text(size=15), axis.title=element_text(size=20)) +
                   xlab("") +
-                  ggtitle("")))
+                  ggtitle(""))
   }
 }
 

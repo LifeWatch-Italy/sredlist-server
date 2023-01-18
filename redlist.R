@@ -40,7 +40,9 @@ function(scientific_name) {
 #* @tag RedList
 function(scientific_name) {
   Prom<-future({
-    sRL_PlotHistory(sciname_fun=scientific_name)
+    HistoPlot<-sRL_PlotHistory(sciname_fun=scientific_name)
+    
+    HistoPlot
    }, seed=T)
 
   return(Prom %...>% plot())
