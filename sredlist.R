@@ -102,11 +102,10 @@ function(scientific_name, path = "") {
 #* @tag sRedList1
 function(scientific_name, presences = list(), seasons = list() , origins = list(), path = "") { # nolint
   
-  if(paste0("Storage_SP_", sub(" ", "_", sRL_decode(scientific_name))) %not in% ls(name=".GlobalEnv")){assign(paste0("Storage_SP_", sub(" ", "_", sRL_decode(scientific_name))), list(Creation=Sys.time(), Output=sRL_InitLog(scientific_name, DisSource = "Red List")), .GlobalEnv)}
-  
   #Filter param
   scientific_name <- sRL_decode(scientific_name)
-  Storage_SP=sRL_reuse(scientific_name)
+  Storage_SP=sRL_StoreRead(scientific_name) ; print(names(Storage_SP))
+  print(path)
   path <- ifelse(path == "", paste0(R.utils::capitalize(trim(gsub(" ", "_", scientific_name))), '_RL'), path ) # nolint
   if (length(presences) != 0) presences <- as.character(presences);
   if (length(seasons) != 0) seasons <- as.character(seasons);
@@ -137,7 +136,8 @@ function(scientific_name, presences = list(), seasons = list() , origins = list(
   CountrySP<-st_crop(Storage_SP$CountrySP_saved, extent(distSP))
   Storage_SP<-sRL_OutLog(Storage_SP, c("Distribution_Presence", "Distribution_Seasonal", "Distribution_Origin"), c(paste0(presences, collapse=","), paste0(seasons, collapse=","), paste0(origins, collapse=",")))
   Storage_SP<-sRL_OutLog(Storage_SP, "Distribution_Source", ifelse(substr(path, nchar(path)-2, nchar(path))=="_RL", "Red List", "Uploaded")) # If path ends by _RL it comes from the RL, uploaded otherwise
-  assign(paste0("Storage_SP_", sub(" ", "_", scientific_name)), Storage_SP, .GlobalEnv)
+  sRL_StoreSave(scientific_name, Storage_SP)
+  log_info("Plot distribution")
   
   ### Plot
   if (nrow(distSP) > 0) {
@@ -253,7 +253,8 @@ function(scientific_name, Gbif_Source=list(), Uploaded_Records="") {
 
   # Assign
   output_to_save<-sRL_InitLog(scientific_name, DisSource = "Created") ; output_to_save$Value[output_to_save$Parameter=="Gbif_Source"]<-paste0(ifelse(Gbif_Source[1]==1, "GBIF ", ""), ifelse(Gbif_Source[2]==1, "OBIS ", ""), ifelse(Gbif_Source[3]==1, "Red_List ", ""), ifelse(is.null(nrow(Uploaded_Records)), "", "Uploaded"))
-  assign(paste0("Storage_SP_", sub(" ", "_", scientific_name)), list(flags_raw_saved=flags_raw, CountrySP_WGS_saved=CountrySP_WGS, Creation=Sys.time(), Output=output_to_save), .GlobalEnv)
+  Storage_SP<-list(flags_raw_saved=flags_raw, CountrySP_WGS_saved=CountrySP_WGS, Creation=Sys.time(), Output=output_to_save)
+  sRL_StoreSave(scientific_name, Storage_SP)
 
   
   return(list(
@@ -307,7 +308,7 @@ function(scientific_name, Gbif_Year= -1, Gbif_Uncertainty=-1, Gbif_Extent=list()
   print(Gbif_Sea)
   
   ### Charge downloaded data
-  Storage_SP<-sRL_reuse(scientific_name)
+  Storage_SP<-sRL_StoreRead(scientific_name) ; print(names(Storage_SP))
   flags_raw<-Storage_SP$flags_raw_saved
   
   ### Subset the observations user wants to keep (can be run several times if users play with parameters)
@@ -318,7 +319,7 @@ function(scientific_name, Gbif_Year= -1, Gbif_Uncertainty=-1, Gbif_Extent=list()
   Storage_SP$dat_proj_saved<-dat_proj
   Storage_SP$flags<-flags
   Storage_SP<-sRL_OutLog(Storage_SP, c("Gbif_Year", "Gbif_Uncertainty", "Gbif_Sea", "Gbif_Extent"), c(Gbif_Year, Gbif_Uncertainty, Gbif_Sea, paste0(Gbif_Extent, collapse=",")))
-  assign(paste0("Storage_SP_", sub(" ", "_", scientific_name)), Storage_SP, .GlobalEnv)
+  sRL_StoreSave(scientific_name, Storage_SP)
   
   log_info("END - GBIF Step 2")
   
@@ -392,7 +393,7 @@ function(scientific_name, Gbif_Start="", Gbif_Param=list(), Gbif_Buffer=-1, Gbif
   log_info("START - Maps the distribution")
   
   # Get back GBIF observations
-  Storage_SP=sRL_reuse(scientific_name)
+  Storage_SP=sRL_StoreRead(scientific_name)
   dat_proj=Storage_SP$dat_proj_saved
   if(nrow(dat_proj)==0){no_gbif_data()}
   
@@ -406,11 +407,9 @@ function(scientific_name, Gbif_Start="", Gbif_Param=list(), Gbif_Buffer=-1, Gbif
                                   Gbif_Param=Gbif_Param)
   log_info("Map Distribution halfway")
   # Store and calculate area
-  Storage_SP$gbif_number_saved=eval(parse(text=paste0("gbif_number_saved_", sub(" ", "_", scientific_name))))
+  Storage_SP$gbif_number_saved=nrow(dat_proj)
 
   # Plot distribution
-  Storage_SP$CountrySP_saved<-sRL_reuse(scientific_name)$CountrySP_saved
-
   ggsave(paste0("resources/AOH_stored/", sub(" ", "_", scientific_name), "/Plots/eoo.png"), plot(
     ggplot() + 
       geom_sf(data=Storage_SP$CountrySP_saved, fill="gray70")+
@@ -425,7 +424,7 @@ function(scientific_name, Gbif_Start="", Gbif_Param=list(), Gbif_Buffer=-1, Gbif
   # Keep distribution in memory
   Storage_SP$distSP3_saved=distSP
   Storage_SP<-sRL_OutLog(Storage_SP, c("Mapping_Start", "Mapping_Crop", "Mapping_Buffer", "Mapping_Altitude", "Kernel_parameter", "Alpha_parameter"), c(Gbif_Start, Gbif_Crop, Gbif_Buffer, paste0(Gbif_Altitude, collapse=","), ifelse(Gbif_Start=="kernel", Gbif_Param[1], NA), ifelse(Gbif_Start=="alpha", Gbif_Param[1], NA)))
-  assign(paste0("Storage_SP_", sub(" ", "_", scientific_name)), Storage_SP, .GlobalEnv)
+  sRL_StoreSave(scientific_name, Storage_SP)
   
   return(list(
     plot_eoo = plot3,
@@ -454,7 +453,8 @@ function(scientific_name, Gbif_Smooth=-1) {
   
   ### Transform parameters GBIF filtering
   scientific_name <- sRL_decode(scientific_name)
-  Storage_SP=sRL_reuse(scientific_name)
+  Storage_SP=sRL_StoreRead(scientific_name)
+  log_info("Start GBIF 4")
   
   ### Smooth if parameter >0
   Gbif_Smooth=as.numeric(Gbif_Smooth) ; print(Gbif_Smooth)
@@ -481,7 +481,7 @@ function(scientific_name, Gbif_Smooth=-1) {
   Storage_SP$distSP_saved <- distSP
   Storage_SP$distSP_savedORIGINAL <- distSP # I need to save it twice for country croping for National RL
   Storage_SP<-sRL_OutLog(Storage_SP, "Mapping_Smooth", Gbif_Smooth)
-  assign(paste0("Storage_SP_", sub(" ", "_", scientific_name)), Storage_SP, .GlobalEnv)
+  sRL_StoreSave(scientific_name, Storage_SP)
   
   ### Plot
   ggsave(paste0("resources/AOH_stored/", sub(" ", "_", scientific_name), "/Plots/plot_final.png"), plot(
@@ -495,7 +495,8 @@ function(scientific_name, Gbif_Smooth=-1) {
   plot_final <- base64enc::dataURI(file = paste0("resources/AOH_stored/", sub(" ", "_", scientific_name), "/Plots/plot_final.png"), mime = "image/png") # nolint
   
   # Save distribution in the platform
-  gbif_path <- sRL_saveMapDistribution(scientific_name)
+  gbif_path <- sRL_saveMapDistribution(scientific_name, Storage_SP)
+  log_info("End GBIF 4")
   
  return(list(
     plot_eoo = plot_final,
@@ -527,7 +528,7 @@ function(scientific_name, domain_pref=list(), Crop_Country="") {
 
   # Filter parameters
   scientific_name<-sRL_decode(scientific_name)
-  Storage_SP<-sRL_reuse(scientific_name)
+  Storage_SP<-sRL_StoreRead(scientific_name) ; print(names(Storage_SP))
   rownames(coo_raw)<-1:nrow(coo_raw)
   distSP<-Storage_SP$distSP_savedORIGINAL
   domain_pref<-revalue(as.character(domain_pref), c("1"="Terrestrial", "2"="Marine", "3"="Freshwater"))
@@ -562,7 +563,7 @@ function(scientific_name, domain_pref=list(), Crop_Country="") {
   
   # Save for SIS
   Storage_SP$countries_SIS<-sRL_OutputCountries(scientific_name, subset(coo, coo$presence>0), Storage_SP$AltPref_saved)
-  assign(paste0("Storage_SP_", sub(" ", "_", scientific_name)), Storage_SP, .GlobalEnv)
+  sRL_StoreSave(scientific_name, Storage_SP)
   
   # Plot
   return(
@@ -602,7 +603,7 @@ function(scientific_name, presences = list(), seasons = list() , origins = list(
 
   #Filter param
   scientific_name <- sRL_decode(scientific_name)
-  Storage_SP=sRL_reuse(scientific_name)
+  Storage_SP=sRL_StoreRead(scientific_name) ; print(names(Storage_SP))
 
   # Load distribution
   distSP<-Storage_SP$distSP_saved
@@ -700,7 +701,7 @@ function(scientific_name, habitats_pref= list(), habitats_pref_MARGINAL=list(), 
   
   #Filter param
   scientific_name <- sRL_decode(scientific_name)
-  Storage_SP=sRL_reuse(scientific_name)
+  Storage_SP=sRL_StoreRead(scientific_name) ; print(names(Storage_SP))
   distSP=Storage_SP$distSP_saved
   
   # Habitat table (for aoh analysis and for SIS Connect)
@@ -757,6 +758,7 @@ function(scientific_name, habitats_pref= list(), habitats_pref_MARGINAL=list(), 
     
     log_info("START - Small: Cropping rasters")
     alt_crop=crop(alt_raw, extent(distSP)) 
+    terra::writeRaster(alt_crop, paste0("resources/AOH_stored/", gsub(" ", "_", scientific_name), "/alt_crop.tif"))
     Storage_SP$alt_crop_saved=alt_crop
     cci2_crop<-crop(cci2, extent(distSP))
     gc()
@@ -865,8 +867,6 @@ function(scientific_name, habitats_pref= list(), habitats_pref_MARGINAL=list(), 
     
   }
   
-  Storage_SP$AOH2_saved=AOH2
-  if(Uncertain=="Uncertain_yes"){Storage_SP$AOH2_opt_saved=AOH2_opt}
   Storage_SP$AOH_type<-AOH_type
   
   # Plot AOH and calculate area
@@ -935,7 +935,7 @@ function(scientific_name, habitats_pref= list(), habitats_pref_MARGINAL=list(), 
   
   ### Save parameters and results
   Storage_SP<-sRL_OutLog(Storage_SP, c("AOH_HabitatPreference", "AOH_MarginalHabitatPreference", "AOH_ElevationPreference", "AOH_Density"), c(paste0(habitats_pref, collapse=","), paste0(habitats_pref_MARGINAL, collapse=","), paste0(altitudes_pref, collapse=", "), ifelse(density_pref=='-1', NA, density_pref)))
-  assign(paste0("Storage_SP_", sub(" ", "_", scientific_name)), Storage_SP, .GlobalEnv)
+  sRL_StoreSave(scientific_name, Storage_SP)
   terraOptions(tempdir=tempdir())
   rasterOptions(tmpdir=tempdir())
   gc()
@@ -987,17 +987,19 @@ function(scientific_name, GL_species=1) { # nolint
   
   #Filter param
   scientific_name <- sRL_decode(scientific_name)
-  Storage_SP=sRL_reuse(scientific_name)
+  Storage_SP=sRL_StoreRead(scientific_name)
   GL_species<-as.numeric(GL_species)
   distSP=Storage_SP$distSP_saved
-  alt_crop=Storage_SP$alt_crop_saved
+  alt_crop=rast(paste0("resources/AOH_stored/", gsub(" ", "_", scientific_name), "/alt_crop.tif")) ; crs(alt_crop)<-CRSMOLL
   rangeSP_clean=Storage_SP$RangeClean_saved
   habitats_pref_DF=Storage_SP$habitats_SIS
   altitude_pref_DF=Storage_SP$AltPref_saved
-  AOH2=Storage_SP$AOH2_saved
   AOH_km2<-Storage_SP$AOHkm2_saved
   AOH_type<-Storage_SP$AOH_type
   rangeSP_cleanOPT=Storage_SP$RangeCleanOPT_saved
+  # AOH charged directly
+  AOH2<-rast(paste0("resources/AOH_stored/", gsub(" ", "_", scientific_name), "/Current/", list.files(paste0("resources/AOH_stored/", gsub(" ", "_", scientific_name), "/Current"))[1])) ; crs(AOH2[[1]])<-CRSMOLL
+  if(Storage_SP$Uncertain=="Uncertain_yes"){AOH2_opt<-rast(paste0("resources/AOH_stored/", gsub(" ", "_", scientific_name), "/Current_optimistic/", list.files(paste0("resources/AOH_stored/", gsub(" ", "_", scientific_name), "/Current_optimistic"))[1])) ; crs(AOH2_opt[[1]])<-CRSMOLL}
   
   # Charge distribution
   distSP$binomial<-as.character(distSP$binomial)
@@ -1059,7 +1061,7 @@ function(scientific_name, GL_species=1) { # nolint
           labs(subtitle= "(marginal habitats / extreme elevations excluded)") +
           sRLTheme_maps,
         
-        gplot((Storage_SP$AOH2_opt_saved[[1]]*2+3)-AOH1_opt[[1]]) +
+        gplot((AOH2_opt[[1]]*2+3)-AOH1_opt[[1]]) +
           coord_fixed()+
           geom_tile(aes(fill = factor(as.character(value), c("2", "3", "4", "5")))) +
           scale_fill_manual(values=c("#a6611a", "gray90", "#80cdc1", "#018571"), labels=c("Newly unsuitable", "Unsuitable", "Suitable", "Newly suitable"), name="", na.translate=F, drop=F)+
@@ -1102,7 +1104,7 @@ function(scientific_name, GL_species=1) { # nolint
           labs(subtitle= "(marginal habitats / extreme elevations excluded)") +
           sRLTheme_maps,
         
-        gplot((Storage_SP$AOH2_opt_saved[[1]]-AOH1_opt[[1]])/9) + # Divide by 9 to get percents
+        gplot((AOH2_opt[[1]]-AOH1_opt[[1]])/9) + # Divide by 9 to get percents
           coord_fixed()+
           geom_tile(aes(fill = value)) +
           scale_fill_gradient2(low="#8c510a", mid="azure2", midpoint=0, high="#018571", name="Suitability change (%)", limits=c(-100,100), na.value=NA, trans=colour_bidirect_scale, breaks=c(-100, -50, -10, 0, 10, 50, 100))+
@@ -1134,7 +1136,7 @@ function(scientific_name, GL_species=1) { # nolint
   if(Storage_SP$Uncertain=="Uncertain_yes"){Storage_SP$aoh_lostOPT_saved=AOH_lostOPT}
   Storage_SP$Year1_saved<-Year1 ; Storage_SP$Year1theo_saved<-Year1_theo
   Storage_SP<-sRL_OutLog(Storage_SP, "AOH_GenerationLength", GL_species)
-  assign(paste0("Storage_SP_", sub(" ", "_", scientific_name)), Storage_SP, .GlobalEnv)
+  sRL_StoreSave(scientific_name, Storage_SP)
   
   # Output to return
   Out_area<-ifelse(Storage_SP$Uncertain=="Uncertain_no", 
@@ -1204,8 +1206,8 @@ function(scientific_name, dispersion="-1") {
   
     ### Filter param
     scientific_name<-sRL_decode(scientific_name)
-    Storage_SP<-sRL_reuse(scientific_name)
-    aoh<-Storage_SP$AOH2_saved[[1]]
+    Storage_SP<-sRL_StoreRead(scientific_name)
+    aoh<-rast(paste0("resources/AOH_stored/", gsub(" ", "_", scientific_name), "/Current/", list.files(paste0("resources/AOH_stored/", gsub(" ", "_", scientific_name), "/Current"))[1]))[[1]]  ; crs(aoh)<-CRSMOLL
     aoh_type<-Storage_SP$AOH_type
     dispersion<-as.numeric(dispersion)*1000 ; print(dispersion)
 
@@ -1273,7 +1275,7 @@ function(scientific_name, RSproduct = "") { # nolint
   
   # Charge parameters
   scientific_name<-sRL_decode(scientific_name)
-  Storage_SP<-sRL_reuse(scientific_name)
+  Storage_SP<-sRL_StoreRead(scientific_name)
   distSP<-Storage_SP$RangeClean_saved
   GL<-Storage_SP$GL_saved
   print(RSproduct)
@@ -1346,7 +1348,7 @@ function(scientific_name, eoo_km2, aoo_km2, pop_size,
   
   #Filter param
   scientific_name <- sRL_decode(scientific_name)
-  Storage_SP=sRL_reuse(scientific_name)
+  Storage_SP=sRL_StoreRead(scientific_name)
   aoh_lost<-ifelse("aoh_lost_saved" %in% names(Storage_SP), 
     ifelse(Storage_SP$Uncertain=="Uncertain_no", Storage_SP$aoh_lost_saved, paste(Storage_SP$aoh_lost_saved, Storage_SP$aoh_lostOPT_saved, sep="/")),
     NA)    

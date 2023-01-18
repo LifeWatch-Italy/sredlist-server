@@ -231,10 +231,7 @@ sRL_SubsetGbif<-function(flags, scientific_name){
   
   # Prepare GBIF data for mapping
   dat_cl <- flags[is.na(flags$Reason)==T,] # Keep only data that are not flagged
-  gbif_data_number <- nrow(dat_cl)
-  
-  assign(paste0("gbif_number_saved_", sub(" ", "_", scientific_name)), gbif_data_number, .GlobalEnv)
-  
+
   # Prepare spatial points
   dat_proj<-st_as_sf(dat_cl,coords = c("decimalLongitude", "decimalLatitude"), crs="+proj=longlat +datum=WGS84") %>%
     st_transform(., st_crs(CRSMOLL)) 
@@ -330,10 +327,10 @@ sRL_MapDistributionGBIF<-function(dat, scientific_name, First_step, AltMIN, AltM
   distGBIF <- as.polygons(sp.range) %>% st_as_sf(.)
   }
   
-  ### Restrict CountrySP in case the altitude reduced it a lot, and store in Storage_SP
-  Storage_SP=sRL_reuse(scientific_name)
-  Storage_SP$CountrySP_saved<-CountrySP
-  assign(paste0("Storage_SP_", sub(" ", "_", scientific_name)), Storage_SP, .GlobalEnv)
+  # ### Restrict CountrySP in case the altitude reduced it a lot, and store in Storage_SP
+  # Storage_SP=sRL_reuse(scientific_name)
+  # Storage_SP$CountrySP_saved<-CountrySP
+  # assign(paste0("Storage_SP_", sub(" ", "_", scientific_name)), Storage_SP, .GlobalEnv)
   
   
   ### Prepare to export
@@ -349,11 +346,8 @@ sRL_MapDistributionGBIF<-function(dat, scientific_name, First_step, AltMIN, AltM
 
 
 ### Save distribution mapped from the GBIF procedure
-sRL_saveMapDistribution <- function(scientific_name) {
+sRL_saveMapDistribution <- function(scientific_name, Storage_SP) {
   
-  Storage_SP<-sRL_reuse(sRL_decode(scientific_name))
-  
-
   ### Create a file path E.g: Distributions/Nile tilapia/Nile_tilapia_GBIF_20211207/ # nolint
   upload_folder_scientific_name <- R.utils::capitalize(paste0(stringr::str_replace(scientific_name, " ", "_"), format(Sys.time(), "_GBIF_%Y%m%d"))) # nolint
   filePath <- paste0(config$distribution_path, scientific_name, "/", upload_folder_scientific_name, "/") # nolint
@@ -380,7 +374,6 @@ sRL_saveMapDistribution <- function(scientific_name) {
   )
   jsonlite::write_json(list(info = text), paste0(filePath, upload_folder_scientific_name, ".json"), auto_unbox= TRUE) # nolint
   return(upload_folder_scientific_name)
-  # writeLines(text, paste0(filePath, upload_folder_scientific_name, ".txt"))
 }
 
 

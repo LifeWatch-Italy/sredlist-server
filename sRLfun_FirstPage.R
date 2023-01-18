@@ -135,9 +135,29 @@ sRL_PrepareCountries <- function(LIMS){
 
 
 ### Function to reuse past calculated and stored values
-sRL_reuse=function(scientific_name){
-  eval(parse(text=paste0("Storage_SP_", sub(" ", "_", sRL_decode(scientific_name)))))
+sRL_StoreSave<-function(scientific_name, Storage_SP){
+  SCI<-sRL_decode(scientific_name)
+  FILE=paste0("resources/AOH_stored/", gsub(" ", "_", SCI), "/Storage_SP.rds")
+  dir.create(paste0("resources/AOH_stored/", sub(" ", "_", scientific_name), "/Plots"), recursive=T)
+  saveRDS(Storage_SP, file=FILE)
 }
+
+sRL_StoreRead<-function(scientific_name){
+  SCI<-sRL_decode(scientific_name)
+  
+  # Read if it exists or charge it
+  FILE<-paste0("resources/AOH_stored/", gsub(" ", "_", SCI), "/Storage_SP.rds")
+  if(file.exists(FILE)){
+    Storage<-readRDS(FILE)
+  } else {
+    Storage<-list(Creation=Sys.time())
+  }
+  
+  return(Storage)
+}
+
+
+
 
 ### Functions to store parameters in output
 sRL_InitLog<-function(scientific_name, DisSource){
@@ -201,21 +221,7 @@ sRL_cleaningMemory<-function(Time_limit){
     cat(paste0(length(toremove_temp), " / ", length(list_temp), " temporary folders should be removed, (", temp_prop_removed, " were correctly removed)", "\n"))
   }
 } ,error=function(e){cat("Problem removing temporary files")}) 
-  
-  # Remove Storage_SP
-  tryCatch({
-    list_storage<-ls(name=".GlobalEnv")[grepl("Storage_SP", ls(name=".GlobalEnv"))]
-    toremove_storage<-0
-  if(length(list_storage)>1){ # >1 because there will always be the Storage of the species currently running
-    for(i in 1:length(list_storage)){
-      Time_storage<-eval(parse(text= paste0(list_storage[i], "$Creation")))
-      Time_diff_stor<-difftime(Time_now, Time_storage, units="mins") %>% as.numeric(.)
-      if(Time_diff_stor>Time_limit){rm(list=list_storage[i], pos=".GlobalEnv")
-        toremove_storage<-toremove_storage+1}
-    }
-    cat(paste0(toremove_storage, " / ", length(list_storage), " Storage_SP should be removed, (", (length(list_storage)-length(ls(name=".GlobalEnv")[grepl("Storage_SP", ls(name=".GlobalEnv"))])), " were correctly removed)", "\n"))
-   }
-  } ,error=function(e){cat("Problem removing Storage_SP")}) 
+
 }
 
 

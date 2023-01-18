@@ -39,8 +39,6 @@ sRL_CalculateCriteria<- function(aoh_lost, eoo_km2, aoo_km2, pop_size){
 ### Create the allfields file for SIS Connect
 sRL_CreateALLFIELDS <- function(scientific_name, aoh_lost, eoo_km2, aoo_km2, pop_size, AltPref_saved){
   
-  Storage_SP=sRL_reuse(scientific_name)
-  
   # Charge empty allfields
   allfields<-read.csv("Species/SIS_allfields_empty.csv")[1,]
   allfields$X<-NULL
@@ -129,7 +127,6 @@ sRL_OutputRef<-function(scientific_name, AltPref_saved){
   # Charge the file with sRedList reference
   ref_SIS<-read.csv("Species/SIS_references_empty.csv")
   
-  Storage_SP=sRL_reuse(sRL_decode(scientific_name))
   if("dat_proj_saved" %in% names(Storage_SP)){
     
     # Add rgbif if used
@@ -167,7 +164,7 @@ sRL_OutputRef<-function(scientific_name, AltPref_saved){
 ### Prepare distribution output shapefile
 sRL_OutputDistribution<-function(scientific_name){
   
-  distSP<-sRL_reuse(scientific_name)$distSP_saved
+  distSP<-Storage_SP$distSP_saved
   
   # Create template
   distSP$OBJECTID<-1:nrow(distSP)
@@ -190,8 +187,6 @@ sRL_OutputDistribution<-function(scientific_name){
 
 ### Save occurrences shapefile from the GBIF procedure
 sRL_OutputOccurrences <- function(scientific_name) {
-  
-  Storage_SP<-sRL_reuse(sRL_decode(scientific_name))
   
   # Transform in lat/lon
   dat<-Storage_SP$dat_proj_saved %>% st_transform(., "+init=epsg:4326")

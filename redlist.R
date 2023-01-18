@@ -77,8 +77,9 @@ function(scientific_name, path = "") {
   
       # Format the countries shapefile and save it in the global memory (to avoid recalculating at every step)
       CountrySP<-sRL_PrepareCountries(extent(distSP))
-      assign(paste0("Storage_SP_", sub(" ", "_", scientific_name)), list(CountrySP_saved=CountrySP, Creation=Sys.time()), .GlobalEnv)
-  
+      Storage_SP<-list(CountrySP_saved=CountrySP, Creation=Sys.time(), Output=sRL_InitLog(scientific_name, DisSource = "Red List"))
+      sRL_StoreSave(scientific_name, Storage_SP)
+
       # Plot
       Plot_Dist<-ggplot() +
                   geom_sf(data = CountrySP, fill="gray96", col="gray50") + # nolint
@@ -121,7 +122,7 @@ function(scientific_name) {
 
   #Filter param
   scientific_name <- sRL_decode(scientific_name)
-  Storage_SP=sRL_reuse(scientific_name)
+  Storage_SP=sRL_StoreRead(scientific_name, Storage_SP)
 
   #Extract alt_pref
   if(scientific_name %in% speciesRL$scientific_name){
