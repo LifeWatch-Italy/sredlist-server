@@ -9,6 +9,9 @@ sRL_PrepareHabitatFile<-function(scientific_name, habitats_pref, habitats_pref_M
   if(scientific_name %in% speciesRL$scientific_name) {habitats_pref_DF$id_no<-speciesRL$taxonid[speciesRL$scientific_name==scientific_name & is.na(speciesRL$population)==T]} else {habitats_pref_DF$id_no<-99999999999} # I subset for population NA for species like Panthera leo 
   habitats_pref_DF$season<-"Resident"
   
+  # Remove if no habitat code
+  habitats_pref_DF<-subset(habitats_pref_DF, is.na(habitats_pref_DF$code)==F)
+  
   # Columns for SIS Connect
   habitats_pref_DF$GeneralHabitats.GeneralHabitatsSubfield.GeneralHabitatsLookup<-habitats_pref_DF$code # Column with habitat code
   habitats_pref_DF$GeneralHabitats.GeneralHabitatsSubfield.GeneralHabitatsName<-habitats_pref_DF$habitat # Column with habitat name

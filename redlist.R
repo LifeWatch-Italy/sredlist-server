@@ -105,11 +105,16 @@ function(scientific_name, path = "") {
 #* @serializer json
 #* @tag RedList
 function(scientific_name) {
+
+Prom<-future({
   
   # Filter param
   scientific_name <- sRL_decode(scientific_name)
   hab_pref <- rl_habitats(scientific_name, key = config$red_list_token)#$result
   return(hab_pref)
+
+}, seed=T)
+return(Prom)
 }
 
 
@@ -120,11 +125,14 @@ function(scientific_name) {
 #* @serializer unboxedJSON
 #* @tag RedList
 function(scientific_name) {
+  
+Prom<-future({
+  sf::sf_use_s2(FALSE)
   log_info("START - Altitude extract")
 
   #Filter param
   scientific_name <- sRL_decode(scientific_name)
-  Storage_SP=sRL_StoreRead(scientific_name, Storage_SP)
+  Storage_SP=sRL_StoreRead(scientific_name)
 
   #Extract alt_pref
   if(scientific_name %in% speciesRL$scientific_name){
@@ -168,6 +176,10 @@ function(scientific_name) {
   log_info("END - Altitude extract")
   print(alt_pref)
   return(alt_pref)
+  
+}, seed=T)
+
+return(Prom)
 }
 
 
