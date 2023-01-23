@@ -1373,7 +1373,7 @@ function(scientific_name, RSproduct = "") { # nolint
 # M7: Outputs ----------------------------------------------------------------
 
 #* Upload all parameters
-#* @get species/<scientific_name>/species/final-estimates
+#* @get species/<scientific_name>/final-estimates
 #* @param scientific_name:string Scientific Name
 #* @serializer unboxedJSON
 #* @tag sRedList
@@ -1381,7 +1381,7 @@ function(){
   
   Estimates<-data.frame(T1="test_from_R", T2="test2 from R")
   
-  return(list(T1="test_from_R", T2="test_from_R2"))
+  return(list("test_from_R", "test_from_R2"))
 }
 
 
