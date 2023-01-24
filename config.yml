@@ -1,6 +1,6 @@
 default:
   log_dir: "logs"
-  red_list_token: "9bb4facb6d23f48efbf424bb05c0c1ef1cf6f468393bc745d42179ac4aca5fee"
+  red_list_token: "c9bac1a346ae2d7bb442e971e5b7a13f0c8b5a4b6c1614215805f9b93a07add7"
   distribution_path: "resources/Distributions/"
   POINTdistribution_path: "resources/Point.distributions/"
   YearAOH2: 2020
