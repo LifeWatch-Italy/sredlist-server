@@ -93,18 +93,6 @@ distCountries<-st_read("Species/Map countries/Red_List_countries_Simplif_0.001MO
 coo_raw<-read_sf("Species/Map countries/Red_List_countries_Simplif_coo_Grad.shp")
 eez_raw<-read_sf("Species/Map countries/Red_List_EEZ_Simplif_coo_0.05.shp")
 
-# Load ESA land cover data from 2020 and altitude data
-alt_raw <- rast(config$alt_raster_path) ; crs(alt_raw)<-CRSMOLL  # I ensure the CRS is correctly assigned (it was saved as a CRSMOLL raster)
-cci2 <- rast(config$cci2_raster_path); crs(cci2)<-CRSMOLL
-grid22<-rast("resources/EmptyGrid2x2/Empty.grid.2x2.Mollweide.tif")
-CCI_large<-stackOpen(paste0(config$cciStack2_path, "/2020/CCI_Stack_Agg30_Year2020.stk"))
-names(CCI_large)<-read.table(paste0(config$cciStack2_path, "/2020/CCI_Stack_Agg30_Year2020.stk"))[,1] %>% gsub(config$cciStack2_path, "", .) %>% substr(., 7, (nchar(.)-4)) # I have to rename them because update in raster package made a change in the names. I checked that the order of the rasters in Stack were the same as in the .stk file
-alt_large<-raster(paste0(config$cciStack2_path, "/ElevationAgg30.tif"))
-
-# Load Elevation at 10x10km scale to extract elevation preference for large range species, one aggregated with min value, one aggregated with max value (to be sure to be conservative)
-Alt1010_min<-raster(paste0(config$cciStack2_path, "/ElevationAgg30_MINIMUM.tif"))
-Alt1010_max<-raster(paste0(config$cciStack2_path, "/ElevationAgg30_MAXIMUM.tif"))
-
 
 # Load Crosswalk CSV and Density CSV
 density<-read.csv("Species/Density.table.csv", sep=",")

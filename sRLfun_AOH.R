@@ -1,5 +1,20 @@
 
 
+### Charge rasters functions
+sRL_ChargeAltRaster<-function(){alt_raw<-rast(config$alt_raster_path) ; crs(alt_raw)<-CRSMOLL ; return(alt_raw)}  # I ensure the CRS is correctly assigned (it was saved as a CRSMOLL raster)}
+
+sRL_ChargeCci2Raster<-function(){cci2<-rast(config$cci2_raster_path); crs(cci2)<-CRSMOLL ; return(cci2)}
+
+sRL_ChargeGrid22Raster<-function(){rast("resources/EmptyGrid2x2/Empty.grid.2x2.Mollweide.tif")}
+
+sRL_ChargeCciLargeRaster<-function(){
+  CCI_large<-stackOpen(paste0(config$cciStack2_path, "/2020/CCI_Stack_Agg30_Year2020.stk"))
+  names(CCI_large)<-read.table(paste0(config$cciStack2_path, "/2020/CCI_Stack_Agg30_Year2020.stk"))[,1] %>% gsub(config$cciStack2_path, "", .) %>% substr(., 7, (nchar(.)-4)) # I have to rename them because update in raster package made a change in the names. I checked that the order of the rasters in Stack were the same as in the .stk file
+  return(CCI_large)
+}
+
+
+
 ### Prepare habitat preference DF (compatible with SIS Connect)
 sRL_PrepareHabitatFile<-function(scientific_name, habitats_pref, habitats_pref_MARGINAL){
   
@@ -101,16 +116,19 @@ sRL_areaAOH<-function(ras, SCALE){
 }
 
 
+
+
+
 ### AOH calculate for large range species
-sRL_largeAOH<-function(habitats_pref, altitudes_pref, rangeSP_clean, YR){
+sRL_largeAOH<-function(alt_crop, habitats_pref, altitudes_pref, rangeSP_clean, YR, FILENAME){
   
-  log_info("Charge CCI_Large data")
-  if(YR==config$YearAOH2){CCI_fun<-CCI_large} else {
+  sRL_loginfo("Charge CCI_Large data")
+  if(YR==config$YearAOH2){CCI_fun<-sRL_ChargeCciLargeRaster()} else {
     CCI_fun<-stackOpen(paste0(config$cciStack2_path, "/", YR, "/CCI_Stack_Agg30_Year", YR, ".stk"))
     names(CCI_fun)<-read.table(paste0(config$cciStack2_path, "/", YR, "/CCI_Stack_Agg30_Year", YR, ".stk"))[,1] %>% gsub(config$cciStack2_path, "", .) %>% substr(., 7, (nchar(.)-4)) # I have to rename them because update in raster package made a change in the names. I checked that the order of the rasters in Stack were the same as in the .stk file
   }
   
-  log_info("START - Large AOH function")
+  sRL_loginfo("START - Large AOH function")
   
   # Select rasters to keep
   CCI_to_keep<-NA
@@ -120,16 +138,20 @@ sRL_largeAOH<-function(habitats_pref, altitudes_pref, rangeSP_clean, YR){
   
   # Crop and sum CCIs  
   CCI_crop<-crop(CCI_suitable, extent(rangeSP_clean))
-  CCI_sum<-sum(CCI_crop)
+  CCI_sum<-sum(CCI_crop, na.rm=T)
+  if(class(CCI_sum)[1] != "SpatRaster"){CCI_sum<-rast(CCI_sum)}
 
   # Crop altitude and calculate AOH
-  alt_crop<-crop(alt_large, extent(rangeSP_clean))
   alt_suitable<-(alt_crop > as.numeric(altitudes_pref[1]) & alt_crop<as.numeric(altitudes_pref[2]))
+  if(class(alt_suitable)[1] != "SpatRaster"){alt_suitable<-rast(alt_suitable)}
 
-  AOH<-CCI_sum*alt_suitable %>% mask(., rangeSP_clean)
-  AOH<-rast(AOH)
+  AOH <- (CCI_sum*alt_suitable) %>% mask(., rangeSP_clean)
   
-  log_info("END - Large AOH function")
+  # Save AOH
+  if(FILENAME != ""){terra::writeRaster(AOH, filename=FILENAME)}
+  
+  
+  sRL_loginfo("END - Large AOH function")
   
   return(AOH)
 }

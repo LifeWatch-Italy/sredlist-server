@@ -128,7 +128,7 @@ function(scientific_name) {
   
 Prom<-future({
   sf::sf_use_s2(FALSE)
-  log_info("START - Altitude extract")
+  sRL_loginfo("START - Altitude extract")
 
   #Filter param
   scientific_name <- sRL_decode(scientific_name)
@@ -148,7 +148,7 @@ Prom<-future({
     Range_size<-as.numeric(sum(st_area(Storage_SP$distSP_saved)))/(10^6)
     
     if(Range_size < as.numeric(config$Size_LargeRange)){
-      log_info("Run altitude extract (Small range)")
+      sRL_loginfo("Run altitude extract (Small range)")
       EXTR<-round(exactextractr::exact_extract(alt_raw, Storage_SP$distSP_saved, c("min", "max")))
       if(is.na(alt_pref$result$elevation_lower)==T){alt_pref$result$elevation_lower<-min(EXTR$min, na.rm=T)}
       if(is.na(alt_pref$result$elevation_upper)==T){alt_pref$result$elevation_upper<-max(EXTR$max, na.rm=T)}
@@ -156,13 +156,15 @@ Prom<-future({
     
     ### Large range
     if(Range_size >= as.numeric(config$Size_LargeRange)){
-      log_info("Run altitude extract (Large range)")
+      sRL_loginfo("Run altitude extract (Large range)")
 
       if(is.na(alt_pref$result$elevation_lower)==T){
+        Alt1010_min<-raster(paste0(config$cciStack2_path, "/ElevationAgg30_MINIMUM.tif"))
         EXTR_min<-exactextractr::exact_extract(Alt1010_min, Storage_SP$distSP_saved, "min")
         alt_pref$result$elevation_lower<-trunc(min(EXTR_min, na.rm=T))
         }
       if(is.na(alt_pref$result$elevation_upper)==T){
+        Alt1010_max<-raster(paste0(config$cciStack2_path, "/ElevationAgg30_MAXIMUM.tif"))
         EXTR_max<-exactextractr::exact_extract(Alt1010_max, Storage_SP$distSP_saved, "max")
         alt_pref$result$elevation_upper<-ceiling(max(EXTR_max, na.rm=T))
         }
@@ -173,7 +175,7 @@ Prom<-future({
   if(is.na(alt_pref$result$elevation_lower)==T){alt_pref$result$elevation_lower<-0}
   if(is.na(alt_pref$result$elevation_upper)==T){alt_pref$result$elevation_upper<-9000}
   
-  log_info("END - Altitude extract")
+  sRL_loginfo("END - Altitude extract")
   print(alt_pref)
   return(alt_pref)
   

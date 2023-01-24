@@ -140,7 +140,7 @@ Prom<-future({
   Storage_SP<-sRL_OutLog(Storage_SP, c("Distribution_Presence", "Distribution_Seasonal", "Distribution_Origin"), c(paste0(presences, collapse=","), paste0(seasons, collapse=","), paste0(origins, collapse=",")))
   Storage_SP<-sRL_OutLog(Storage_SP, "Distribution_Source", ifelse(substr(path, nchar(path)-2, nchar(path))=="_RL", "Red List", "Uploaded")) # If path ends by _RL it comes from the RL, uploaded otherwise
   sRL_StoreSave(scientific_name, Storage_SP)
-  log_info("Plot distribution")
+  sRL_loginfo("Plot distribution")
   
   ### Plot
   if (nrow(distSP) > 0) {
@@ -212,11 +212,11 @@ Prom<-future({
   dir.create(paste0("resources/AOH_stored/", sub(" ", "_", scientific_name), "/Plots"), recursive=T)
 
   ### GBIF procedure
-  log_info("START - Create data")
+  sRL_loginfo("START - Create data")
   dat <- sRL_createDataGBIF(scientific_name, Gbif_Source, Uploaded_Records)
 
   # ### Plot
-  ggsave(paste0("resources/AOH_stored/", sub(" ", "_", scientific_name), "/Plots/plot_data.png"), plot(
+  ggsave(paste0("resources/AOH_stored/", sub(" ", "_", scientific_name), "/Plots/plot_data.png"), (
     ggplot() +
       coord_fixed() +
       borders("world", colour = "gray86", fill = "gray80") +
@@ -226,8 +226,8 @@ Prom<-future({
       sRLTheme_maps %+replace%   theme(legend.position="top")
     ), width=18, height=5.5) # nolint
   plot1 <- base64enc::dataURI(file = paste0("resources/AOH_stored/", sub(" ", "_", scientific_name), "/Plots/plot_data.png"), mime = "image/png")
-  log_info("END - Create data")
-  log_info("START - Clean coordinates")
+  sRL_loginfo("END - Create data")
+  sRL_loginfo("START - Clean coordinates")
 
 
   # Prepare countries
@@ -250,14 +250,14 @@ Prom<-future({
   if(Skip_country==T){flags_raw$.sea<-FALSE}
 
   # # Extract elevation (need to transform the CRS for it)
-  # log_info("START - Extracting elevation values")
+  # sRL_loginfo("START - Extracting elevation values")
   # flags_foralt<-st_geometry(st_as_sf(flags_raw,coords = c("decimalLongitude", "decimalLatitude"), crs="+proj=longlat +datum=WGS84")) %>%
   #   st_transform(., st_crs(CRSMOLL)) %>%
   #   st_as_sf(.)
   #
   # flags_raw$Alt_points=terra::extract(alt_raw, st_coordinates(flags_foralt), method="simple")$Elevation_reprojMollweide3
   # flags_raw$Alt_points<-replace(flags_raw$Alt_points, is.nan(flags_raw$Alt_points)==T, NA)
-  # log_info("END - Extracting elevation values")
+  # sRL_loginfo("END - Extracting elevation values")
 
 
   # Assign
@@ -312,7 +312,7 @@ function(scientific_name, Gbif_Year= -1, Gbif_Uncertainty=-1, Gbif_Extent=list()
 Prom<-future({
   sf::sf_use_s2(FALSE)  
 
-  log_info("START - GBIF Step 2")
+  sRL_loginfo("START - GBIF Step 2")
 
 
   ### Transform parameters GBIF filtering
@@ -336,7 +336,7 @@ Prom<-future({
   Storage_SP<-sRL_OutLog(Storage_SP, c("Gbif_Year", "Gbif_Uncertainty", "Gbif_Sea", "Gbif_Extent"), c(Gbif_Year, Gbif_Uncertainty, Gbif_Sea, paste0(Gbif_Extent, collapse=",")))
   sRL_StoreSave(scientific_name, Storage_SP)
   
-  log_info("END - GBIF Step 2")
+  sRL_loginfo("END - GBIF Step 2")
   
   return(
     leaflet(flags) %>%
@@ -412,7 +412,7 @@ Prom<-future({
   Gbif_Param<-as.numeric(Gbif_Param) ; print(Gbif_Param)
   
   #GBIF STEP 3: Map distribution from GBIF
-  log_info("START - Maps the distribution")
+  sRL_loginfo("START - Maps the distribution")
   
   # Get back GBIF observations
   Storage_SP=sRL_StoreRead(scientific_name)
@@ -427,13 +427,13 @@ Prom<-future({
                                   Buffer_km2=as.numeric(Gbif_Buffer),
                                   GBIF_crop=Gbif_Crop,
                                   Gbif_Param=Gbif_Param)
-  log_info("Map Distribution halfway")
+  sRL_loginfo("Map Distribution halfway")
   # Store and calculate area
   Storage_SP$gbif_number_saved=nrow(dat_proj)
   Storage_SP$CountrySP_saved<-st_crop(distCountries, extent(distSP))
   
   # Plot distribution
-  ggsave(paste0("resources/AOH_stored/", sub(" ", "_", scientific_name), "/Plots/eoo.png"), plot(
+  ggsave(paste0("resources/AOH_stored/", sub(" ", "_", scientific_name), "/Plots/eoo.png"), (
     ggplot() + 
       geom_sf(data=Storage_SP$CountrySP_saved, fill="gray70")+
       geom_sf(data = distSP, fill="darkred") + 
@@ -442,7 +442,7 @@ Prom<-future({
       sRLTheme_maps
   ), width=18, height=5.5) # nolint
   plot3 <- base64enc::dataURI(file = paste0("resources/AOH_stored/", sub(" ", "_", scientific_name), "/Plots/eoo.png"), mime = "image/png") # nolint
-  log_info("END - Maps the distribution")
+  sRL_loginfo("END - Maps the distribution")
   
   # Keep distribution in memory
   Storage_SP$distSP3_saved=distSP
@@ -481,7 +481,7 @@ Prom<-future({
   sf::sf_use_s2(FALSE)
     
   ### Transform parameters GBIF filtering
-  log_info("Start GBIF 4")
+  sRL_loginfo("Start GBIF 4")
   scientific_name <- sRL_decode(scientific_name)
   Storage_SP=sRL_StoreRead(scientific_name)
   Crop_par<-Storage_SP$Output$Value[Storage_SP$Output$Parameter=="Mapping_Crop"]
@@ -527,7 +527,7 @@ Prom<-future({
   sRL_StoreSave(scientific_name, Storage_SP)
   
   ### Plot
-  ggsave(paste0("resources/AOH_stored/", sub(" ", "_", scientific_name), "/Plots/plot_final.png"), plot(
+  ggsave(paste0("resources/AOH_stored/", sub(" ", "_", scientific_name), "/Plots/plot_final.png"), (
     ggplot() + 
       geom_sf(data=Storage_SP$CountrySP_saved, fill="gray70")+
       geom_sf(data = distSP, fill="darkred") + 
@@ -539,7 +539,7 @@ Prom<-future({
   
   # Save distribution in the platform
   gbif_path <- sRL_saveMapDistribution(scientific_name, Storage_SP)
-  log_info("End GBIF 4")
+  sRL_loginfo("End GBIF 4")
   
  return(list(
     plot_eoo = plot_final,
@@ -669,7 +669,7 @@ Prom<-future({
   dir.create(paste0("resources/AOH_stored/", sub(" ", "_", scientific_name), "/Plots"), recursive=T)
 
   ### Plot EOO
-  log_info("START - Plot EOO \n")
+  sRL_loginfo("START - Plot EOO \n")
   EOO <- st_as_sf(st_convex_hull(st_union(distSP))) ## Needed to avoid having different sub-polygons
   ggsave(paste0("resources/AOH_stored/", sub(" ", "_", scientific_name), "/Plots/plot_eoo.png"), 
     ggplot() +
@@ -680,7 +680,7 @@ Prom<-future({
       sRLTheme_maps, 
     width=6, height=6) # nolint
   plot3 <- base64enc::dataURI(file = paste0("resources/AOH_stored/", sub(" ", "_", scientific_name), "/Plots/plot_eoo.png"), mime = "image/png") # nolint
-  log_info("END - Plot EOO \n")
+  sRL_loginfo("END - Plot EOO \n")
 
   ### Calculate EOO area
   EOO_km2 <- round(as.numeric(st_area(EOO))/1000000)
@@ -752,13 +752,13 @@ function(scientific_name) {
 #* @tag sRedList
 function(scientific_name, habitats_pref= list(), habitats_pref_MARGINAL=list(), altitudes_pref= list(), density_pref= '-1', isGbifDistribution = FALSE, path = "") { # nolint    
 
-# Prom<-future({
-#   sf::sf_use_s2(FALSE)
+Prom<-future({
+  sf::sf_use_s2(FALSE)
   
   # Clean memory
-  log_info("START - Cleaning memory")
+  sRL_loginfo("START - Cleaning memory")
   sRL_cleaningMemory(Time_limit=45)
-  log_info("END - Cleaning memory")
+  sRL_loginfo("END - Cleaning memory")
   
   if(length(habitats_pref)==0){no_habitat_pref()}
   
@@ -768,8 +768,11 @@ function(scientific_name, habitats_pref= list(), habitats_pref_MARGINAL=list(), 
   distSP=Storage_SP$distSP_saved
 
   # Habitat table (for aoh analysis and for SIS Connect)
-  if(! "habitats_pref_MARGINAL" %in% ls()){habitats_pref_MARGINAL=NA}
+  print(habitats_pref_MARGINAL)
+  if(! exists("habitats_pref_MARGINAL")){habitats_pref_MARGINAL=NA}
+  print(habitats_pref_MARGINAL)
   habitats_pref_DF<-sRL_PrepareHabitatFile(scientific_name, habitats_pref, habitats_pref_MARGINAL)
+  print(habitats_pref_DF)
   Storage_SP$habitats_SIS=habitats_pref_DF
 
   # Altitude table (for aoh analysis and for SIS Connect)
@@ -819,9 +822,11 @@ function(scientific_name, habitats_pref= list(), habitats_pref_MARGINAL=list(), 
   AOH_type<-ifelse(Range_size < as.numeric(config$Size_LargeRange), "Small", "Large") ; print(AOH_type)
   if(AOH_type=="Small"){
 
-    log_info("START - Small: Cropping rasters")
+    sRL_loginfo("START - Small: Cropping rasters")
+    alt_raw<-sRL_ChargeAltRaster()
     alt_crop=crop(alt_raw, extent(distSP))
     writeRaster(alt_crop, paste0(output_dir, "/alt_crop.tif"))
+    cci2<-sRL_ChargeCci2Raster()
     cci2_crop<-crop(cci2, extent(distSP))
 
     # Calculate AOH with "Suitable" habitats only (ie pessimistic)
@@ -844,14 +849,14 @@ function(scientific_name, habitats_pref= list(), habitats_pref_MARGINAL=list(), 
 
       # Calculate optimistic AOH: but if marginal habitats all point at CCI modalities already included with habitats_pref and elevation are not different, I use AOH2 directly as there won't be any difference
       if(length(unique(crosswalk_to_use$value[crosswalk_to_use$code %in% habitats_pref]))==length(unique(crosswalk_to_use$value[crosswalk_to_use$code %in% c(habitats_pref, habitats_pref_MARGINAL)])) & !"elevation_lowerEXTREME" %in% names(altitudes_pref_DF) & !"elevation_upperEXTREME" %in% names(altitudes_pref_DF)){
-            AOH2_opt<-AOH2; log_info("Identical AOH, no need to calculate")} else{
+            AOH2_opt<-AOH2; sRL_loginfo("Identical AOH, no need to calculate")} else{
 
             AOH2_opt<-sRL_calculateAOH(rangeSP_fun=rangeSP_cleanOPT,
                                  cci_fun=cci2_crop,
                                  alt_fun=alt_crop,
                                  FOLDER=paste0(output_dir, "/Current_optimistic"),
                                  elevation_data_fun=altitudes_pref_DF)
-            log_info("Optimistic AOH calculated")
+            sRL_loginfo("Optimistic AOH calculated")
         }
       }
 
@@ -881,15 +886,21 @@ function(scientific_name, habitats_pref= list(), habitats_pref_MARGINAL=list(), 
     ### LARGE-RANGES
   } else {
 
-    AOH2<-sRL_largeAOH(habitats_pref, altitudes_pref_DF[, c("elevation_lower", "elevation_upper")], rangeSP_clean, config$YearAOH2)
+    # Prepare altitude raster
+    alt_large<-raster(paste0(config$cciStack2_path, "/ElevationAgg30.tif"))
+    alt_crop<-crop(alt_large, extent(rangeSP_clean))
+    writeRaster(alt_crop, paste0(output_dir, "/alt_crop.tif"))
+    
+    # Calculate AOH
+    AOH2<-sRL_largeAOH(alt_crop, habitats_pref, altitudes_pref_DF[, c("elevation_lower", "elevation_upper")], rangeSP_clean, config$YearAOH2, paste0(output_dir, "/Current/aoh.tif"))
 
     if(Uncertain=="Uncertain_no"){
-      plot1 <- plot(gplot((AOH2[[1]]/9)) + # Divide by 9 to get percents
+      plot1 <- gplot((AOH2[[1]]/9)) + # Divide by 9 to get percents
         coord_fixed()+
         geom_tile(aes(fill = value)) +
         scale_fill_gradient(low="#dfc27d", high="#018571", name="Suitability (%)", limits=c(0,100), na.value=NA)+
         ggtitle(paste0("Area of Habitat in ", config$YearAOH2)) +
-        sRLTheme_maps)
+        sRLTheme_maps
 
     } else{
 
@@ -899,13 +910,13 @@ function(scientific_name, habitats_pref= list(), habitats_pref_MARGINAL=list(), 
 
       # If there is no need to calculate a new one (no new CCI modalities or no new elevation limits, use the last one)
       if(length(unique(crosswalk_to_use$value[crosswalk_to_use$code %in% habitats_pref]))==length(unique(crosswalk_to_use$value[crosswalk_to_use$code %in% c(habitats_pref, habitats_pref_MARGINAL)])) & !"elevation_lowerEXTREME" %in% names(altitudes_pref_DF) & !"elevation_upperEXTREME" %in% names(altitudes_pref_DF)){
-          AOH2_opt<-AOH2; log_info("Identical AOH, no need to calculate")} else{
+          AOH2_opt<-AOH2; sRL_loginfo("Identical AOH, no need to calculate")} else{
 
-          AOH2_opt<-sRL_largeAOH(c(habitats_pref, habitats_pref_MARGINAL), alt_pref_extreme, rangeSP_clean, config$YearAOH2)
-          log_info("Optimistic AOH calculated")
+          AOH2_opt<-sRL_largeAOH(alt_crop, c(habitats_pref, habitats_pref_MARGINAL), alt_pref_extreme, rangeSP_clean, config$YearAOH2, FILENAME=paste0(output_dir, "/Current_optimistic/aoh.tif"))
+          sRL_loginfo("Optimistic AOH calculated")
       }
 
-      plot1 <- grid.arrange(
+      plot1 <- cowplot::plot_grid(
         gplot((AOH2[[1]]/9)) + # Divide by 9 to get percents
           coord_fixed()+
           geom_tile(aes(fill = value)) +
@@ -922,7 +933,7 @@ function(scientific_name, habitats_pref= list(), habitats_pref_MARGINAL=list(), 
           labs(subtitle= "(marginal habitats / extreme elevations included)") +
           sRLTheme_maps,
 
-        top=paste0("Area of Habitat in ", config$YearAOH2), ncol=1)
+        labels=paste0("Area of Habitat in ", config$YearAOH2), ncol=1)
     }
 
   }
@@ -930,32 +941,32 @@ function(scientific_name, habitats_pref= list(), habitats_pref_MARGINAL=list(), 
   Storage_SP$AOH_type<-AOH_type
 
   # Plot AOH and calculate area
-  log_info("START - Plot AOH")
+  sRL_loginfo("START - Plot AOH")
 
   ggsave(filename = paste0("resources/AOH_stored/", sub(" ", "_", scientific_name), "/Plots/aoh.png"), plot = plot1, width=6, height=ifelse(Uncertain=="Uncertain_no" | AOH_type=="Small", 6, 10))
   plot1 <- base64enc::dataURI(file = paste0("resources/AOH_stored/", sub(" ", "_", scientific_name), "/Plots/aoh.png"), mime = "image/png", encoding = "base64") # nolint
-  log_info("END - Plot AOH")
+  print("END - Plot AOH")
 
   AOH_km2 <-  sRL_areaAOH(AOH2[[1]], "cci") # Same scale in small or large AOH because the unit is always 1 cell of the fine raster
   if(Uncertain=="Uncertain_yes"){AOH_km2_opt <-  sRL_areaAOH(AOH2_opt[[1]], "cci") ;  Storage_SP$AOHkm2OPT_saved<-AOH_km2_opt}
   Storage_SP$AOHkm2_saved<-AOH_km2
 
-
   ### Calculate Area of Habitat in a resolution of 2x2km (as is the map of altitude provided), in order to use it as an upper bound of species Area of Occupancy under criterion B2 (each cell covers 4km2)
+  grid22<-sRL_ChargeGrid22Raster()
   grid22_crop<-crop(grid22, AOH2[[1]])
-  aoh_22<-resample(AOH2[[1]], grid22_crop, method="max")>0
+  aoh_22<-terra::resample(AOH2[[1]], grid22_crop, method="max")>0
 
   if(Uncertain=="Uncertain_no"){
-    plot2 <- plot(gplot(aoh_22[[1]]>0) +
+    plot2 <- gplot(aoh_22[[1]]>0) +
       coord_fixed()+
       geom_tile(aes(fill = factor(as.character(value), c("0", "1")))) +
       scale_fill_manual(values=c("#dfc27d", "#018571"), labels=c("Unsuitable", "Suitable"), name="", na.translate=F, drop=F) +
       labs(title="Area of Habitat (2x2km)", subtitle=ifelse(AOH_type=="Large", "Likely slightly overestimated (using a 10x10km aggregate raster)", ""))+
-      sRLTheme_maps)
+      sRLTheme_maps
   }
 
   if(Uncertain=="Uncertain_yes"){
-    aoh_22_opt<-resample(AOH2_opt[[1]], grid22_crop, method="max")>0
+    aoh_22_opt<-terra::resample(AOH2_opt[[1]], grid22_crop, method="max")>0
 
     # Plot on a single plot if small range, on two if large range
     if(AOH_type=="Small"){
@@ -967,7 +978,7 @@ function(scientific_name, habitats_pref= list(), habitats_pref_MARGINAL=list(), 
         sRLTheme_maps
 
     } else{
-    plot2 <- grid.arrange(
+    plot2 <- cowplot::plot_grid(
       gplot(aoh_22[[1]]>0) +
         coord_fixed()+
         geom_tile(aes(fill = factor(as.character(value), c("0", "1")))) +
@@ -982,7 +993,7 @@ function(scientific_name, habitats_pref= list(), habitats_pref_MARGINAL=list(), 
         labs(title="Optimistic")+
         sRLTheme_maps,
 
-      top="Area of Habitat (2x2km); Likely slightly overestimated", ncol=1)
+      labels="Area of Habitat (2x2km); Likely slightly overestimated", ncol=1)
   }
   }
 
@@ -1001,7 +1012,7 @@ function(scientific_name, habitats_pref= list(), habitats_pref_MARGINAL=list(), 
   gc()
 
   ### Calculate population size (with uncertainty to due uncertainty in AOH and in density estimate)
-  log_info("START - Calcualte population size")
+  sRL_loginfo("START - Calcualte population size")
   if (density_pref[1] != '-1') {
     density_pref <- unlist(strsplit(as.character(density_pref), "-")) %>% as.numeric(.) ; print(density_pref) # Density_pref has one value if certain, 2 values otherwise
 
@@ -1009,7 +1020,7 @@ function(scientific_name, habitats_pref= list(), habitats_pref_MARGINAL=list(), 
     if(Uncertain=="Uncertain_yes"){pop_size <- paste(c(round(AOH_km2 * min(density_pref)), round(AOH_km2_opt * max(density_pref))), collapse="-")} # Multiplies pessimistic aoh by pessimistic density, optimistic AOH by optimistic density (or a single density if only one provided)
     print(pop_size)
   }
-  log_info("END - Calcualte population size")
+  sRL_loginfo("END - Calcualte population size")
 
   ### Return list of arguments + calculate population size
   LIST=list(
@@ -1024,9 +1035,9 @@ function(scientific_name, habitats_pref= list(), habitats_pref_MARGINAL=list(), 
   }
 
   return(LIST)
-# }, seed=T)
-# 
-# return(Prom)
+}, seed=T)
+
+return(Prom)
 }
 
 
@@ -1047,8 +1058,8 @@ function(scientific_name, habitats_pref= list(), habitats_pref_MARGINAL=list(), 
 #* @tag sRedList
 function(scientific_name, GL_species=1) { # nolint
   
-# Prom<-future({
-#   sf::sf_use_s2(FALSE)
+Prom<-future({
+  sf::sf_use_s2(FALSE)
   
   #Filter param
   scientific_name <- sRL_decode(scientific_name)
@@ -1062,6 +1073,7 @@ function(scientific_name, GL_species=1) { # nolint
   AOH_km2<-Storage_SP$AOHkm2_saved
   AOH_type<-Storage_SP$AOH_type
   rangeSP_cleanOPT=Storage_SP$RangeCleanOPT_saved
+  
   # AOH charged directly
   AOH2<-rast(paste0("resources/AOH_stored/", gsub(" ", "_", scientific_name), "/Current/", list.files(paste0("resources/AOH_stored/", gsub(" ", "_", scientific_name), "/Current"))[1])) ; crs(AOH2[[1]])<-CRSMOLL
   if(Storage_SP$Uncertain=="Uncertain_yes"){AOH2_opt<-rast(paste0("resources/AOH_stored/", gsub(" ", "_", scientific_name), "/Current_optimistic/", list.files(paste0("resources/AOH_stored/", gsub(" ", "_", scientific_name), "/Current_optimistic"))[1])) ; crs(AOH2_opt[[1]])<-CRSMOLL}
@@ -1083,10 +1095,10 @@ function(scientific_name, GL_species=1) { # nolint
   if(AOH_type=="Small"){
     
     # Charge and crop CCI1
-    log_info("START - Cropping rasters")
+    sRL_loginfo("START - Cropping rasters")
     cci1<-rast(sub("XXXX", Year1, config$cci1_raster_path)) ; crs(cci1)<-CRSMOLL # I ensure the CRS is correctly assigned
     cci1_crop<-crop(cci1, extent(distSP))
-    log_info("END - Cropping rasters")
+    sRL_loginfo("END - Cropping rasters")
   
     # Calculate AOH
     AOH1<-sRL_calculateAOH(rangeSP_fun=rangeSP_clean,
@@ -1117,7 +1129,7 @@ function(scientific_name, GL_species=1) { # nolint
       
     } else{
       
-      plot1 <-grid.arrange( 
+      plot1 <- cowplot::plot_grid( 
         gplot((AOH2[[1]]*2+3)-AOH1[[1]]) +
           coord_fixed()+
           geom_tile(aes(fill = factor(as.character(value), c("2", "3", "4", "5")))) +
@@ -1134,7 +1146,7 @@ function(scientific_name, GL_species=1) { # nolint
           labs(subtitle= "(marginal habitats / extreme elevations included)") +
           sRLTheme_maps,
         
-        top=paste0("Trends in Area of Habitat between ", Year1, " and ", config$YearAOH2), ncol=1)
+        labels=paste0("Trends in Area of Habitat between ", Year1, " and ", config$YearAOH2), ncol=1)
     }
   
    
@@ -1142,7 +1154,7 @@ function(scientific_name, GL_species=1) { # nolint
   ### LARGE-RANGES
 
     # Calculate AOH
-    AOH1<-sRL_largeAOH(habitats_pref_DF$code[habitats_pref_DF$suitability=="Suitable"], altitude_pref_DF[, c("elevation_lower", "elevation_upper")], rangeSP_clean, Year1)
+    AOH1<-sRL_largeAOH(alt_crop, habitats_pref_DF$code[habitats_pref_DF$suitability=="Suitable"], altitude_pref_DF[, c("elevation_lower", "elevation_upper")], rangeSP_clean, Year1, FILENAME="")
     
     # If no uncertainty, plot directly
     if(Storage_SP$Uncertain=="Uncertain_no"){
@@ -1158,9 +1170,9 @@ function(scientific_name, GL_species=1) { # nolint
       alt_pref_extreme<-c(min(c(altitude_pref_DF$elevation_lower, altitude_pref_DF$elevation_lowerEXTREME), na.rm=T),
                           max(c(altitude_pref_DF$elevation_upper, altitude_pref_DF$elevation_upperEXTREME), na.rm=T)) ; print(alt_pref_extreme)
 
-      AOH1_opt<-sRL_largeAOH(habitats_pref_DF$code, alt_pref_extreme, rangeSP_clean, Year1)
+      AOH1_opt<-sRL_largeAOH(alt_crop, habitats_pref_DF$code, alt_pref_extreme, rangeSP_clean, Year1, FILENAME="")
 
-      plot1 <- grid.arrange(
+      plot1 <- cowplot::plot_grid(
         gplot((AOH2[[1]]-AOH1[[1]])/9) + # Divide by 9 to get percents
           coord_fixed()+
           geom_tile(aes(fill = value)) +
@@ -1233,9 +1245,9 @@ function(scientific_name, GL_species=1) { # nolint
   
   return(LIST)
   
-# }, seed=T)
-# 
-# return(Prom)
+}, seed=T)
+ 
+return(Prom)
 }
 
 
@@ -1297,29 +1309,28 @@ Prom<-future({
     # Cumulative fragmentation (depends if one or two density estimates)
     if(! "pop2" %in% names(res$prop.fragm)){
       G2<-ggplot(res$prop.fragm)+
-        geom_step(aes(x=pop, y=CumSum), col="darkred", lwd=2)+
-        geom_vline(xintercept=min(res$prop.fragm$pop[res$prop.fragm$prop.pop>0.5], na.rm=T), linetype="dashed")+
+        geom_step(aes(x=pop, y=CumSum), col="darkred", linewidth=2)+
+        geom_vline(xintercept=min(res$prop.fragm$pop[res$prop.fragm$CumSum>0.5], na.rm=T), linetype="dashed")+
         geom_hline(yintercept=0.5, linetype="dashed")+
         xlab("How many individuals do you consider to be a 'small' population?")+ylab("Proportion of the population that is fragmented")+
         ylim(c(0,1))+
-        labs(subtitle=paste0("Fragmented if you consider that a population with ", round(min(res$prop.fragm$pop[res$prop.fragm$prop.pop>0.5], na.rm=T)), " individuals is 'small'"))+
+        labs(subtitle=paste0("Fragmented if you consider that a population with ", round(min(res$prop.fragm$pop[res$prop.fragm$CumSum>0.5], na.rm=T)), " individuals is 'small'"))+
         theme_minimal()
     } else {
       G2<-ggplot(res$prop.fragm)+
-        geom_step(aes(x=pop2, y=CumSum), col="coral2", lwd=2)+
-        geom_step(aes(x=pop, y=CumSum), col="darkred", lwd=2)+
-        geom_vline(xintercept=min(res$prop.fragm$pop[res$prop.fragm$prop.pop>0.5], na.rm=T), linetype="dashed")+
-        geom_vline(xintercept=min(res$prop.fragm$pop2[res$prop.fragm$prop.pop2>0.5], na.rm=T), linetype="dashed")+
+        geom_step(aes(x=pop2, y=CumSum), col="coral2", linewidth=2)+
+        geom_step(aes(x=pop, y=CumSum), col="darkred", linewidth=2)+
+        geom_vline(xintercept=min(res$prop.fragm$pop[res$prop.fragm$CumSum>0.5], na.rm=T), linetype="dashed")+
+        geom_vline(xintercept=min(res$prop.fragm$pop2[res$prop.fragm$CumSum>0.5], na.rm=T), linetype="dashed")+
         geom_hline(yintercept=0.5, linetype="dashed")+
         xlab("How many individuals do you consider to be a 'small' population?")+ylab("Proportion of the population that is fragmented")+
         ylim(c(0,1))+
-        labs(subtitle=paste0("Fragmented if you consider that a population with ", round(min(res$prop.fragm$pop[res$prop.fragm$prop.pop>0.5], na.rm=T)), "-", round(min(res$prop.fragm$pop2[res$prop.fragm$prop.pop2>0.5], na.rm=T)), " individuals is 'small'"))+
+        labs(subtitle=paste0("Fragmented if you consider that a population with ", round(min(res$prop.fragm$pop[res$prop.fragm$CumSum>0.5], na.rm=T)), "-", round(min(res$prop.fragm$pop2[res$prop.fragm$CumSum>0.5], na.rm=T)), " individuals is 'small'"))+
         theme_minimal()
       }
     
-    Plot_Fragm<-grid.arrange(G1, G2, ncol=2)
-    
-    Plot_Fragm
+    Plot<-cowplot::plot_grid(G1, G2, ncol=2)
+    return(Plot)
     
   }, seed=T) 
   
@@ -1341,8 +1352,8 @@ Prom<-future({
 #* @tag sRedList
 function(scientific_name, RSproduct = "") { # nolint    
   
-# Prom<-future({
-#   sf::sf_use_s2(FALSE)
+Prom<-future({
+  sf::sf_use_s2(FALSE)
   
   # Charge parameters
   scientific_name<-sRL_decode(scientific_name)
@@ -1359,9 +1370,9 @@ function(scientific_name, RSproduct = "") { # nolint
   # Return
   return(List_trendsRS)
 
-# }, seed=T)
-# 
-# return(Prom)
+}, seed=T)
+
+return(Prom)
 }
 
 
@@ -1408,20 +1419,20 @@ Prom<-future({
   sf::sf_use_s2(FALSE)
     
     
-  log_info("Pop")
+  sRL_loginfo("Pop")
   print(locationNumber)
   print(populationTrend)
-  #print(Estimates)
+  print(Estimates)
   
-  log_info("Extreme fluctuations")
+  sRL_loginfo("Extreme fluctuations")
   print(Extreme_EOO) ; print(Extreme_AOO) ; print(Extreme_Pop) ; print(Extreme_NLoc) ; print(Extreme_NSub)
   print(Extreme_EOO_justif) ; print(Extreme_AOO_justif) ; print(Extreme_Pop_justif) ; print(Extreme_NLoc_justif) ; print(Extreme_NSub_justif)
   
-  log_info("Continuing declines")
+  sRL_loginfo("Continuing declines")
   print(Continuing_EOO) ; print(Continuing_AOO) ; print(Continuing_Hab) ; print(Continuing_Pop) ; print(Continuing_NLoc) ; print(Continuing_NSub)
   print(Continuing_EOO_justif) ; print(Continuing_AOO_justif) ; print(Continuing_Hab_justif) ; print(Continuing_Pop_justif) ; print(Continuing_NLoc_justif) ; print(Continuing_NSub_justif)
   
-  log_info("Over")
+  sRL_loginfo("Over")
   
   
   #Filter param
@@ -1665,12 +1676,12 @@ function(scientific_name, file_name, path, type) {
   if ((scientific_name %in% list.files(config$distribution_path)) && !grepl("_RL", file_name) && !grepl("_RL", path)) { # nolint
     if (type == "folder") {
       if (file_name %in% list.files(paste0(config$distribution_path, path))) {
-        log_info(paste0("Delete distribution:", config$distribution_path, path, '/', file_name)) # nolint
+        sRL_loginfo(paste0("Delete distribution:", config$distribution_path, path, '/', file_name)) # nolint
         return(list(response = unlink(paste0(config$distribution_path, path, '/', file_name), recursive = TRUE))) # nolint
       }
     }else {
       if(file_name %in% list.files(paste0(config$distribution_path, scientific_name, '/', path))){ # nolint
-        log_info(paste0("Delete distribution:", config$distribution_path, scientific_name, '/', path, "/", file_name)) # nolint
+        sRL_loginfo(paste0("Delete distribution:", config$distribution_path, scientific_name, '/', path, "/", file_name)) # nolint
         return(list(response = unlink(paste0(config$distribution_path, scientific_name, "/", path, "/", file_name)))) # nolint
       }
     }
