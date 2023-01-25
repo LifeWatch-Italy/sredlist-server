@@ -36,64 +36,6 @@ sRL_CalculateCriteria<- function(aoh_lost, eoo_km2, aoo_km2, pop_size){
 
 
 
-### Create the allfields file for SIS Connect
-sRL_CreateALLFIELDS <- function(scientific_name, aoh_lost, eoo_km2, aoo_km2, pop_size, AltPref_saved){
-  
-  # Charge empty allfields
-  allfields<-read.csv("Species/SIS_allfields_empty.csv")[1,]
-  allfields$X<-NULL
-  
-  # Take data from saved prepared dataset
-  allfields$internal_taxon_id<-AltPref_saved$taxonid[1]
-  allfields$internal_taxon_name<-AltPref_saved$scientific_name[1]
-  allfields$assessment_id<-NA
-  
-  allfields$ElevationLower.limit<-paste0(c(AltPref_saved$elevation_lowerEXTREME[1], AltPref_saved$elevation_lower[1]), collapse="-")
-  allfields$ElevationUpper.limit<-paste0(c(AltPref_saved$elevation_upper[1], AltPref_saved$elevation_upperEXTREME[1]), collapse="-")
-  
-  ### Save parameters from analyses
-  
-  # Generation length
-  allfields$GenerationLength.range<-Storage_SP$GL_saved
-
-  # EOO
-  allfields$EOO.range<-eoo_km2
-  allfields$EOO.justification<-"The EOO has been estimated on the sRedList Platform"
-  
-  if(is.na(aoh_lost)==F){
-  # AOO
-  allfields$AOO.range<-aoo_km2
-  allfields$AOO.justification<-"The AOO has been estimated on the sRedList Platform by rescaling the Area of Habitat to a 2x2km2 grid"
-
-  # Decline for A2
-  aoh_lost_processed<-unlist(strsplit(as.character(aoh_lost), "/")) %>% as.numeric(.)
-  
-  if(length(aoh_lost_processed)==1 | sign(aoh_lost_processed[1])==sign(aoh_lost_processed[2])){ # If only one estimate or two of the same sign, keep uncertainty
-    allfields$PopulationReductionPast.range<-paste(sort(abs(aoh_lost_processed)), collapse="-")
-    allfields$PopulationReductionPast.direction<-revalue(as.character(sign(aoh_lost_processed[1])), c("1"="Reduction", "-1"="Increase", "0"=NA))
-    } else{ # If two estimates with different signs, I keep the minimum and put 0 as maximum
-    allfields$PopulationReductionPast.range<-paste(c(0, abs(min(aoh_lost_processed))), collapse="-")
-    allfields$PopulationReductionPast.direction<-"Reduction"
-    
-  }
-  
-  Justif.3gen<-ifelse(Storage_SP$Year1_saved>Storage_SP$Year1theo_saved, paste0(" (which is ", (Storage_SP$Year1_saved-Storage_SP$Year1theo_saved), " years less than 3 generations)"),  " (which corresponds to the maximum between 10 years / 3 generations)")
-  allfields$PopulationReductionPast.justification<-allfields$PopulationDeclineGenerations3.justification<-paste0("The decline has been measured from the sRedList platform as the decline in Area of Habitat between ", Storage_SP$Year1_saved, " and ",  config$YearAOH2, Justif.3gen)
-  }
-  
-  # Decline for C1
-  #allfields$PopulationDeclineGenerations3.range<-ifelse(aoh_lost>=0, aoh_lost, 0)
- 
-    
-  # Population size (only if positive, i.e. if an estimate of density has been provided)
-  if(pop_size>=0){allfields$PopulationSize.range<-pop_size}
-
-  return(allfields)
-  
-}
-
-
-
 
 ### Prepare countries output csv
 sRL_OutputCountries<-function(scientific_name, countries, AltPref_saved){

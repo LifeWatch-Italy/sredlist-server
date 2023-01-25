@@ -684,7 +684,11 @@ Prom<-future({
 
   ### Calculate EOO area
   EOO_km2 <- round(as.numeric(st_area(EOO))/1000000)
-
+  
+  ### Save EOO area
+  Storage_SP$eoo_km2<-EOO_km2
+  sRL_StoreSave(scientific_name, Storage_SP)
+  
 
   return(list(
     eoo_km2 = EOO_km2,
@@ -1003,10 +1007,11 @@ Prom<-future({
   AOO_km2<- sRL_areaAOH(aoh_22[[1]], SCALE="2x2")
   if(Uncertain=="Uncertain_yes"){AOO_km2_opt<- sRL_areaAOH(aoh_22_opt[[1]], SCALE="2x2")}
   Storage_SP$density_saved<-density_pref
+  Storage_SP$aoo_km2<-AOO_km2
+  
 
   ### Save parameters and results
   Storage_SP<-sRL_OutLog(Storage_SP, c("AOH_HabitatPreference", "AOH_MarginalHabitatPreference", "AOH_ElevationPreference", "AOH_Density"), c(paste0(habitats_pref, collapse=","), paste0(habitats_pref_MARGINAL, collapse=","), paste0(altitudes_pref, collapse=", "), ifelse(density_pref=='-1', NA, density_pref)))
-  sRL_StoreSave(scientific_name, Storage_SP)
   terraOptions(tempdir=tempdir())
   rasterOptions(tmpdir=tempdir())
   gc()
@@ -1019,9 +1024,11 @@ Prom<-future({
     if(Uncertain=="Uncertain_no"){pop_size <- paste(round(AOH_km2 * density_pref), collapse="-")} # Multiplies AOH by both density estimates (or one if only one available)
     if(Uncertain=="Uncertain_yes"){pop_size <- paste(c(round(AOH_km2 * min(density_pref)), round(AOH_km2_opt * max(density_pref))), collapse="-")} # Multiplies pessimistic aoh by pessimistic density, optimistic AOH by optimistic density (or a single density if only one provided)
     print(pop_size)
+    Storage_SP$pop_size<-pop_size
   }
   sRL_loginfo("END - Calcualte population size")
-
+  sRL_StoreSave(scientific_name, Storage_SP)
+  
   ### Return list of arguments + calculate population size
   LIST=list(
     aoh_km2 = ifelse(Uncertain=="Uncertain_no", ceiling(AOH_km2), paste(ceiling(AOH_km2), ceiling(AOH_km2_opt), sep="-")), # I use ceiling to avoid having a 0 which is problematic
@@ -1388,39 +1395,48 @@ return(Prom)
 #* @param scientific_name:string Scientific Name
 #* @serializer unboxedJSON
 #* @tag sRedList
-function(){
+function(scientific_name){
   
-  Estimates<-data.frame(T1="test_from_R", T2="test2 from R")
+  Storage_SP<-sRL_StoreRead(scientific_name) ; print(names(Storage_SP))
   
-  return(list("test_from_R", "test_from_R2"))
+  ### EOO
+  EOO_val <- ifelse("eoo_km2" %in% names(Storage_SP), Storage_SP$eoo_km2, "")
+  EOO_justif <- ifelse("eoo_km2" %in% names(Storage_SP), "The EOO has been estimated as the Minimal Convex Polygon around the distribution on the sRedList platform.", "")
+  
+  ### AOO
+  AOO_val <- ifelse("aoo_km2" %in% names(Storage_SP), Storage_SP$aoo_km2, "")
+  AOO_justif <- ifelse("aoo_km2" %in% names(Storage_SP), "The AOO has been estimated on the sRedList Platform by rescaling the Area of Habitat to a 2x2km2 grid.", "")
+  
+  ### Pop size
+  Pop_val <- ifelse("pop_size" %in% names(Storage_SP), Storage_SP$pop_size, "")
+
+  ### Trends
+  Trends_val <- ifelse("aoh_lost" %in% names(Storage_SP), Storage_SP$aoh_lost, "")
+  Trends_justif <- ifelse("aoh_lost" %in% names(Storage_SP), "TO FILL", "")
+  
+  return(list(EOO_val, EOO_justif, AOO_val, AOO_justif, Pop_val, Trends_val, Trends_justif))
 }
 
 
 #* Plot Red List category
 #* @get species/<scientific_name>/assessment/red-list-criteria
 #* @param scientific_name:string Scientific Name
-#* @param aoh_lost:int AOH_lost
-#* @param eoo_km2:int EOO_km2
-#* @param aoo_km2:int AOO_km2
-#* @param pop_size:int Pop_size
 #* @serializer png list(width = 800, height = 600)
 #* @tag sRedList
-function(scientific_name, eoo_km2, aoo_km2, pop_size, 
+function(scientific_name,  
          Estimates, 
-         pastTrends_qual, pastTrends_basis, pastTrends_reversible, pastTrends_understood, pastTrends_ceased, fragment,
+         pastTrends_dir, pastTrends_qual, pastTrends_basis, pastTrends_reversible, pastTrends_understood, pastTrends_ceased, fragment, Fragment_justif,
          Extreme_EOO, Extreme_AOO, Extreme_Pop, Extreme_NLoc, Extreme_NSub, Extreme_EOO_justif, Extreme_AOO_justif, Extreme_Pop_justif, Extreme_NLoc_justif, Extreme_NSub_justif,
          Continuing_EOO, Continuing_AOO, Continuing_Hab, Continuing_Pop, Continuing_NLoc, Continuing_NSub, Continuing_EOO_justif, Continuing_AOO_justif, Continuing_Hab_justif, Continuing_Pop_justif, Continuing_NLoc_justif, Continuing_NSub_justif,
-         locationNumber,	locationNumber_justif, locationSub,	locationSub_justif,	Num_Largest, OneSubpop,	VeryRestricted,	VeryRestricted_justif,
-         populationTrend, currentTrends_basis, currentTrends_years, futureTrends_quality, futureTrends_basis, futureTrends, futureTrends_justif, ongoingTrends_NY, ongoingTrends_basis, ongoingTrends_reversible, ongoingTrends_understood, ongoingTrends_ceased, ongoingTrends, ongoingTrends_justif,
+         locationNumber,	locationNumber_justif, SubNumber,	SubNumber_justif,	Num_Largest, OneSubpop,	VeryRestricted,	VeryRestricted_justif,
+         populationTrend, currentTrends_basis, currentPop_years, futureTrends_quality, futureTrends_basis, futureTrends, futureTrends_dir, futureTrends_justif, ongoingTrends_NY, ongoingTrends_quality, ongoingTrends_basis, ongoingTrends_reversible, ongoingTrends_understood, ongoingTrends_ceased, ongoingTrends, ongoingTrends_dir, ongoingTrends_justif,
          C_igen_value, C_igen_qual, C_igen_justif, C_iigen_value, C_iigen_qual, C_iigen_justif, C_iiigen_value, C_iiigen_qual, C_iiigen_justif
          ) {
   
 Prom<-future({
-  sf::sf_use_s2(FALSE)
-    
-    
+  
   sRL_loginfo("Pop")
-  print(locationNumber)
+  print(SubNumber)
   print(populationTrend)
   print(Estimates)
   
@@ -1434,65 +1450,211 @@ Prom<-future({
   
   sRL_loginfo("Over")
   
-  
   #Filter param
+  sRL_loginfo("Start Criteria calculation")
   scientific_name <- sRL_decode(scientific_name)
-  Storage_SP=sRL_StoreRead(scientific_name)
-  aoh_lost<-ifelse("aoh_lost_saved" %in% names(Storage_SP), 
-    ifelse(Storage_SP$Uncertain=="Uncertain_no", Storage_SP$aoh_lost_saved, paste(Storage_SP$aoh_lost_saved, Storage_SP$aoh_lostOPT_saved, sep="/")),
-    NA)    
+  Storage_SP<-sRL_StoreRead(scientific_name)
+  print(names(Storage_SP))
+  # aoh_lost<-ifelse("aoh_lost_saved" %in% names(Storage_SP),
+  #   ifelse(Storage_SP$Uncertain=="Uncertain_no", Storage_SP$aoh_lost_saved, paste(Storage_SP$aoh_lost_saved, Storage_SP$aoh_lostOPT_saved, sep="/")),
+  #   NA)
+  # 
+  # 
+  # # Calculate criteria
+  # criteria<-sRL_CalculateCriteria(aoh_lost, eoo_km2, aoo_km2, pop_size)
   
-  
-  # Calculate criteria
-  criteria<-sRL_CalculateCriteria(aoh_lost, eoo_km2, aoo_km2, pop_size)
-
   
   ### Prepare SIS Connect files
-  AltPref_saved=Storage_SP$AltPref_saved
-  habitats_SIS=Storage_SP$habitats_SIS[,6:13] ; habitats_SIS$assessment_id<-NA ; habitats_SIS$internal_taxon_id<-NA
-
-  allfields_SIS<-sRL_CreateALLFIELDS(scientific_name, aoh_lost, eoo_km2, aoo_km2, pop_size, AltPref_saved)
-  countries_SIS<-Storage_SP$countries_SIS
-  ref_SIS<-sRL_OutputRef(scientific_name, AltPref_saved)
+  habitats_SIS<-Storage_SP$habitats_SIS[,6:13]
+  habitats_SIS$assessment_id<-NA
+  habitats_SIS$internal_taxon_id<-NA
+   
+  sRL_loginfo("Start Allfields")
   
+  # Charge empty allfields
+  allfields<-read.csv("Species/SIS_allfields_empty.csv")[1,]
+  allfields$X<-NULL
+
+  # # Take data from saved prepared dataset
+  allfields$internal_taxon_name<-scientific_name
+  allfields$assessment_id<-NA
+
+  if("AltPref_saved" %in% names(Storage_SP)){
+    # Charge AltPref_saved
+    AltPref_saved=Storage_SP$AltPref_saved
+    
+    # Add taxon id
+    allfields$internal_taxon_id<-AltPref_saved$taxonid[1]
+    
+    # Add elevation limits
+    allfields$ElevationLower.limit<-paste0(c(AltPref_saved$elevation_lowerEXTREME[1], AltPref_saved$elevation_lower[1]), collapse="-")
+    allfields$ElevationUpper.limit<-paste0(c(AltPref_saved$elevation_upper[1], AltPref_saved$elevation_upperEXTREME[1]), collapse="-")
+        
+  }
+  
+  ### Save parameters from analyses
+  # Generation length
+  allfields$GenerationLength.range<-Storage_SP$GL_saved
+  
+  # EOO
+  allfields$EOO.range<-Estimates[1]
+  allfields$EOO.justification<-Estimates[2]
+  
+  # AOO
+  allfields$AOO.range<-Estimates[3]
+  allfields$AOO.justification<-Estimates[4]
+  
+  # Population size
+  allfields$PopulationSize.range<-Estimates[5]
+  
+  # Decline for A2
+  # aoh_lost_processed<-unlist(strsplit(as.character(aoh_lost), "/")) %>% as.numeric(.)
+  #
+  # if(length(aoh_lost_processed)==1 | sign(aoh_lost_processed[1])==sign(aoh_lost_processed[2])){ # If only one estimate or two of the same sign, keep uncertainty
+  # allfields$PopulationReductionPast.range<-paste(sort(abs(aoh_lost_processed)), collapse="-")
+  # allfields$PopulationReductionPast.direction<-revalue(as.character(sign(aoh_lost_processed[1])), c("1"="Reduction", "-1"="Increase", "0"=NA))
+  # } else{ # If two FinalEstimates with different signs, I keep the minimum and put 0 as maximum
+  # allfields$PopulationReductionPast.range<-paste(c(0, abs(min(aoh_lost_processed))), collapse="-")
+  # allfields$PopulationReductionPast.direction<-"Reduction"
+  #
+  # }
+  #
+  # Justif.3gen<-ifelse(Storage_SP$Year1_saved>Storage_SP$Year1theo_saved, paste0(" (which is ", (Storage_SP$Year1_saved-Storage_SP$Year1theo_saved), " years less than 3 generations)")," (which corresponds to the maximum between 10 years / 3 generations)")
+  # allfields$PopulationReductionPast.justification<-allfields$PopulationDeclineGenerations3.justification<-paste0("The decline has been measured from the sRedList platform as the decline in Area of Habitat between ", Storage_SP$Year1_saved, " and ",config$YearAOH2, Justif.3gen)
+  # }
+  #
+  
+  # Population trends details
+  allfields$PopulationReductionPast.qualifier<-pastTrends_qual
+  allfields$PopulationReductionPastBasis.value<-pastTrends_basis
+  allfields$PopulationReductionPastReversible.value<-pastTrends_reversible
+  allfields$PopulationReductionPastUnderstood.value<-pastTrends_understood
+  allfields$PopulationReductionPastCeased.value<-pastTrends_ceased
+
+  # Fragmentation
+  #allfields$SevereFragmentation.isFragmented<-ifelse(fragment=="true", "Yes", "No")
+  allfields$SevereFragmentation.justification<-Fragment_justif
+
+  # Population details
+  allfields$LocationsNumber.range<-locationNumber
+  allfields$LocationsNumber.justification<-locationNumber_justif
+  allfields$YearOfPopulationEstimate.value<-currentPop_years
+  allfields$AreaRestricted.isRestricted<-VeryRestricted
+  allfields$AreaRestricted.justification<-VeryRestricted_justif
+  allfields$SubpopulationNumber.range<-SubNumber
+  allfields$SubpopulationNumber.justification<-SubNumber_justif
+  allfields$MaxSubpopulationSize.range<-Num_Largest
+  allfields$MatureIndividualsSubpopulation.value<-OneSubpop
+
+  # Population trends
+  allfields$TrendInWildOfftake.value<-populationTrend
+  allfields$CurrentTrendDataDerivation.value<-currentTrends_basis
+
+  allfields$PopulationReductionFuture.direction<-futureTrends_dir
+  allfields$PopulationReductionFuture.range<-futureTrends
+  allfields$PopulationReductionFuture.justification<-futureTrends_justif
+  allfields$PopulationReductionFuture.qualifier<-futureTrends_quality
+  allfields$PopulationReductionFutureBasis.value<-futureTrends_basis
+
+  allfields$PopulationReductionPastandFuture.direction<-ongoingTrends_dir
+  allfields$PopulationReductionPastandFuture.range<-ongoingTrends
+  allfields$PopulationReductionPastandFuture.justification<-ongoingTrends_justif
+  allfields$PopulationReductionPastandFuture.qualifier<-ongoingTrends_quality
+  allfields$PopulationReductionPastandFutureBasis.value<-ongoingTrends_basis
+  allfields$PopulationReductionPastandFuture.numYears<-ongoingTrends_NY
+  allfields$PopulationReductionPastandFutureCeased.value<-ongoingTrends_ceased
+  allfields$PopulationReductionPastandFutureReversible.value<-ongoingTrends_reversible
+  allfields$PopulationReductionPastandFutureUnderstood.value<-ongoingTrends_understood
+
+  # Population C1
+  allfields$PopulationDeclineGenerations1.range<-C_igen_value
+  allfields$PopulationDeclineGenerations1.qualifier<-C_igen_qual
+  allfields$PopulationDeclineGenerations1.justification<-C_igen_justif
+
+  allfields$PopulationDeclineGenerations2.range<-C_iigen_value
+  allfields$PopulationDeclineGenerations2.qualifier<-C_iigen_qual
+  allfields$PopulationDeclineGenerations2.justification<-C_iigen_justif
+
+  allfields$PopulationDeclineGenerations3.range<-C_iiigen_value
+  allfields$PopulationDeclineGenerations3.qualifier<-C_iiigen_qual
+  allfields$PopulationDeclineGenerations3.justification<-C_iiigen_justif
+
+  # Extreme fluctuations
+  allfields$EOOExtremeFluctuation.isFluctuating<-Extreme_EOO
+  allfields$EOOExtremeFluctuation.justification<-Extreme_EOO_justif
+  allfields$AOOExtremeFluctuation.isFluctuating<-Extreme_AOO
+  allfields$AOOExtremeFluctuation.justification<-Extreme_AOO_justif
+  allfields$PopulationExtremeFluctuation.isFluctuating<-Extreme_Pop
+  allfields$PopulationExtremeFluctuation.justification<-Extreme_Pop_justif
+  allfields$LocationExtremeFluctuation.isFluctuating<-Extreme_NLoc
+  allfields$LocationExtremeFluctuation.justification<-Extreme_NLoc_justif
+  allfields$SubpopulationExtremeFluctuation.isFluctuating<-Extreme_NSub
+  allfields$SubpopulationExtremeFluctuation.justification<-Extreme_NSub_justif
+
+  # Continuing declines
+  allfields$EOOContinuingDecline.isContinuingDecline<-Continuing_EOO
+  allfields$EOOContinuingDecline.justification<-Continuing_EOO_justif
+  allfields$AOOContinuingDecline.isInContinuingDecline<-Continuing_AOO
+  allfields$AOOContinuingDecline.justification<-Continuing_AOO_justif
+  allfields$HabitatContinuingDecline.isDeclining<-Continuing_Hab
+  allfields$HabitatContinuingDecline.justification<-Continuing_Hab_justif
+  allfields$LocationContinuingDecline.inDecline<-Continuing_NLoc
+  allfields$LocationContinuingDecline.justification<-Continuing_NLoc_justif
+  allfields$PopulationContinuingDecline.isDeclining<-Continuing_Pop
+  allfields$PopulationContinuingDecline.justification<-Continuing_Pop_justif
+  allfields$SubpopulationContinuingDecline.isDeclining<-Continuing_NSub
+  allfields$SubpopulationContinuingDecline.justification<-Continuing_NSub_justif
+  
+  # Remove empty columns (important to avoid overwriting data in reassessments)
+  allfields<-allfields[,which(is.na(allfields[1,])==F & allfields[1,] != "Unknown")]
+
+  
+  
+  
+  sRL_loginfo("Start Countries")
+  #countries_SIS<-Storage_SP$countries_SIS
+  #ref_SIS<-sRL_OutputRef(scientific_name, AltPref_saved) # I HAVE TO CHANGE THIS AS AltPref_saved IS ABSENT IF AOH SKIPPED
+   
   # Save csv files in a folder
   output_dir<-paste0(sub(" ", "_", scientific_name), "_sRedList")
   dir.create(output_dir)
-  write.csv(allfields_SIS, paste0(output_dir, "/allfields.csv"), row.names = F)
-  write.csv(countries_SIS, paste0(output_dir, "/countries.csv"), row.names = F)
-  write.csv(ref_SIS, paste0(output_dir, "/references.csv"), row.names = F)
-  write.csv(habitats_SIS, paste0(output_dir, "/habitats.csv"), row.names = F)
-  write.csv(Storage_SP$Output, paste0(output_dir, "/00.Output_log.csv"), row.names = F)
+  write.csv(allfields, paste0(output_dir, "/allfields.csv"), row.names = F)
+  #write.csv(countries_SIS, paste0(output_dir, "/countries.csv"), row.names = F)
+  # write.csv(ref_SIS, paste0(output_dir, "/references.csv"), row.names = F)
+  # write.csv(habitats_SIS, paste0(output_dir, "/habitats.csv"), row.names = F)
+  # write.csv(Storage_SP$Output, paste0(output_dir, "/00.Output_log.csv"), row.names = F)
+  # 
+  # # Save distribution and occurrences if from GBIF
+  # if(is.null(Storage_SP$gbif_number_saved)==F){
+  #   st_write(sRL_OutputDistribution(scientific_name), paste0(output_dir, "/sRedList_", gsub(" ", ".", scientific_name), "_Distribution.shp"), append=F)
+  #   st_write(sRL_OutputOccurrences(scientific_name), paste0(output_dir, "/sRedList_", gsub(" ", ".", scientific_name), "_Occurrences.shp"), append=F)
+  # }
+  # 
+  # # Zip that folder and delete it + Storage_SP
+  # #zip(zipfile = output_dir, files = output_dir,  zip = "C:/Program Files/7-Zip/7Z", flags="a -tzip")
+  # zip(zipfile = output_dir, files = output_dir)
+  # unlink(output_dir, recursive=T)
+  # eval(parse(text=paste0("rm(Storage_SP_", sub(" ", "_", scientific_name), ", envir=.GlobalEnv)")))  # Removes Storage_SP
+  # 
+  # # Remove the AOH files stored
+  # unlink(paste0("resources/AOH_stored/", sub(" ", "_", scientific_name)), recursive=T)
+  # terraOptions(tempdir=tempdir())
+  # rasterOptions(tmpdir=tempdir())
+  # gc()
+  # 
+  # # Plot
   
-  # Save distribution and occurrences if from GBIF
-  if(is.null(Storage_SP$gbif_number_saved)==F){
-    st_write(sRL_OutputDistribution(scientific_name), paste0(output_dir, "/sRedList_", gsub(" ", ".", scientific_name), "_Distribution.shp"), append=F)
-    st_write(sRL_OutputOccurrences(scientific_name), paste0(output_dir, "/sRedList_", gsub(" ", ".", scientific_name), "_Occurrences.shp"), append=F)
-  }
-  
-  # Zip that folder and delete it + Storage_SP
-  #zip(zipfile = output_dir, files = output_dir,  zip = "C:/Program Files/7-Zip/7Z", flags="a -tzip")
-  zip(zipfile = output_dir, files = output_dir)
-  unlink(output_dir, recursive=T)
-  eval(parse(text=paste0("rm(Storage_SP_", sub(" ", "_", scientific_name), ", envir=.GlobalEnv)")))  # Removes Storage_SP
-  
-  # Remove the AOH files stored
-  unlink(paste0("resources/AOH_stored/", sub(" ", "_", scientific_name)), recursive=T)
-  terraOptions(tempdir=tempdir())
-  rasterOptions(tmpdir=tempdir())
-  gc()
-  
-  # Plot
-  return(
-    ggplot(criteria) +
-      geom_point(aes(x = Value, y = Crit, col = Value), size = 40, show.legend=F) +
-      geom_text(aes(x=Value, y=Crit, label=Value), col="white", size=10)+
-      scale_x_discrete(drop = F) + scale_y_discrete(drop=F) +
-      xlab("Red List Category triggered") + ylab("Criteria")+
-      scale_colour_manual(drop = F, values=c("#006666ff", "#cc9900ff", "#cc6633ff", "#cc3333ff"))+
-      ggtitle(paste0("The species seems to meet the ", as.character(max(criteria$Value, na.rm=T)), " category under criteria ", paste(criteria$Crit[criteria$Value==max(criteria$Value, na.rm=T)], collapse=" / "), ". Please check subcriteria!"))+
-      theme_bw()
-  )
+  return(ggplot(data=data.frame(X=1,Y=1))+geom_point(aes(X,Y)))
+  # return(
+  #   ggplot(criteria) +
+  #     geom_point(aes(x = Value, y = Crit, col = Value), size = 40, show.legend=F) +
+  #     geom_text(aes(x=Value, y=Crit, label=Value), col="white", size=10)+
+  #     scale_x_discrete(drop = F) + scale_y_discrete(drop=F) +
+  #     xlab("Red List Category triggered") + ylab("Criteria")+
+  #     scale_colour_manual(drop = F, values=c("#006666ff", "#cc9900ff", "#cc6633ff", "#cc3333ff"))+
+  #     ggtitle(paste0("The species seems to meet the ", as.character(max(criteria$Value, na.rm=T)), " category under criteria ", paste(criteria$Crit[criteria$Value==max(criteria$Value, na.rm=T)], collapse=" / "), ". Please check subcriteria!"))+
+  #     theme_bw()
+  # )
 
 }, seed=T) 
 
