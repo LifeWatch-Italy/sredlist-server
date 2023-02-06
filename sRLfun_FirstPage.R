@@ -195,7 +195,7 @@ sRL_cleaningMemory<-function(Time_limit){
   tryCatch({
     list_tempdir<-paste0(tempdir(), "\\", list.files(tempdir(), recursive=T))
     if(length(list_tempdir)>0){
-      Time_diff_tempdir<-difftime(Time_now, file.info(list_tempdir)$mtime, units="mins") %>% as.numeric(.)
+      Time_diff_tempdir<-difftime(Time_now, file.info(list_tempdir)$atime, units="mins") %>% as.numeric(.)
       toremove_tempdir<-list_tempdir[Time_diff_tempdir>Time_limit]
       unlink(toremove_tempdir, recursive=T)
       tempdir_prop_removed<- (length(list_tempdir)-length(list.files(tempdir(), recursive=T)))
@@ -208,7 +208,7 @@ sRL_cleaningMemory<-function(Time_limit){
   # Remove ZIP files
   list_zips<-list.files()[grepl(".zip", list.files())]
   if(length(list_zips)>0){
-    Time_diff_zips<-difftime(Time_now, file.info(list_zips)$mtime, units="mins") %>% as.numeric(.)
+    Time_diff_zips<-difftime(Time_now, file.info(list_zips)$atime, units="mins") %>% as.numeric(.)
     toremove_zips<-list_zips[Time_diff_zips>Time_limit]
     unlink(toremove_zips, recursive=T)
     zips_prop_removed<- (length(list_zips)-length(list.files()[grepl(".zip", list.files())]))
@@ -221,7 +221,7 @@ sRL_cleaningMemory<-function(Time_limit){
   tryCatch({
     list_temp<-paste0("resources/AOH_stored/", list.files("resources/AOH_stored"))
   if(length(list.files("resources/AOH_stored"))>0){
-    Time_diff_temp<-difftime(Time_now, file.info(list_temp)$mtime, units="mins") %>% as.numeric(.)
+    Time_diff_temp<-difftime(Time_now, file.info(list_temp)$atime, units="mins") %>% as.numeric(.)
     toremove_temp<-list_temp[Time_diff_temp>Time_limit]
     unlink(toremove_temp, recursive=T)
     temp_prop_removed<- (length(list_temp)-length(list.files("resources/AOH_stored")))
