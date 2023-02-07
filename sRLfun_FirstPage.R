@@ -146,7 +146,7 @@ sRL_PrepareCountries <- function(LIMS){
 sRL_StoreSave<-function(scientific_name, Storage_SP){
   SCI<-sRL_decode(scientific_name)
   FILE=paste0("resources/AOH_stored/", gsub(" ", "_", SCI), "/Storage_SP.rds")
-  dir.create(paste0("resources/AOH_stored/", sub(" ", "_", scientific_name), "/Plots"), recursive=T)
+  dir.create(paste0("resources/AOH_stored/", sub(" ", "_", SCI), "/Plots"), recursive=T)
   saveRDS(Storage_SP, file=FILE)
 }
 

@@ -1,13 +1,13 @@
 
 
 ### Calculate Criteria
-sRL_CalculateCriteria<- function(aoh_lost, eoo_km2, aoo_km2, pop_size){
+sRL_CalculateCriteria<- function(allfields){
   
 
   criteria <- data.frame(Crit=c("A2", 'A2', "B1", "B1", "B2", "B2", "C1", "C1", "D", "D"), Scenario=rep(c("Pessimistic", "Optimistic"), 5), Value=NA) ; criteria$Value=factor(criteria$Value, c("LC/NT", "VU", "EN", "CR"), ordered=T) # nolint
 
   # B1
-  criteria$Value[criteria$Crit=="B1"] <- cut(as.numeric(eoo_km2), breaks=c(0, 100, 5000, 20000, Inf), labels=rev(c("LC/NT", "VU", "EN", "CR")), include.lowest=T) # nolint
+  criteria$Value[criteria$Crit=="B1"] <- cut(as.numeric(allfields$EOO.range), breaks=c(0, 100, 5000, 20000, Inf), labels=rev(c("LC/NT", "VU", "EN", "CR")), include.lowest=T) # nolint
   
   if(is.na(aoh_lost)==F){
     # A2
@@ -15,7 +15,7 @@ sRL_CalculateCriteria<- function(aoh_lost, eoo_km2, aoo_km2, pop_size){
     criteria$Value[criteria$Crit=="A2"] <- cut(as.numeric(aoh_lost_processed), breaks=c(-Inf, 30, 50, 80, 100), labels=c("LC/NT", "VU", "EN", "CR")) # nolint
 
     # B2
-    aoo_processed<-unlist(strsplit(as.character(aoo_km2), "-")) %>% as.numeric(.)
+    aoo_processed<-unlist(strsplit(as.character(allfields$AOO.range), "-")) %>% as.numeric(.)
     criteria$Value[criteria$Crit=="B2"] <- cut(as.numeric(aoo_processed), breaks=c(0, 10, 500, 2000, Inf), labels=rev(c("LC/NT", "VU", "EN", "CR")), include.lowest=T) # nolint
   }
   
@@ -23,8 +23,8 @@ sRL_CalculateCriteria<- function(aoh_lost, eoo_km2, aoo_km2, pop_size){
   # if(aoh_lost>=10){criteria$Value[criteria$Crit=="C1"]<-cut(as.numeric(Pop_size), breaks=c(0, 10000, Inf), labels=rev(c("LC/NT", "VU")))} else {criteria$Value[criteria$Crit=="C1"]<-"LC/NT"}
   
   # D
-  if(pop_size != '-1'){
-    pop_processed<-unlist(strsplit(as.character(pop_size), "-")) %>% as.numeric(.)
+  if(allfields$PopulationSize.range != '-1'){
+    pop_processed<-unlist(strsplit(as.character(allfields$PopulationSize.range), "-")) %>% as.numeric(.)
     criteria$Value[criteria$Crit=="D"]<-cut(pop_processed, breaks=c(0, 50, 250, 1000, Inf), labels=rev(c("LC/NT", "VU", "EN", "CR")), include.lowest=T)  # nolint
   }
   
@@ -38,7 +38,7 @@ sRL_CalculateCriteria<- function(aoh_lost, eoo_km2, aoo_km2, pop_size){
 
 
 ### Prepare countries output csv
-sRL_OutputCountries<-function(scientific_name, countries, AltPref_saved){
+sRL_OutputCountries<-function(scientific_name, countries){
   
   if(nrow(countries)==0){CO_SIS<-data.frame()} else{
   # Assign the name to provide (SIS_name1 if available, SIS_name2 otherwise)
@@ -53,7 +53,6 @@ sRL_OutputCountries<-function(scientific_name, countries, AltPref_saved){
   CO_SIS$CountryOccurrence.CountryOccurrenceSubfield.presence=NA # "Extant"
   CO_SIS$CountryOccurrence.CountryOccurrenceSubfield.seasonality=NA # "Resident"
   CO_SIS$assessment_id=NA
-  CO_SIS$internal_taxon_id=AltPref_saved$taxonid[1]
   CO_SIS$internal_taxon_name=scientific_name
   }
   
@@ -64,7 +63,7 @@ sRL_OutputCountries<-function(scientific_name, countries, AltPref_saved){
 
 
 ### Prepare references output csv
-sRL_OutputRef<-function(scientific_name, AltPref_saved){
+sRL_OutputRef<-function(scientific_name, Storage_SP){
 
   # Charge the file with sRedList reference
   ref_SIS<-read.csv("Species/SIS_references_empty.csv")
@@ -92,10 +91,9 @@ sRL_OutputRef<-function(scientific_name, AltPref_saved){
     }  
   }
   
-  # Add species name / taxonid
+  # Add species name
   ref_SIS$internal_taxon_name<-scientific_name
-  ref_SIS$internal_taxon_id<-AltPref_saved$taxonid[1]
-    
+
   return(ref_SIS)
 }
 

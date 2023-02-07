@@ -21,3 +21,7 @@ NA,NA,"AOH_Density","Density (ind per km2) used to calculate population size",NA
 NA,NA,"Crop_Country","Country used to restrict species' distribution in case of National (or European) Red Listing",NA
 NA,NA,"Kernel_parameter","Value of the kernel parameter (only important if Kernel has been chosen as the method to map distribution with the Mapping_Start parameter",NA
 NA,NA,"Alpha_parameter","Value of the Alphahull parameter (only important if Alphahull has been chosen as the method to map distribution with the Mapping_Start parameter",NA
+NA,NA,"Estimated_EOO_raw","This is the original EOO value calculated by the platform (it might differ from the value in allfields.csv if you manually edited this value)",NA
+NA,NA,"Estimated_AOO_raw","This is the original AOO value calculated by the platform (it might differ from the value in allfields.csv if you manually edited this value)",NA
+NA,NA,"Estimated_PopSize_raw","This is the original Population Size value calculated by the platform (it might differ from the value in allfields.csv if you manually edited this value)",NA
+NA,NA,"Estimated_PopTrends_raw","This is the original Population Trends value calculated by the platform (it might differ from the value in allfields.csv if you manually edited this value)",NA

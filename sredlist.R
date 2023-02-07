@@ -611,7 +611,7 @@ Prom<-future({
   coo$colour<-col.df$Col[match(coo$colour, col.df$Code)]
   
   # Save for SIS
-  Storage_SP$countries_SIS<-sRL_OutputCountries(scientific_name, subset(coo, coo$presence>0), Storage_SP$AltPref_saved)
+  Storage_SP$countries_SIS<-sRL_OutputCountries(scientific_name, subset(coo, coo$presence>0))
   sRL_StoreSave(scientific_name, Storage_SP)
   
   # Plot
@@ -1402,17 +1402,25 @@ function(scientific_name){
   ### EOO
   EOO_val <- ifelse("eoo_km2" %in% names(Storage_SP), Storage_SP$eoo_km2, "")
   EOO_justif <- ifelse("eoo_km2" %in% names(Storage_SP), "The EOO has been estimated as the Minimal Convex Polygon around the distribution on the sRedList platform.", "")
+  Storage_SP<-sRL_OutLog(Storage_SP, "Estimated_EOO_raw", EOO_val)
   
   ### AOO
   AOO_val <- ifelse("aoo_km2" %in% names(Storage_SP), Storage_SP$aoo_km2, "")
   AOO_justif <- ifelse("aoo_km2" %in% names(Storage_SP), "The AOO has been estimated on the sRedList Platform by rescaling the Area of Habitat to a 2x2km2 grid.", "")
+  Storage_SP<-sRL_OutLog(Storage_SP, "Estimated_AOO_raw", AOO_val)
   
   ### Pop size
   Pop_val <- ifelse("pop_size" %in% names(Storage_SP), Storage_SP$pop_size, "")
-
+  Storage_SP<-sRL_OutLog(Storage_SP, "Estimated_PopSize_raw", Pop_val)
+  
   ### Trends
   Trends_val <- ifelse("aoh_lost" %in% names(Storage_SP), Storage_SP$aoh_lost, "")
   Trends_justif <- ifelse("aoh_lost" %in% names(Storage_SP), "TO FILL", "")
+  Storage_SP<-sRL_OutLog(Storage_SP, "Estimated_PopTrends_raw", Trends_val)
+  
+  ### Save Storage_SP
+  sRL_StoreSave(scientific_name, Storage_SP)
+  
   
   return(list(EOO_val, EOO_justif, AOO_val, AOO_justif, Pop_val, Trends_val, Trends_justif))
 }
@@ -1433,22 +1441,6 @@ function(scientific_name,
          C_igen_value, C_igen_qual, C_igen_justif, C_iigen_value, C_iigen_qual, C_iigen_justif, C_iiigen_value, C_iiigen_qual, C_iiigen_justif
          ) {
   
-Prom<-future({
-  
-  sRL_loginfo("Pop")
-  print(SubNumber)
-  print(populationTrend)
-  print(Estimates)
-  
-  sRL_loginfo("Extreme fluctuations")
-  print(Extreme_EOO) ; print(Extreme_AOO) ; print(Extreme_Pop) ; print(Extreme_NLoc) ; print(Extreme_NSub)
-  print(Extreme_EOO_justif) ; print(Extreme_AOO_justif) ; print(Extreme_Pop_justif) ; print(Extreme_NLoc_justif) ; print(Extreme_NSub_justif)
-  
-  sRL_loginfo("Continuing declines")
-  print(Continuing_EOO) ; print(Continuing_AOO) ; print(Continuing_Hab) ; print(Continuing_Pop) ; print(Continuing_NLoc) ; print(Continuing_NSub)
-  print(Continuing_EOO_justif) ; print(Continuing_AOO_justif) ; print(Continuing_Hab_justif) ; print(Continuing_Pop_justif) ; print(Continuing_NLoc_justif) ; print(Continuing_NSub_justif)
-  
-  sRL_loginfo("Over")
   
   #Filter param
   sRL_loginfo("Start Criteria calculation")
@@ -1460,8 +1452,7 @@ Prom<-future({
   #   NA)
   # 
   # 
-  # # Calculate criteria
-  # criteria<-sRL_CalculateCriteria(aoh_lost, eoo_km2, aoo_km2, pop_size)
+  
   
   
   ### Prepare SIS Connect files
@@ -1559,7 +1550,7 @@ Prom<-future({
   allfields$PopulationReductionPastandFuture.direction<-ongoingTrends_dir
   allfields$PopulationReductionPastandFuture.range<-ongoingTrends
   allfields$PopulationReductionPastandFuture.justification<-ongoingTrends_justif
-  allfields$PopulationReductionPastandFuture.qualifier<-ongoingTrends_quality
+  #allfields$PopulationReductionPastandFuture.qualifier<-ongoingTrends_quality
   allfields$PopulationReductionPastandFutureBasis.value<-ongoingTrends_basis
   allfields$PopulationReductionPastandFuture.numYears<-ongoingTrends_NY
   allfields$PopulationReductionPastandFutureCeased.value<-ongoingTrends_ceased
@@ -1611,28 +1602,29 @@ Prom<-future({
   
   
   
-  sRL_loginfo("Start Countries")
-  #countries_SIS<-Storage_SP$countries_SIS
-  #ref_SIS<-sRL_OutputRef(scientific_name, AltPref_saved) # I HAVE TO CHANGE THIS AS AltPref_saved IS ABSENT IF AOH SKIPPED
+  sRL_loginfo("Start Countries and refs")
+  countries_SIS<-Storage_SP$countries_SIS
+  ref_SIS<-sRL_OutputRef(scientific_name, Storage_SP) 
    
   # Save csv files in a folder
+  sRL_loginfo("Start writting")
   output_dir<-paste0(sub(" ", "_", scientific_name), "_sRedList")
   dir.create(output_dir)
   write.csv(allfields, paste0(output_dir, "/allfields.csv"), row.names = F)
-  #write.csv(countries_SIS, paste0(output_dir, "/countries.csv"), row.names = F)
-  # write.csv(ref_SIS, paste0(output_dir, "/references.csv"), row.names = F)
-  # write.csv(habitats_SIS, paste0(output_dir, "/habitats.csv"), row.names = F)
-  # write.csv(Storage_SP$Output, paste0(output_dir, "/00.Output_log.csv"), row.names = F)
-  # 
-  # # Save distribution and occurrences if from GBIF
-  # if(is.null(Storage_SP$gbif_number_saved)==F){
-  #   st_write(sRL_OutputDistribution(scientific_name), paste0(output_dir, "/sRedList_", gsub(" ", ".", scientific_name), "_Distribution.shp"), append=F)
-  #   st_write(sRL_OutputOccurrences(scientific_name), paste0(output_dir, "/sRedList_", gsub(" ", ".", scientific_name), "_Occurrences.shp"), append=F)
-  # }
-  # 
-  # # Zip that folder and delete it + Storage_SP
-  # #zip(zipfile = output_dir, files = output_dir,  zip = "C:/Program Files/7-Zip/7Z", flags="a -tzip")
-  # zip(zipfile = output_dir, files = output_dir)
+  write.csv(countries_SIS, paste0(output_dir, "/countries.csv"), row.names = F)
+  write.csv(ref_SIS, paste0(output_dir, "/references.csv"), row.names = F)
+  write.csv(habitats_SIS, paste0(output_dir, "/habitats.csv"), row.names = F)
+  write.csv(Storage_SP$Output, paste0(output_dir, "/00.Output_log.csv"), row.names = F)
+   
+  # Save distribution and occurrences if from GBIF
+  if(is.null(Storage_SP$gbif_number_saved)==F){
+   st_write(sRL_OutputDistribution(scientific_name), paste0(output_dir, "/sRedList_", gsub(" ", ".", scientific_name), "_Distribution.shp"), append=F)
+   st_write(sRL_OutputOccurrences(scientific_name), paste0(output_dir, "/sRedList_", gsub(" ", ".", scientific_name), "_Occurrences.shp"), append=F)
+  }
+  
+  # Zip that folder and delete it + Storage_SP
+  #zip(zipfile = output_dir, files = output_dir,  zip = "C:/Program Files/7-Zip/7Z", flags="a -tzip")
+  zip(zipfile = output_dir, files = output_dir)
   # unlink(output_dir, recursive=T)
   # eval(parse(text=paste0("rm(Storage_SP_", sub(" ", "_", scientific_name), ", envir=.GlobalEnv)")))  # Removes Storage_SP
   # 
@@ -1641,9 +1633,15 @@ Prom<-future({
   # terraOptions(tempdir=tempdir())
   # rasterOptions(tmpdir=tempdir())
   # gc()
-  # 
-  # # Plot
+
+
+  ### Calculate criteria
+  sRL_loginfo("Start Criteria calculation")
+  #criteria<-sRL_CalculateCriteria(allfields)
   
+  
+  ### Plot
+  sRL_loginfo("Start Plotting")
   return(ggplot(data=data.frame(X=1,Y=1))+geom_point(aes(X,Y)))
   # return(
   #   ggplot(criteria) +
@@ -1656,10 +1654,7 @@ Prom<-future({
   #     theme_bw()
   # )
 
-}, seed=T) 
 
-### Return plot 
-return(Prom %...>% plot())
 }
 
 
