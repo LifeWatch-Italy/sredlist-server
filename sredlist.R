@@ -1220,7 +1220,6 @@ Prom<-future({
   if(Storage_SP$Uncertain=="Uncertain_yes"){Storage_SP$aoh_lostOPT_saved=AOH_lostOPT}
   Storage_SP$Year1_saved<-Year1 ; Storage_SP$Year1theo_saved<-Year1_theo
   Storage_SP<-sRL_OutLog(Storage_SP, "AOH_GenerationLength", GL_species)
-  sRL_StoreSave(scientific_name, Storage_SP)
   
   # Output to return
   Out_area<-ifelse(Storage_SP$Uncertain=="Uncertain_no", 
@@ -1235,14 +1234,23 @@ Prom<-future({
   
   # With extrapolation
   FACT_Extrap<-(config$YearAOH2-Year1_theo)/(config$YearAOH2-Year1) # Exponential extrapolation (formula from guidelines)
+  AOH_lost_extrap<-round(abs(100*(1-(1-as.numeric(AOH_lost)/100)^FACT_Extrap)))
+  if(Storage_SP$Uncertain=="Uncertain_yes"){
+    AOH_lostOPT_extrap<-round(abs(100*(1-(1-AOH_lostOPT/100)^FACT_Extrap)))
+    Storage_SP$aoh_lostOPT_extrap=AOH_lostOPT_extrap
+  }
+  
   Out_loss_extrap<-ifelse(Year1==Year1_theo, "", 
         ifelse(Storage_SP$Uncertain=="Uncertain_no", 
-              paste0(Year1_theo, "-", config$YearAOH2, ": ", revalue(as.factor(sign(AOH_lost)), c("-1"="AOH gain of ", "1"="AOH loss of ", "0"="AOH loss of ")), round(abs(100*(1-(1-AOH_lost/100)^FACT_Extrap))), "%"), # Give trend in AOH rather than loss,
-              paste0(Year1_theo, "-", config$YearAOH2, ": ", revalue(as.factor(sign(AOH_lost)), c("-1"="AOH gain of ", "1"="AOH loss of ", "0"="AOH loss of ")), round(abs(100*(1-(1-as.numeric(AOH_lost)/100)^FACT_Extrap))), "% (Pessimistic) or ", revalue(as.factor(sign(AOH_lostOPT)), c("-1"="AOH gain of ", "1"="AOH loss of ", "0"="AOH loss of ")), round(abs(100*(1-(1-AOH_lostOPT/100)^FACT_Extrap))), "% (Optimistic)")
+              paste0(Year1_theo, "-", config$YearAOH2, ": ", revalue(as.factor(sign(AOH_lost)), c("-1"="AOH gain of ", "1"="AOH loss of ", "0"="AOH loss of ")), AOH_lost_extrap, "%"), # Give trend in AOH rather than loss,
+              paste0(Year1_theo, "-", config$YearAOH2, ": ", revalue(as.factor(sign(AOH_lost)), c("-1"="AOH gain of ", "1"="AOH loss of ", "0"="AOH loss of ")), AOH_lost_extrap, "% (Pessimistic) or ", revalue(as.factor(sign(AOH_lostOPT)), c("-1"="AOH gain of ", "1"="AOH loss of ", "0"="AOH loss of ")), AOH_lostOPT_extrap, "% (Optimistic)")
   ))
+  Storage_SP$aoh_lost_extrap=AOH_lost_extrap
   
   
   ### Return
+  sRL_StoreSave(scientific_name, Storage_SP)
+  
   LIST<-list(
     aoh_lost_km2 = Out_area,
     aoh_lost = Out_loss,
@@ -1404,25 +1412,59 @@ function(scientific_name){
   EOO_justif <- ifelse("eoo_km2" %in% names(Storage_SP), "The EOO has been estimated as the Minimal Convex Polygon around the distribution on the sRedList platform.", "")
   Storage_SP<-sRL_OutLog(Storage_SP, "Estimated_EOO_raw", EOO_val)
   
+  
   ### AOO
   AOO_val <- ifelse("aoo_km2" %in% names(Storage_SP), Storage_SP$aoo_km2, "")
   AOO_justif <- ifelse("aoo_km2" %in% names(Storage_SP), "The AOO has been estimated on the sRedList Platform by rescaling the Area of Habitat to a 2x2km2 grid.", "")
   Storage_SP<-sRL_OutLog(Storage_SP, "Estimated_AOO_raw", AOO_val)
   
+  
   ### Pop size
   Pop_val <- ifelse("pop_size" %in% names(Storage_SP), Storage_SP$pop_size, "")
   Storage_SP<-sRL_OutLog(Storage_SP, "Estimated_PopSize_raw", Pop_val)
   
+  
   ### Trends
-  Trends_val <- ifelse("aoh_lost" %in% names(Storage_SP), Storage_SP$aoh_lost, "")
-  Trends_justif <- ifelse("aoh_lost" %in% names(Storage_SP), "TO FILL", "")
-  Storage_SP<-sRL_OutLog(Storage_SP, "Estimated_PopTrends_raw", Trends_val)
+  if(!"aoh_lost_saved" %in% names(Storage_SP)){Trends_dir <- Trends_val <- Trends_justif<- NA} else {
+    
+    # In any case I take the pessimistic AOH (extrapolated) and its sign
+    signP<-sign(Storage_SP$aoh_lost_saved) %>% replace(., .==0, -1)
+    aohP<-abs(Storage_SP$aoh_lost_extrap)
+    
+    # If no uncertainty, I use aohP and signP as suggested estimates
+    if(Storage_SP$Uncertain=="Uncertain_no"){
+      Trends_dir<-revalue(as.character(signP), c("-1"="+", "1"="-"))
+      Trends_val<-aohP
+      
+      # If there is uncertainty it depends if optimistic and pessimistic are in the same direction (both decreasing or both increasing)
+    } else {
+      signO<-sign(Storage_SP$aoh_lostOPT_saved) %>% replace(., .==0, -1)
+      aohO<-abs(Storage_SP$aoh_lostOPT_extrap)
+      
+      # If optimistic and pessimistic have the same sign, I use this
+      if(signP==signO){
+        Trends_dir<-revalue(as.character(signP), c("-1"="+", "1"="-"))
+        Trends_val<-paste(min(c(aohP, aohO)), max(c(aohP, aohO)), sep="-")
+        # If they have different sign, I put the negative and suggest it can go down to 0
+      } else {
+        Trends_dir<-"Reduction"
+        Trends_val<-paste(0, aohP, sep="-")
+      }
+    }
+    
+    Trends_justif<-paste0("This trend has been measured from the sRedList platform as the trend in Area of Habitat between ", 
+                          paste0(Storage_SP$Year1theo_saved, " and ",config$YearAOH2), # Give years if no extrapolation
+                          ifelse(Storage_SP$Year1theo_saved==Storage_SP$Year1_saved, "", " (using expontential extrapolation for the period before 1992)")) # Specify extrapolation if needed
+    
+    Storage_SP<-sRL_OutLog(Storage_SP, "Estimated_PopTrends_raw", Trends_val)
+  }
+  
   
   ### Save Storage_SP
   sRL_StoreSave(scientific_name, Storage_SP)
   
   
-  return(list(EOO_val, EOO_justif, AOO_val, AOO_justif, Pop_val, Trends_val, Trends_justif))
+  return(list(EOO_val, EOO_justif, AOO_val, AOO_justif, Pop_val, Trends_dir, Trends_val, Trends_justif))
 }
 
 
@@ -1447,14 +1489,7 @@ function(scientific_name,
   scientific_name <- sRL_decode(scientific_name)
   Storage_SP<-sRL_StoreRead(scientific_name)
   print(names(Storage_SP))
-  # aoh_lost<-ifelse("aoh_lost_saved" %in% names(Storage_SP),
-  #   ifelse(Storage_SP$Uncertain=="Uncertain_no", Storage_SP$aoh_lost_saved, paste(Storage_SP$aoh_lost_saved, Storage_SP$aoh_lostOPT_saved, sep="/")),
-  #   NA)
-  # 
-  # 
-  
-  
-  
+
   ### Prepare SIS Connect files
   habitats_SIS<-Storage_SP$habitats_SIS[,6:13]
   habitats_SIS$assessment_id<-NA
@@ -1499,21 +1534,10 @@ function(scientific_name,
   allfields$PopulationSize.range<-Estimates[5]
   
   # Decline for A2
-  # aoh_lost_processed<-unlist(strsplit(as.character(aoh_lost), "/")) %>% as.numeric(.)
-  #
-  # if(length(aoh_lost_processed)==1 | sign(aoh_lost_processed[1])==sign(aoh_lost_processed[2])){ # If only one estimate or two of the same sign, keep uncertainty
-  # allfields$PopulationReductionPast.range<-paste(sort(abs(aoh_lost_processed)), collapse="-")
-  # allfields$PopulationReductionPast.direction<-revalue(as.character(sign(aoh_lost_processed[1])), c("1"="Reduction", "-1"="Increase", "0"=NA))
-  # } else{ # If two FinalEstimates with different signs, I keep the minimum and put 0 as maximum
-  # allfields$PopulationReductionPast.range<-paste(c(0, abs(min(aoh_lost_processed))), collapse="-")
-  # allfields$PopulationReductionPast.direction<-"Reduction"
-  #
-  # }
-  #
-  # Justif.3gen<-ifelse(Storage_SP$Year1_saved>Storage_SP$Year1theo_saved, paste0(" (which is ", (Storage_SP$Year1_saved-Storage_SP$Year1theo_saved), " years less than 3 generations)")," (which corresponds to the maximum between 10 years / 3 generations)")
-  # allfields$PopulationReductionPast.justification<-allfields$PopulationDeclineGenerations3.justification<-paste0("The decline has been measured from the sRedList platform as the decline in Area of Habitat between ", Storage_SP$Year1_saved, " and ",config$YearAOH2, Justif.3gen)
-  # }
-  #
+  if(Estimates[6] %in% c("+", "-")){allfields$PopulationReductionPast.direction<-revalue(Estimates[6], c("-"="Reduction", "+"="Increase"))} # Replace by Increase or Reduction (if users wrote something else, we don't report it in allfields)
+  allfields$PopulationReductionPast.range<-Estimates[7]
+  allfields$PopulationReductionPast.justification<-allfields$PopulationDeclineGenerations3.justification<-Estimates[8]
+
   
   # Population trends details
   allfields$PopulationReductionPast.qualifier<-pastTrends_qual
@@ -1550,7 +1574,7 @@ function(scientific_name,
   allfields$PopulationReductionPastandFuture.direction<-ongoingTrends_dir
   allfields$PopulationReductionPastandFuture.range<-ongoingTrends
   allfields$PopulationReductionPastandFuture.justification<-ongoingTrends_justif
-  #allfields$PopulationReductionPastandFuture.qualifier<-ongoingTrends_quality
+  allfields$PopulationReductionPastandFuture.qualifier<-ongoingTrends_quality
   allfields$PopulationReductionPastandFutureBasis.value<-ongoingTrends_basis
   allfields$PopulationReductionPastandFuture.numYears<-ongoingTrends_NY
   allfields$PopulationReductionPastandFutureCeased.value<-ongoingTrends_ceased
