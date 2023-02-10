@@ -1,40 +1,5 @@
 
 
-### Calculate Criteria
-sRL_CalculateCriteria<- function(allfields){
-  
-
-  criteria <- data.frame(Crit=c("A2", 'A2', "B1", "B1", "B2", "B2", "C1", "C1", "D", "D"), Scenario=rep(c("Pessimistic", "Optimistic"), 5), Value=NA) ; criteria$Value=factor(criteria$Value, c("LC/NT", "VU", "EN", "CR"), ordered=T) # nolint
-
-  # B1
-  criteria$Value[criteria$Crit=="B1"] <- cut(as.numeric(allfields$EOO.range), breaks=c(0, 100, 5000, 20000, Inf), labels=rev(c("LC/NT", "VU", "EN", "CR")), include.lowest=T) # nolint
-  
-  if(is.na(aoh_lost)==F){
-    # A2
-    aoh_lost_processed<-unlist(strsplit(as.character(aoh_lost), "/")) %>% as.numeric(.)
-    criteria$Value[criteria$Crit=="A2"] <- cut(as.numeric(aoh_lost_processed), breaks=c(-Inf, 30, 50, 80, 100), labels=c("LC/NT", "VU", "EN", "CR")) # nolint
-
-    # B2
-    aoo_processed<-unlist(strsplit(as.character(allfields$AOO.range), "-")) %>% as.numeric(.)
-    criteria$Value[criteria$Crit=="B2"] <- cut(as.numeric(aoo_processed), breaks=c(0, 10, 500, 2000, Inf), labels=rev(c("LC/NT", "VU", "EN", "CR")), include.lowest=T) # nolint
-  }
-  
-  # C1 (only for VU for now)
-  # if(aoh_lost>=10){criteria$Value[criteria$Crit=="C1"]<-cut(as.numeric(Pop_size), breaks=c(0, 10000, Inf), labels=rev(c("LC/NT", "VU")))} else {criteria$Value[criteria$Crit=="C1"]<-"LC/NT"}
-  
-  # D
-  if(allfields$PopulationSize.range != '-1'){
-    pop_processed<-unlist(strsplit(as.character(allfields$PopulationSize.range), "-")) %>% as.numeric(.)
-    criteria$Value[criteria$Crit=="D"]<-cut(pop_processed, breaks=c(0, 50, 250, 1000, Inf), labels=rev(c("LC/NT", "VU", "EN", "CR")), include.lowest=T)  # nolint
-  }
-  
-  criteria<-subset(criteria, is.na(criteria$Value)==F)
-  
-  return(criteria)
-}
-
-
-
 
 
 ### Prepare countries output csv
@@ -167,6 +132,339 @@ sRL_OutputOccurrences <- function(scientific_name) {
   
   return(dat_SIS)
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+extract_range<-function(carac){
+  strsplit(as.character(carac), "-") %>% unlist(.) %>% as.numeric(.)
+}
+
+crit_apply<-function(crit, CRIT, Val){
+  
+  if(length(Val)!=0){ # If Val is empty (i.e. no value for this parameter in allfields), I leave empty
+    Val_num<-revalue(Val, c("LC"="1", "VU"="2", "EN"="3", "CR"="4")) %>% as.numeric(.)
+    crit$Cat_ThresholdMIN[crit$criterion==CRIT]<-min(Val_num) %>% as.character(.) %>% revalue(., c("1"="LC", "2"="VU", "3"="EN", "4"="CR"))
+    crit$Cat_ThresholdMAX[crit$criterion==CRIT]<-max(Val_num) %>% as.character(.) %>% revalue(., c("1"="LC", "2"="VU", "3"="EN", "4"="CR"))
+  }
+  return(crit)
+}
+
+
+
+
+sRL_CriteriaCalculator <- function(allfields){
+  
+  crit <- data.frame(criterion=c("A1", "A2", "A3", "A4", "B1", "B2", "C1", "C2", "D1", "D2"), Cat_ThresholdMIN=NA, Cat_ThresholdMAX=NA, Subcrit=NA)
+  
+  ##################
+  ### CRITERIA A ###
+  ##################
+  
+  
+  ### Criteron A1 
+  
+  # Thresholds
+  if(is.na(allfields$PopulationReductionPast.direction)==F){
+  if(allfields$PopulationReductionPast.direction == "Increase"){crit_A1<-"LC"} else{
+    crit_A1<-cut(extract_range(allfields$PopulationReductionPast.range), breaks=c(0,50,70,90,101), labels=c("LC", "VU", "EN", "CR"), include.lowest=T, right=F) %>% as.character(.)
+  }
+  crit<-crit_apply(crit, "A1", crit_A1)
+  }
+  
+  # Subcriteria
+  crit$Subcrit[crit$criterion=="A1"]<-ifelse(allfields$PopulationReductionPast.qualifier %in% c("Observed","Estimated","Inferred","Suspected") &
+                                               allfields$PopulationReductionPastUnderstood.value=="Yes" &
+                                               allfields$PopulationReductionPastCeased.value=="Yes" &
+                                               allfields$PopulationReductionPastReversible.value=="Yes",
+                                             1, 0)
+  
+  
+  
+  
+  ### Criteron A2
+  
+  # Thresholds
+  if(is.na(allfields$PopulationReductionPast.direction)==F){
+  if(allfields$PopulationReductionPast.direction == "Increase"){crit_A2<-"LC"} else{
+    crit_A2<-cut(extract_range(allfields$PopulationReductionPast.range), breaks=c(0,30,50,80,101), labels=c("LC", "VU", "EN", "CR"), include.lowest=T, right=F) %>% as.character(.)
+  }
+  crit<-crit_apply(crit, "A2", crit_A2)
+  }
+  
+  # Subcriteria
+  crit$Subcrit[crit$criterion=="A2"]<-ifelse(allfields$PopulationReductionPast.qualifier %in% c("Observed","Estimated","Inferred","Suspected") &
+                                               (allfields$PopulationReductionPastUnderstood.value=="No" |
+                                                allfields$PopulationReductionPastCeased.value=="No" |
+                                                allfields$PopulationReductionPastReversible.value=="No"),
+                                             1, 0)
+  
+  
+  
+  
+  ### Criteron A3
+  
+  # Thresholds
+  if(is.na(allfields$PopulationReductionFuture.direction)==F){
+  if(allfields$PopulationReductionFuture.direction == "Increase"){crit_A3<-"LC"} else{
+    crit_A3<-cut(extract_range(allfields$PopulationReductionFuture.range), breaks=c(0,30,50,80,101), labels=c("LC", "VU", "EN", "CR"), include.lowest=T, right=F)
+  }
+  crit<-crit_apply(crit, "A3", crit_A3)
+  }
+  
+  # Subcriteria
+  crit$Subcrit[crit$criterion=="A3"]<-ifelse(allfields$PopulationReductionFuture.qualifier %in% c("Projected","Inferred","Suspected"),
+                                             1, 0)
+  
+  
+  
+  ### Criteron A4
+  
+  # Thresholds
+  if(is.na(allfields$PopulationReductionPastandFuture.direction)==F){
+  if(allfields$PopulationReductionPastandFuture.direction == "Increase"){crit_A4<-"LC"} else{
+    crit_A4<-cut(extract_range(allfields$PopulationReductionPastandFuture.range), breaks=c(0,30,50,80,101), labels=c("LC", "VU", "EN", "CR"), include.lowest=T, right=F) %>% as.character(.)
+  }
+  crit<-crit_apply(crit, "A4", crit_A4)
+  }
+  
+  # Subcriteria
+  crit$Subcrit[crit$criterion=="A4"]<-ifelse(allfields$PopulationReductionPast.qualifier %in% c("Observed", "Estimated", "Projected", "Inferred", "Suspected") &
+                                               (allfields$PopulationReductionPastandFutureUnderstood.value=="No" |
+                                                allfields$PopulationReductionPastandFutureCeased.value=="No" |
+                                                allfields$PopulationReductionPastandFutureReversible.value=="No"),
+                                             1, 0)
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  ##################
+  ### CRITERIA B ###
+  ##################  
+  
+  ### Criterion B1
+  crit_B1<-cut(extract_range(allfields$EOO.range), breaks=c(0,100,5000,20000,Inf), labels=c("CR", "EN", "VU", "LC"), include.lowest=T, right=F) %>% as.character(.)
+  crit<-crit_apply(crit, "B1", crit_B1)
+  
+  
+  ### Criterion B2
+  crit_B2<-cut(extract_range(allfields$AOO.range), breaks=c(0,10,500,2000,Inf), labels=c("CR", "EN", "VU", "LC"), include.lowest=T, right=F) %>% as.character(.)
+  crit<-crit_apply(crit, "B2", crit_B2)
+  
+  
+  ### Subcriteria
+  
+  # Severely fragmented
+  sev.fragm<-allfields$SevereFragmentation.isFragmented=="Yes" 
+  if(is.na(sev.fragm)){sev.fragm<-FALSE}
+  
+  # Number of locations
+  N.loc<-cut(extract_range(allfields$LocationsNumber.range), breaks=c(0,1,5,10,Inf), labels=c("CR", "EN", "VU", "LC"), include.lowest=T, right=T) %>% as.character(.)
+  if(is.na(N.loc)[1]){N.loc<-"LC"} # If NA I consider unmet
+  
+  # Continuing decline
+  cont.decl<-allfields$EOOContinuingDecline.isContinuingDecline=="Yes" |
+    allfields$AOOContinuingDecline.isInContinuingDecline=="Yes" |
+    allfields$HabitatContinuingDecline.isDeclining=="Yes" |
+    allfields$SubpopulationContinuingDecline.isDeclining=="Yes" |
+    allfields$LocationContinuingDecline.inDecline=="Yes" |
+    allfields$PopulationContinuingDecline.isDeclining=="Yes"
+  if(is.na(cont.decl)){cont.decl<-FALSE}
+  
+  # Extreme fluctuations
+  extr.fluc<-allfields$EOOExtremeFluctuation.isFluctuating=="Yes" |
+    allfields$AOOExtremeFluctuation.isFluctuating=="Yes" |
+    allfields$SubpopulationExtremeFluctuation.isFluctuating=="Yes" |
+    allfields$LocationExtremeFluctuation.isFluctuating=="Yes" |
+    allfields$PopulationExtremeFluctuation.isFluctuating=="Yes"
+  if(is.na(extr.fluc)){extr.fluc<-FALSE}
+  
+  # Apply subcriteria (first without N.loc as it's more complicated an category specific, we only look for it if only one of b or c)
+  if(sum(sev.fragm, cont.decl, extr.fluc, na.rm=T) >= 2){crit$Subcrit[crit$criterion %in% c("B1", "B2")]<-1}
+  if(sum(sev.fragm, cont.decl, extr.fluc, na.rm=T) == 0){crit$Subcrit[crit$criterion %in% c("B1", "B2")]<-0}
+  if(sum(sev.fragm, cont.decl, extr.fluc, na.rm=T) == 1){
+    # If the only one is severe fragmentation, subcriteria not met
+    if(sev.fragm==TRUE){crit$Subcrit[crit$criterion %in% c("B1", "B2")]<-0} else {
+      # If fluctuations or decline met, I check the highest category met by number of locations
+      crit$Subcrit[crit$criterion %in% c("B1", "B2")]<-revalue(sort(factor(N.loc, levels=c("LC", "VU", "EN", "CR")), decreasing=T)[1], c("CR"="1", "EN"="EN", "VU"="VU", "LC"="0")) %>% as.character(.)
+    }
+    
+    ## If I used N.loc with EN or VU, I can adapt the category met
+    if(crit$Subcrit[crit$criterion=="B1"] == "VU"){
+      # Change category for B1
+      if(crit$Cat_ThresholdMAX[crit$criterion=="B1"] %in% c("CR", "EN")){ # If the threshold category is higher than VU
+        crit$Cat_ThresholdMAX[crit$criterion=="B1"]<-"VU" # Then the B1 max category is brought to VU
+        if(crit$Cat_ThresholdMIN[crit$criterion=="B1"] %in% c("EN", "CR")){crit$Cat_ThresholdMIN[crit$criterion=="B1"]<-"VU"} # And also the min category (unless it's already VU or LC)
+      }
+      # Change category for B2
+      if(crit$Cat_ThresholdMAX[crit$criterion=="B2"] %in% c("CR", "EN")){ # If the threshold category is higher than VU
+        crit$Cat_ThresholdMAX[crit$criterion=="B2"]<-"VU" # Then the B2 max category is brought to VU
+        if(crit$Cat_ThresholdMIN[crit$criterion=="B2"] %in% c("EN", "CR")){crit$Cat_ThresholdMIN[crit$criterion=="B2"]<-"VU"} # And also the min category (unless it's already VU or LC)
+      }
+      # Validate subcriteria
+      crit$Subcrit[crit$criterion %in% c("B1", "B2")]<-1
+    }
+    
+    if(crit$Subcrit[crit$criterion=="B1"] == "EN"){
+      # Change category for B1
+      if(crit$Cat_ThresholdMAX[crit$criterion=="B1"] %in% c("CR")){ # If the threshold category is higher than EN
+        crit$Cat_ThresholdMAX[crit$criterion=="B1"]<-"EN" # Then the B1 max category is brought to EN
+        if(crit$Cat_ThresholdMIN[crit$criterion=="B1"] %in% c("CR")){crit$Cat_ThresholdMIN[crit$criterion=="B1"]<-"EN"} # And also the min category (unless it's already VU or LC)
+      }
+      # Change category for B2
+      if(crit$Cat_ThresholdMAX[crit$criterion=="B2"] %in% c("CR")){ # If the threshold category is higher than EN
+        crit$Cat_ThresholdMAX[crit$criterion=="B2"]<-"EN" # Then the B2 max category is brought to EN
+        if(crit$Cat_ThresholdMIN[crit$criterion=="B2"] %in% c("CR")){crit$Cat_ThresholdMIN[crit$criterion=="B2"]<-"EN"} # And also the min category (unless it's already VU or LC)
+      }
+      # Validate subcriteria
+      crit$Subcrit[crit$criterion %in% c("B1", "B2")]<-1
+    }
+  }
+  
+  
+  
+  
+  
+  
+  
+  ##################
+  ### CRITERIA C ###
+  ##################  
+  
+  ### Population size
+  crit_CPOP<-cut(extract_range(allfields$PopulationSize.range), breaks=c(0,250,2500,10000,Inf), labels=c("CR", "EN", "VU", "LC"), include.lowest=T, right=F) %>% as.character(.)
+  
+  
+  ### Criterion C1
+  if(is.na(crit_CPOP[1])==F){
+    # Extract declines and keep the one that applies
+    crit_C1b_1gen<-revalue(as.character(extract_range(allfields$PopulationDeclineGenerations1.range)>=25), c("TRUE"="CR", "FALSE"="LC"))
+    crit_C1b_2gen<-revalue(as.character(extract_range(allfields$PopulationDeclineGenerations2.range)>=20), c("TRUE"="EN", "FALSE"="LC"))
+    crit_C1b_3gen<-revalue(as.character(extract_range(allfields$PopulationDeclineGenerations3.range)>=10), c("TRUE"="VU", "FALSE"="LC"))
+    
+    if("CR" %in% crit_C1b_1gen){crit_C1b<-crit_C1b_1gen} else {
+      if("EN" %in% crit_C1b_2gen){crit_C1b<-crit_C1b_2gen} else {
+        if("VU" %in% crit_C1b_3gen){crit_C1b<-crit_C1b_3gen} else {
+          crit_C1b<-"LC"
+        }
+      }
+    } 
+    
+    # Calculate minimum and maximum common category
+    Cat_min<-sort(factor(c(crit_C1b, crit_CPOP), levels=c("LC", "VU", "EN", "CR")))[1] # Minimum category is the first one when you order categories
+    Cat_max<-sort(factor(c(
+      sort(factor(crit_CPOP, levels=c("LC", "VU", "EN", "CR")), decreasing=T)[1], # keeps the highest category met according to population size
+      sort(factor(crit_C1b, levels=c("LC", "VU", "EN", "CR")), decreasing=T)[1] # Keeps the highest category met according to decline
+    ), levels=c("LC", "VU", "EN", "CR")))[1] # Keeps the lowest between both
+    
+    
+    # Assign threshold
+    crit<-crit_apply(crit, "C1", c(Cat_min, Cat_max))
+    
+    
+    # Subcriterion (only for the highest met category). In case of intermediate category I also look at qualifier for higher category, this is important eg if pop size triggers EN but decline triggers CR, then the qualifier is only given for 1 generation decline
+    COND1<-allfields$PopulationDeclineGenerations1.qualifier %in% c("Observed", "Estimated", "Projected")
+    COND2<-allfields$PopulationDeclineGenerations2.qualifier %in% c("Observed", "Estimated", "Projected")
+    COND3<-allfields$PopulationDeclineGenerations3.qualifier %in% c("Observed", "Estimated", "Projected")
+    if(Cat_max=="CR"){crit$Subcrit[crit$criterion=="C1"]<-ifelse(COND1, 1, 0)}
+    if(Cat_max=="EN"){crit$Subcrit[crit$criterion=="C1"]<-ifelse(COND1 | COND2, 1, 0)}
+    if(Cat_max=="VU"){crit$Subcrit[crit$criterion=="C1"]<-ifelse(COND1 | COND2 | COND3, 1, 0)}
+    if(Cat_max=="LC"){crit$Subcrit[crit$criterion=="C1"]<-1}
+  }
+  
+  
+  ### Criterion C2
+  Crit_C2<-sort(factor(crit_CPOP, levels=c("LC", "VU", "EN", "CR")), decreasing=T)[1]
+  
+  if(is.na(Crit_C2)==F){
+    ## If no decline, then it's not met
+    if(is.na(allfields$PopulationContinuingDecline.isDeclining) | allfields$PopulationContinuingDecline.isDeclining == "No"){crit$Subcrit[crit$criterion=="C2"]<-0} else {
+      
+      ## If fluctuations, then it's automatically met
+      if(is.na(allfields$PopulationExtremeFluctuation.isFluctuating)==F & allfields$PopulationExtremeFluctuation.isFluctuating == "Yes"){crit$Subcrit[crit$criterion=="C2"]<-1} else {
+        
+        ## If decline but no fluctuations, I have to look at C2a thresholds
+        # C2ai threshold (using the minimum value)
+        C2ai_cat<-cut(min(extract_range(allfields$MaxSubpopulationSize.range)), breaks=c(0,50,250,1000,Inf), labels=c("CR", "EN", "VU", "LC"), include.lowest=T, right=T) %>% as.character(.)
+        if(is.na(C2ai_cat)[1]){C2ai_cat<-"LC"} # If NA, it's not met
+        # C2aii threshold (using the maximum value)
+        C2aii_value<-max(extract_range(allfields$MatureIndividualsSubpopulation.value))
+        C2aii_cat<-cut(C2aii_value, breaks=c(0,90,95,100,101), labels=c(0, "CR", "EN", 1), include.lowest=T, right=F) %>% as.character(.) %>% replace(., is.na(.), 0)
+        if(C2aii_cat == 0){crit$Subcrit[crit$criterion=="C2"]<-0} # Will be overwritten if this does not apply
+        # Apply category by category
+        if(Crit_C2=="LC"){crit$Subcrit[crit$criterion=="C2"]<-1} # Always met
+        if(Crit_C2=="VU"){crit$Subcrit[crit$criterion=="C2"]<-ifelse(C2aii_cat=="1" | C2ai_cat %in% c("CR", "EN", "VU"),1,0)} # Met only if C2ai_cat is threatened or if C2aii_cat is 1
+        if(Crit_C2=="EN"){
+          if(C2aii_cat %in% c("1", "EN")){crit$Subcrit[crit$criterion=="C2"]<-1} else { # If C2aii trigerred, the subcriterion is met
+            if(C2ai_cat %in% c("CR", "EN")){crit$Subcrit[crit$criterion=="C2"]<-1} # If the CR/EN of C2ai is met, it's all fine
+            if(C2ai_cat == "VU"){crit$Subcrit[crit$criterion=="C2"]<-1; Crit_C2<-"VU"} # If only VU is met for C2ai, I bring the category to VU
+            if(C2ai_cat == "LC"){crit$Subcrit[crit$criterion=="C2"]<-0} # If only LC is met for C2ai, subcriteria not met
+          }}
+        if(Crit_C2=="CR"){
+          if(C2aii_cat %in% c("1", "EN", "CR")){crit$Subcrit[crit$criterion=="C2"]<-1} else { # If C2aii trigerred, the subcriterion is met
+            if(C2ai_cat == "CR"){crit$Subcrit[crit$criterion=="C2"]<-1} # If the CR/EN of C2ai is met, it's all fine
+            if(C2ai_cat == "EN"){crit$Subcrit[crit$criterion=="C2"]<-1; Crit_C2<-"EN"} # If only EN is met for C2ai, I bring the category to EN
+            if(C2ai_cat == "VU"){crit$Subcrit[crit$criterion=="C2"]<-1; Crit_C2<-"VU"} # If only VU is met for C2ai, I bring the category to VU
+            if(C2ai_cat == "LC"){crit$Subcrit[crit$criterion=="C2"]<-0} # If only LC is met for C2ai, subcriteria not met
+          }}
+      }
+    }}
+  
+  ## Assign values of C2
+  crit<-crit_apply(crit, "C2", c(
+    sort(factor(c(crit_CPOP, Crit_C2), levels=c("LC", "VU", "EN", "CR")))[1], # The min value is the minimum value of Crit_CPOP unless it has to be lowered because of subcriterion C2ai
+    Crit_C2 # The max value is Crit_C2 (i.e., the maximum category but maybe lowered by subcriterion C2ai)
+  ))
+  
+  
+  
+  
+  
+  
+  ##################
+  ### CRITERIA D ###
+  ##################
+  
+  ### criterion D1
+  crit_D1<-cut(extract_range(allfields$PopulationSize.range), breaks=c(0,50,250,1000,Inf), labels=c("CR", "EN", "VU", "LC"), include.lowest=T, right=F) %>% as.character(.)
+  crit<-crit_apply(crit, "D1", crit_D1)
+  crit$Subcrit[crit$criterion=="D1"]<-1
+  
+  ### Criterion D2
+  if(is.na(allfields$AreaRestricted.isRestricted)==F){
+    crit_D2<-revalue(allfields$AreaRestricted.isRestricted, c("Yes"="VU", "No"="LC"))
+    crit<-crit_apply(crit, "D2", crit_D2)
+    crit$Subcrit[crit$criterion=="D2"]<-1
+  }
+  
+  
+  
+  #############################
+  ### RETURN THE DATA FRAME ###
+  #############################
+  
+  return(crit)
+}
+
+
+
 
 
 

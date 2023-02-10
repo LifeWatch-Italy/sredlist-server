@@ -893,7 +893,7 @@ Prom<-future({
     # Prepare altitude raster
     alt_large<-raster(paste0(config$cciStack2_path, "/ElevationAgg30.tif"))
     alt_crop<-crop(alt_large, extent(rangeSP_clean))
-    writeRaster(alt_crop, paste0(output_dir, "/alt_crop.tif"))
+    writeRaster(alt_crop, paste0(output_dir, "/alt_crop.tif"), overwrite=T)
     
     # Calculate AOH
     AOH2<-sRL_largeAOH(alt_crop, habitats_pref, altitudes_pref_DF[, c("elevation_lower", "elevation_upper")], rangeSP_clean, config$YearAOH2, paste0(output_dir, "/Current/aoh.tif"))
@@ -1483,6 +1483,7 @@ function(scientific_name,
          C_igen_value, C_igen_qual, C_igen_justif, C_iigen_value, C_iigen_qual, C_iigen_justif, C_iiigen_value, C_iiigen_qual, C_iiigen_justif
          ) {
   
+  print(Estimates)
   
   #Filter param
   sRL_loginfo("Start Criteria calculation")
@@ -1547,7 +1548,7 @@ function(scientific_name,
   allfields$PopulationReductionPastCeased.value<-pastTrends_ceased
 
   # Fragmentation
-  #allfields$SevereFragmentation.isFragmented<-ifelse(fragment=="true", "Yes", "No")
+  allfields$SevereFragmentation.isFragmented<-ifelse(fragment=="true", "Yes", "No")
   allfields$SevereFragmentation.justification<-Fragment_justif
 
   # Population details
@@ -1621,7 +1622,7 @@ function(scientific_name,
   allfields$SubpopulationContinuingDecline.justification<-Continuing_NSub_justif
   
   # Remove empty columns (important to avoid overwriting data in reassessments)
-  allfields<-allfields[,which(is.na(allfields[1,])==F & allfields[1,] != "Unknown")]
+  allfields_to_save<-allfields[,which(is.na(allfields[1,])==F & allfields[1,] != "Unknown" & allfields[1,] != "NA")]
 
   
   
@@ -1634,7 +1635,7 @@ function(scientific_name,
   sRL_loginfo("Start writting")
   output_dir<-paste0(sub(" ", "_", scientific_name), "_sRedList")
   dir.create(output_dir)
-  write.csv(allfields, paste0(output_dir, "/allfields.csv"), row.names = F)
+  write.csv(allfields_to_save, paste0(output_dir, "/allfields.csv"), row.names = F)
   write.csv(countries_SIS, paste0(output_dir, "/countries.csv"), row.names = F)
   write.csv(ref_SIS, paste0(output_dir, "/references.csv"), row.names = F)
   write.csv(habitats_SIS, paste0(output_dir, "/habitats.csv"), row.names = F)
@@ -1646,37 +1647,41 @@ function(scientific_name,
    st_write(sRL_OutputOccurrences(scientific_name), paste0(output_dir, "/sRedList_", gsub(" ", ".", scientific_name), "_Occurrences.shp"), append=F)
   }
   
-  # Zip that folder and delete it + Storage_SP
+  # Zip that folder
   #zip(zipfile = output_dir, files = output_dir,  zip = "C:/Program Files/7-Zip/7Z", flags="a -tzip")
   zip(zipfile = output_dir, files = output_dir)
-  # unlink(output_dir, recursive=T)
-  # eval(parse(text=paste0("rm(Storage_SP_", sub(" ", "_", scientific_name), ", envir=.GlobalEnv)")))  # Removes Storage_SP
-  # 
-  # # Remove the AOH files stored
-  # unlink(paste0("resources/AOH_stored/", sub(" ", "_", scientific_name)), recursive=T)
-  # terraOptions(tempdir=tempdir())
-  # rasterOptions(tmpdir=tempdir())
-  # gc()
 
 
   ### Calculate criteria
   sRL_loginfo("Start Criteria calculation")
-  #criteria<-sRL_CalculateCriteria(allfields)
+  criteria<-sRL_CriteriaCalculator(allfields[1,])
   
   
   ### Plot
   sRL_loginfo("Start Plotting")
-  return(ggplot(data=data.frame(X=1,Y=1))+geom_point(aes(X,Y)))
-  # return(
-  #   ggplot(criteria) +
-  #     geom_point(aes(x = Value, y = Crit, col = Value), size = 40, show.legend=F) +
-  #     geom_text(aes(x=Value, y=Crit, label=Value), col="white", size=10)+
-  #     scale_x_discrete(drop = F) + scale_y_discrete(drop=F) +
-  #     xlab("Red List Category triggered") + ylab("Criteria")+
-  #     scale_colour_manual(drop = F, values=c("#006666ff", "#cc9900ff", "#cc6633ff", "#cc3333ff"))+
-  #     ggtitle(paste0("The species seems to meet the ", as.character(max(criteria$Value, na.rm=T)), " category under criteria ", paste(criteria$Crit[criteria$Value==max(criteria$Value, na.rm=T)], collapse=" / "), ". Please check subcriteria!"))+
-  #     theme_bw()
-  # )
+  criteria$Cat_ThresholdMIN <- criteria$Cat_ThresholdMIN %>% replace(., .=="LC", "LC/NT") %>% factor(., c("LC/NT", "VU", "EN", "CR"))
+  criteria$Cat_ThresholdMAX <- criteria$Cat_ThresholdMAX %>% replace(., .=="LC", "LC/NT") %>% factor(., c("LC/NT", "VU", "EN", "CR"))
+  criteria$criterion<-factor(criteria$criterion, levels=sort(criteria$criterion, decreasing=T))
+  
+  CAT_MAX<-sort(criteria$Cat_ThresholdMAX[criteria$Subcrit==1], decreasing=T)[1]
+  CRIT_MAX<-criteria$criterion[criteria$Cat_ThresholdMAX==CAT_MAX & criteria$Subcrit==1] %>% .[is.na(.)==F] %>% paste(., collapse=" / ")
+  
+  criteria$ColMin<-paste0(criteria$Cat_ThresholdMIN, criteria$Subcrit) %>% factor(., c("LC/NT1", "VU1", "EN1", "CR1", "LC/NT0", "VU0", "EN0", "CR0"))
+  criteria$ColMax<-paste0(criteria$Cat_ThresholdMAX, criteria$Subcrit) %>% factor(., c("LC/NT1", "VU1", "EN1", "CR1", "LC/NT0", "VU0", "EN0", "CR0"))
+  
+  return(
+    plot(ggplot(criteria, aes(y = criterion)) +
+      geom_linerange(aes(xmin=Cat_ThresholdMIN, xmax=Cat_ThresholdMAX), linewidth=10, colour="gray75")+
+      geom_point(aes(x = Cat_ThresholdMIN, col = ColMin), size = 20, stroke=6, show.legend=F) +
+      geom_text(aes(x=Cat_ThresholdMIN, label=Cat_ThresholdMIN), col="white", size=5)+
+      geom_point(aes(x = Cat_ThresholdMAX, col = ColMax), size = 20, stroke=6, show.legend=F) +
+      geom_text(aes(x=Cat_ThresholdMAX, label=Cat_ThresholdMAX), col="white", size=5)+
+      scale_x_discrete(drop = F, na.translate = FALSE) + scale_y_discrete(drop=F, na.translate = FALSE) +
+      xlab("Red List Category triggered") + ylab("Criteria")+
+      scale_colour_manual(drop = F, values=c("#006666ff", "#cc9900ff", "#cc6633ff", "#cc3333ff", "#b3d1d1ff", "#f0e1b3ff", "#f0d1c2ff", "#f0c2c2ff"))+
+      ggtitle(paste0("The species seems to meet the ", CAT_MAX, " category under criteria ", CRIT_MAX))+
+      theme_bw())
+  )
 
 
 }
@@ -1694,8 +1699,12 @@ function(scientific_name) {
   # Prepare the ZIP to return
   zip_to_extract<-readBin(paste0(gsub(" ", "_", scientific_name), "_sRedList.zip"), "raw", n = file.info(paste0(gsub(" ", "_", scientific_name), "_sRedList.zip"))$size)
   
-  # Remove the local file
+  # Remove the local files
+  unlink(paste0(gsub(" ", "_", scientific_name), "_sRedList"), recursive=T)
+  unlink(paste0("resources/AOH_stored/", sub(" ", "_", scientific_name)), recursive=T)
   unlink(paste0(gsub(" ", "_", scientific_name), "_sRedList.zip"), recursive=T)
+  
+  # Return
   return(zip_to_extract)
 }
 
