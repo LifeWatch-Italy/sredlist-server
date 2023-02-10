@@ -1648,7 +1648,7 @@ function(scientific_name,
   }
   
   # Zip that folder
-  #zip(zipfile = output_dir, files = output_dir,  zip = "C:/Program Files/7-Zip/7Z", flags="a -tzip")
+  #zip(zipfile = output_dir, files = output_dir,  zip = "C:/Program Files/7-Zip/7z", flags="a -tzip")
   zip(zipfile = output_dir, files = output_dir)
 
 
