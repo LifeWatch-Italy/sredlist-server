@@ -205,8 +205,8 @@ sRL_cleaningMemory<-function(Time_limit){
   } ,error=function(e){cat("Problem removing temporary files from tempdir()")}) 
   
   tryCatch({
-  # Remove ZIP files
-  list_zips<-list.files()[grepl(".zip", list.files())]
+  # Remove ZIP files + pre-zip folders
+  list_zips<-list.files()[grepl("_sRedList", list.files())]
   if(length(list_zips)>0){
     Time_diff_zips<-difftime(Time_now, file.info(list_zips)$atime, units="mins") %>% as.numeric(.)
     toremove_zips<-list_zips[Time_diff_zips>Time_limit]
@@ -221,7 +221,7 @@ sRL_cleaningMemory<-function(Time_limit){
   tryCatch({
     list_temp<-paste0("resources/AOH_stored/", list.files("resources/AOH_stored"))
   if(length(list.files("resources/AOH_stored"))>0){
-    Time_diff_temp<-difftime(Time_now, file.info(list_temp)$atime, units="mins") %>% as.numeric(.)
+    Time_diff_temp<-difftime(Time_now, file.info(paste(list_temp, "Storage_SP.rds", sep="/"))$mtime, units="mins") %>% as.numeric(.) #I use the modification time of Storage_SP because the folder modification time is not updated when Storage_SP is updated (which made problems when you started working on the same species after more than 45 minutes)
     toremove_temp<-list_temp[Time_diff_temp>Time_limit]
     unlink(toremove_temp, recursive=T)
     temp_prop_removed<- (length(list_temp)-length(list.files("resources/AOH_stored")))
