@@ -1408,19 +1408,19 @@ function(scientific_name){
   Storage_SP<-sRL_StoreRead(scientific_name) ; print(names(Storage_SP))
   
   ### EOO
-  EOO_val <- ifelse("eoo_km2" %in% names(Storage_SP), Storage_SP$eoo_km2, "")
-  EOO_justif <- ifelse("eoo_km2" %in% names(Storage_SP), "The EOO has been estimated as the Minimal Convex Polygon around the distribution on the sRedList platform.", "")
+  EOO_val <- ifelse("eoo_km2" %in% names(Storage_SP), Storage_SP$eoo_km2, NA)
+  EOO_justif <- ifelse("eoo_km2" %in% names(Storage_SP), "The EOO has been estimated as the Minimal Convex Polygon around the distribution on the sRedList platform.", NA)
   Storage_SP<-sRL_OutLog(Storage_SP, "Estimated_EOO_raw", EOO_val)
   
   
   ### AOO
-  AOO_val <- ifelse("aoo_km2" %in% names(Storage_SP), Storage_SP$aoo_km2, "")
-  AOO_justif <- ifelse("aoo_km2" %in% names(Storage_SP), "The AOO has been estimated on the sRedList Platform by rescaling the Area of Habitat to a 2x2km2 grid.", "")
+  AOO_val <- ifelse("aoo_km2" %in% names(Storage_SP), Storage_SP$aoo_km2, NA)
+  AOO_justif <- ifelse("aoo_km2" %in% names(Storage_SP), "The AOO has been estimated on the sRedList Platform by rescaling the Area of Habitat to a 2x2km2 grid.", NA)
   Storage_SP<-sRL_OutLog(Storage_SP, "Estimated_AOO_raw", AOO_val)
   
   
   ### Pop size
-  Pop_val <- ifelse("pop_size" %in% names(Storage_SP), Storage_SP$pop_size, "")
+  Pop_val <- ifelse("pop_size" %in% names(Storage_SP), Storage_SP$pop_size, NA)
   Storage_SP<-sRL_OutLog(Storage_SP, "Estimated_PopSize_raw", Pop_val)
   
   
@@ -1454,7 +1454,7 @@ function(scientific_name){
     
     Trends_justif<-paste0("This trend has been measured from the sRedList platform as the trend in Area of Habitat between ", 
                           paste0(Storage_SP$Year1theo_saved, " and ",config$YearAOH2), # Give years if no extrapolation
-                          ifelse(Storage_SP$Year1theo_saved==Storage_SP$Year1_saved, "", " (using expontential extrapolation for the period before 1992)")) # Specify extrapolation if needed
+                          ifelse(Storage_SP$Year1theo_saved==Storage_SP$Year1_saved, NA, " (using expontential extrapolation for the period before 1992)")) # Specify extrapolation if needed
     
     Storage_SP<-sRL_OutLog(Storage_SP, "Estimated_PopTrends_raw", Trends_val)
   }
@@ -1463,8 +1463,16 @@ function(scientific_name){
   ### Save Storage_SP
   sRL_StoreSave(scientific_name, Storage_SP)
   
+  Estimates_df=data.frame(EOO_val=EOO_val, 
+                       EOO_justif=EOO_justif, 
+                       AOO_val=AOO_val, 
+                       AOO_justif=AOO_justif, 
+                       Pop_val=Pop_val, 
+                       Trends_dir=Trends_dir, 
+                       Trends_val=Trends_val, 
+                       Trends_justif=Trends_justif)
   
-  return(list(EOO_val, EOO_justif, AOO_val, AOO_justif, Pop_val, Trends_dir, Trends_val, Trends_justif))
+  return(list(Estimates=Estimates_df))
 }
 
 
@@ -1483,6 +1491,7 @@ function(scientific_name,
          C_igen_value, C_igen_qual, C_igen_justif, C_iigen_value, C_iigen_qual, C_iigen_justif, C_iiigen_value, C_iiigen_qual, C_iiigen_justif
          ) {
   
+  Estimates<-replace(Estimates, Estimates %in% c("undefined", " "), NA)
   print(Estimates)
   
   #Filter param
