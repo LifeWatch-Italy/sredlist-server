@@ -71,7 +71,7 @@ function(scientific_name, path = "") {
   files <- base::list.files(path = speciesPath, pattern = "\\.shp$")
   
   if (length(files) == 0) {
-    not_found("Shapefile of the species does not exist!") # nolint
+    not_found() # nolint
   } else {
     distributionPath <- paste0(speciesPath, "/", files[1]) # nolint
   }
@@ -81,7 +81,7 @@ function(scientific_name, path = "") {
   
   ### Clean the distribution
   distSP <-sRL_PrepareDistrib(distributions, scientific_name) # nolint
-  
+
   return(list(
     presences = union(c(1, 2, 3), unique(distSP$presence)),
     seasons = union(c(1, 2), unique(distSP$seasonal)),

@@ -89,13 +89,27 @@ sRL_ReadDistribution <- function(scientific_name, path) {
 
 ### Prepare distribution
 sRL_PrepareDistrib <- function(distributions, scientific_name){
+  
+  # Replace column names
   names(distributions)[which(names(distributions) %in% c("SCINAME", "binomial", "BINOMIAL", "binomil"))] <- "binomial" # nolint
   names(distributions)[which(names(distributions) %in% c("PRESENC", "PRESENCE", "presence", "presenc"))] <- "presence" # nolint
   names(distributions)[which(names(distributions) %in% c("ORIGIN", "origin"))] <- "origin" # nolint
   names(distributions)[which(names(distributions) %in% c("SEASONA", "SEASONAL", "seasonal", "seasonl"))] <- "seasonal" # nolint
-  distSP <- subset(distributions, distributions$binomial == scientific_name) # nolint 
   
+  # If no column, add them
+  if(!"binomial" %in% names(distributions)){distributions$binomial<-scientific_name}
+  if(!"presence" %in% names(distributions)){distributions$presence<-1}
+  if(!"origin" %in% names(distributions)){distributions$origin<-1}
+  if(!"seasonal" %in% names(distributions)){distributions$seasonal<-1}
+  
+  # Subset
+  if(! scientific_name %in% distributions$binomial){species_not_in_distrib()}
+  distSP <- subset(distributions, distributions$binomial == scientific_name) # nolint 
+  if(nrow(distSP)==0){empty_distrib()}
+  
+  # Transform CRS
   distSP<-st_transform(distSP, st_crs(CRSMOLL))
+  
   return(distSP)
 }
 

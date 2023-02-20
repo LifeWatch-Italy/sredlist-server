@@ -27,8 +27,16 @@ payload_too_large  <- function(message = "Payload Too Large") {
   api_error(message = message, status = 413)
 }
 
-not_found <- function(message = "Not found.") {
-  api_error(message = message, status = 404)
+not_found <- function() {
+  api_error(message = "Shapefile of the species does not exist!", status = 404)
+}
+
+species_not_in_distrib <- function() {
+  api_error(message = "The species is not present in the shapefile, there may be a mistake in column 'binomial'", status = 400)
+}
+
+empty_distrib <- function() {
+  api_error(message = "The distribution is empty", status = 400)
 }
 
 missing_params <- function(message = "Missing required parameters.") {
