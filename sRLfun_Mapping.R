@@ -6,10 +6,11 @@ sRL_createDataGBIF <- function(scientific_name, GBIF_SRC, Uploaded_Records) { # 
   
   ### Download data
   # From GBIF
-  if(GBIF_SRC[1]==1){
+  TaxKey<-name_backbone(name=scientific_name)$usageKey
+  if(GBIF_SRC[1]==1 & is.null(TaxKey)==F){
     
     #Calculate the total number of data in GBIF
-    OCC<-occ_count(taxonKey=name_backbone(name=scientific_name)$usageKey, georeferenced = TRUE)
+    OCC<-occ_count(taxonKey=TaxKey, georeferenced = TRUE)
     
     if(OCC < config$LIM_GBIF){ # Download all data or structure download if more than LIM_GBIF
       dat_gbif <- rgbif::occ_data(scientificName=scientific_name, hasCoordinate = T, limit=config$LIM_GBIF)$data # occ_data is faster than occ_search because it omits some columns
