@@ -265,7 +265,7 @@ sRL_MapDistributionGBIF<-function(dat, scientific_name, First_step, AltMIN, AltM
   if(First_step=="alpha"){
       Par_alpha<-Gbif_Param[2]
       EX<-extent(dat)
-      distGBIF<-convexHull(dat, alpha = Par_alpha * 0.1 * sqrt((EX@xmin-EX@xmax)^2 + (EX@ymin-EX@ymax)^2), sp = FALSE)
+      distGBIF<-convexHull(dat, alpha = Par_alpha * sqrt((EX@xmin-EX@xmax)^2 + (EX@ymin-EX@ymax)^2), sp = FALSE)
       st_crs(distGBIF)<-st_crs(dat)
       
   }
