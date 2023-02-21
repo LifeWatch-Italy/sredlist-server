@@ -1675,7 +1675,9 @@ function(scientific_name,
   criteria$criterion<-factor(criteria$criterion, levels=sort(criteria$criterion, decreasing=T))
   
   CAT_MAX<-sort(criteria$Cat_ThresholdMAX[criteria$Subcrit==1], decreasing=T)[1]
-  CRIT_MAX<-criteria$criterion[criteria$Cat_ThresholdMAX==CAT_MAX & criteria$Subcrit==1] %>% .[is.na(.)==F] %>% paste(., collapse=" / ")
+  if(is.na(CAT_MAX)){CAT_MAX<-"LC"}
+  CRIT_MAX<-criteria$criterion[criteria$Cat_ThresholdMAX==CAT_MAX & criteria$Subcrit==1] %>% .[is.na(.)==F] %>% paste(., collapse=" / ") %>% paste0(" under crit. ", .)
+  if(CAT_MAX=="LC"){CRIT_MAX<-""}
   
   criteria$ColMin<-paste0(criteria$Cat_ThresholdMIN, criteria$Subcrit) %>% factor(., c("LC/NT1", "VU1", "EN1", "CR1", "LC/NT0", "VU0", "EN0", "CR0"))
   criteria$ColMax<-paste0(criteria$Cat_ThresholdMAX, criteria$Subcrit) %>% factor(., c("LC/NT1", "VU1", "EN1", "CR1", "LC/NT0", "VU0", "EN0", "CR0"))
@@ -1690,7 +1692,7 @@ function(scientific_name,
       scale_x_discrete(drop = F, na.translate = FALSE) + scale_y_discrete(drop=F, na.translate = FALSE) +
       xlab("Red List Category triggered") + ylab("Criteria")+
       scale_colour_manual(drop = F, values=c("#006666ff", "#cc9900ff", "#cc6633ff", "#cc3333ff", "#b3d1d1ff", "#f0e1b3ff", "#f0d1c2ff", "#f0c2c2ff"))+
-      ggtitle(paste0("The species seems to meet the ", CAT_MAX, " category under criteria ", CRIT_MAX))+
+      ggtitle(paste0("The species seems to meet the ", CAT_MAX, " category", CRIT_MAX))+
       theme_bw())
   )
 
