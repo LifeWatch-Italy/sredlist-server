@@ -1167,12 +1167,12 @@ Prom<-future({
     
     # If no uncertainty, plot directly
     if(Storage_SP$Uncertain=="Uncertain_no"){
-      plot1 <- plot(gplot((AOH2[[1]]-AOH1[[1]])/9) + 
+      plot1 <- gplot((AOH2[[1]]-AOH1[[1]])/9) + 
         coord_fixed()+
         geom_tile(aes(fill = value))+
         scale_fill_gradient2(low="#8c510a", mid="azure2", midpoint=0, high="#018571", name="Suitability change (%)", limits=c(-100,100), na.value=NA, trans=colour_bidirect_scale, breaks=c(-100, -50, -10, 0, 10, 50, 100))+
         ggtitle(paste0("Trends in Area of Habitat between ", Year1, " and ", config$YearAOH2))+
-        sRLTheme_maps)
+        sRLTheme_maps
       
     } else { # If uncertainty, calculate other trends and plot
 
