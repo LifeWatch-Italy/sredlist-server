@@ -572,6 +572,8 @@ return(Prom)
 #* @tag sRedList
 function(scientific_name, domain_pref=list(), Crop_Country="") {
 
+if(!Crop_Country %in% c(distCountries$SIS_name0, "", "Europe", "EU27")){no_countries_crop()}
+  
 Prom<-future({
   sf::sf_use_s2(FALSE)
 
@@ -586,16 +588,16 @@ Prom<-future({
   
   # Crop for National Red Listing
   if(Crop_Country != ""){
-    if(!Crop_Country %in% c(distCountries$SIS_name0, "Europe")){no_countries_crop()} else{
     distSP<-sRL_CropCountry(distSP, domain_pref, Crop_Country)
+    if(nrow(distSP)==0){no_COO_overlap()}
     Storage_SP$distSP_saved<-distSP
     Storage_SP<-sRL_OutLog(Storage_SP, "Crop_Country", Crop_Country)
-    }}
+    }
   
   # Prepare distribution and calculate COO
   distSP<-distSP %>% dplyr::group_by(origin, presence, seasonal) %>% dplyr::summarise(N= n()) %>% st_transform(., st_crs(coo_raw))
   distWGS<-st_transform(distSP, st_crs(coo_raw))
-  coo<-sRL_cooExtract(distSP, domain_pref)
+  coo<-sRL_cooExtract(distSP, domain_pref, Crop_Country)
   
   # Simplify distribution if large distribution
   if((extent(distWGS)@xmax-extent(distWGS)@xmin)>50){distWGS<-st_simplify(distWGS, dTolerance=0.05)}

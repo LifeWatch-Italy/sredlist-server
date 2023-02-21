@@ -381,7 +381,7 @@ sRL_saveMapDistribution <- function(scientific_name, Storage_SP) {
 
 
 ### Function COO countries of occurrence
-sRL_cooExtract<-function(distSP, domain_pref){
+sRL_cooExtract<-function(distSP, domain_pref, Crop_Country){
   
   ### Prepare COO terrestrial and freshwater
   if("Terrestrial" %in% domain_pref | "Freshwater" %in% domain_pref){
@@ -429,22 +429,45 @@ sRL_cooExtract<-function(distSP, domain_pref){
   }
   
   
-  ### Merge and return
-  if(!"Marine" %in% domain_pref){return(coo)}
-  if("Marine" %in% domain_pref & length(domain_pref)==1){return(eez)}
-  if("Marine" %in% domain_pref & ("Terrestrial" %in% domain_pref | "Freshwater" %in% domain_pref)){return(rbind(coo, eez))}
+  ### Merge
+  if(!"Marine" %in% domain_pref){COO_merged<-coo}
+  if("Marine" %in% domain_pref & length(domain_pref)==1){COO_merged<-eez}
+  if("Marine" %in% domain_pref & ("Terrestrial" %in% domain_pref | "Freshwater" %in% domain_pref)){COO_merged<-rbind(coo, eez)}
   
+  
+  ### Subset if National / Regional Red Listing
+  if(Crop_Country[1] != ""){
+    Crop_Country1<-c()
+    if(Crop_Country[1]=="Europe"){Crop_Country<-sRL_EuropeList; Crop_Country1<-sRL_EuropeList1}
+    if(Crop_Country[1]=="EU27"){Crop_Country<-sRL_EU27List}
+    
+    COO_merged$Level0_occupied[(COO_merged$SIS_name0 %in% Crop_Country | COO_merged$SIS_name1 %in% Crop_Country1)==F]<-FALSE
+    COO_merged$Level1_occupied[(COO_merged$SIS_name0 %in% Crop_Country | COO_merged$SIS_name1 %in% Crop_Country1)==F]<-FALSE
+  }
+  
+    
+  ### Return
+  return(COO_merged)  
 }
 
 
+
+
 ### Function to crop a country for National Red Listing
+sRL_EuropeList<-c("Albania", "Andorra", "Austria", "Belarus", "Belgium", "Bosnia and Herzegovina", "Bulgaria", "Croatia", "Cyprus", "Czechia", "Denmark", "Estonia", "Finland", "France", "Germany", "Greece", "Hungary", "Iceland", "Ireland", "Italy", "Latvia", "Liechtenstein", "Lithuania", "Luxembourg", "Malta", "Moldova, Republic of", "Monaco", "Montenegro", "Netherlands", "North Macedonia", "Norway", "Poland", "Portugal", "Romania", "San Marino", "Serbia", "Slovakia", "Slovenia", "Spain", "Sweden", "Switzerland", "Ukraine", "United Kingdom of Great Britain and Northern Ireland")
+sRL_EuropeList1<-c("European Russia", "Türkiye-in-Europe") # For Europe I need to include Eastern Russia and Eastern Turkey, I list them in Crop_Country1 which is empty for non European National assessments
+sRL_EU27List<-c("Austria", "Belgium", "Bulgaria", "Croatia", "Cyprus", "Czechia", "Denmark", "Estonia", "Finland", "France", "Germany", "Greece", "Hungary", "Ireland", "Italy", "Latvia", "Lithuania", "Luxembourg", "Malta", "Netherlands", "Poland", "Portugal", "Romania", "Slovakia", "Slovenia", "Spain", "Sweden")
+
 sRL_CropCountry<-function(distSP, domain_pref, Crop_Country){
 
   # Europe
   Crop_Country1<-c()
-  if(Crop_Country=="Europe"){
-    Crop_Country<-c("Albania", "Andorra", "Austria", "Belarus", "Belgium", "Bosnia and Herzegovina", "Bulgaria", "Croatia", "Cyprus", "Czechia", "Denmark", "Estonia", "Finland", "France", "Germany", "Greece", "Hungary", "Iceland", "Ireland", "Italy", "Latvia", "Liechtenstein", "Lithuania", "Luxembourg", "Malta", "Moldova, Republic of", "Monaco", "Montenegro", "Netherlands", "North Macedonia", "Norway", "Poland", "Portugal", "Romania", "San Marino", "Serbia", "Slovakia", "Slovenia", "Spain", "Sweden", "Switzerland", "Ukraine", "United Kingdom of Great Britain and Northern Ireland")
-    Crop_Country1<-c("European Russia", "Türkiye-in-Europe") # For Europe I need to include Eastern Russia and Eastern Turkey, I list them in Crop_Country1 which is empty for non European National assessments
+  if(Crop_Country[1]=="Europe"){
+    Crop_Country<-sRL_EuropeList
+    Crop_Country1<-sRL_EuropeList1
+  }
+  if(Crop_Country[1]=="EU27"){
+    Crop_Country<-sRL_EU27List
   }
   
   

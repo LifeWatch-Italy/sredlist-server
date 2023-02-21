@@ -76,4 +76,7 @@ no_countries_crop <- function() {
   api_error(message = "This country is not in the list of Red List countries, check names on the interactive map", status = 400)
 }
 
+no_COO_overlap <- function() {
+  api_error(message = "This country does not overlap with species distribution", status = 400)
+}
 
