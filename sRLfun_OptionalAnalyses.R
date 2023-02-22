@@ -65,7 +65,7 @@ sRL_CalcHumandensity<-function(scientific_name, distSP, GL){
   ### Plots
   RS_name="Human population density"
   
-  GG_RS=grid.arrange(
+  GG_RS=cowplot::plot_grid(
     
     gplot(human2_crop)+
       coord_fixed()+
@@ -81,7 +81,7 @@ sRL_CalcHumandensity<-function(scientific_name, distSP, GL){
       ggtitle(paste0("Change ", Year1, "-", Year2)) +
       sRLTheme_maps
     
-    ,ncol=2, top=RS_name
+    ,ncol=2, labels=RS_name
   )
   
   ggsave(filename = paste0("resources/AOH_stored/", sub(" ", "_", scientific_name), "/Plots/RS_plot.png"), plot = GG_RS, width=10, height=6)
@@ -126,7 +126,7 @@ sRL_CalcForestchange<-function(scientific_name, distSP){
   ### Plots
   RS_name="Forest cover"
   
-  GG_RS=grid.arrange(
+  GG_RS=cowplot::plot_grid(
     
     gplot(forest2_crop)+
       coord_fixed()+
@@ -142,7 +142,7 @@ sRL_CalcForestchange<-function(scientific_name, distSP){
       ggtitle(paste0("Change 2000-2022")) +
       sRLTheme_maps
     
-    ,ncol=2, top=RS_name
+    ,ncol=2, labels=RS_name
   )
   
   ggsave(filename = paste0("resources/AOH_stored/", sub(" ", "_", scientific_name), "/Plots/RS_plot.png"), plot = GG_RS, width=10, height=6)

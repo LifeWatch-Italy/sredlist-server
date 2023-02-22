@@ -80,3 +80,8 @@ no_COO_overlap <- function() {
   api_error(message = "This country does not overlap with species distribution", status = 400)
 }
 
+no_density_fragm <- function() {
+  api_error(message = "A density must be provided in the AOH step to perform this step", status = 400)
+}
+
+

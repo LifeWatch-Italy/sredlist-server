@@ -27,7 +27,7 @@ library(Rook) ; library(ggplot2) ; library(gridExtra) ; library(raster) ; librar
 ### GBIF mapping
 library(rgbif) ; library(CoordinateCleaner) ; library(rCAT) ; library(maps) ; library(countrycode); library(rnaturalearthdata); library(robis) # nolint
 library(plotly) ; library(mapview) ; library(leaflet) ; library(htmltools) ; library(leafem)
-library(adehabitatHR) ; library(smoothr) ; library(spatialEco)
+library(adehabitatHR) ; library(smoothr) ; library(spatialEco) ; library(alphahull)
 
 ### AOH analyses
 library(exactextractr)

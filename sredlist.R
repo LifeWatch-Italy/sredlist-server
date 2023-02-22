@@ -478,54 +478,61 @@ function(scientific_name) {return(list(Gbif_Smooth = 0))}
 function(scientific_name, Gbif_Smooth=-1) {
   
 Prom<-future({
-  sf::sf_use_s2(FALSE)
+  TRY=0
+  tryCatch({
+    sf::sf_use_s2(FALSE)
     
-  ### Transform parameters GBIF filtering
-  sRL_loginfo("Start GBIF 4")
-  scientific_name <- sRL_decode(scientific_name)
-  Storage_SP=sRL_StoreRead(scientific_name)
-  Crop_par<-Storage_SP$Output$Value[Storage_SP$Output$Parameter=="Mapping_Crop"]
+    ### Transform parameters GBIF filtering
+    sRL_loginfo("Start GBIF 4")
+    scientific_name <- sRL_decode(scientific_name)
+    Storage_SP=sRL_StoreRead(scientific_name)
+    Crop_par<-Storage_SP$Output$Value[Storage_SP$Output$Parameter=="Mapping_Crop"]
+    
+    ### Smooth if parameter >0
+    Gbif_Smooth=as.numeric(Gbif_Smooth) ; print(Gbif_Smooth)
+    if(Gbif_Smooth>0){
+      
+      if(Crop_par %in% c("cropland", "cropsea")){
+        distSP<-sRL_MapDistributionGBIF(Storage_SP$dat_proj_saved, scientific_name,
+                                        First_step=Storage_SP$Output$Value[Storage_SP$Output$Parameter=="Mapping_Start"],
+                                        AltMIN=Storage_SP$Output$Value[Storage_SP$Output$Parameter=="Mapping_Altitude"] %>% strsplit(., ",") %>% unlist(.) %>% as.numeric(.) %>% .[1], 
+                                        AltMAX=Storage_SP$Output$Value[Storage_SP$Output$Parameter=="Mapping_Altitude"] %>% strsplit(., ",") %>% unlist(.) %>% as.numeric(.) %>% .[2],
+                                        Buffer_km2=as.numeric(Storage_SP$Output$Value[Storage_SP$Output$Parameter=="Mapping_Buffer"]),
+                                        GBIF_crop="",
+                                        Gbif_Param=c(as.numeric(Storage_SP$Output$Value[Storage_SP$Output$Parameter=="Kernel_parameter"]), as.numeric(Storage_SP$Output$Value[Storage_SP$Output$Parameter=="Alpha_parameter"])))
+      } else {distSP<-Storage_SP$distSP3_saved}
+      distSP<-smooth(distSP, method = "ksmooth", smoothness=Gbif_Smooth, max_distance=10000)} else{
+        distSP<-Storage_SP$distSP3_saved
+      }
+    distSP<-st_make_valid(distSP)
+    
+    
+    ### If smooth and the distribution should be cropped by land/sea, we crop again after smoothing
+    if(Gbif_Smooth>0 & Crop_par %in% c("cropland", "cropsea")){
+      CountrySP<-Storage_SP$CountrySP_saved
+      
+      if(Crop_par=="cropland"){
+        distSP<-st_intersection(distSP, CountrySP) %>% 
+          dplyr::group_by(binomial) %>% dplyr::summarise(N = n())}
+      
+      if(Crop_par=="cropsea"){
+        countr<-CountrySP %>% st_crop(., extent(distSP)) %>% dplyr::group_by() %>% dplyr::summarise(N = n())
+        distSP<-st_difference(distSP, countr)}
+      
+      distSP$id_no<-NA; distSP$seasonal<-distSP$origin<-distSP$presence<-1
+    }
+    TRY=1
+  }, error=function(e){cat("Smooth did not work")})
   
-  ### Smooth if parameter >0
-  Gbif_Smooth=as.numeric(Gbif_Smooth) ; print(Gbif_Smooth)
-  if(Gbif_Smooth>0){
-    
-    if(Crop_par %in% c("cropland", "cropsea")){
-      distSP<-sRL_MapDistributionGBIF(Storage_SP$dat_proj_saved, scientific_name,
-                                    First_step=Storage_SP$Output$Value[Storage_SP$Output$Parameter=="Mapping_Start"],
-                                    AltMIN=Storage_SP$Output$Value[Storage_SP$Output$Parameter=="Mapping_Altitude"] %>% strsplit(., ",") %>% unlist(.) %>% as.numeric(.) %>% .[1], 
-                                    AltMAX=Storage_SP$Output$Value[Storage_SP$Output$Parameter=="Mapping_Altitude"] %>% strsplit(., ",") %>% unlist(.) %>% as.numeric(.) %>% .[2],
-                                    Buffer_km2=as.numeric(Storage_SP$Output$Value[Storage_SP$Output$Parameter=="Mapping_Buffer"]),
-                                    GBIF_crop="",
-                                    Gbif_Param=c(as.numeric(Storage_SP$Output$Value[Storage_SP$Output$Parameter=="Kernel_parameter"]), as.numeric(Storage_SP$Output$Value[Storage_SP$Output$Parameter=="Alpha_parameter"])))
-    } else {distSP<-Storage_SP$distSP3_saved}
-    distSP<-smooth(distSP, method = "ksmooth", smoothness=Gbif_Smooth, max_distance=10000)} else{
-    distSP<-Storage_SP$distSP3_saved
-  }
-  distSP<-st_make_valid(distSP)
-  
-  
-  ### If smooth and the distribution should be cropped by land/sea, we crop again after smoothing
-  if(Gbif_Smooth>0 & Crop_par %in% c("cropland", "cropsea")){
-    CountrySP<-Storage_SP$CountrySP_saved
-    
-    if(Crop_par=="cropland"){
-      distSP<-st_intersection(distSP, CountrySP) %>% 
-        dplyr::group_by(binomial) %>% dplyr::summarise(N = n())}
-    
-    if(Crop_par=="cropsea"){
-      countr<-CountrySP %>% st_crop(., extent(distSP)) %>% dplyr::group_by() %>% dplyr::summarise(N = n())
-      distSP<-st_difference(distSP, countr)}
-    
-    distSP$id_no<-NA; distSP$seasonal<-distSP$origin<-distSP$presence<-1
-  }
+  # If problem in the TryCatch (i.e., smoothing not possible), I return the original distribution
+  if(TRY==0){distSP<-Storage_SP$distSP3_saved %>% st_make_valid(.)}
   
   ### Keep distribution in memory
   Storage_SP$distSP_saved <- distSP
   Storage_SP$distSP_savedORIGINAL <- distSP # I need to save it twice for country croping for National RL
   Storage_SP<-sRL_OutLog(Storage_SP, "Mapping_Smooth", Gbif_Smooth)
   sRL_StoreSave(scientific_name, Storage_SP)
-  
+    
   ### Plot
   ggsave(paste0("resources/AOH_stored/", sub(" ", "_", scientific_name), "/Plots/plot_final.png"), (
     ggplot() + 
@@ -536,18 +543,18 @@ Prom<-future({
       sRLTheme_maps
   ), width=18, height=5.5) # nolint
   plot_final <- base64enc::dataURI(file = paste0("resources/AOH_stored/", sub(" ", "_", scientific_name), "/Plots/plot_final.png"), mime = "image/png") # nolint
-  
+    
   # Save distribution in the platform
   gbif_path <- sRL_saveMapDistribution(scientific_name, Storage_SP)
   sRL_loginfo("End GBIF 4")
   
- return(list(
+  return(list(
     plot_eoo = plot_final,
     eoo_km2 = 1, # eoo_km2 parameter is used in the client to know if we come from GBIF or RL distribution, so I have to keep it here or to change the client
     eoo_rating = 1,
     gbif_path = gbif_path
   ))
-  
+
 }, seed=T)
 
 return(Prom) 
@@ -590,17 +597,16 @@ Prom<-future({
   if(Crop_Country != ""){
     distSP<-sRL_CropCountry(distSP, domain_pref, Crop_Country)
     if(nrow(distSP)==0){no_COO_overlap()}
-    Storage_SP$distSP_saved<-distSP
     Storage_SP<-sRL_OutLog(Storage_SP, "Crop_Country", Crop_Country)
     }
+  Storage_SP$distSP_saved<-distSP # I have to save it even if Crop_Country is empty because maybe it was not empty at previous call
   
   # Prepare distribution and calculate COO
-  distSP<-distSP %>% dplyr::group_by(origin, presence, seasonal) %>% dplyr::summarise(N= n()) %>% st_transform(., st_crs(coo_raw))
-  distWGS<-st_transform(distSP, st_crs(coo_raw))
-  coo<-sRL_cooExtract(distSP, domain_pref, Crop_Country)
+  distSP_WGS<-distSP %>% dplyr::group_by(origin, presence, seasonal) %>% dplyr::summarise(N= n()) %>% st_transform(., st_crs(coo_raw))
+  coo<-sRL_cooExtract(distSP_WGS, domain_pref, Crop_Country)
   
   # Simplify distribution if large distribution
-  if((extent(distWGS)@xmax-extent(distWGS)@xmin)>50){distWGS<-st_simplify(distWGS, dTolerance=0.05)}
+  if((extent(distSP_WGS)@xmax-extent(distSP_WGS)@xmin)>50){distSP_WGS<-st_simplify(distSP_WGS, dTolerance=0.05)}
   
   # Create table of colours / labels and assign colours
   col.df<-data.frame(
@@ -625,7 +631,7 @@ Prom<-future({
                 fillColor=coo$colour,
                 popup=coo$Popup,
                 stroke=T, weight=2, fillOpacity=1) %>%
-      addPolygons(data=distWGS, color="#D69F32", fillOpacity=0.4) %>%
+      addPolygons(data=distSP_WGS, color="#D69F32", fillOpacity=0.4) %>%
       addLegend(position="bottomleft", colors=c(col.df$Col[col.df$Col %in% coo$colour], "#D69F32"), labels=c(col.df$Label[col.df$Col %in% coo$colour], "Distribution"), opacity=1)
   )
   
@@ -927,7 +933,7 @@ Prom<-future({
           coord_fixed()+
           geom_tile(aes(fill = value)) +
           scale_fill_gradient(low="#dfc27d", high="#018571", name="Suitability (%)", limits=c(0,100), na.value=NA)+
-          ggtitle("Pessimistic AOH") +
+          ggtitle(paste0("Pessimistic AOH in ", config$YearAOH2)) +
           labs(subtitle= "(marginal habitats / extreme elevations excluded)") +
           sRLTheme_maps,
 
@@ -935,11 +941,11 @@ Prom<-future({
           coord_fixed()+
           geom_tile(aes(fill = value)) +
           scale_fill_gradient(low="#dfc27d", high="#018571", name="Suitability (%)", limits=c(0,100), na.value=NA)+
-          ggtitle("Optimistic AOH") +
+          ggtitle(paste0("Optimistic AOH in ", config$YearAOH2)) +
           labs(subtitle= "(marginal habitats / extreme elevations included)") +
           sRLTheme_maps,
 
-        labels=paste0("Area of Habitat in ", config$YearAOH2), ncol=1)
+        ncol=1)
     }
 
   }
@@ -967,7 +973,7 @@ Prom<-future({
       coord_fixed()+
       geom_tile(aes(fill = factor(as.character(value), c("0", "1")))) +
       scale_fill_manual(values=c("#dfc27d", "#018571"), labels=c("Unsuitable", "Suitable"), name="", na.translate=F, drop=F) +
-      labs(title="Area of Habitat (2x2km)", subtitle=ifelse(AOH_type=="Large", "Likely slightly overestimated (using a 10x10km aggregate raster)", ""))+
+      labs(title="", subtitle=ifelse(AOH_type=="Large", "Likely slightly overestimated (using a 10x10km aggregate raster)", ""))+
       sRLTheme_maps
   }
 
@@ -980,7 +986,7 @@ Prom<-future({
         coord_fixed()+
         geom_tile(aes(fill = factor(value, levels=c("0", "1", "2")))) +
         scale_fill_manual(values=c("#FBCB3C", "#54B967", "#004D40", NA), labels=c("Unsuitable", "Unknown", "Suitable", ""), name="", na.translate=F, drop=F) +
-        ggtitle("Area of Habitat (2x2km); Likely slightly overestimated") +
+        ggtitle("") +
         sRLTheme_maps
 
     } else{
@@ -999,7 +1005,7 @@ Prom<-future({
         labs(title="Optimistic")+
         sRLTheme_maps,
 
-      labels="Area of Habitat (2x2km); Likely slightly overestimated", ncol=1)
+      labels="Likely slightly overestimated (using a 10x10km aggregate raster)", ncol=1)
   }
   }
 
@@ -1008,7 +1014,7 @@ Prom<-future({
 
   AOO_km2<- sRL_areaAOH(aoh_22[[1]], SCALE="2x2")
   if(Uncertain=="Uncertain_yes"){AOO_km2_opt<- sRL_areaAOH(aoh_22_opt[[1]], SCALE="2x2")}
-  Storage_SP$density_saved<-density_pref
+  if (density_pref[1] != '-1') {Storage_SP$density_saved<-density_pref}
   Storage_SP$aoo_km2<-AOO_km2
   
 
@@ -1143,8 +1149,7 @@ Prom<-future({
           coord_fixed()+
           geom_tile(aes(fill = factor(as.character(value), c("2", "3", "4", "5")))) +
           scale_fill_manual(values=c("#a6611a", "gray90", "#80cdc1", "#018571"), labels=c("Newly unsuitable", "Unsuitable", "Suitable", "Newly suitable"), name="", na.translate=F, drop=F)+
-          ggtitle("Pessimistic AOH") +
-          labs(subtitle= "(marginal habitats / extreme elevations excluded)") +
+          ggtitle("\n\nPessimistic AOH") +
           sRLTheme_maps,
         
         gplot((AOH2_opt[[1]]*2+3)-AOH1_opt[[1]]) +
@@ -1152,10 +1157,10 @@ Prom<-future({
           geom_tile(aes(fill = factor(as.character(value), c("2", "3", "4", "5")))) +
           scale_fill_manual(values=c("#a6611a", "gray90", "#80cdc1", "#018571"), labels=c("Newly unsuitable", "Unsuitable", "Suitable", "Newly suitable"), name="", na.translate=F, drop=F)+
           ggtitle("Optimistic AOH") +
-          labs(subtitle= "(marginal habitats / extreme elevations included)") +
           sRLTheme_maps,
         
-        labels=paste0("Trends in Area of Habitat between ", Year1, " and ", config$YearAOH2), ncol=1)
+        labels=paste0("Trends in Area of Habitat between ", Year1, " and ", config$YearAOH2), 
+        ncol=1)
     }
   
    
@@ -1186,8 +1191,8 @@ Prom<-future({
           coord_fixed()+
           geom_tile(aes(fill = value)) +
           scale_fill_gradient2(low="#8c510a", mid="azure2", midpoint=0, high="#018571", name="Suitability change (%)", limits=c(-100,100), na.value=NA, trans=colour_bidirect_scale, breaks=c(-100, -50, -10, 0, 10, 50, 100))+
-          ggtitle("Pessimistic AOH") +
-          labs(subtitle= "(marginal habitats / extreme elevations excluded)") +
+          ggtitle("\n\nPessimistic AOH") +
+          #labs(subtitle= "(marginal habitats / extreme elevations excluded)") +
           sRLTheme_maps,
         
         gplot((AOH2_opt[[1]]-AOH1_opt[[1]])/9) + # Divide by 9 to get percents
@@ -1195,17 +1200,18 @@ Prom<-future({
           geom_tile(aes(fill = value)) +
           scale_fill_gradient2(low="#8c510a", mid="azure2", midpoint=0, high="#018571", name="Suitability change (%)", limits=c(-100,100), na.value=NA, trans=colour_bidirect_scale, breaks=c(-100, -50, -10, 0, 10, 50, 100))+
           ggtitle("Optimistic AOH") +
-          labs(subtitle= "(marginal habitats / extreme elevations included)") +
+          #labs(subtitle= "(marginal habitats / extreme elevations included)") +
           sRLTheme_maps,
         
-        top=paste0("Trends in Area of Habitat between ", Year1, " and ", config$YearAOH2), ncol=1)
+        labels=paste0("Trends in Area of Habitat between ", Year1, " and ", config$YearAOH2), 
+        ncol=1)
     }
 
     
   }  
   
   # Plot
-  ggsave(filename = paste0("resources/AOH_stored/", sub(" ", "_", scientific_name), "/Plots/trends_aoh.png"), plot = plot1, width=6, height=ifelse(Storage_SP$Uncertain=="Uncertain_no", 6, 10))
+  ggsave(filename = paste0("resources/AOH_stored/", sub(" ", "_", scientific_name), "/Plots/trends_aoh.png"), plot = plot1, width=8, height=ifelse(Storage_SP$Uncertain=="Uncertain_no", 8, 13))
   plot1 <- base64enc::dataURI(file = paste0("resources/AOH_stored/", sub(" ", "_", scientific_name), "/Plots/trends_aoh.png"), mime = "image/png", encoding = "base64") # nolint
   
   # Calculate area and trends
@@ -1282,11 +1288,8 @@ return(Prom)
 #* @tag sRedList
 function(scientific_name) {
   
-  dispersion=10
-  
-  
   return(list(
-    dispersion=dispersion
+    dispersion=10
   ));
 }
 
@@ -1308,7 +1311,8 @@ Prom<-future({
     aoh<-rast(paste0("resources/AOH_stored/", gsub(" ", "_", scientific_name), "/Current/", list.files(paste0("resources/AOH_stored/", gsub(" ", "_", scientific_name), "/Current"))[1]))[[1]]  ; crs(aoh)<-CRSMOLL
     aoh_type<-Storage_SP$AOH_type
     dispersion<-as.numeric(dispersion)*1000 ; print(dispersion)
-
+    if(is.null(Storage_SP$density_saved)){no_density_fragm()}
+    
     ### Calculate fragmentation
     res<-sRL_fragmentation(aoh, aoh_type, dispersion, Storage_SP$density_saved)
     
@@ -1456,7 +1460,7 @@ function(scientific_name){
     
     Trends_justif<-paste0("This trend has been measured from the sRedList platform as the trend in Area of Habitat between ", 
                           paste0(Storage_SP$Year1theo_saved, " and ",config$YearAOH2), # Give years if no extrapolation
-                          ifelse(Storage_SP$Year1theo_saved==Storage_SP$Year1_saved, NA, " (using expontential extrapolation for the period before 1992)")) # Specify extrapolation if needed
+                          ifelse(Storage_SP$Year1theo_saved==Storage_SP$Year1_saved, "", " (using expontential extrapolation for the period before 1992)")) # Specify extrapolation if needed
     
     Storage_SP<-sRL_OutLog(Storage_SP, "Estimated_PopTrends_raw", Trends_val)
   }

@@ -265,7 +265,7 @@ sRL_MapDistributionGBIF<-function(dat, scientific_name, First_step, AltMIN, AltM
   if(First_step=="alpha"){
       Par_alpha<-Gbif_Param[2]
       EX<-extent(dat)
-      distGBIF<-convexHull(dat, alpha = Par_alpha * sqrt((EX@xmin-EX@xmax)^2 + (EX@ymin-EX@ymax)^2), sp = FALSE)
+      distGBIF<-convexHull(dat, alpha = Par_alpha * sqrt((EX@xmin-EX@xmax)^2 + (EX@ymin-EX@ymax)^2))
       st_crs(distGBIF)<-st_crs(dat)
       
   }
@@ -473,8 +473,9 @@ sRL_CropCountry<-function(distSP, domain_pref, Crop_Country){
   
   # Select countries depending on domain preferences
   if("Marine" %in% domain_pref){eez_Sub<-subset(eez_raw, eez_raw$SIS_name0 %in% Crop_Country | eez_raw$SIS_name1 %in% Crop_Country1) %>% st_transform(., CRSMOLL)}
-  cou_Sub<-subset(coo_raw, (coo_raw$SIS_name0 %in% Crop_Country) | (coo_raw$SIS_name1 %in% Crop_Country1)) %>% st_transform(., CRSMOLL)
-  if("Marine" %in% domain_pref & length(domain_pref)==1){eez_Sub}
+  if("Terrestrial" %in% domain_pref | "Freshwater" %in% domain_pref){cou_Sub<-subset(coo_raw, (coo_raw$SIS_name0 %in% Crop_Country) | (coo_raw$SIS_name1 %in% Crop_Country1)) %>% st_transform(., CRSMOLL)}
+  
+  if("Marine" %in% domain_pref & length(domain_pref)==1){country_sub<-eez_Sub}
   if(!"Marine" %in% domain_pref){country_sub<-cou_Sub}
   if("Marine" %in% domain_pref & ("Terrestrial" %in% domain_pref | "Freshwater" %in% domain_pref)){
     cou_Sub$Aire<-cou_Sub$Tol<-NULL
