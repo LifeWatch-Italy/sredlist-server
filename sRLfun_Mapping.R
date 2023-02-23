@@ -289,20 +289,21 @@ sRL_MapDistributionGBIF<-function(dat, scientific_name, First_step, AltMIN, AltM
   
   
   ### Apply crop by land/sea
-  # Create countries map based on the buffer
-  CountrySP<-st_crop(distCountries_notsimplif, 1.1*extent(distGBIF))
-  
   distGBIF$binomial=scientific_name
   
-  # Remove land or sea if requested
-  if(GBIF_crop=="cropland"){
-    distGBIF<-st_intersection(distGBIF, CountrySP) %>% 
-      dplyr::group_by(binomial) %>% dplyr::summarise(N = n())}
+  # Create countries map based on the buffer
+  if(GBIF_crop %in% c("cropland", "cropsea")){
+    CountrySP<-st_crop(distCountries_mapping, 1.1*extent(distGBIF))
+  
+    # Remove land or sea if requested
+    if(GBIF_crop=="cropland"){
+      distGBIF<-st_intersection(distGBIF, CountrySP) %>% 
+        dplyr::group_by(binomial) %>% dplyr::summarise(N = n())}
 
-  if(GBIF_crop=="cropsea"){
-    countr<-CountrySP %>% st_crop(., extent(distGBIF)) %>% dplyr::group_by() %>% dplyr::summarise(N = n())
-    distGBIF<-st_difference(distGBIF, countr)}
-
+    if(GBIF_crop=="cropsea"){
+      countr<-CountrySP %>% st_crop(., extent(distGBIF)) %>% dplyr::group_by() %>% dplyr::summarise(N = n())
+      distGBIF<-st_difference(distGBIF, countr)}
+  }
   
   ### Merge
   distGBIF<-distGBIF %>% dplyr::group_by(binomial) %>% dplyr::summarise(N = n())
@@ -425,7 +426,7 @@ sRL_cooExtract<-function(distSP, domain_pref, Crop_Country){
                       "<b> National entity: ","</b>", eez$SIS_name0, ifelse(eez$Level0_occupied==T, " (Occupied)", " (Empty)"), "<br>", "<br>",
                       "<b> Subnational entity: ","</b>", eez$SIS_name1, ifelse(is.na(eez$SIS_name1)==T, "", ifelse(eez$Level1_occupied==T, " (Occupied)", " (Empty)")), "<br>")
     
-    eez$Domain="Marine" ; eez$Tol<-eez$Aire<-NA
+    eez$Domain="Marine"
   }
   
   

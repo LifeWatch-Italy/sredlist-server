@@ -84,14 +84,14 @@ convert_empty <- function(string) {
 ### Charge the files that will remain unaltered
 
 # Charge species information from RL - updated in 27-09-2021
-speciesRL <- read.csv("Species/species-all-page.csv") # nolint
+speciesRL <- readRDS("Species/species-all-page.rds") # nolint
 
 # Load Map countries
-distCountries_notsimplif <- st_read("Species/Map countries/Red_List_countries_Simplif_0.01MOLLWEIDE.shp")  ; st_crs(distCountries_notsimplif)<-CRSMOLL
-distCountries_WGS <- st_read("Species/Map countries/Red_List_countries_Simplif0.001.shp")
-distCountries<-st_read("Species/Map countries/Red_List_countries_Simplif_0.001MOLLWEIDE.shp") ; st_crs(distCountries)<-CRSMOLL
-coo_raw<-read_sf("Species/Map countries/Red_List_countries_Simplif_coo_Grad.shp")
-eez_raw<-read_sf("Species/Map countries/Red_List_EEZ_Simplif_coo_0.05.shp")
+distCountries_mapping <- st_read("Species/Map countries/Red_List_countries_msSimplif0.05_MOLL.shp")  ; st_crs(distCountries_mapping)<-CRSMOLL # Use to create maps in GBIF step 3
+distCountries_WGS <- st_read("Species/Map countries/Red_List_countries_msSimplif0.05_WGS_combined.shp") # Used to filter GBIF data in GBIF step 2
+distCountries<-st_read("Species/Map countries/Red_List_countries_msSimplif0.005_MOLL.shp") ; st_crs(distCountries)<-CRSMOLL # Used to map countries in the background
+coo_raw<-read_sf("Species/Map countries/Red_List_countries_msSimplif_coo_0.001.shp") # Used to map COO
+eez_raw<-read_sf("Species/Map countries/Red_List_EEZ_Simplif_coo_0.001.shp") # Used to map COO
 
 
 # Load Crosswalk CSV and Density CSV

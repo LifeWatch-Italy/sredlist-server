@@ -262,7 +262,7 @@ Prom<-future({
 
   # Assign
   output_to_save<-sRL_InitLog(scientific_name, DisSource = "Created") ; output_to_save$Value[output_to_save$Parameter=="Gbif_Source"]<-paste0(ifelse(Gbif_Source[1]==1, "GBIF ", ""), ifelse(Gbif_Source[2]==1, "OBIS ", ""), ifelse(Gbif_Source[3]==1, "Red_List ", ""), ifelse(is.null(nrow(Uploaded_Records)), "", "Uploaded"))
-  Storage_SP<-list(flags_raw_saved=flags_raw, CountrySP_WGS_saved=CountrySP_WGS, Creation=Sys.time(), Output=output_to_save)
+  Storage_SP<-list(flags_raw_saved=flags_raw, Creation=Sys.time(), Output=output_to_save)
   sRL_StoreSave(scientific_name, Storage_SP)
   
   return(list(plot_data=plot1))
@@ -430,12 +430,13 @@ Prom<-future({
   sRL_loginfo("Map Distribution halfway")
   # Store and calculate area
   Storage_SP$gbif_number_saved=nrow(dat_proj)
-  Storage_SP$CountrySP_saved<-st_crop(distCountries, extent(distSP))
+  Storage_SP$CountrySP_saved<-st_crop(distCountries, extent(distSP)) # This is for later (fits the extent of the distribution)
+  CountrySP<-st_crop(distCountries, extent(dat_proj)) # This is for now (fits the extent of the occurrence points)
   
   # Plot distribution
   ggsave(paste0("resources/AOH_stored/", sub(" ", "_", scientific_name), "/Plots/eoo.png"), (
     ggplot() + 
-      geom_sf(data=Storage_SP$CountrySP_saved, fill="gray70")+
+      geom_sf(data=CountrySP, fill="gray70")+
       geom_sf(data = distSP, fill="darkred") + 
       geom_sf(data=dat_proj)+
       ggtitle("")+
@@ -489,7 +490,7 @@ Prom<-future({
     Crop_par<-Storage_SP$Output$Value[Storage_SP$Output$Parameter=="Mapping_Crop"]
     
     ### Smooth if parameter >0
-    Gbif_Smooth=as.numeric(Gbif_Smooth) ; print(Gbif_Smooth)
+    Gbif_Smooth=as.numeric(Gbif_Smooth)/10 ; print(Gbif_Smooth) # I divide by 10 so that we can have a range of 0-100 on the client (decimal don't work correctly with the slider)
     if(Gbif_Smooth>0){
       
       if(Crop_par %in% c("cropland", "cropsea")){
@@ -516,7 +517,7 @@ Prom<-future({
           dplyr::group_by(binomial) %>% dplyr::summarise(N = n())}
       
       if(Crop_par=="cropsea"){
-        countr<-CountrySP %>% st_crop(., extent(distSP)) %>% dplyr::group_by() %>% dplyr::summarise(N = n())
+        countr<-distCountries_mapping %>% st_crop(., extent(distSP)) %>% dplyr::group_by() %>% dplyr::summarise(N = n())
         distSP<-st_difference(distSP, countr)}
       
       distSP$id_no<-NA; distSP$seasonal<-distSP$origin<-distSP$presence<-1
@@ -538,7 +539,6 @@ Prom<-future({
     ggplot() + 
       geom_sf(data=Storage_SP$CountrySP_saved, fill="gray70")+
       geom_sf(data = distSP, fill="darkred") + 
-      geom_sf(data=Storage_SP$dat_proj_saved)+
       ggtitle("")+
       sRLTheme_maps
   ), width=18, height=5.5) # nolint
@@ -579,7 +579,7 @@ return(Prom)
 #* @tag sRedList
 function(scientific_name, domain_pref=list(), Crop_Country="") {
 
-if(!Crop_Country %in% c(distCountries$SIS_name0, "", "Europe", "EU27")){no_countries_crop()}
+if(!Crop_Country %in% c(coo_raw$SIS_name0, "", "Europe", "EU27")){no_countries_crop()}
   
 Prom<-future({
   sf::sf_use_s2(FALSE)
