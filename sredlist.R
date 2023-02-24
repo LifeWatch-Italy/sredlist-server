@@ -579,7 +579,14 @@ return(Prom)
 #* @tag sRedList
 function(scientific_name, domain_pref=list(), Crop_Country="") {
 
-if(!Crop_Country %in% c(coo_raw$SIS_name0, "", "Europe", "EU27")){no_countries_crop()}
+### Manage case in Crop_Country
+if(!Crop_Country %in% c(coo_raw$SIS_name0, "", "Europe", "EU27")){
+  if(tolower(Crop_Country) %in% tolower(coo_raw$SIS_name0)){
+    Crop_Country<-coo_raw$SIS_name0[tolower(coo_raw$SIS_name0)==tolower(Crop_Country)][1]
+  }
+  if(tolower(Crop_Country)=="europe"){Crop_Country<-"Europe"}
+  if(tolower(Crop_Country)=="eu27"){Crop_Country<-"EU27"}
+}
   
 Prom<-future({
   sf::sf_use_s2(FALSE)
@@ -595,45 +602,60 @@ Prom<-future({
   
   # Crop for National Red Listing
   if(Crop_Country != ""){
-    distSP<-sRL_CropCountry(distSP, domain_pref, Crop_Country)
-    if(nrow(distSP)==0){no_COO_overlap()}
-    Storage_SP<-sRL_OutLog(Storage_SP, "Crop_Country", Crop_Country)
-    }
-  Storage_SP$distSP_saved<-distSP # I have to save it even if Crop_Country is empty because maybe it was not empty at previous call
-  
-  # Prepare distribution and calculate COO
-  distSP_WGS<-distSP %>% dplyr::group_by(origin, presence, seasonal) %>% dplyr::summarise(N= n()) %>% st_transform(., st_crs(coo_raw))
-  coo<-sRL_cooExtract(distSP_WGS, domain_pref, Crop_Country)
-  
-  # Simplify distribution if large distribution
-  if((extent(distSP_WGS)@xmax-extent(distSP_WGS)@xmin)>50){distSP_WGS<-st_simplify(distSP_WGS, dTolerance=0.05)}
-  
-  # Create table of colours / labels and assign colours
-  col.df<-data.frame(
-    Code=c("MarineFALSEFALSE", "MarineTRUEFALSE", "MarineTRUETRUE", "TerrestrialFALSEFALSE", "TerrestrialTRUEFALSE", "TerrestrialTRUETRUE"),
-    Col=c("#D2D2D2", "#9595C3", "#5757A9", "white", "#F17777", "#8C2316"),
-    Label=c("Empty (marine)", "Subnational empty (marine)", "Occupied (marine)", "Empty (terrestrial)", "Subnational empty (terrestrial)", "Occupied (terrestrial)")
-  )
-  
-  coo$colour<-paste0(coo$Domain, coo$Level0_occupied, coo$Level1_occupied) 
-  coo$colour<-col.df$Col[match(coo$colour, col.df$Code)]
-  
-  # Save for SIS
-  Storage_SP$countries_SIS<-sRL_OutputCountries(scientific_name, subset(coo, coo$presence>0))
-  sRL_StoreSave(scientific_name, Storage_SP)
-  
-  # Plot
-  return(
-    leaflet() %>%
-      setView(lat = 10, lng = 0, zoom = 2) %>%
-      addPolygons(data=coo,
-                color=ifelse(coo$Level0_occupied==T, "black", "grey"),
-                fillColor=coo$colour,
-                popup=coo$Popup,
-                stroke=T, weight=2, fillOpacity=1) %>%
-      addPolygons(data=distSP_WGS, color="#D69F32", fillOpacity=0.4) %>%
-      addLegend(position="bottomleft", colors=c(col.df$Col[col.df$Col %in% coo$colour], "#D69F32"), labels=c(col.df$Label[col.df$Col %in% coo$colour], "Distribution"), opacity=1)
-  )
+    if(Crop_Country %in% c(coo_raw$SIS_name0, "", "Europe", "EU27")){
+      distSP<-sRL_CropCountry(distSP, domain_pref, Crop_Country)
+      Storage_SP<-sRL_OutLog(Storage_SP, "Crop_Country", Crop_Country)} 
+    else {
+      distSP<-data.frame()
+      }
+  }
+  # If empty, return an empty plot
+  if(nrow(distSP)==0){
+    TITLE<-ifelse(Crop_Country %in% c(coo_raw$SIS_name0, "", "Europe", "EU27"),
+                  "<center><font size='6' color='#ad180d'><b>This country does not overlap with species distribution <br><br> Try changing country name or leave the field empty</b></center>",
+                  "<center><font size='6' color='#ad180d'><b>This country is not in the list of Red List countries <br><br> Check countries name and orthograph on SIS or on the interactive map by leaving this field empty</b></center>"
+                  )
+    return(
+      leaflet() %>% addControl(TITLE, position = "topleft", className="map-title")
+    )
+  } else {
+    
+    Storage_SP$distSP_saved<-distSP # I have to save it even if Crop_Country is empty because maybe it was not empty at previous call
+    
+    # Prepare distribution and calculate COO
+    distSP_WGS<-distSP %>% dplyr::group_by(origin, presence, seasonal) %>% dplyr::summarise(N= n()) %>% st_transform(., st_crs(coo_raw))
+    coo<-sRL_cooExtract(distSP_WGS, domain_pref, Crop_Country)
+    
+    # Simplify distribution if large distribution
+    if((extent(distSP_WGS)@xmax-extent(distSP_WGS)@xmin)>50){distSP_WGS<-st_simplify(distSP_WGS, dTolerance=0.05)}
+    
+    # Create table of colours / labels and assign colours
+    col.df<-data.frame(
+      Code=c("MarineFALSEFALSE", "MarineTRUEFALSE", "MarineTRUETRUE", "TerrestrialFALSEFALSE", "TerrestrialTRUEFALSE", "TerrestrialTRUETRUE"),
+      Col=c("#D2D2D2", "#9595C3", "#5757A9", "white", "#F17777", "#8C2316"),
+      Label=c("Empty (marine)", "Subnational empty (marine)", "Occupied (marine)", "Empty (terrestrial)", "Subnational empty (terrestrial)", "Occupied (terrestrial)")
+    )
+    
+    coo$colour<-paste0(coo$Domain, coo$Level0_occupied, coo$Level1_occupied) 
+    coo$colour<-col.df$Col[match(coo$colour, col.df$Code)]
+    
+    # Save for SIS
+    Storage_SP$countries_SIS<-sRL_OutputCountries(scientific_name, subset(coo, coo$presence>0))
+    sRL_StoreSave(scientific_name, Storage_SP)
+    
+    # Plot
+    return(
+      leaflet() %>%
+        setView(lat = 10, lng = 0, zoom = 2) %>%
+        addPolygons(data=coo,
+                    color=ifelse(coo$Level0_occupied==T, "black", "grey"),
+                    fillColor=coo$colour,
+                    popup=coo$Popup,
+                    stroke=T, weight=2, fillOpacity=1) %>%
+        addPolygons(data=distSP_WGS, color="#D69F32", fillOpacity=0.4) %>%
+        addLegend(position="bottomleft", colors=c(col.df$Col[col.df$Col %in% coo$colour], "#D69F32"), labels=c(col.df$Label[col.df$Col %in% coo$colour], "Distribution"), opacity=1)
+    )
+  }
   
 }, seed=T)
 
@@ -1302,6 +1324,8 @@ function(scientific_name) {
 #* @tag sRedList
 function(scientific_name, dispersion="-1") {
   
+  if(is.null(sRL_StoreRead(sRL_decode(scientific_name))$density_saved)){no_density_fragm()}
+  
 Prom<-future({
     sf::sf_use_s2(FALSE)
   
@@ -1311,8 +1335,7 @@ Prom<-future({
     aoh<-rast(paste0("resources/AOH_stored/", gsub(" ", "_", scientific_name), "/Current/", list.files(paste0("resources/AOH_stored/", gsub(" ", "_", scientific_name), "/Current"))[1]))[[1]]  ; crs(aoh)<-CRSMOLL
     aoh_type<-Storage_SP$AOH_type
     dispersion<-as.numeric(dispersion)*1000 ; print(dispersion)
-    if(is.null(Storage_SP$density_saved)){no_density_fragm()}
-    
+
     ### Calculate fragmentation
     res<-sRL_fragmentation(aoh, aoh_type, dispersion, Storage_SP$density_saved)
     

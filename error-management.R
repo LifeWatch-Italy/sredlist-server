@@ -72,14 +72,6 @@ no_coords_update <- function() {
   api_error(message = "longitude and latitude columns were not found in uploaded data", status = 400)
 }
 
-no_countries_crop <- function() {
-  api_error(message = "This country is not in the list of Red List countries, check names on the interactive map", status = 400)
-}
-
-no_COO_overlap <- function() {
-  api_error(message = "This country does not overlap with species distribution", status = 400)
-}
-
 no_density_fragm <- function() {
   api_error(message = "A density must be provided in the AOH step to perform this step", status = 400)
 }
