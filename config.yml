@@ -12,6 +12,8 @@ default:
   #Development
   access_control_allow_origin: "*"
   # Development Victor
+  #distribution_path: "C:/Users/Victor/Documents/sRedList/Platform/Platform_preprocessing_files/Indiv.distributions/Raw_polygons/1.Indiv/"
+  #POINTdistribution_path: "C:/Users/Victor/Documents/sRedList/Platform/Platform_preprocessing_files/Indiv.distributions/Raw_points/1.Indiv/"
   alt_raster_path: "C:/Users/Victor/Documents/sRedList/Platform/InProgress/Large_Files/Elevation_MollweidePlatform.tif"
   cci1_raster_path: "C:/Users/Victor/Documents/sRedList/Platform/InProgress/Large_Files/CCIXXXX_reprojMollweide.tif"
   cci2_raster_path: "C:/Users/Victor/Documents/sRedList/Platform/InProgress/Large_Files/CCI2020_reprojMollweide.tif"

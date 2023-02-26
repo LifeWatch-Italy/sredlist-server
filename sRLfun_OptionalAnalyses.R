@@ -81,7 +81,7 @@ sRL_CalcHumandensity<-function(scientific_name, distSP, GL){
       ggtitle(paste0("Change ", Year1, "-", Year2)) +
       sRLTheme_maps
     
-    ,ncol=2, labels=RS_name
+    ,ncol=2
   )
   
   ggsave(filename = paste0("resources/AOH_stored/", sub(" ", "_", scientific_name), "/Plots/RS_plot.png"), plot = GG_RS, width=10, height=6)
@@ -140,9 +140,9 @@ sRL_CalcForestchange<-function(scientific_name, distSP){
       geom_tile(aes(fill = value)) +
       scale_fill_gradient2(low="#8c510a", mid="azure2", midpoint=0, high="#018571", name="%", na.value="white")+
       ggtitle(paste0("Change 2000-2022")) +
-      sRLTheme_maps
+      sRLTheme_maps,
     
-    ,ncol=2, labels=RS_name
+    ncol=2
   )
   
   ggsave(filename = paste0("resources/AOH_stored/", sub(" ", "_", scientific_name), "/Plots/RS_plot.png"), plot = GG_RS, width=10, height=6)

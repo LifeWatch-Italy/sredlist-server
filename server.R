@@ -90,12 +90,13 @@ speciesRL <- readRDS("Species/species-all-page.rds") # nolint
 distCountries_mapping <- st_read("Species/Map countries/Red_List_countries_msSimplif0.05_MOLL.shp")  ; st_crs(distCountries_mapping)<-CRSMOLL # Use to create maps in GBIF step 3
 distCountries_WGS <- st_read("Species/Map countries/Red_List_countries_msSimplif0.05_WGS_combined.shp") # Used to filter GBIF data in GBIF step 2
 distCountries<-st_read("Species/Map countries/Red_List_countries_msSimplif0.005_MOLL.shp") ; st_crs(distCountries)<-CRSMOLL # Used to map countries in the background
+distCountries_light <- distCountries %>% st_simplify(., dTolerance=0.01) %>% st_transform(., crs=st_crs(distCountries_WGS))
 coo_raw<-read_sf("Species/Map countries/Red_List_countries_msSimplif_coo_0.001.shp") # Used to map COO
 eez_raw<-read_sf("Species/Map countries/Red_List_EEZ_Simplif_coo_0.001.shp") # Used to map COO
 
 
 # Load Crosswalk CSV and Density CSV
-density<-read.csv("Species/Density.table.csv", sep=",")
+density<-read.csv("Species/Density.table.csv", sep=",") %>% subset(., .$Density>0)
 crosswalk <- read.table("Species/Crosswalk_CCI_IUCN.txt", header=T)
 crosswalkLARGE<-read.csv("Species/Lumbierres_large_crosswalk.csv")
 GL_file<-read.csv("Species/Generation_length_sRedList.csv", sep=",")
@@ -106,7 +107,7 @@ if(config$crosswalk == "Lumbierres"){crosswalk_to_use<- read.table("Species/Cros
 output<-read.csv("Species/Output log empty.csv")
 
 # Load Hydrobasins map
-#hydro_raw<-st_read(config$hydrobasins_path) %>% st_transform(., crs=CRSMOLL)
+hydro_raw<-st_read(config$hydrobasins_path) %>% st_transform(., crs=CRSMOLL)
 
 
 

@@ -73,6 +73,7 @@ sRL_PlotHistory <- function(sciname_fun){
 # Generated distribution from File by scientific_name of species and folder path
 sRL_ReadDistribution <- function(scientific_name, path) {
   speciesPath <- paste0(config$distribution_path, scientific_name, "/", path) # nolint
+  print(speciesPath)
   files <- base::list.files(path = speciesPath, pattern = "\\.shp$")
 
   if (length(files) == 0) {
@@ -95,6 +96,7 @@ sRL_PrepareDistrib <- function(distributions, scientific_name){
   names(distributions)[which(names(distributions) %in% c("PRESENC", "PRESENCE", "presence", "presenc"))] <- "presence" # nolint
   names(distributions)[which(names(distributions) %in% c("ORIGIN", "origin"))] <- "origin" # nolint
   names(distributions)[which(names(distributions) %in% c("SEASONA", "SEASONAL", "seasonal", "seasonl"))] <- "seasonal" # nolint
+  names(distributions)[which(names(distributions) %in% c("taxonid", "sisid", "SISID"))] <- "id_no" # nolint
   
   # If no column, add them
   if(!"binomial" %in% names(distributions)){distributions$binomial<-scientific_name}
@@ -219,8 +221,8 @@ sRL_cleaningMemory<-function(Time_limit){
   } ,error=function(e){cat("Problem removing temporary files from tempdir()")}) 
   
   tryCatch({
-  # Remove ZIP files + pre-zip folders
-  list_zips<-list.files()[grepl("_sRedList", list.files())]
+  # Remove ZIP files + pre-zip folders + merged zip
+  list_zips<-c(list.files()[grepl("_sRedList", list.files())], list.files()[grepl("Unzipped", list.files())])
   if(length(list_zips)>0){
     Time_diff_zips<-difftime(Time_now, file.info(list_zips)$atime, units="mins") %>% as.numeric(.)
     toremove_zips<-list_zips[Time_diff_zips>Time_limit]

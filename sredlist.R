@@ -216,10 +216,11 @@ Prom<-future({
   dat <- sRL_createDataGBIF(scientific_name, Gbif_Source, Uploaded_Records)
 
   # ### Plot
+  sRL_loginfo("START - Plot data")
   ggsave(paste0("resources/AOH_stored/", sub(" ", "_", scientific_name), "/Plots/plot_data.png"), (
     ggplot() +
       coord_fixed() +
-      borders("world", colour = "gray86", fill = "gray80") +
+      geom_sf(data=distCountries_light, colour = "gray86", fill = "gray80")+
       geom_point(data = dat, aes(x = decimalLongitude, y = decimalLatitude, col=Source_type), size = 1) +
       scale_colour_brewer(type="qual", palette=2, name="Source")+
       ggtitle(paste(names(table(dat$Source_type)), table(dat$Source_type), sep=" (") %>% paste(., collapse="), ") %>% paste0("Raw geo-referenced observations (N=", nrow(dat), ") from: ", ., ")") )+
@@ -2000,7 +2001,7 @@ function(Uploaded_Zips=list()) {
   Hab_files<-list.files(Zip_Path, recursive = T)[grepl('habitats.csv', list.files(Zip_Path, recursive = T))] %>% paste0(Zip_Path, "/", .)
   
   eval(parse(text=
-               paste0("habitatsM<-rbind(",
+               paste0("habitatsM<-rbind.fill(",
                       paste0("read.csv(Hab_files[", 1:length(Hab_files), "])", collapse=','),")"
                )))
   
@@ -2009,7 +2010,7 @@ function(Uploaded_Zips=list()) {
   Coun_files<-list.files(Zip_Path, recursive = T)[grepl('countries.csv', list.files(Zip_Path, recursive = T))] %>% paste0(Zip_Path, "/", .)
   
   eval(parse(text=
-               paste0("countriesM<-rbind(",
+               paste0("countriesM<-rbind.fill(",
                       paste0("read.csv(Coun_files[", 1:length(Coun_files), "])", collapse=','),")"
                )))
   
@@ -2017,7 +2018,7 @@ function(Uploaded_Zips=list()) {
   Ref_files<-list.files(Zip_Path, recursive = T)[grepl('references.csv', list.files(Zip_Path, recursive = T))] %>% paste0(Zip_Path, "/", .)
   
   eval(parse(text=
-               paste0("referencesM<-rbind(",
+               paste0("referencesM<-rbind.fill(",
                       paste0("read.csv(Ref_files[", 1:length(Ref_files), "])", collapse=','),")"
                )))
   
@@ -2025,7 +2026,7 @@ function(Uploaded_Zips=list()) {
   All_files<-list.files(Zip_Path, recursive = T)[grepl('allfields.csv', list.files(Zip_Path, recursive = T))] %>% paste0(Zip_Path, "/", .)
   
   eval(parse(text=
-               paste0("allfieldsM<-rbind(",
+               paste0("allfieldsM<-rbind.fill(",
                       paste0("read.csv(All_files[", 1:length(All_files), "])", collapse=','),")"
                )))
   
@@ -2034,7 +2035,7 @@ function(Uploaded_Zips=list()) {
   Log_files<-list.files(Zip_Path, recursive = T)[grepl('00.Output_log.csv', list.files(Zip_Path, recursive = T))] %>% paste0(Zip_Path, "/", .)
   
   eval(parse(text=
-               paste0("LogM<-rbind(",
+               paste0("LogM<-rbind.fill(",
                       paste0("read.csv(Log_files[", 1:length(Log_files), "])", collapse=','),")"
                )))
   
@@ -2045,7 +2046,7 @@ function(Uploaded_Zips=list()) {
     Dist_files<-list.files(Zip_Path, recursive = T)[grepl('_Distribution.shp', list.files(Zip_Path, recursive = T))] %>% paste0(Zip_Path, "/", .)
     
     eval(parse(text=
-                 paste0("DistM<-rbind(",
+                 paste0("DistM<-rbind.fill(",
                         paste0("st_read(Dist_files[", 1:length(Dist_files), "])", collapse=','),")"
                  )))
   }
@@ -2056,7 +2057,7 @@ function(Uploaded_Zips=list()) {
     Occ_files<-list.files(Zip_Path, recursive = T)[grepl('_Occurrences.shp', list.files(Zip_Path, recursive = T))] %>% paste0(Zip_Path, "/", .)
     
     eval(parse(text=
-                 paste0("OccM<-rbind(",
+                 paste0("OccM<-rbind.fill(",
                         paste0("st_read(Occ_files[", 1:length(Occ_files), "])", collapse=','),")"
                  )))
   }
