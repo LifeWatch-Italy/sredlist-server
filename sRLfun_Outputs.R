@@ -67,7 +67,7 @@ sRL_OutputRef<-function(scientific_name, Storage_SP){
 
 
 ### Prepare distribution output shapefile
-sRL_OutputDistribution<-function(scientific_name){
+sRL_OutputDistribution<-function(scientific_name, Storage_SP){
   
   distSP<-Storage_SP$distSP_saved
   
@@ -91,7 +91,7 @@ sRL_OutputDistribution<-function(scientific_name){
 
 
 ### Save occurrences shapefile from the GBIF procedure
-sRL_OutputOccurrences <- function(scientific_name) {
+sRL_OutputOccurrences <- function(scientific_name, Storage_SP) {
   
   # Transform in lat/lon
   dat<-Storage_SP$dat_proj_saved %>% st_transform(., "+init=epsg:4326")

@@ -122,13 +122,13 @@ sRL_areaAOH<-function(ras, SCALE){
 ### AOH calculate for large range species
 sRL_largeAOH<-function(alt_crop, habitats_pref, altitudes_pref, rangeSP_clean, YR, FILENAME){
   
-  sRL_loginfo("Charge CCI_Large data")
+  sRL_loginfo("Charge CCI_Large data", scientific_name)
   if(YR==config$YearAOH2){CCI_fun<-sRL_ChargeCciLargeRaster()} else {
     CCI_fun<-stackOpen(paste0(config$cciStack2_path, "/", YR, "/CCI_Stack_Agg30_Year", YR, ".stk"))
     names(CCI_fun)<-read.table(paste0(config$cciStack2_path, "/", YR, "/CCI_Stack_Agg30_Year", YR, ".stk"))[,1] %>% gsub(config$cciStack2_path, "", .) %>% substr(., 7, (nchar(.)-4)) # I have to rename them because update in raster package made a change in the names. I checked that the order of the rasters in Stack were the same as in the .stk file
   }
   
-  sRL_loginfo("START - Large AOH function")
+  sRL_loginfo("START - Large AOH function", scientific_name)
   
   # Select rasters to keep
   CCI_to_keep<-NA
@@ -151,7 +151,7 @@ sRL_largeAOH<-function(alt_crop, habitats_pref, altitudes_pref, rangeSP_clean, Y
   if(FILENAME != ""){terra::writeRaster(AOH, filename=FILENAME)}
   
   
-  sRL_loginfo("END - Large AOH function")
+  sRL_loginfo("END - Large AOH function", scientific_name)
   
   return(AOH)
 }

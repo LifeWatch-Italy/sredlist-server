@@ -1,8 +1,8 @@
 ############################################
 ### Print log info inside future promise ###
 ############################################
-sRL_loginfo<-function(x){
-  print(paste0(x, " [", Sys.time(), "]", "\n"))
+sRL_loginfo<-function(x, scientific_name){
+  print(paste0(x, " [", Sys.time(), " - ", scientific_name, "]"))
 #  insight::print_colour(paste0(x, " XX[", Sys.time(), "]", "\n"), "green")
 }
 
@@ -58,6 +58,7 @@ sRL_PlotHistory <- function(sciname_fun){
                   geom_point(data=historic, aes(x = year, col = Cat, y = Cat), shape = 15, size = 5, show.legend = F) + # nolint
                   scale_colour_manual(values=rev(c("#000000ff", "#542344ff", "#d81e05ff", "#fc7f3fff", "#f9e814ff", "#bcbddc", "#d1d1c6ff", "#cce226ff", "#60c659ff")), name="", drop=FALSE) + # nolint
                   scale_y_discrete(rev(levels(historic$Cat)), drop=FALSE, name="Extinction risk") + # nolint
+                  scale_x_continuous(limits=c(NA, 2023))+
                   theme_minimal() %+replace% theme(axis.text=element_text(size=15), axis.title=element_text(size=20)) +
                   xlab("") +
                   ggtitle(""))

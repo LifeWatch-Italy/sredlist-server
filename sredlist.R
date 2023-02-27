@@ -140,7 +140,7 @@ Prom<-future({
   Storage_SP<-sRL_OutLog(Storage_SP, c("Distribution_Presence", "Distribution_Seasonal", "Distribution_Origin"), c(paste0(presences, collapse=","), paste0(seasons, collapse=","), paste0(origins, collapse=",")))
   Storage_SP<-sRL_OutLog(Storage_SP, "Distribution_Source", ifelse(substr(path, nchar(path)-2, nchar(path))=="_RL", "Red List", "Uploaded")) # If path ends by _RL it comes from the RL, uploaded otherwise
   sRL_StoreSave(scientific_name, Storage_SP)
-  sRL_loginfo("Plot distribution")
+  sRL_loginfo("Plot distribution", scientific_name)
   
   ### Plot
   if (nrow(distSP) > 0) {
@@ -208,15 +208,15 @@ Prom<-future({
     print(Uploaded_Records)
   }
 
-  ### Create storage folder if it does not exist
-  dir.create(paste0("resources/AOH_stored/", sub(" ", "_", scientific_name), "/Plots"), recursive=T)
-
   ### GBIF procedure
-  sRL_loginfo("START - Create data")
+  sRL_loginfo("START - Create data", scientific_name)
   dat <- sRL_createDataGBIF(scientific_name, Gbif_Source, Uploaded_Records)
 
+  ### Create storage folder if it does not exist
+  dir.create(paste0("resources/AOH_stored/", sub(" ", "_", scientific_name), "/Plots"), recursive=T)
+  
   # ### Plot
-  sRL_loginfo("START - Plot data")
+  sRL_loginfo("START - Plot data", scientific_name)
   ggsave(paste0("resources/AOH_stored/", sub(" ", "_", scientific_name), "/Plots/plot_data.png"), (
     ggplot() +
       coord_fixed() +
@@ -227,8 +227,8 @@ Prom<-future({
       sRLTheme_maps %+replace%   theme(legend.position="top")
     ), width=18, height=5.5) # nolint
   plot1 <- base64enc::dataURI(file = paste0("resources/AOH_stored/", sub(" ", "_", scientific_name), "/Plots/plot_data.png"), mime = "image/png")
-  sRL_loginfo("END - Create data")
-  sRL_loginfo("START - Clean coordinates")
+  sRL_loginfo("END - Create data", scientific_name)
+  sRL_loginfo("START - Clean coordinates", scientific_name)
 
 
   # Prepare countries
@@ -313,7 +313,7 @@ function(scientific_name, Gbif_Year= -1, Gbif_Uncertainty=-1, Gbif_Extent=list()
 Prom<-future({
   sf::sf_use_s2(FALSE)  
 
-  sRL_loginfo("START - GBIF Step 2")
+  sRL_loginfo("START - GBIF Step 2", scientific_name)
 
 
   ### Transform parameters GBIF filtering
@@ -337,7 +337,7 @@ Prom<-future({
   Storage_SP<-sRL_OutLog(Storage_SP, c("Gbif_Year", "Gbif_Uncertainty", "Gbif_Sea", "Gbif_Extent"), c(Gbif_Year, Gbif_Uncertainty, Gbif_Sea, paste0(Gbif_Extent, collapse=",")))
   sRL_StoreSave(scientific_name, Storage_SP)
   
-  sRL_loginfo("END - GBIF Step 2")
+  sRL_loginfo("END - GBIF Step 2", scientific_name)
   
   return(
     leaflet(flags) %>%
@@ -413,7 +413,7 @@ Prom<-future({
   Gbif_Param<-as.numeric(Gbif_Param) ; print(Gbif_Param)
   
   #GBIF STEP 3: Map distribution from GBIF
-  sRL_loginfo("START - Maps the distribution")
+  sRL_loginfo("START - Maps the distribution", scientific_name)
   
   # Get back GBIF observations
   Storage_SP=sRL_StoreRead(scientific_name)
@@ -428,7 +428,7 @@ Prom<-future({
                                   Buffer_km2=as.numeric(Gbif_Buffer),
                                   GBIF_crop=Gbif_Crop,
                                   Gbif_Param=Gbif_Param)
-  sRL_loginfo("Map Distribution halfway")
+  sRL_loginfo("Map Distribution halfway", scientific_name)
   # Store and calculate area
   Storage_SP$gbif_number_saved=nrow(dat_proj)
   Storage_SP$CountrySP_saved<-st_crop(distCountries, extent(distSP)) # This is for later (fits the extent of the distribution)
@@ -444,7 +444,7 @@ Prom<-future({
       sRLTheme_maps
   ), width=18, height=5.5) # nolint
   plot3 <- base64enc::dataURI(file = paste0("resources/AOH_stored/", sub(" ", "_", scientific_name), "/Plots/eoo.png"), mime = "image/png") # nolint
-  sRL_loginfo("END - Maps the distribution")
+  sRL_loginfo("END - Maps the distribution", scientific_name)
   
   # Keep distribution in memory
   Storage_SP$distSP3_saved=distSP
@@ -485,7 +485,7 @@ Prom<-future({
     sf::sf_use_s2(FALSE)
     
     ### Transform parameters GBIF filtering
-    sRL_loginfo("Start GBIF 4")
+    sRL_loginfo("Start GBIF 4", scientific_name)
     scientific_name <- sRL_decode(scientific_name)
     Storage_SP=sRL_StoreRead(scientific_name)
     Crop_par<-Storage_SP$Output$Value[Storage_SP$Output$Parameter=="Mapping_Crop"]
@@ -547,7 +547,7 @@ Prom<-future({
     
   # Save distribution in the platform
   gbif_path <- sRL_saveMapDistribution(scientific_name, Storage_SP)
-  sRL_loginfo("End GBIF 4")
+  sRL_loginfo("End GBIF 4", scientific_name)
   
   return(list(
     plot_eoo = plot_final,
@@ -700,7 +700,7 @@ Prom<-future({
   dir.create(paste0("resources/AOH_stored/", sub(" ", "_", scientific_name), "/Plots"), recursive=T)
 
   ### Plot EOO
-  sRL_loginfo("START - Plot EOO \n")
+  sRL_loginfo("START - Plot EOO \n", scientific_name)
   EOO <- st_as_sf(st_convex_hull(st_union(distSP))) ## Needed to avoid having different sub-polygons
   ggsave(paste0("resources/AOH_stored/", sub(" ", "_", scientific_name), "/Plots/plot_eoo.png"), 
     ggplot() +
@@ -711,7 +711,7 @@ Prom<-future({
       sRLTheme_maps, 
     width=6, height=6) # nolint
   plot3 <- base64enc::dataURI(file = paste0("resources/AOH_stored/", sub(" ", "_", scientific_name), "/Plots/plot_eoo.png"), mime = "image/png") # nolint
-  sRL_loginfo("END - Plot EOO \n")
+  sRL_loginfo("END - Plot EOO \n", scientific_name)
 
   ### Calculate EOO area
   EOO_km2 <- round(as.numeric(st_area(EOO))/1000000)
@@ -791,9 +791,9 @@ Prom<-future({
   sf::sf_use_s2(FALSE)
   
   # Clean memory
-  sRL_loginfo("START - Cleaning memory")
+  sRL_loginfo("START - Cleaning memory", scientific_name)
   sRL_cleaningMemory(Time_limit=45)
-  sRL_loginfo("END - Cleaning memory")
+  sRL_loginfo("END - Cleaning memory", scientific_name)
   
   if(length(habitats_pref)==0){no_habitat_pref()}
   
@@ -857,7 +857,7 @@ Prom<-future({
   AOH_type<-ifelse(Range_size < as.numeric(config$Size_LargeRange), "Small", "Large") ; print(AOH_type)
   if(AOH_type=="Small"){
 
-    sRL_loginfo("START - Small: Cropping rasters")
+    sRL_loginfo("START - Small: Cropping rasters", scientific_name)
     alt_raw<-sRL_ChargeAltRaster()
     alt_crop=crop(alt_raw, extent(distSP))
     writeRaster(alt_crop, paste0(output_dir, "/alt_crop.tif"))
@@ -884,14 +884,14 @@ Prom<-future({
 
       # Calculate optimistic AOH: but if marginal habitats all point at CCI modalities already included with habitats_pref and elevation are not different, I use AOH2 directly as there won't be any difference
       if(length(unique(crosswalk_to_use$value[crosswalk_to_use$code %in% habitats_pref]))==length(unique(crosswalk_to_use$value[crosswalk_to_use$code %in% c(habitats_pref, habitats_pref_MARGINAL)])) & !"elevation_lowerEXTREME" %in% names(altitudes_pref_DF) & !"elevation_upperEXTREME" %in% names(altitudes_pref_DF)){
-            AOH2_opt<-AOH2; sRL_loginfo("Identical AOH, no need to calculate")} else{
+            AOH2_opt<-AOH2; sRL_loginfo("Identical AOH, no need to calculate", scientific_name)} else{
 
             AOH2_opt<-sRL_calculateAOH(rangeSP_fun=rangeSP_cleanOPT,
                                  cci_fun=cci2_crop,
                                  alt_fun=alt_crop,
                                  FOLDER=paste0(output_dir, "/Current_optimistic"),
                                  elevation_data_fun=altitudes_pref_DF)
-            sRL_loginfo("Optimistic AOH calculated")
+            sRL_loginfo("Optimistic AOH calculated", scientific_name)
         }
       }
 
@@ -945,10 +945,10 @@ Prom<-future({
 
       # If there is no need to calculate a new one (no new CCI modalities or no new elevation limits, use the last one)
       if(length(unique(crosswalk_to_use$value[crosswalk_to_use$code %in% habitats_pref]))==length(unique(crosswalk_to_use$value[crosswalk_to_use$code %in% c(habitats_pref, habitats_pref_MARGINAL)])) & !"elevation_lowerEXTREME" %in% names(altitudes_pref_DF) & !"elevation_upperEXTREME" %in% names(altitudes_pref_DF)){
-          AOH2_opt<-AOH2; sRL_loginfo("Identical AOH, no need to calculate")} else{
+          AOH2_opt<-AOH2; sRL_loginfo("Identical AOH, no need to calculate", scientific_name)} else{
 
           AOH2_opt<-sRL_largeAOH(alt_crop, c(habitats_pref, habitats_pref_MARGINAL), alt_pref_extreme, rangeSP_clean, config$YearAOH2, FILENAME=paste0(output_dir, "/Current_optimistic/aoh.tif"))
-          sRL_loginfo("Optimistic AOH calculated")
+          sRL_loginfo("Optimistic AOH calculated", scientific_name)
       }
 
       plot1 <- cowplot::plot_grid(
@@ -976,7 +976,7 @@ Prom<-future({
   Storage_SP$AOH_type<-AOH_type
 
   # Plot AOH and calculate area
-  sRL_loginfo("START - Plot AOH")
+  sRL_loginfo("START - Plot AOH", scientific_name)
 
   ggsave(filename = paste0("resources/AOH_stored/", sub(" ", "_", scientific_name), "/Plots/aoh.png"), plot = plot1, width=6, height=ifelse(Uncertain=="Uncertain_no" | AOH_type=="Small", 6, 10))
   plot1 <- base64enc::dataURI(file = paste0("resources/AOH_stored/", sub(" ", "_", scientific_name), "/Plots/aoh.png"), mime = "image/png", encoding = "base64") # nolint
@@ -1048,7 +1048,7 @@ Prom<-future({
   gc()
 
   ### Calculate population size (with uncertainty to due uncertainty in AOH and in density estimate)
-  sRL_loginfo("START - Calcualte population size")
+  sRL_loginfo("START - Calcualte population size", scientific_name)
   if (density_pref[1] != '-1') {
     density_pref <- unlist(strsplit(as.character(density_pref), "-")) %>% as.numeric(.) ; print(density_pref) # Density_pref has one value if certain, 2 values otherwise
 
@@ -1057,7 +1057,7 @@ Prom<-future({
     print(pop_size)
     Storage_SP$pop_size<-pop_size
   }
-  sRL_loginfo("END - Calcualte population size")
+  sRL_loginfo("END - Calcualte population size", scientific_name)
   sRL_StoreSave(scientific_name, Storage_SP)
   
   ### Return list of arguments + calculate population size
@@ -1133,10 +1133,10 @@ Prom<-future({
   if(AOH_type=="Small"){
     
     # Charge and crop CCI1
-    sRL_loginfo("START - Cropping rasters")
+    sRL_loginfo("START - Cropping rasters", scientific_name)
     cci1<-rast(sub("XXXX", Year1, config$cci1_raster_path)) ; crs(cci1)<-CRSMOLL # I ensure the CRS is correctly assigned
     cci1_crop<-crop(cci1, extent(distSP))
-    sRL_loginfo("END - Cropping rasters")
+    sRL_loginfo("END - Cropping rasters", scientific_name)
   
     # Calculate AOH
     AOH1<-sRL_calculateAOH(rangeSP_fun=rangeSP_clean,
@@ -1525,7 +1525,7 @@ function(scientific_name,
   print(Estimates)
   
   #Filter param
-  sRL_loginfo("Start Criteria calculation")
+  sRL_loginfo("Start Criteria calculation", scientific_name)
   scientific_name <- sRL_decode(scientific_name)
   Storage_SP<-sRL_StoreRead(scientific_name)
   print(names(Storage_SP))
@@ -1535,7 +1535,7 @@ function(scientific_name,
   habitats_SIS$assessment_id<-NA
   habitats_SIS$internal_taxon_id<-NA
    
-  sRL_loginfo("Start Allfields")
+  sRL_loginfo("Start Allfields", scientific_name)
   
   # Charge empty allfields
   allfields<-read.csv("Species/SIS_allfields_empty.csv")[1,]
@@ -1666,12 +1666,12 @@ function(scientific_name,
   
   
   
-  sRL_loginfo("Start Countries and refs")
+  sRL_loginfo("Start Countries and refs", scientific_name)
   countries_SIS<-Storage_SP$countries_SIS
   ref_SIS<-sRL_OutputRef(scientific_name, Storage_SP) 
    
   # Save csv files in a folder
-  sRL_loginfo("Start writting")
+  sRL_loginfo("Start writting", scientific_name)
   output_dir<-paste0(sub(" ", "_", scientific_name), "_sRedList")
   dir.create(output_dir)
   write.csv(allfields_to_save, paste0(output_dir, "/allfields.csv"), row.names = F)
@@ -1682,8 +1682,8 @@ function(scientific_name,
    
   # Save distribution and occurrences if from GBIF
   if(is.null(Storage_SP$gbif_number_saved)==F){
-   st_write(sRL_OutputDistribution(scientific_name), paste0(output_dir, "/sRedList_", gsub(" ", ".", scientific_name), "_Distribution.shp"), append=F)
-   st_write(sRL_OutputOccurrences(scientific_name), paste0(output_dir, "/sRedList_", gsub(" ", ".", scientific_name), "_Occurrences.shp"), append=F)
+   st_write(sRL_OutputDistribution(scientific_name, Storage_SP), paste0(output_dir, "/sRedList_", gsub(" ", ".", scientific_name), "_Distribution.shp"), append=F)
+   st_write(sRL_OutputOccurrences(scientific_name, Storage_SP), paste0(output_dir, "/sRedList_", gsub(" ", ".", scientific_name), "_Occurrences.shp"), append=F)
   }
   
   # Zip that folder
@@ -1692,12 +1692,12 @@ function(scientific_name,
 
 
   ### Calculate criteria
-  sRL_loginfo("Start Criteria calculation")
+  sRL_loginfo("Start Criteria calculation", scientific_name)
   criteria<-sRL_CriteriaCalculator(allfields[1,])
   
   
   ### Plot
-  sRL_loginfo("Start Plotting")
+  sRL_loginfo("Start Plotting", scientific_name)
   criteria$Cat_ThresholdMIN <- criteria$Cat_ThresholdMIN %>% replace(., .=="LC", "LC/NT") %>% factor(., c("LC/NT", "VU", "EN", "CR"))
   criteria$Cat_ThresholdMAX <- criteria$Cat_ThresholdMAX %>% replace(., .=="LC", "LC/NT") %>% factor(., c("LC/NT", "VU", "EN", "CR"))
   criteria$criterion<-factor(criteria$criterion, levels=sort(criteria$criterion, decreasing=T))
@@ -1907,12 +1907,12 @@ function(scientific_name, file_name, path, type) {
   if ((scientific_name %in% list.files(config$distribution_path)) && !grepl("_RL", file_name) && !grepl("_RL", path)) { # nolint
     if (type == "folder") {
       if (file_name %in% list.files(paste0(config$distribution_path, path))) {
-        sRL_loginfo(paste0("Delete distribution:", config$distribution_path, path, '/', file_name)) # nolint
+        sRL_loginfo(paste0("Delete distribution:", config$distribution_path, path, '/', file_name), scientific_name) # nolint
         return(list(response = unlink(paste0(config$distribution_path, path, '/', file_name), recursive = TRUE))) # nolint
       }
     }else {
       if(file_name %in% list.files(paste0(config$distribution_path, scientific_name, '/', path))){ # nolint
-        sRL_loginfo(paste0("Delete distribution:", config$distribution_path, scientific_name, '/', path, "/", file_name)) # nolint
+        sRL_loginfo(paste0("Delete distribution:", config$distribution_path, scientific_name, '/', path, "/", file_name), scientific_name) # nolint
         return(list(response = unlink(paste0(config$distribution_path, scientific_name, "/", path, "/", file_name)))) # nolint
       }
     }
