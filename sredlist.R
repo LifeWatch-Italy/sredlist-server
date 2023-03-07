@@ -945,7 +945,11 @@ Prom<-future({
 
       # If there is no need to calculate a new one (no new CCI modalities or no new elevation limits, use the last one)
       if(length(unique(crosswalk_to_use$value[crosswalk_to_use$code %in% habitats_pref]))==length(unique(crosswalk_to_use$value[crosswalk_to_use$code %in% c(habitats_pref, habitats_pref_MARGINAL)])) & !"elevation_lowerEXTREME" %in% names(altitudes_pref_DF) & !"elevation_upperEXTREME" %in% names(altitudes_pref_DF)){
-          AOH2_opt<-AOH2; sRL_loginfo("Identical AOH, no need to calculate", scientific_name)} else{
+          sRL_loginfo("Identical AOH, no need to calculate", scientific_name)
+          AOH2_opt<-AOH2
+          terra::writeRaster(AOH2_opt, paste0("resources/AOH_stored/", gsub(" ", "_", scientific_name), "/Current_optimistic/Optimistic_identical.tif"))
+          
+        } else{
 
           AOH2_opt<-sRL_largeAOH(alt_crop, c(habitats_pref, habitats_pref_MARGINAL), alt_pref_extreme, rangeSP_clean, config$YearAOH2, FILENAME=paste0(output_dir, "/Current_optimistic/aoh.tif"))
           sRL_loginfo("Optimistic AOH calculated", scientific_name)
