@@ -645,9 +645,10 @@ Prom<-future({
     sRL_StoreSave(scientific_name, Storage_SP)
     
     # Plot
+    EXT<-1.2*extent(coo[coo$Level0_occupied==T,])
     return(
       leaflet() %>%
-        setView(lat = 10, lng = 0, zoom = 2) %>%
+        fitBounds(lng1=EXT[1], lng2=EXT[2], lat1=EXT[3], lat2=EXT[4]) %>%
         addPolygons(data=coo,
                     color=ifelse(coo$Level0_occupied==T, "black", "grey"),
                     fillColor=coo$colour,
@@ -982,7 +983,7 @@ Prom<-future({
   # Plot AOH and calculate area
   sRL_loginfo("START - Plot AOH", scientific_name)
 
-  ggsave(filename = paste0("resources/AOH_stored/", sub(" ", "_", scientific_name), "/Plots/aoh.png"), plot = plot1, width=6, height=ifelse(Uncertain=="Uncertain_no" | AOH_type=="Small", 6, 10))
+  ggsave(filename = paste0("resources/AOH_stored/", sub(" ", "_", scientific_name), "/Plots/aoh.png"), plot = plot1, width=9, height=ifelse(Uncertain=="Uncertain_no" | AOH_type=="Small", 9, 15))
   plot1 <- base64enc::dataURI(file = paste0("resources/AOH_stored/", sub(" ", "_", scientific_name), "/Plots/aoh.png"), mime = "image/png", encoding = "base64") # nolint
   print("END - Plot AOH")
 
@@ -1022,21 +1023,21 @@ Prom<-future({
         coord_fixed()+
         geom_tile(aes(fill = factor(as.character(value), c("0", "1")))) +
         scale_fill_manual(values=c("#dfc27d", "#018571"), labels=c("Unsuitable", "Suitable"), name="", na.translate=F, drop=F) +
-        labs(title="Pessimistic")+
+        labs(title="Likely slightly overestimated (using a 10x10km aggregate raster) \n\n Pessimistic", subtitle= "(marginal habitats / extreme elevations excluded)")+
         sRLTheme_maps,
 
       gplot(aoh_22_opt[[1]]>0) +
         coord_fixed()+
         geom_tile(aes(fill = factor(as.character(value), c("0", "1")))) +
         scale_fill_manual(values=c("#dfc27d", "#018571"), labels=c("Unsuitable", "Suitable"), name="", na.translate=F, drop=F) +
-        labs(title="Optimistic")+
+        labs(title="Optimistic", subtitle= "(marginal habitats / extreme elevations included)")+
         sRLTheme_maps,
 
-      labels="Likely slightly overestimated (using a 10x10km aggregate raster)", ncol=1)
+      ncol=1)
   }
   }
 
-  ggsave(filename = paste0("resources/AOH_stored/", sub(" ", "_", scientific_name), "/Plots/aoo.png"), plot = plot2, width=6, height=ifelse(Uncertain=="Uncertain_no" | AOH_type=="Small", 6, 10))
+  ggsave(filename = paste0("resources/AOH_stored/", sub(" ", "_", scientific_name), "/Plots/aoo.png"), plot = plot2, width=9, height=ifelse(Uncertain=="Uncertain_no" | AOH_type=="Small", 9, 15))
   plot2 <- base64enc::dataURI(file = paste0("resources/AOH_stored/", sub(" ", "_", scientific_name), "/Plots/aoo.png"), mime = "image/png", encoding = "base64") # nolint
 
   AOO_km2<- sRL_areaAOH(aoh_22[[1]], SCALE="2x2")
