@@ -14,13 +14,13 @@ default:
   # Development Victor
   #distribution_path: "C:/Users/Victor/Documents/sRedList/Platform/Platform_preprocessing_files/Indiv.distributions/Raw_polygons/1.Indiv/"
   #POINTdistribution_path: "C:/Users/Victor/Documents/sRedList/Platform/Platform_preprocessing_files/Indiv.distributions/Raw_points/1.Indiv/"
-  alt_raster_path: "C:/Users/Victor/Documents/sRedList/Platform/InProgress/Large_Files/Elevation_MollweidePlatform.tif"
-  cci1_raster_path: "C:/Users/Victor/Documents/sRedList/Platform/InProgress/Large_Files/CCIXXXX_reprojMollweide.tif"
-  cci2_raster_path: "C:/Users/Victor/Documents/sRedList/Platform/InProgress/Large_Files/CCI2020_reprojMollweide.tif"
-  cciStack2_path: "C:/Users/Victor/Documents/sRedList/Platform/InProgress/Large_Files/RasterAggregated"
-  hydrobasins_path: "C:/Users/Victor/Documents/sRedList/Platform/InProgress/Large_Files/HydroBASINS_level08_w_attributes_2021_05/HydroBASINS_level08_w_attributes_2021_05.shp"
-  Human_density_path: "C:/Users/Victor/Documents/sRedList/Platform/InProgress/Large_Files/Human_Density/gpw_v4_population_density_rev11_XXXX_2pt5_min.tif"
-  ForestAgg_path: "C:/Users/Victor/Documents/sRedList/Platform/InProgress/Large_Files/Forest_Agg/Merged_Forest_XXXX.tif"
+  # alt_raster_path: "C:/Users/Victor/Documents/sRedList/Platform/InProgress/Large_Files/Elevation_MollweidePlatform.tif"
+  # cci1_raster_path: "C:/Users/Victor/Documents/sRedList/Platform/InProgress/Large_Files/CCIXXXX_reprojMollweide.tif"
+  # cci2_raster_path: "C:/Users/Victor/Documents/sRedList/Platform/InProgress/Large_Files/CCI2020_reprojMollweide.tif"
+  # cciStack2_path: "C:/Users/Victor/Documents/sRedList/Platform/InProgress/Large_Files/RasterAggregated"
+  # hydrobasins_path: "C:/Users/Victor/Documents/sRedList/Platform/InProgress/Large_Files/HydroBASINS_level08_w_attributes_2021_05/HydroBASINS_level08_w_attributes_2021_05.shp"
+  # Human_density_path: "C:/Users/Victor/Documents/sRedList/Platform/InProgress/Large_Files/Human_Density/gpw_v4_population_density_rev11_XXXX_2pt5_min.tif"
+  # ForestAgg_path: "C:/Users/Victor/Documents/sRedList/Platform/InProgress/Large_Files/Forest_Agg/Merged_Forest_XXXX.tif"
 
   #Test
   #alt_raster_path: "/Volumes/SSDINDI/LifeWatch/RedList-LaSapienza/Dataset/GLOBEelevation/GLOBE_projected_Moll.tif"
