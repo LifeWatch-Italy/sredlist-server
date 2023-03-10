@@ -231,6 +231,10 @@ sRL_cleanDataGBIF <- function(flags, year_GBIF, uncertainty_GBIF, keepyearNA_GBI
 ### Filter GBIF data
 sRL_SubsetGbif<-function(flags, scientific_name){
   
+  # Round coordinates (<1m change); needed to avoid having almost duplicate points in alpha function
+  flags$decimalLongitude<-round(flags$decimalLongitude,5) 
+  flags$decimalLatitude<-round(flags$decimalLatitude,5)
+  
   # Prepare GBIF data for mapping
   dat_cl <- flags[is.na(flags$Reason)==T,] # Keep only data that are not flagged
 

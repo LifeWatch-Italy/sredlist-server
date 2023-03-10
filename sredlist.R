@@ -1525,7 +1525,7 @@ function(scientific_name,
          populationTrend, currentTrends_basis, currentPop_years, futureTrends_quality, futureTrends_basis, futureTrends, futureTrends_dir, futureTrends_justif, ongoingTrends_NY, ongoingTrends_quality, ongoingTrends_basis, ongoingTrends_reversible, ongoingTrends_understood, ongoingTrends_ceased, ongoingTrends, ongoingTrends_dir, ongoingTrends_justif,
          C_igen_value, C_igen_qual, C_igen_justif, C_iigen_value, C_iigen_qual, C_iigen_justif, C_iiigen_value, C_iiigen_qual, C_iiigen_justif
          ) {
-  
+
   Estimates<-replace(Estimates, Estimates %in% c("undefined", " "), NA)
   print(Estimates)
   
@@ -1580,6 +1580,7 @@ function(scientific_name,
   
   # Decline for A2
   if(Estimates[6] %in% c("+", "-")){allfields$PopulationReductionPast.direction<-revalue(Estimates[6], c("-"="Reduction", "+"="Increase"))} # Replace by Increase or Reduction (if users wrote something else, we don't report it in allfields)
+  if(is.na(Estimates[6])==T & is.na(Estimates[7])==F){allfields$PopulationReductionPast.direction<-"Increase"}
   allfields$PopulationReductionPast.range<-Estimates[7]
   allfields$PopulationReductionPast.justification<-allfields$PopulationDeclineGenerations3.justification<-Estimates[8]
 
