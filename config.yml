@@ -21,14 +21,19 @@ default:
   hydrobasins_path: "C:/Users/Victor/Documents/sRedList/Platform/InProgress/Large_Files/HydroBASINS_level08_w_attributes_2021_05/HydroBASINS_level08_w_attributes_2021_05.shp"
   Human_density_path: "C:/Users/Victor/Documents/sRedList/Platform/InProgress/Large_Files/Human_Density/gpw_v4_population_density_rev11_XXXX_2pt5_min.tif"
   ForestAgg_path: "C:/Users/Victor/Documents/sRedList/Platform/InProgress/Large_Files/Forest_Agg/Merged_Forest_XXXX.tif"
-  #Production
-  #alt_raster_path: "resources/GLOBEelevation/Elevation_MollweidePlatform.tif"
-  #cci1_raster_path: "resources/ESA-CCI/CCIXXXX_reprojMollweide.tif"
-  #cci2_raster_path: "resources/ESA-CCI/CCI2020_reprojMollweide.tif"
-  #access_control_allow_origin: "http://193.204.79.97"
+
   #Test
   #alt_raster_path: "/Volumes/SSDINDI/LifeWatch/RedList-LaSapienza/Dataset/GLOBEelevation/GLOBE_projected_Moll.tif"
   #cci1_raster_path: "/Volumes/SSDINDI/LifeWatch/RedList-LaSapienza/Dataset/ESACCI-LC-L4-LCCS-Map-300m-P1Y-2010-v2.0.7cds.nc"
   #cci2_raster_path: "/Volumes/SSDINDI/LifeWatch/RedList-LaSapienza/Dataset/C3S-LC-L4-LCCS-Map-300m-P1Y-2020-v2.1.1.nc"
   #access_control_allow_origin: "*"
   #distribution_path: "/Volumes/SSDINDI/LifeWatch/RedList-LaSapienza/Dataset/Distributions/"
+
+  # PRODUCTION
+  alt_raster_path: "resources/GLOBEelevation/Elevation_MollweidePlatform.tif"
+  cci1_raster_path: "resources/ESA-CCI/CCIXXXX_reprojMollweide.tif"
+  cci2_raster_path: "resources/ESA-CCI/CCI2020_reprojMollweide.tif"
+  cciStack2_path: "resources/RasterAggregated"
+  hydrobasins_path: "resources/HydroBASINS_level08_w_attributes_2021_05/HydroBASINS_level08_w_attributes_2021_05.shp"
+  Human_density_path: "resources/Human_Density/gpw_v4_population_density_rev11_XXXX_2pt5_min.tif"
+  ForestAgg_path: "resources/Forest_Agg/Merged_Forest_XXXX.tif"
