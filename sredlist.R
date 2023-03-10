@@ -1512,7 +1512,7 @@ function(scientific_name){
 
 
 #* Plot Red List category
-#* @get species/<scientific_name>/assessment/red-list-criteria
+#* @post species/<scientific_name>/assessment/red-list-criteria
 #* @param scientific_name:string Scientific Name
 #* @serializer png list(width = 800, height = 600)
 #* @tag sRedList
