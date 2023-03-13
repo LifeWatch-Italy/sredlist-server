@@ -521,7 +521,8 @@ Prom<-future({
         countr<-distCountries_mapping %>% st_crop(., extent(distSP)) %>% dplyr::group_by() %>% dplyr::summarise(N = n())
         distSP<-st_difference(distSP, countr)}
       
-      distSP$id_no<-NA; distSP$seasonal<-distSP$origin<-distSP$presence<-1
+      distSP$id_no<-Storage_SP$distSP3_saved$id_no
+      distSP$seasonal<-distSP$origin<-distSP$presence<-1
     }
     TRY=1
   }, error=function(e){cat("Smooth did not work")})
