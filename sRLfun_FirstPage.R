@@ -49,14 +49,13 @@ sRL_PlotHistory <- function(sciname_fun){
     not_found("Scientific name not found.")
   } else{
     historic$Cat<-revalue(historic$category, c("Least Concern"="LC", "Near Threatened"="NT", "Vulnerable"="VU", "Endangered"="EN", "Critically Endangered"="CR", "Extinct in the Wild"="EW", "Extinct"="EX", "Data Deficient"="DD")) # nolint
-    historic$Cat[historic$Cat %not in% c("LC", "NT", "DD", "VU", "EN", "CR", "EW", "EX")]<-"old" # nolint
-    historic$Cat <- factor(historic$Cat, c("LC", "NT", "DD", "old", "VU", "EN", "CR", "EW", "EX")) # nolint
+    historic$Cat[historic$Cat %not in% c("LC", "NT", "DD", "VU", "EN", "CR", "EW", "EX")]<-"Former" # nolint
+    historic$Cat <- factor(historic$Cat, c("Former", "DD", "LC", "NT", "VU", "EN", "CR", "EW", "EX")) # nolint
     historic$year <- as.numeric(historic$year)
     
     return(ggplot()+
-                  geom_line(data=historic[historic$Cat != "old",], aes(x = year, y = as.numeric(Cat)), size = 0.5) +
                   geom_point(data=historic, aes(x = year, col = Cat, y = Cat), shape = 15, size = 5, show.legend = F) + # nolint
-                  scale_colour_manual(values=rev(c("#000000ff", "#542344ff", "#d81e05ff", "#fc7f3fff", "#f9e814ff", "#bcbddc", "#d1d1c6ff", "#cce226ff", "#60c659ff")), name="", drop=FALSE) + # nolint
+                  scale_colour_manual(values=rev(c("#000000ff", "#542344ff", "#d81e05ff", "#fc7f3fff", "#f9e814ff", "#cce226ff", "#60c659ff", "#d1d1c6ff", "#bcbddc")), name="", drop=FALSE) + # nolint
                   scale_y_discrete(rev(levels(historic$Cat)), drop=FALSE, name="Extinction risk") + # nolint
                   scale_x_continuous(limits=c(NA, 2023))+
                   theme_minimal() %+replace% theme(axis.text=element_text(size=15), axis.title=element_text(size=20)) +

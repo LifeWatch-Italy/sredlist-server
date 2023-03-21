@@ -407,8 +407,8 @@ sRL_cooExtract<-function(distSP, domain_pref, Crop_Country){
     coo$Level0_occupied<-NA ; for(i in 1:nrow(coo)){coo$Level0_occupied[i]<-max(c(0,coo$presence[coo$SIS_name0==coo$SIS_name0[i]]), na.rm=T)>=1}
     coo$Level1_occupied<-is.na(coo$Dist_row)==F
     
-    coo$Popup<-paste0("<b> National entity: ","</b>", coo$SIS_name0, ifelse(coo$Level0_occupied==T, " (Occupied)", " (Empty)"), "<br>", "<br>",
-                      "<b> Subnational entity: ","</b>", coo$SIS_name1, ifelse(is.na(coo$SIS_name1)==T, "", ifelse(coo$Level1_occupied==T, " (Occupied)", " (Empty)")), "<br>")
+    coo$Popup<-paste0("<b> National entity: ","</b>", coo$SIS_name0, ifelse(coo$Level0_occupied==T, " (Present)", " (Absent)"), "<br>", "<br>",
+                      "<b> Subnational entity: ","</b>", coo$SIS_name1, ifelse(is.na(coo$SIS_name1)==T, "", ifelse(coo$Level1_occupied==T, " (Present)", " (Absent)")), "<br>")
     
     coo$Domain<-"Terrestrial"
   }
@@ -431,8 +431,8 @@ sRL_cooExtract<-function(distSP, domain_pref, Crop_Country){
     eez$Level1_occupied<-is.na(eez$Dist_row)==F
     
     eez$Popup<-paste0("<b>", "Marine EEZ","</b>", "<br>", "<br>",
-                      "<b> National entity: ","</b>", eez$SIS_name0, ifelse(eez$Level0_occupied==T, " (Occupied)", " (Empty)"), "<br>", "<br>",
-                      "<b> Subnational entity: ","</b>", eez$SIS_name1, ifelse(is.na(eez$SIS_name1)==T, "", ifelse(eez$Level1_occupied==T, " (Occupied)", " (Empty)")), "<br>")
+                      "<b> National entity: ","</b>", eez$SIS_name0, ifelse(eez$Level0_occupied==T, " (Present)", " (Absent)"), "<br>", "<br>",
+                      "<b> Subnational entity: ","</b>", eez$SIS_name1, ifelse(is.na(eez$SIS_name1)==T, "", ifelse(eez$Level1_occupied==T, " (Present)", " (Absent)")), "<br>")
     
     eez$Domain="Marine"
   }

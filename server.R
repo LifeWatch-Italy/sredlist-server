@@ -1,10 +1,11 @@
 ### Only for Victor
-# setwd("C:/Users/Victor/Documents/sRedList/Platform/InProgress/sredlist-server-develop")
+setwd("C:/Users/Victor/Documents/sRedList/Platform/InProgress/sredlist-server-develop")
 
 
 
 
 ### Set the asynchronous coding
+#options(future.globals.maxSize= 2000*1024^2) # Max 2 GB of RAM per session
 library(promises) ; library(future)
 future::plan("multisession")
 

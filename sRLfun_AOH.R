@@ -137,7 +137,7 @@ sRL_largeAOH<-function(alt_crop, habitats_pref, altitudes_pref, rangeSP_clean, Y
   print("Suitable CCI groups:") ; print(names(CCI_suitable))
   
   # Crop and sum CCIs  
-  CCI_crop<-terra::crop(CCI_suitable, extent(rangeSP_clean))
+  CCI_crop<-raster::crop(CCI_suitable, extent(rangeSP_clean))
   CCI_sum<-sum(CCI_crop, na.rm=T)
   if(class(CCI_sum)[1] != "SpatRaster"){CCI_sum<-rast(CCI_sum)}
 

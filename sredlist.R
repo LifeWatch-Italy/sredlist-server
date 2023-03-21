@@ -288,7 +288,7 @@ function(scientific_name) {return(list(Gbif_Year = 1900))}
 #* @param scientific_name:string Scientific Name
 #* @serializer json
 #* @tag sRedList
-function(scientific_name) {return(list(Gbif_Uncertainty = 100))}
+function(scientific_name) {return(list(Gbif_Uncertainty = 10))}
 
 #* GBIF Extent
 #* @get species/<scientific_name>/gbif-extent
@@ -635,7 +635,7 @@ Prom<-future({
     col.df<-data.frame(
       Code=c("MarineFALSEFALSE", "MarineTRUEFALSE", "MarineTRUETRUE", "TerrestrialFALSEFALSE", "TerrestrialTRUEFALSE", "TerrestrialTRUETRUE"),
       Col=c("#D2D2D2", "#9595C3", "#5757A9", "white", "#F17777", "#8C2316"),
-      Label=c("Empty (marine)", "Subnational empty (marine)", "Occupied (marine)", "Empty (terrestrial)", "Subnational empty (terrestrial)", "Occupied (terrestrial)")
+      Label=c("Absent (marine)", "Absent from subnational (marine)", "Present (marine)", "Absent (terrestrial)", "Absent from subnational (terrestrial)", "Present (terrestrial)")
     )
     
     coo$colour<-paste0(coo$Domain, coo$Level0_occupied, coo$Level1_occupied) 
@@ -1365,7 +1365,7 @@ Prom<-future({
         geom_hline(yintercept=0.5, linetype="dashed")+
         xlab("How many individuals do you consider to be a 'small' population?")+ylab("Proportion of the population that is fragmented")+
         ylim(c(0,1))+
-        labs(subtitle=paste0("Fragmented if you consider that a population with ", round(min(res$prop.fragm$pop[res$prop.fragm$CumSum>0.5], na.rm=T)), " individuals is 'small'"))+
+        labs(subtitle=paste0("Fragmented if you consider that a population < than ", round(min(res$prop.fragm$pop[res$prop.fragm$CumSum>0.5], na.rm=T)), " mature individuals is 'small'"))+
         theme_minimal()
     } else {
       G2<-ggplot(res$prop.fragm)+
@@ -1376,7 +1376,7 @@ Prom<-future({
         geom_hline(yintercept=0.5, linetype="dashed")+
         xlab("How many individuals do you consider to be a 'small' population?")+ylab("Proportion of the population that is fragmented")+
         ylim(c(0,1))+
-        labs(subtitle=paste0("Fragmented if you consider that a population with ", round(min(res$prop.fragm$pop[res$prop.fragm$CumSum>0.5], na.rm=T)), "-", round(min(res$prop.fragm$pop2[res$prop.fragm$CumSum>0.5], na.rm=T)), " individuals is 'small'"))+
+        labs(subtitle=paste0("Fragmented if you consider that a population < than ", round(min(res$prop.fragm$pop[res$prop.fragm$CumSum>0.5], na.rm=T)), "-", round(min(res$prop.fragm$pop2[res$prop.fragm$CumSum>0.5], na.rm=T)), " mature individuals is 'small'"))+
         theme_minimal()
       }
     
@@ -1445,7 +1445,7 @@ function(scientific_name){
   
   ### EOO
   EOO_val <- ifelse("eoo_km2" %in% names(Storage_SP), Storage_SP$eoo_km2, NA)
-  EOO_justif <- ifelse("eoo_km2" %in% names(Storage_SP), "The EOO has been estimated as the Minimal Convex Polygon around the distribution on the sRedList platform.", NA)
+  EOO_justif <- ifelse("eoo_km2" %in% names(Storage_SP), "The EOO has been estimated as the Minimum Convex Polygon around the distribution on the sRedList platform.", NA)
   Storage_SP<-sRL_OutLog(Storage_SP, "Estimated_EOO_raw", EOO_val)
   
   
