@@ -1363,10 +1363,10 @@ Prom<-future({
         geom_step(aes(x=pop, y=CumSum), col="darkred", linewidth=2)+
         geom_vline(xintercept=min(res$prop.fragm$pop[res$prop.fragm$CumSum>0.5], na.rm=T), linetype="dashed")+
         geom_hline(yintercept=0.5, linetype="dashed")+
-        xlab("How many individuals do you consider to be a 'small' population?")+ylab("Proportion of the population that is fragmented")+
+        xlab("How many individuals constitute a 'small' population?")+ylab("Proportion of the population that is fragmented")+
         ylim(c(0,1))+
-        labs(subtitle=paste0("Fragmented if you consider that a population < than ", round(min(res$prop.fragm$pop[res$prop.fragm$CumSum>0.5], na.rm=T)), " mature individuals is 'small'"))+
-        theme_minimal()
+        labs(subtitle=paste0("Fragmented if you consider that a population lower \n than ", round(min(res$prop.fragm$pop[res$prop.fragm$CumSum>0.5], na.rm=T)), " mature individuals is 'small'"))+
+        theme_minimal() %+replace%   theme(text=element_text(size=20), plot.subtitle=element_text(hjust=0.5))
     } else {
       G2<-ggplot(res$prop.fragm)+
         geom_step(aes(x=pop2, y=CumSum), col="coral2", linewidth=2)+
@@ -1374,10 +1374,10 @@ Prom<-future({
         geom_vline(xintercept=min(res$prop.fragm$pop[res$prop.fragm$CumSum>0.5], na.rm=T), linetype="dashed")+
         geom_vline(xintercept=min(res$prop.fragm$pop2[res$prop.fragm$CumSum>0.5], na.rm=T), linetype="dashed")+
         geom_hline(yintercept=0.5, linetype="dashed")+
-        xlab("How many individuals do you consider to be a 'small' population?")+ylab("Proportion of the population that is fragmented")+
+        xlab("How many individuals constitute a 'small' population?")+ylab("Proportion of the population that is fragmented")+
         ylim(c(0,1))+
-        labs(subtitle=paste0("Fragmented if you consider that a population < than ", round(min(res$prop.fragm$pop[res$prop.fragm$CumSum>0.5], na.rm=T)), "-", round(min(res$prop.fragm$pop2[res$prop.fragm$CumSum>0.5], na.rm=T)), " mature individuals is 'small'"))+
-        theme_minimal()
+        labs(subtitle=paste0("Fragmented if you consider that a population lower \n than ", round(min(res$prop.fragm$pop[res$prop.fragm$CumSum>0.5], na.rm=T)), "-", round(min(res$prop.fragm$pop2[res$prop.fragm$CumSum>0.5], na.rm=T)), " mature individuals is 'small'"))+
+        theme_minimal() %+replace%   theme(text=element_text(size=20), plot.subtitle=element_text(hjust=0.5))
       }
     
     Plot<-cowplot::plot_grid(G1, G2, ncol=2)
