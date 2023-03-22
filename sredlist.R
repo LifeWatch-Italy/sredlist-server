@@ -424,10 +424,14 @@ Prom<-future({
                                   GBIF_crop=Gbif_Crop,
                                   Gbif_Param=Gbif_Param)
   sRL_loginfo("Map Distribution halfway", scientific_name)
+  
+  # Map countries (keeping max extent between points and polygons)
+  EXT_max <-  do.call(bind, sapply(c(extent(distSP), extent(dat_proj)), FUN = function(x){as(x, 'SpatialPolygons')}))  %>% bbox(.) %>% extent(.)
+  CountrySP<-st_crop(distCountries, 1.15*EXT_max)
+  
   # Store and calculate area
+  Storage_SP$CountrySP_saved<-CountrySP 
   Storage_SP$gbif_number_saved=nrow(dat_proj)
-  Storage_SP$CountrySP_saved<-st_crop(distCountries, extent(distSP)) # This is for later (fits the extent of the distribution)
-  CountrySP<-st_crop(distCountries, extent(dat_proj)) # This is for now (fits the extent of the occurrence points)
   
   # Plot distribution
   ggsave(paste0("resources/AOH_stored/", sub(" ", "_", scientific_name), "/Plots/eoo.png"), (
@@ -536,6 +540,7 @@ Prom<-future({
     ggplot() + 
       geom_sf(data=Storage_SP$CountrySP_saved, fill="gray70")+
       geom_sf(data = distSP, fill="darkred") + 
+      geom_sf(data=Storage_SP$dat_proj_saved) +
       ggtitle("")+
       sRLTheme_maps
   ), width=18, height=5.5) # nolint
