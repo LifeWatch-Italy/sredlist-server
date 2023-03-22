@@ -69,11 +69,25 @@ wrong_zip_extension<-function() {
 }
 
 no_coords_update <- function() {
-  api_error(message = "longitude and latitude columns were not found in uploaded data", status = 400)
+  api_error(message = "Longitude (dec_long) and latitude (dec_lat) columns were not found in uploaded data", status = 400)
 }
 
 no_density_fragm <- function() {
   api_error(message = "A density must be provided in the AOH step to perform this step", status = 400)
 }
 
+neg_kernel <- function() {
+  api_error(message = "Kernel parameter cannot be negative", status = 400)
+}
 
+neg_alpha <- function() {
+  api_error(message = "Alpha parameter cannot be negative", status = 400)
+}
+
+coords_outofbound <- function() {
+  api_error(message = "Coordinates should be in decimal with longitude (dec_long) between -180 and 180 and latitude (dec_lat) between -90 and 90. Make sure you used dots and not commas to write decimals in your csv file, this may cause issues.", status = 400)
+}
+
+wrong_species_upload <- function() {
+  api_error(message = "At least one of the uploaded observations has a different species name (sci_name) than the name of the species you are assessing. Please edit your csv file before uploading again.", status = 400)
+}

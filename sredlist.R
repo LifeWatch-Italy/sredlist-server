@@ -194,18 +194,8 @@ Prom<-future({
   
   # Uploaded Records if we uploaded data (it's a list with 1 element being the title of the uploaded csv file); I edit the csv if separator not good
   if(Uploaded_Records != ""){
-    Uploaded_Records<-Uploaded_Records[[1]] 
-    if(ncol(Uploaded_Records)==1){print("CSV with wrong separator with ; separator"); Uploaded_Records<-Uploaded_Records %>% separate(col=names(Uploaded_Records)[1], into=unlist(strsplit(names(Uploaded_Records), ";")), sep=";")}
-    if(ncol(Uploaded_Records)==1){print("CSV with wrong separator with tab separator"); Uploaded_Records<-Uploaded_Records %>% separate(col=names(Uploaded_Records)[1], into=unlist(strsplit(names(Uploaded_Records), "\t")), sep="\t")}
-    if(ncol(Uploaded_Records)==1){wrong_csv_upload()}
-    
-    # Check longitude and latitude are provided
-    if(! "latitude" %in% names(Uploaded_Records)){names(Uploaded_Records)<-replace(names(Uploaded_Records), names(Uploaded_Records) %in% c("y", "Y", "Latitude", "lat", "Lat"), "latitude")}
-    if(! "longitude" %in% names(Uploaded_Records)){names(Uploaded_Records)<-replace(names(Uploaded_Records), names(Uploaded_Records) %in% c("x", "X", "Longitude", "lon", "Lon"), "longitude")}
-    if((! "longitude" %in% names(Uploaded_Records)) | (! "latitude" %in% names(Uploaded_Records))){no_coords_update()}
-    Uploaded_Records$longitude<-as.numeric(Uploaded_Records$longitude) ; Uploaded_Records$latitude<-as.numeric(Uploaded_Records$latitude)
-    
-    print(Uploaded_Records)
+    Uploaded_Records<-sRL_FormatUploadedRecords(Uploaded_Records, scientific_name)
+    print(head(Uploaded_Records))
   }
 
   ### GBIF procedure
@@ -400,6 +390,11 @@ function(scientific_name) {
 #* @tag sRedList
 function(scientific_name, Gbif_Start="", Gbif_Param=list(), Gbif_Buffer=-1, Gbif_Altitude=list(), Gbif_Crop="") {
 
+# Parameter error
+if(Gbif_Start=="kernel" & Gbif_Param[1]<0){neg_kernel()}
+if(Gbif_Start=="alpha" & Gbif_Param[2]<0){neg_alpha()}
+  
+  
 Prom<-future({
   sf::sf_use_s2(FALSE)
 

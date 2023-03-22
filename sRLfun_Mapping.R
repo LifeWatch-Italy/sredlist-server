@@ -1,5 +1,53 @@
 
 
+# Step 1 --------------------------------
+sRL_FormatUploadedRecords <- function(Uploaded_Records, scientific_name){
+  
+  # Charge and deal with tab separator
+  Uploaded_Records<-Uploaded_Records[[1]] 
+  if(ncol(Uploaded_Records)==1){print("CSV with wrong separator with ; separator"); Uploaded_Records<-Uploaded_Records %>% separate(col=names(Uploaded_Records)[1], into=unlist(strsplit(names(Uploaded_Records), ";")), sep=";")}
+  if(ncol(Uploaded_Records)==1){print("CSV with wrong separator with tab separator"); Uploaded_Records<-Uploaded_Records %>% separate(col=names(Uploaded_Records)[1], into=unlist(strsplit(names(Uploaded_Records), "\t")), sep="\t")}
+  if(ncol(Uploaded_Records)==1){wrong_csv_upload()}
+  
+  # Check sci_name is provided (otherwise use scientific_name) and rename column + if only NA or empty, use scientific_name too
+  if(!"sci_name" %in% names(Uploaded_Records)){
+    names(Uploaded_Records)<-replace(names(Uploaded_Records), tolower(names(Uploaded_Records)) %in% c("sci_name", "binomial", "species", "scientific_name", "species_name"), "sci_name")
+    if(! "sci_name" %in% names(Uploaded_Records)){Uploaded_Records$sci_name<-scientific_name}
+  }
+  if(as.logical(table(factor(is.na(replace(Uploaded_Records$sci_name, Uploaded_Records$sci_name=="", NA)), c("TRUE", "FALSE")))["FALSE"]==0)){Uploaded_Records$sci_name<-scientific_name}
+  
+  # If another species name than scientific_name, return an error (I could deal with it but this might introduce errors that users won't sea)
+  if(as.logical(table(factor(Uploaded_Records$sci_name %in% c(scientific_name, NA, ""), c("TRUE", "FALSE")))["FALSE"] >0)){wrong_species_upload()}
+  
+  # Check longitude and latitude are provided
+  if(! "dec_lat" %in% names(Uploaded_Records)){names(Uploaded_Records)<-replace(names(Uploaded_Records), tolower(names(Uploaded_Records)) %in% c("y", "dec_lat", "latitude", "lat"), "dec_lat")}
+  if(! "dec_long" %in% names(Uploaded_Records)){names(Uploaded_Records)<-replace(names(Uploaded_Records), tolower(names(Uploaded_Records)) %in% c("x", "dec_long", "dec_lon", "longitude", "lon", "long"), "dec_long")}
+  if((! "dec_long" %in% names(Uploaded_Records)) | (! "dec_lat" %in% names(Uploaded_Records))){no_coords_update()}
+  Uploaded_Records$dec_long<-as.numeric(Uploaded_Records$dec_long)
+  Uploaded_Records$dec_lat<-as.numeric(Uploaded_Records$dec_lat)
+  # Check they are within -180:180 and -90:90
+  if(min(Uploaded_Records$dec_long)<(-180) |
+     max(Uploaded_Records$dec_long)>(180) |
+     min(Uploaded_Records$dec_lat)<(-90) |
+     max(Uploaded_Records$dec_lat)>(90)){coords_outofbound()}
+  
+  # Make longitude and latitude numeric (includes a comma to point transformation for decimals)
+  Uploaded_Records$dec_long<-Uploaded_Records$dec_long %>% sub(",", ".", .) %>% as.numeric()
+  Uploaded_Records$dec_lat<-Uploaded_Records$dec_lat %>% sub(",", ".", .) %>% as.numeric()
+  
+  # Transform column name of year and make it numeric (if no column, I make it all NA)
+  names(Uploaded_Records)<-replace(names(Uploaded_Records), tolower(names(Uploaded_Records)) %in% c("year", "event_year"), "year")
+  if(! "year" %in% names(Uploaded_Records)){Uploaded_Records$year<-NA}
+  Uploaded_Records$year<-as.numeric(Uploaded_Records$year)
+  
+  # Return
+  return(Uploaded_Records)
+}
+
+
+
+
+
 
 
 sRL_createDataGBIF <- function(scientific_name, GBIF_SRC, Uploaded_Records) { # nolint
@@ -64,12 +112,11 @@ sRL_createDataGBIF <- function(scientific_name, GBIF_SRC, Uploaded_Records) { # 
   if(!is.null(nrow(Uploaded_Records))){
     dat_upload<-Uploaded_Records
     dat_upload$Source_type<-"Uploaded"
-    dat_upload$decimalLongitude<-dat_upload$longitude
-    dat_upload$decimalLatitude<-dat_upload$latitude
-    dat_upload$year<-dat_upload$event_year
-    dat_upload$species<-dat_upload$binomial
+    dat_upload$decimalLongitude<-dat_upload$dec_long
+    dat_upload$decimalLatitude<-dat_upload$dec_lat
+    dat_upload$species<-dat_upload$sci_name
     dat_upload$coordinateUncertaintyInMeters<-NA
-    dat_upload$gbifID<-dat_upload$objectid
+    dat_upload$gbifID<-paste0("Uploaded_", rownames(dat_upload))
     dat_upload$Link<-NA
   } else {dat_upload<-data.frame()}
 
@@ -181,7 +228,7 @@ sRL_StructureGBIF<-function(scientificName){
 }
 
 
-### Function that subsets the observations to flag
+# Step 2 --------------------------------
 sRL_cleanDataGBIF <- function(flags, year_GBIF, uncertainty_GBIF, keepyearNA_GBIF, sea_GBIF, GBIF_xmin, GBIF_xmax, GBIF_ymin, GBIF_ymax) { # nolint
 
   flags$.summary<-NULL
@@ -248,7 +295,7 @@ sRL_SubsetGbif<-function(flags, scientific_name){
 
 
 
-### Create Distribution map from GBIF data
+# Step 3 --------------------------------
 sRL_MapDistributionGBIF<-function(dat, scientific_name, First_step, AltMIN, AltMAX, Buffer_km2, GBIF_crop, Gbif_Param){
 
   ### The first step can be mcp, kernel, alpha, hydro, hydroMCP
@@ -389,7 +436,7 @@ sRL_saveMapDistribution <- function(scientific_name, Storage_SP) {
 
 
 
-### Function COO countries of occurrence
+# COO --------------------
 sRL_cooExtract<-function(distSP, domain_pref, Crop_Country){
   
   ### Prepare COO terrestrial and freshwater

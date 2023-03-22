@@ -167,10 +167,10 @@ sRL_CriteriaCalculator <- function(allfields){
   
   crit <- data.frame(criterion=c("A1", "A2", "A3", "A4", "B1", "B2", "C1", "C2", "D1", "D2"), Cat_ThresholdMIN=NA, Cat_ThresholdMAX=NA, Subcrit=NA)
   
-  ##################
-  ### CRITERIA A ###
-  ##################
+
   
+  ### CRITERIA A ------------------------------
+
   
   ### Criteron A1 
   
@@ -255,10 +255,8 @@ sRL_CriteriaCalculator <- function(allfields){
   
   
   
-  ##################
-  ### CRITERIA B ###
-  ##################  
-  
+  ### CRITERIA B ----------------
+
   ### Criterion B1
   crit_B1<-cut(extract_range(allfields$EOO.range), breaks=c(0,100,5000,20000,Inf), labels=c("CR", "EN", "VU", "LC"), include.lowest=T, right=F) %>% as.character(.)
   crit<-crit_apply(crit, "B1", crit_B1)
@@ -344,10 +342,8 @@ sRL_CriteriaCalculator <- function(allfields){
   
   
   
-  ##################
-  ### CRITERIA C ###
-  ##################  
-  
+  ### CRITERIA C -----------------------------
+
   ### Population size
   crit_CPOP<-cut(extract_range(allfields$PopulationSize.range), breaks=c(0,250,2500,10000,Inf), labels=c("CR", "EN", "VU", "LC"), include.lowest=T, right=F) %>% as.character(.)
   
@@ -438,10 +434,8 @@ sRL_CriteriaCalculator <- function(allfields){
   
   
   
-  ##################
-  ### CRITERIA D ###
-  ##################
-  
+  ### CRITERIA D ----------------
+
   ### criterion D1
   crit_D1<-cut(extract_range(allfields$PopulationSize.range), breaks=c(0,50,250,1000,Inf), labels=c("CR", "EN", "VU", "LC"), include.lowest=T, right=F) %>% as.character(.)
   crit<-crit_apply(crit, "D1", crit_D1)
@@ -456,10 +450,8 @@ sRL_CriteriaCalculator <- function(allfields){
   
   
   
-  #############################
-  ### RETURN THE DATA FRAME ###
-  #############################
-  
+  ### RETURN THE DATA FRAME -----------------------
+
   return(crit)
 }
 
