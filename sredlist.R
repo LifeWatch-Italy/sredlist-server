@@ -789,13 +789,22 @@ function(scientific_name) {
 #* @tag sRedList
 function(scientific_name, habitats_pref= list(), habitats_pref_MARGINAL=list(), altitudes_pref= list(), density_pref= '-1', isGbifDistribution = FALSE, path = "") { # nolint    
 
-Prom<-future({
-  sf::sf_use_s2(FALSE)
-  
-  # Clean memory
+# If habitats not in crosswalk, return error
+if(!"TRUE" %in% (c(habitats_pref, habitats_pref_MARGINAL) %in% crosswalk_to_use$code)){no_habitats_crosswalk()}
+
+
+# Clean memory
+Prom_clean<-future({
   sRL_loginfo("START - Cleaning memory", scientific_name)
   sRL_cleaningMemory(Time_limit=45)
   sRL_loginfo("END - Cleaning memory", scientific_name)
+}, seed=T)  
+Prom_clean %...>% print(.)
+
+
+Prom<-future({
+  sf::sf_use_s2(FALSE)
+  sRL_loginfo("START - AOH API", scientific_name)
   
   if(length(habitats_pref)==0){no_habitat_pref()}
   
@@ -903,7 +912,7 @@ Prom<-future({
       plot1 <- gplot(AOH2[[1]]) +
         coord_fixed()+
         geom_tile(aes(fill = factor(value, levels=c("0", "1")))) +
-        scale_fill_manual(values=c("#dfc27d", "#018571", NA), labels=c("Unsuitable", "Suitable", ""), name="", na.translate=F, drop=F) +
+        scale_fill_manual(values=c("#FBCB3C", "#0D993F", NA), labels=c("Unsuitable", "Suitable", ""), name="", na.translate=F, drop=F) +
         ggtitle("Area of Habitat in 2020") +
         sRLTheme_maps
     }
@@ -914,7 +923,7 @@ Prom<-future({
       plot1<-gplot(AOH2[[1]]+AOH2_opt[[1]])+
         coord_fixed()+
         geom_tile(aes(fill = factor(value, levels=c("0", "1", "2")))) +
-        scale_fill_manual(values=c("#FBCB3C", "#54B967", "#004D40", NA), labels=c("Unsuitable", "Unknown", "Suitable", ""), name="", na.translate=F, drop=F) +
+        scale_fill_manual(values=c("#FBCB3C", "#90D79E", "#0D993F", NA), labels=c("Unsuitable", "Unknown", "Suitable", ""), name="", na.translate=F, drop=F) +
         ggtitle(paste0("Area of Habitat in ", config$YearAOH2)) +
         sRLTheme_maps
     }
@@ -935,7 +944,7 @@ Prom<-future({
       plot1 <- gplot((AOH2[[1]]/9)) + # Divide by 9 to get percents
         coord_fixed()+
         geom_tile(aes(fill = value)) +
-        scale_fill_gradient(low="#dfc27d", high="#018571", name="Suitability (%)", limits=c(0,100), na.value=NA)+
+        scale_fill_gradient(low="#FBCB3C", high="#0D993F", name="Suitability (%)", limits=c(0,100), na.value=NA)+
         ggtitle(paste0("Area of Habitat in ", config$YearAOH2)) +
         sRLTheme_maps
 
@@ -961,7 +970,7 @@ Prom<-future({
         gplot((AOH2[[1]]/9)) + # Divide by 9 to get percents
           coord_fixed()+
           geom_tile(aes(fill = value)) +
-          scale_fill_gradient(low="#dfc27d", high="#018571", name="Suitability (%)", limits=c(0,100), na.value=NA)+
+          scale_fill_gradient(low="#FBCB3C", high="#0D993F", name="Suitability (%)", limits=c(0,100), na.value=NA)+
           ggtitle(paste0("Pessimistic AOH in ", config$YearAOH2)) +
           labs(subtitle= "(marginal habitats / extreme elevations excluded)") +
           sRLTheme_maps,
@@ -969,7 +978,7 @@ Prom<-future({
         gplot((AOH2_opt[[1]]/9)) + # Divide by 9 to get percents
           coord_fixed()+
           geom_tile(aes(fill = value)) +
-          scale_fill_gradient(low="#dfc27d", high="#018571", name="Suitability (%)", limits=c(0,100), na.value=NA)+
+          scale_fill_gradient(low="#FBCB3C", high="#0D993F", name="Suitability (%)", limits=c(0,100), na.value=NA)+
           ggtitle(paste0("Optimistic AOH in ", config$YearAOH2)) +
           labs(subtitle= "(marginal habitats / extreme elevations included)") +
           sRLTheme_maps,
@@ -1001,7 +1010,7 @@ Prom<-future({
     plot2 <- gplot(aoh_22[[1]]>0) +
       coord_fixed()+
       geom_tile(aes(fill = factor(as.character(value), c("0", "1")))) +
-      scale_fill_manual(values=c("#dfc27d", "#018571"), labels=c("Unsuitable", "Suitable"), name="", na.translate=F, drop=F) +
+      scale_fill_manual(values=c("#FBCB3C", "#0D993F"), labels=c("Unsuitable", "Suitable"), name="", na.translate=F, drop=F) +
       labs(title="", subtitle=ifelse(AOH_type=="Large", "Likely slightly overestimated (using a 10x10km aggregate raster)", ""))+
       sRLTheme_maps
   }
@@ -1014,7 +1023,7 @@ Prom<-future({
       plot2<-gplot((aoh_22[[1]]>0)+(aoh_22_opt[[1]]>0))+
         coord_fixed()+
         geom_tile(aes(fill = factor(value, levels=c("0", "1", "2")))) +
-        scale_fill_manual(values=c("#FBCB3C", "#54B967", "#004D40", NA), labels=c("Unsuitable", "Unknown", "Suitable", ""), name="", na.translate=F, drop=F) +
+        scale_fill_manual(values=c("#FBCB3C", "#90D79E", "#0D993F", NA), labels=c("Unsuitable", "Unknown", "Suitable", ""), name="", na.translate=F, drop=F) +
         ggtitle("") +
         sRLTheme_maps
 
@@ -1023,14 +1032,14 @@ Prom<-future({
       gplot(aoh_22[[1]]>0) +
         coord_fixed()+
         geom_tile(aes(fill = factor(as.character(value), c("0", "1")))) +
-        scale_fill_manual(values=c("#dfc27d", "#018571"), labels=c("Unsuitable", "Suitable"), name="", na.translate=F, drop=F) +
+        scale_fill_manual(values=c("#FBCB3C", "#0D993F"), labels=c("Unsuitable", "Suitable"), name="", na.translate=F, drop=F) +
         labs(title="Likely slightly overestimated (using a 10x10km aggregate raster) \n\n Pessimistic", subtitle= "(marginal habitats / extreme elevations excluded)")+
         sRLTheme_maps,
 
       gplot(aoh_22_opt[[1]]>0) +
         coord_fixed()+
         geom_tile(aes(fill = factor(as.character(value), c("0", "1")))) +
-        scale_fill_manual(values=c("#dfc27d", "#018571"), labels=c("Unsuitable", "Suitable"), name="", na.translate=F, drop=F) +
+        scale_fill_manual(values=c("#FBCB3C", "#0D993F"), labels=c("Unsuitable", "Suitable"), name="", na.translate=F, drop=F) +
         labs(title="Optimistic", subtitle= "(marginal habitats / extreme elevations included)")+
         sRLTheme_maps,
 
@@ -1354,7 +1363,7 @@ Prom<-future({
       geom_tile(data = aohDF, aes(x = x, y = y, fill = factor(lyr1, levels=c("0", "1"))), alpha = 0.5, show.legend=F)+
       geom_sf(data=st_transform(res$clusters, crs(aoh)), fill=NA)+
       ggtitle(paste0("Population fragmentation in ", nrow(res$clusters), " clusters"))+
-      scale_fill_manual(values=c("#dfc27d", "#018571", NA), labels=c("Unsuitable", "Suitable", ""), name="", na.translate=F, drop=F) +
+      scale_fill_manual(values=c("#FBCB3C", "#0D993F", NA), labels=c("Unsuitable", "Suitable", ""), name="", na.translate=F, drop=F) +
       sRLTheme_maps
     
     # Cumulative fragmentation (depends if one or two density estimates)

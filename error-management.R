@@ -56,6 +56,10 @@ no_habitat_pref <- function() {
   api_error(message = "At least one suitable habitat must be selected", status = 400)
 }
 
+no_habitats_crosswalk <- function() {
+  api_error(message = "This habitat cannot be mapped on the platform (the crosswalk we use to link with land cover data does not include the habitats you selected)", status = 400)
+}
+
 no_gbif_data <- function() {
   api_error(message = "All records have been excluded in Step 2", status = 400)
 }
