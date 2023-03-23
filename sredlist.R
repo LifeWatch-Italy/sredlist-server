@@ -391,8 +391,8 @@ function(scientific_name) {
 function(scientific_name, Gbif_Start="", Gbif_Param=list(), Gbif_Buffer=-1, Gbif_Altitude=list(), Gbif_Crop="") {
 
 # Parameter error
-if(Gbif_Start=="kernel" & Gbif_Param[1]<0){neg_kernel()}
-if(Gbif_Start=="alpha" & Gbif_Param[2]<0){neg_alpha()}
+if(Gbif_Start=="alpha" & Gbif_Param[1]<0){neg_alpha()}
+if(Gbif_Start=="kernel" & Gbif_Param[2]<0){neg_kernel()}
   
   
 Prom<-future({
@@ -447,7 +447,7 @@ Prom<-future({
   
   # Keep distribution in memory
   Storage_SP$distSP3_saved=distSP
-  Storage_SP<-sRL_OutLog(Storage_SP, c("Mapping_Start", "Mapping_Crop", "Mapping_Buffer", "Mapping_Altitude", "Kernel_parameter", "Alpha_parameter"), c(Gbif_Start, Gbif_Crop, Gbif_Buffer, paste0(Gbif_Altitude, collapse=","), ifelse(Gbif_Start=="kernel", Gbif_Param[1], NA), ifelse(Gbif_Start=="alpha", Gbif_Param[1], NA)))
+  Storage_SP<-sRL_OutLog(Storage_SP, c("Mapping_Start", "Mapping_Crop", "Mapping_Buffer", "Mapping_Altitude", "Kernel_parameter", "Alpha_parameter"), c(Gbif_Start, Gbif_Crop, Gbif_Buffer, paste0(Gbif_Altitude, collapse=","), ifelse(Gbif_Start=="kernel", Gbif_Param[2], NA), ifelse(Gbif_Start=="alpha", Gbif_Param[1], NA)))
   sRL_StoreSave(scientific_name, Storage_SP)
   
   return(list(

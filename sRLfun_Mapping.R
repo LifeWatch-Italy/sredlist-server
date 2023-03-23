@@ -310,14 +310,14 @@ sRL_MapDistributionGBIF<-function(dat, scientific_name, First_step, AltMIN, AltM
 
     # Calculate kernels
     kernel.ref <- kernelUD(as_Spatial(dat), h = "href")  # href = the reference bandwidth
-    distGBIF <- getverticeshr(kernel.ref, percent = 100*Gbif_Param[1]) %>% st_as_sf(.)
+    distGBIF <- getverticeshr(kernel.ref, percent = 100*Gbif_Param[2]) %>% st_as_sf(.)
   }
   
   if(First_step=="alpha"){
       # Remove duplicate points (points with same lon/lat)
       dat_subsample<-dplyr::distinct(dat, as.character(geometry), .keep_all=T) 
     
-      Par_alpha<-Gbif_Param[2]
+      Par_alpha<-Gbif_Param[1]
       EX<-extent(dat_subsample)
       distGBIF<-convexHull(dat_subsample, alpha = Par_alpha * sqrt((EX@xmin-EX@xmax)^2 + (EX@ymin-EX@ymax)^2))
       st_crs(distGBIF)<-st_crs(dat_subsample)
