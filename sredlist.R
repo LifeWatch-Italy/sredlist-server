@@ -1538,7 +1538,7 @@ function(scientific_name,
 
   Estimates<-replace(Estimates, Estimates %in% c("undefined", " "), NA)
   print(Estimates)
-  
+
   #Filter param
   sRL_loginfo("Start Criteria calculation", scientific_name)
   scientific_name <- sRL_decode(scientific_name)
@@ -1603,7 +1603,7 @@ function(scientific_name,
   allfields$PopulationReductionPastCeased.value<-pastTrends_ceased
 
   # Fragmentation
-  allfields$SevereFragmentation.isFragmented<-ifelse(fragment=="true", "Yes", "No")
+  allfields$SevereFragmentation.isFragmented<-ifelse(fragment %in% c("true", "TRUE", "T"), "Yes", "No")
   allfields$SevereFragmentation.justification<-Fragment_justif
 
   # Population details
@@ -1726,6 +1726,10 @@ function(scientific_name,
   criteria$ColMin<-paste0(criteria$Cat_ThresholdMIN, criteria$Subcrit) %>% factor(., c("LC/NT1", "VU1", "EN1", "CR1", "LC/NT0", "VU0", "EN0", "CR0"))
   criteria$ColMax<-paste0(criteria$Cat_ThresholdMAX, criteria$Subcrit) %>% factor(., c("LC/NT1", "VU1", "EN1", "CR1", "LC/NT0", "VU0", "EN0", "CR0"))
   
+  # Prepare plot title
+  TITLE<-ifelse(CAT_MAX=="LC", "The species does not seem to trigger a threatened category under any criterion; \n it could thus be LC or NT) \n", paste0("The species seems to meet the ", CAT_MAX, " category", CRIT_MAX, "\n"))
+  SUBTITLE<-ifelse(nrow(speciesRL[speciesRL$scientific_name == scientific_name,])==1, paste0("Last published category: ", speciesRL$category[speciesRL$scientific_name == scientific_name], "\n"), "")
+  
   return(
     plot(ggplot(criteria, aes(y = criterion)) +
       geom_linerange(aes(xmin=Cat_ThresholdMIN, xmax=Cat_ThresholdMAX), linewidth=10, colour="gray75")+
@@ -1736,8 +1740,9 @@ function(scientific_name,
       scale_x_discrete(drop = F, na.translate = FALSE) + scale_y_discrete(drop=F, na.translate = FALSE) +
       xlab("Red List Category triggered") + ylab("Criteria")+
       scale_colour_manual(drop = F, values=c("#006666ff", "#cc9900ff", "#cc6633ff", "#cc3333ff", "#b3d1d1ff", "#f0e1b3ff", "#f0d1c2ff", "#f0c2c2ff"))+
-      ggtitle(paste0("The species seems to meet the ", CAT_MAX, " category", CRIT_MAX))+
-      theme_bw())
+      ggtitle(TITLE, subtitle=SUBTITLE)+
+      theme_bw()  %+replace% theme(text=element_text(size=18), plot.title=element_text(hjust=0.5), plot.subtitle=element_text(hjust=0.5, size=15))
+    )
   )
 
 
