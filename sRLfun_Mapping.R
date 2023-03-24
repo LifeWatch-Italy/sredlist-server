@@ -36,9 +36,9 @@ sRL_FormatUploadedRecords <- function(Uploaded_Records, scientific_name){
   Uploaded_Records$dec_lat<-Uploaded_Records$dec_lat %>% sub(",", ".", .) %>% as.numeric()
   
   # Transform column name of year and make it numeric (if no column, I make it all NA)
-  names(Uploaded_Records)<-replace(names(Uploaded_Records), tolower(names(Uploaded_Records)) %in% c("year", "event_year"), "year")
+  names(Uploaded_Records)<-replace(names(Uploaded_Records), tolower(names(Uploaded_Records)) %in% c("year", "event_year", "year_event"), "year")
   if(! "year" %in% names(Uploaded_Records)){Uploaded_Records$year<-NA}
-  Uploaded_Records$year<-as.numeric(Uploaded_Records$year)
+  Uploaded_Records$year<-as.numeric(as.character(Uploaded_Records$year))
   
   # Return
   return(Uploaded_Records)
@@ -72,12 +72,12 @@ sRL_createDataGBIF <- function(scientific_name, GBIF_SRC, Uploaded_Records) { # 
     dat_gbif$Link<-paste0("https://gbif.org/occurrence/", dat_gbif$gbifID)
     
     # Extract citation (once per dataset then match)
-    dat_gbif$citation<-NA
-    datasets<-data.frame(Dataset=levels(as.factor(dat_gbif$datasetKey)), citation=NA)
+    dat_gbif$source<-NA
+    datasets<-data.frame(Dataset=levels(as.factor(dat_gbif$datasetKey)), source=NA)
     for(i in 1:nrow(datasets)){
-      datasets$citation[i]<-as.character(unlist(gbif_citation(datasets$Dataset[i]))[2])
+      datasets$source[i]<-as.character(unlist(gbif_citation(datasets$Dataset[i]))[2])
     }
-    dat_gbif$citation<-datasets$citation[match(dat_gbif$datasetKey, datasets$Dataset)]
+    dat_gbif$source<-datasets$source[match(dat_gbif$datasetKey, datasets$Dataset)]
     
     
   } else {dat_gbif<-NULL}
@@ -89,7 +89,7 @@ sRL_createDataGBIF <- function(scientific_name, GBIF_SRC, Uploaded_Records) { # 
     dat_obis$year<-dat_obis$date_year
     dat_obis_sub<-subset(dat_obis, !dat_obis$ID %in% dat_gbif$ID)
     dat_obis_sub$Source_type<-"OBIS"
-    dat_obis_sub$citation<-dat_obis_sub$bibliographicCitation
+    dat_obis_sub$source<-dat_obis_sub$bibliographicCitation
     dat_obis_sub$Link<-paste0("https://obis.org/taxon/", dat_obis_sub$aphiaID[1])
     dat_obis_sub$gbifID<-dat_obis_sub$occurrenceID
   } else {dat_obis_sub<-data.frame()}
@@ -105,6 +105,7 @@ sRL_createDataGBIF <- function(scientific_name, GBIF_SRC, Uploaded_Records) { # 
     dat_RL$coordinateUncertaintyInMeters<-NA
     dat_RL$gbifID<-dat_RL$objectid
     dat_RL$Link<-NA
+    names(dat_RL)<-replace(names(dat_RL), names(dat_RL)=="Source", "source")
   } else {dat_RL<-data.frame()}
   
   
@@ -118,6 +119,7 @@ sRL_createDataGBIF <- function(scientific_name, GBIF_SRC, Uploaded_Records) { # 
     dat_upload$coordinateUncertaintyInMeters<-NA
     dat_upload$gbifID<-paste0("Uploaded_", rownames(dat_upload))
     dat_upload$Link<-NA
+    names(dat_upload)<-replace(names(dat_upload), names(dat_upload)=="Source", "source")
   } else {dat_upload<-data.frame()}
 
   
@@ -135,7 +137,7 @@ sRL_createDataGBIF <- function(scientific_name, GBIF_SRC, Uploaded_Records) { # 
   dat <- dat %>%
     dplyr::select(any_of(c("species", "decimalLongitude", "decimalLatitude", "countryCode", "individualCount", # nolint
                            "gbifID", "id", "objectid", "family", "taxonRank", "coordinateUncertaintyInMeters", "year",
-                           "basisOfRecord", "institutionCode", "datasetName", "Source", "Source_type", "source", "citation", "Link")))
+                           "basisOfRecord", "institutionCode", "datasetName", "Source_type", "source", "citation", "Link")))
   
   # Remove records with no spatial coordinates
   dat <- dat %>% filter(!is.na(decimalLongitude)) %>% filter(!is.na(decimalLatitude)) # nolint

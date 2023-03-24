@@ -35,6 +35,12 @@ sRL_OutputRef<-function(scientific_name, Storage_SP){
   
   if("dat_proj_saved" %in% names(Storage_SP)){
     
+    # Add primary sources from occurrence data
+    citations<-unique(Storage_SP$dat_proj_saved$source)
+    ROW<-(nrow(ref_SIS))
+    ref_SIS[(ROW+1):(ROW+length(citations)),]<-NA
+    ref_SIS$title[(ROW+1):(ROW+length(citations))]<-citations
+    
     # Add rgbif if used
     if("GBIF" %in% Storage_SP$dat_proj_saved$Source){
       ROW<-(nrow(ref_SIS)+1)
@@ -108,9 +114,9 @@ sRL_OutputOccurrences <- function(scientific_name, Storage_SP) {
   dat_SIS$dec_long<-st_coordinates(dat_SIS)[,1]
   dat_SIS$dec_lat<-st_coordinates(dat_SIS)[,2]
   dat_SIS$spatialref<-"WGS84"
-  dat_SIS$event_year<-dat$year
-  dat_SIS$citation<-dat$citation
-
+  dat_SIS$event_year<-dat$event_year
+  dat_SIS$citation<-"IUCN (International Union for Conservation of Nature)"
+  dat_SIS$source<-dat$source
 
   # If data from the Red List, copy the information previously saved
   if("RL" %in% dat$Source){
@@ -122,13 +128,10 @@ sRL_OutputOccurrences <- function(scientific_name, Storage_SP) {
     }}
     
   }
-  
-  # Source information for GBIF / OBIS
-  dat_SIS$source[dat$Source=="GBIF"]<-paste0("Extracted from GBIF; gbif_ID= ", dat$gbifID[dat$Source=="GBIF"])
-  dat_SIS$source[dat$Source=="OBIS"]<-paste0("Extracted from OBIS; obis_ID= ", dat$id[dat$Source=="OBIS"])
-  
-  # Send geometry column at the end of the table
-  dat_SIS<-dat_SIS[, c(names(dat_SIS)[names(dat_SIS) != "geometry"], "geometry")]
+
+  # Remove geometry and make a csv file
+  dat_SIS$geometry<-NULL
+  dat_SIS<-as.data.frame(dat_SIS)
   
   return(dat_SIS)
 }

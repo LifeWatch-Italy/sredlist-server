@@ -709,7 +709,7 @@ Prom<-future({
       geom_sf(data=EOO, fill="#ef3b2c", col=NA) +
       geom_sf(data=distSP, fill="#fcbba1", col=NA) +
       geom_sf(data=st_crop(Storage_SP$CountrySP_saved, extent(EOO)), fill=NA, col="black")+
-      ggtitle(paste0("EOO of ", scientific_name)) +
+      ggtitle("EOO map") +
       sRLTheme_maps, 
     width=6, height=6) # nolint
   plot3 <- base64enc::dataURI(file = paste0("resources/AOH_stored/", sub(" ", "_", scientific_name), "/Plots/plot_eoo.png"), mime = "image/png") # nolint
@@ -902,7 +902,7 @@ Prom<-future({
                                  alt_fun=alt_crop,
                                  FOLDER=paste0(output_dir, "/Current_optimistic"),
                                  elevation_data_fun=altitudes_pref_DF)
-            sRL_loginfo("Optimistic AOH calculated", scientific_name)
+            sRL_loginfo("Maximum AOH calculated", scientific_name)
         }
       }
 
@@ -963,7 +963,7 @@ Prom<-future({
         } else{
 
           AOH2_opt<-sRL_largeAOH(alt_crop, c(habitats_pref, habitats_pref_MARGINAL), alt_pref_extreme, rangeSP_clean, config$YearAOH2, FILENAME=paste0(output_dir, "/Current_optimistic/aoh.tif"))
-          sRL_loginfo("Optimistic AOH calculated", scientific_name)
+          sRL_loginfo("Maximum AOH calculated", scientific_name)
       }
 
       plot1 <- cowplot::plot_grid(
@@ -971,7 +971,7 @@ Prom<-future({
           coord_fixed()+
           geom_tile(aes(fill = value)) +
           scale_fill_gradient(low="#FBCB3C", high="#0D993F", name="Suitability (%)", limits=c(0,100), na.value=NA)+
-          ggtitle(paste0("Pessimistic AOH in ", config$YearAOH2)) +
+          ggtitle(paste0("Minimum AOH in ", config$YearAOH2)) +
           labs(subtitle= "(marginal habitats / extreme elevations excluded)") +
           sRLTheme_maps,
 
@@ -979,7 +979,7 @@ Prom<-future({
           coord_fixed()+
           geom_tile(aes(fill = value)) +
           scale_fill_gradient(low="#FBCB3C", high="#0D993F", name="Suitability (%)", limits=c(0,100), na.value=NA)+
-          ggtitle(paste0("Optimistic AOH in ", config$YearAOH2)) +
+          ggtitle(paste0("Maximum AOH in ", config$YearAOH2)) +
           labs(subtitle= "(marginal habitats / extreme elevations included)") +
           sRLTheme_maps,
 
@@ -1033,14 +1033,14 @@ Prom<-future({
         coord_fixed()+
         geom_tile(aes(fill = factor(as.character(value), c("0", "1")))) +
         scale_fill_manual(values=c("#FBCB3C", "#0D993F"), labels=c("Unsuitable", "Suitable"), name="", na.translate=F, drop=F) +
-        labs(title="Likely slightly overestimated (using a 10x10km aggregate raster) \n\n Pessimistic", subtitle= "(marginal habitats / extreme elevations excluded)")+
+        labs(title="Likely slightly overestimated (using a 10x10km aggregate raster) \n\n Minimum", subtitle= "(marginal habitats / extreme elevations excluded)")+
         sRLTheme_maps,
 
       gplot(aoh_22_opt[[1]]>0) +
         coord_fixed()+
         geom_tile(aes(fill = factor(as.character(value), c("0", "1")))) +
         scale_fill_manual(values=c("#FBCB3C", "#0D993F"), labels=c("Unsuitable", "Suitable"), name="", na.translate=F, drop=F) +
-        labs(title="Optimistic", subtitle= "(marginal habitats / extreme elevations included)")+
+        labs(title="Maximum AOH", subtitle= "(marginal habitats / extreme elevations included)")+
         sRLTheme_maps,
 
       ncol=1)
@@ -1187,14 +1187,14 @@ Prom<-future({
           coord_fixed()+
           geom_tile(aes(fill = factor(as.character(value), c("2", "3", "4", "5")))) +
           scale_fill_manual(values=c("#a6611a", "gray90", "#80cdc1", "#018571"), labels=c("Newly unsuitable", "Unsuitable", "Suitable", "Newly suitable"), name="", na.translate=F, drop=F)+
-          ggtitle("\n\nPessimistic AOH") +
+          ggtitle("\n\n Minimum AOH") +
           sRLTheme_maps,
         
         gplot((AOH2_opt[[1]]*2+3)-AOH1_opt[[1]]) +
           coord_fixed()+
           geom_tile(aes(fill = factor(as.character(value), c("2", "3", "4", "5")))) +
           scale_fill_manual(values=c("#a6611a", "gray90", "#80cdc1", "#018571"), labels=c("Newly unsuitable", "Unsuitable", "Suitable", "Newly suitable"), name="", na.translate=F, drop=F)+
-          ggtitle("Optimistic AOH") +
+          ggtitle("Maximum AOH") +
           sRLTheme_maps,
         
         labels=paste0("Trends in Area of Habitat between ", Year1, " and ", config$YearAOH2), 
@@ -1229,7 +1229,7 @@ Prom<-future({
           coord_fixed()+
           geom_tile(aes(fill = value)) +
           scale_fill_gradient2(low="#8c510a", mid="azure2", midpoint=0, high="#018571", name="Suitability change (%)", limits=c(-100,100), na.value=NA, trans=colour_bidirect_scale, breaks=c(-100, -50, -10, 0, 10, 50, 100))+
-          ggtitle("\n\nPessimistic AOH") +
+          ggtitle("\n\n Minimum AOH") +
           #labs(subtitle= "(marginal habitats / extreme elevations excluded)") +
           sRLTheme_maps,
         
@@ -1237,7 +1237,7 @@ Prom<-future({
           coord_fixed()+
           geom_tile(aes(fill = value)) +
           scale_fill_gradient2(low="#8c510a", mid="azure2", midpoint=0, high="#018571", name="Suitability change (%)", limits=c(-100,100), na.value=NA, trans=colour_bidirect_scale, breaks=c(-100, -50, -10, 0, 10, 50, 100))+
-          ggtitle("Optimistic AOH") +
+          ggtitle("Maximum AOH") +
           #labs(subtitle= "(marginal habitats / extreme elevations included)") +
           sRLTheme_maps,
         
@@ -1274,7 +1274,7 @@ Prom<-future({
   
   Out_loss<-ifelse(Storage_SP$Uncertain=="Uncertain_no", 
                    paste0(Year1, "-", config$YearAOH2, ": ", revalue(as.factor(sign(AOH_lost)), c("-1"="AOH gain of ", "1"="AOH loss of ", "0"="AOH loss of ")), abs(AOH_lost), "%"), # Give trend in AOH rather than loss,
-                   paste0(Year1, "-", config$YearAOH2, ": ", revalue(as.factor(sign(AOH_lost)), c("-1"="AOH gain of ", "1"="AOH loss of ", "0"="AOH loss of ")), abs(as.numeric(AOH_lost)), "% (Pessimistic) or ", revalue(as.factor(sign(AOH_lostOPT)), c("-1"="AOH gain of ", "1"="AOH loss of ", "0"="AOH loss of ")), abs(AOH_lostOPT), "% (Optimistic)")
+                   paste0(Year1, "-", config$YearAOH2, ": ", revalue(as.factor(sign(AOH_lost)), c("-1"="AOH gain of ", "1"="AOH loss of ", "0"="AOH loss of ")), abs(as.numeric(AOH_lost)), "% (Min AOH) or ", revalue(as.factor(sign(AOH_lostOPT)), c("-1"="AOH gain of ", "1"="AOH loss of ", "0"="AOH loss of ")), abs(AOH_lostOPT), "% (Max AOH)")
   )
   
   
@@ -1289,7 +1289,7 @@ Prom<-future({
   Out_loss_extrap<-ifelse(Year1==Year1_theo, "", 
         ifelse(Storage_SP$Uncertain=="Uncertain_no", 
               paste0(Year1_theo, "-", config$YearAOH2, ": ", revalue(as.factor(sign(AOH_lost)), c("-1"="AOH gain of ", "1"="AOH loss of ", "0"="AOH loss of ")), AOH_lost_extrap, "%"), # Give trend in AOH rather than loss,
-              paste0(Year1_theo, "-", config$YearAOH2, ": ", revalue(as.factor(sign(AOH_lost)), c("-1"="AOH gain of ", "1"="AOH loss of ", "0"="AOH loss of ")), AOH_lost_extrap, "% (Pessimistic) or ", revalue(as.factor(sign(AOH_lostOPT)), c("-1"="AOH gain of ", "1"="AOH loss of ", "0"="AOH loss of ")), AOH_lostOPT_extrap, "% (Optimistic)")
+              paste0(Year1_theo, "-", config$YearAOH2, ": ", revalue(as.factor(sign(AOH_lost)), c("-1"="AOH gain of ", "1"="AOH loss of ", "0"="AOH loss of ")), AOH_lost_extrap, "% (Min AOH) or ", revalue(as.factor(sign(AOH_lostOPT)), c("-1"="AOH gain of ", "1"="AOH loss of ", "0"="AOH loss of ")), AOH_lostOPT_extrap, "% (Max AOH)")
   ))
   Storage_SP$aoh_lost_extrap=AOH_lost_extrap
   
@@ -1460,7 +1460,7 @@ function(scientific_name){
   
   ### AOO
   AOO_val <- ifelse("aoo_km2" %in% names(Storage_SP), Storage_SP$aoo_km2, NA)
-  AOO_justif <- ifelse("aoo_km2" %in% names(Storage_SP), "The AOO has been estimated on the sRedList Platform by rescaling the Area of Habitat to a 2x2km2 grid.", NA)
+  AOO_justif <- ifelse("aoo_km2" %in% names(Storage_SP), "The upper bound of AOO has been estimated on the sRedList Platform by rescaling the Area of Habitat to a 2x2km2 grid.", NA)
   Storage_SP<-sRL_OutLog(Storage_SP, "Estimated_AOO_raw", AOO_val)
   
   
@@ -1699,7 +1699,7 @@ function(scientific_name,
   # Save distribution and occurrences if from GBIF
   if(is.null(Storage_SP$gbif_number_saved)==F){
    st_write(sRL_OutputDistribution(scientific_name, Storage_SP), paste0(output_dir, "/sRedList_", gsub(" ", ".", scientific_name), "_Distribution.shp"), append=F)
-   st_write(sRL_OutputOccurrences(scientific_name, Storage_SP), paste0(output_dir, "/sRedList_", gsub(" ", ".", scientific_name), "_Occurrences.shp"), append=F)
+   write.csv(sRL_OutputOccurrences(scientific_name, Storage_SP), paste0(output_dir, "/sRedList_", gsub(" ", ".", scientific_name), "_Occurrences.csv"), row.names=F)
   }
   
   # Zip that folder
