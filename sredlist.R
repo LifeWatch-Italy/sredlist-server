@@ -127,6 +127,11 @@ Prom<-future({
                      distSP_full$seasonal %in% choice_season &
                      distSP_full$origin %in% choice_origin)
   
+  ### Add id_no if not present
+  names(distSP)<-replace(names(distSP), tolower(names(distSP)) %in% c("id_no", "sisid"), "id_no")
+  if(! "id_no" %in% names(distSP)){distSP$id_no<-1}
+  
+  
   ### Colour the distributions
   distSP<-sRL_ColourDistrib(distSP)
   
@@ -789,7 +794,8 @@ function(scientific_name) {
 #* @tag sRedList
 function(scientific_name, habitats_pref= list(), habitats_pref_MARGINAL=list(), altitudes_pref= list(), density_pref= '-1', isGbifDistribution = FALSE, path = "") { # nolint    
 
-# If habitats not in crosswalk, return error
+# If no habitat preference or habitats not in crosswalk, return error
+if(length(habitats_pref)==0){no_habitat_pref()}
 if(!"TRUE" %in% (c(habitats_pref, habitats_pref_MARGINAL) %in% crosswalk_to_use$code)){no_habitats_crosswalk()}
 
 
@@ -805,8 +811,6 @@ Prom_clean %...>% print(.)
 Prom<-future({
   sf::sf_use_s2(FALSE)
   sRL_loginfo("START - AOH API", scientific_name)
-  
-  if(length(habitats_pref)==0){no_habitat_pref()}
   
   #Filter param
   scientific_name <- sRL_decode(scientific_name)

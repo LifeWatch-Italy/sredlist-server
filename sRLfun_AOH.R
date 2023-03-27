@@ -130,9 +130,9 @@ sRL_largeAOH<-function(alt_crop, habitats_pref, altitudes_pref, rangeSP_clean, Y
   
   sRL_loginfo("START - Large AOH function", scientific_name)
   
-  # Select rasters to keep
+  # Select rasters to keep (I have to replace . by x in codes otherwise it's used as a joker in grepl; also inside the semicolumn to ensure this is the exact habitat and that 5.3 is not included in 15.3 for instance)
   CCI_to_keep<-NA
-  for(i in 1:length(habitats_pref)){CCI_to_keep<-c(CCI_to_keep, crosswalkLARGE$Stack_Name[grepl(habitats_pref[i], crosswalkLARGE$Codes)])  %>% unique(.) %>% .[is.na(.)==F] %>% sort(.)}
+  for(i in 1:length(habitats_pref)){CCI_to_keep<-c(CCI_to_keep, crosswalkLARGE$Stack_Name[grepl(paste0(";", gsub("[.]", "x", habitats_pref[i]), ";"), gsub("[.]", "x", crosswalkLARGE$Codes))])  %>% unique(.) %>% .[is.na(.)==F] %>% sort(.)}
   CCI_suitable<-CCI_fun[[which(names(CCI_fun) %in% paste0("Agg30_CCI", YR, "_", CCI_to_keep))]]
   print("Suitable CCI groups:") ; print(names(CCI_suitable))
   
