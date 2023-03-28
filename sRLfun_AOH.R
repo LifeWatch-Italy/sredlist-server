@@ -19,7 +19,7 @@ sRL_ChargeCciLargeRaster<-function(){
 sRL_PrepareHabitatFile<-function(scientific_name, habitats_pref, habitats_pref_MARGINAL){
   
   # Columns for AOH package analyses
-  habitats_pref_DF <- data.frame(code=as.character(c(habitats_pref, habitats_pref_MARGINAL)), suitability=c(rep("Suitable", length(habitats_pref)), rep("Marginal", length(habitats_pref_MARGINAL))))
+  habitats_pref_DF <- data.frame(code=as.character(c(habitats_pref, habitats_pref_MARGINAL)), suitability=c(rep("Suitable", length(habitats_pref)), rep("Unknown", length(habitats_pref_MARGINAL))))
   habitats_pref_DF$habitat<-crosswalk$iucn_habitat[match(habitats_pref_DF$code, crosswalk$iucn_code)]
   if(scientific_name %in% speciesRL$scientific_name) {habitats_pref_DF$id_no<-speciesRL$taxonid[speciesRL$scientific_name==scientific_name][1]} else {habitats_pref_DF$id_no<-99999999999} 
   habitats_pref_DF$season<-"Resident"

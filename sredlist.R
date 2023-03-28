@@ -776,7 +776,7 @@ function(scientific_name) {
   # If value in GL_file we take it, otherwise default=1
   GL_species = ifelse(scientific_name %in% GL_file$internal_taxon_name, GL_file$GL_estimate[GL_file$internal_taxon_name==scientific_name][1], 1)
 
-  return(list(GL_species = GL_species))
+  return(list(GL_species = as.character(GL_species)))
 }
 
 
@@ -787,7 +787,7 @@ function(scientific_name) {
 #* @param habitats_pref:[str] habitats_pref
 #* @param habitats_pref_MARGINAL:[str] habitats_pref_MARGINAL
 #* @param altitudes_pref:[int] altitudes_pref
-#* @param density_pref:numeric density_pref
+#* @param density_pref:string density_pref
 #* @param isGbifDistribution:boolean isGbifDistribution
 #* @param path:string Distribution Folder default RedList
 #* @serializer unboxedJSON
@@ -829,10 +829,10 @@ Prom<-future({
   if(length(altitudes_pref)==0){altitudes_pref<-c(0,9000)}
   altitudes_pref_DF<-sRL_PrepareAltitudeFile(scientific_name, altitudes_pref)
   Storage_SP$AltPref_saved=altitudes_pref_DF
-  density_pref <- gsub(" ", "", density_pref)
+  density_pref <- density_pref %>% gsub(" ", "", .) %>% gsub(",", ".", .)
 
   # Do I need to calculate 2 aoh (yes if uncertainty in habitats or altitude)
-  Uncertain<-ifelse("Marginal" %in% habitats_pref_DF$suitability | TRUE %in% grepl("-", altitudes_pref), "Uncertain_yes", "Uncertain_no")
+  Uncertain<-ifelse("Unknown" %in% habitats_pref_DF$suitability | TRUE %in% grepl("-", altitudes_pref), "Uncertain_yes", "Uncertain_no")
   Storage_SP$Uncertain<-Uncertain
   
   print(paste0("Habitat suitable: ", paste(habitats_pref, collapse=", "), "   ;   Habitat marginal: ", paste(habitats_pref_MARGINAL, collapse=", ")))
@@ -852,7 +852,7 @@ Prom<-future({
                                       keep_iucn_rl_seasonal = 1:5,
                                       keep_iucn_rl_origin = 1:6,
                                       spp_summary_data = altitudes_pref_DF,
-                                      spp_habitat_data = habitats_pref_DF, # Will only keep suitable habitat
+                                      spp_habitat_data = habitats_pref_DF[habitats_pref_DF$suitability=="Suitable",], # Will only keep suitable habitat
                                       key=config$red_list_token,
                                       crs=st_crs(CRSMOLL))
 
@@ -976,7 +976,7 @@ Prom<-future({
           geom_tile(aes(fill = value)) +
           scale_fill_gradient(low="#FBCB3C", high="#0D993F", name="Suitability (%)", limits=c(0,100), na.value=NA)+
           ggtitle(paste0("Minimum AOH in ", config$YearAOH2)) +
-          labs(subtitle= "(marginal habitats / extreme elevations excluded)") +
+          labs(subtitle= "(marginal or unknown habitats / extreme elevations excluded)") +
           sRLTheme_maps,
 
         gplot((AOH2_opt[[1]]/9)) + # Divide by 9 to get percents
@@ -984,7 +984,7 @@ Prom<-future({
           geom_tile(aes(fill = value)) +
           scale_fill_gradient(low="#FBCB3C", high="#0D993F", name="Suitability (%)", limits=c(0,100), na.value=NA)+
           ggtitle(paste0("Maximum AOH in ", config$YearAOH2)) +
-          labs(subtitle= "(marginal habitats / extreme elevations included)") +
+          labs(subtitle= "(marginal or unknown habitats / extreme elevations included)") +
           sRLTheme_maps,
 
         ncol=1)
@@ -1037,14 +1037,14 @@ Prom<-future({
         coord_fixed()+
         geom_tile(aes(fill = factor(as.character(value), c("0", "1")))) +
         scale_fill_manual(values=c("#FBCB3C", "#0D993F"), labels=c("Unsuitable", "Suitable"), name="", na.translate=F, drop=F) +
-        labs(title="Likely slightly overestimated (using a 10x10km aggregate raster) \n\n Minimum", subtitle= "(marginal habitats / extreme elevations excluded)")+
+        labs(title="Likely slightly overestimated (using a 10x10km aggregate raster) \n\n Minimum", subtitle= "(marginal or unknown habitats / extreme elevations excluded)")+
         sRLTheme_maps,
 
       gplot(aoh_22_opt[[1]]>0) +
         coord_fixed()+
         geom_tile(aes(fill = factor(as.character(value), c("0", "1")))) +
         scale_fill_manual(values=c("#FBCB3C", "#0D993F"), labels=c("Unsuitable", "Suitable"), name="", na.translate=F, drop=F) +
-        labs(title="Maximum AOH", subtitle= "(marginal habitats / extreme elevations included)")+
+        labs(title="Maximum AOH", subtitle= "(marginal or unknown habitats / extreme elevations included)")+
         sRLTheme_maps,
 
       ncol=1)
@@ -1108,12 +1108,12 @@ return(Prom)
 #* @param origins:[int] origins (1, 2)
 #* @param habitats_pref:[str] habitats_pref
 #* @param altitudes_pref:[int] altitudes_pref
-#* @param GL_species:numeric GL_species
+#* @param GL_species:string GL_species
 #* @param isGbifDistribution:boolean isGbifDistribution
 #* @param path:string Distribution Folder default RedList
 #* @serializer unboxedJSON
 #* @tag sRedList
-function(scientific_name, GL_species=1) { # nolint
+function(scientific_name, GL_species="1") { # nolint
   
 Prom<-future({
   sf::sf_use_s2(FALSE)
@@ -1121,7 +1121,8 @@ Prom<-future({
   #Filter param
   scientific_name <- sRL_decode(scientific_name)
   Storage_SP=sRL_StoreRead(scientific_name)
-  GL_species<-as.numeric(GL_species)
+  GL_species<-GL_species %>% gsub(" ", "", .) %>% sub(",", ".", .) %>% as.numeric(.) ; if(is.na(GL_species)){incorrect_GL()}
+
   distSP=Storage_SP$distSP_saved
   alt_crop=rast(paste0("resources/AOH_stored/", gsub(" ", "_", scientific_name), "/alt_crop.tif")) ; crs(alt_crop)<-CRSMOLL
   rangeSP_clean=Storage_SP$RangeClean_saved
@@ -1342,9 +1343,10 @@ function(scientific_name) {
 #* @param dispersion:string dispersion
 #* @serializer png list(width = 1200, height = 600)
 #* @tag sRedList
-function(scientific_name, dispersion="-1") {
+function(scientific_name, dispersion="-1", density_pref= '-1') {
   
-  if(is.null(sRL_StoreRead(sRL_decode(scientific_name))$density_saved)){no_density_fragm()}
+  if(density_pref =="-1" | is.null(density_pref)){no_density_fragm()}
+  print(density_pref)
   
 Prom<-future({
     sf::sf_use_s2(FALSE)
@@ -1354,10 +1356,11 @@ Prom<-future({
     Storage_SP<-sRL_StoreRead(scientific_name)
     aoh<-rast(paste0("resources/AOH_stored/", gsub(" ", "_", scientific_name), "/Current/", list.files(paste0("resources/AOH_stored/", gsub(" ", "_", scientific_name), "/Current"))[1]))[[1]]  ; crs(aoh)<-CRSMOLL
     aoh_type<-Storage_SP$AOH_type
-    dispersion<-as.numeric(dispersion)*1000 ; print(dispersion)
-
+    dispersion <- dispersion %>% gsub(" ", "", .) %>% gsub(",", ".", .) %>% as.numeric(.)*1000 ; print(dispersion)
+    density_pref <- density_pref %>% gsub(" ", "", .) %>% gsub(",", ".", .)
+    
     ### Calculate fragmentation
-    res<-sRL_fragmentation(aoh, aoh_type, dispersion, Storage_SP$density_saved)
+    res<-sRL_fragmentation(aoh, aoh_type, dispersion, density_pref)
     
     
     ### Plots

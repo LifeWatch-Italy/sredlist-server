@@ -80,6 +80,10 @@ no_density_fragm <- function() {
   api_error(message = "A density must be provided in the AOH step to perform this step", status = 400)
 }
 
+incorrect_GL <- function() {
+  api_error(message = "The Generation Length value entered is not valid", status = 400)
+}
+
 neg_kernel <- function() {
   api_error(message = "Kernel parameter cannot be negative", status = 400)
 }
