@@ -396,8 +396,8 @@ function(scientific_name) {
 function(scientific_name, Gbif_Start="", Gbif_Param=list(), Gbif_Buffer=-1, Gbif_Altitude=list(), Gbif_Crop="") {
 
 # Parameter error
-if(Gbif_Start=="alpha" & Gbif_Param[1]<0){neg_alpha()}
-if(Gbif_Start=="kernel" & Gbif_Param[2]<0){neg_kernel()}
+if(Gbif_Start=="alpha" & Gbif_Param[1] <= 0){neg_alpha()}
+if(Gbif_Start=="kernel" & Gbif_Param[2] <= 0){neg_kernel()}
   
   
 Prom<-future({
@@ -444,14 +444,14 @@ Prom<-future({
       geom_sf(data=CountrySP, fill="gray70")+
       geom_sf(data = distSP, fill="darkred") + 
       geom_sf(data=dat_proj)+
-      ggtitle("")+
+      labs(caption=ifelse("alphaTEMPO" %in% names(distSP), paste0("The true alpha tension parameter used is ", round(distSP$alphaTEMPO[1],2)), ""))+
       sRLTheme_maps
   ), width=18, height=5.5) # nolint
   plot3 <- base64enc::dataURI(file = paste0("resources/AOH_stored/", sub(" ", "_", scientific_name), "/Plots/eoo.png"), mime = "image/png") # nolint
   sRL_loginfo("END - Maps the distribution", scientific_name)
   
   # Keep distribution in memory
-  Storage_SP$distSP3_saved=distSP
+  Storage_SP$distSP3_saved=distSP[, names(distSP) != "alphaTEMPO"]
   Storage_SP<-sRL_OutLog(Storage_SP, c("Mapping_Start", "Mapping_Crop", "Mapping_Buffer", "Mapping_Altitude", "Kernel_parameter", "Alpha_parameter"), c(Gbif_Start, Gbif_Crop, Gbif_Buffer, paste0(Gbif_Altitude, collapse=","), ifelse(Gbif_Start=="kernel", Gbif_Param[2], NA), ifelse(Gbif_Start=="alpha", Gbif_Param[1], NA)))
   sRL_StoreSave(scientific_name, Storage_SP)
   
@@ -616,6 +616,7 @@ Prom<-future({
       distSP<-data.frame()
       }
   }
+  
   # If empty, return an empty plot
   if(nrow(distSP)==0){
     TITLE<-ifelse(Crop_Country %in% c(coo_raw$SIS_name0, "", "Europe", "EU27"),
@@ -650,8 +651,11 @@ Prom<-future({
     Storage_SP$countries_SIS<-sRL_OutputCountries(scientific_name, subset(coo, coo$presence>0))
     sRL_StoreSave(scientific_name, Storage_SP)
     
-    # Plot
+    # Prepare extent
     EXT<-1.2*extent(coo[coo$Level0_occupied==T,])
+    if(is.na(EXT[1]) | is.na(EXT[2]) | is.na(EXT[3]) | is.na(EXT[4])){EXT<-1.2*extent(distSP_WGS)} # In case there is no overlap with countries (e.g., distribution at sea because of simplification)
+    
+    # Plot
     return(
       leaflet() %>%
         fitBounds(lng1=EXT[1], lng2=EXT[2], lat1=EXT[3], lat2=EXT[4]) %>%

@@ -92,12 +92,19 @@ sRL_createDataGBIF <- function(scientific_name, GBIF_SRC, Uploaded_Records) { # 
     dat_obis_sub$source<-dat_obis_sub$bibliographicCitation
     dat_obis_sub$Link<-paste0("https://obis.org/taxon/", dat_obis_sub$aphiaID[1])
     dat_obis_sub$gbifID<-dat_obis_sub$occurrenceID
+    
+    # If too many data, keep a sample (most recent)
+    if(nrow(dat_obis_sub) > config$LIM_GBIF){
+      dat_obis_sub$Source_type<-"OBIS sample"
+      dat_obis_sub<-dat_obis_sub[order(dat_obis_sub$year, decreasing=T),]
+      dat_obis_sub<-dat_obis_sub[1:config$LIM_GBIF,]
+    }
   } else {dat_obis_sub<-data.frame()}
   
   # From Red List point
   if(GBIF_SRC[3]==1 & paste0(scientific_name, ".csv") %in% list.files(config$POINTdistribution_path)){
     dat_RL<-read.csv(paste0(config$POINTdistribution_path, scientific_name, ".csv"))
-    dat_RL$Source_type<-"RL"
+    dat_RL$Source_type<-"Red List"
     dat_RL$decimalLongitude<-dat_RL$longitude
     dat_RL$decimalLatitude<-dat_RL$latitude
     dat_RL$year<-dat_RL$event_year
@@ -106,6 +113,13 @@ sRL_createDataGBIF <- function(scientific_name, GBIF_SRC, Uploaded_Records) { # 
     dat_RL$gbifID<-dat_RL$objectid
     dat_RL$Link<-NA
     names(dat_RL)<-replace(names(dat_RL), names(dat_RL)=="Source", "source")
+    
+    # If too many data, keep a sample (most recent)
+    if(nrow(dat_RL) > config$LIM_GBIF){
+      dat_RL$Source_type<-"Red List sample"
+      dat_RL<-dat_RL[order(dat_RL$year, decreasing=T),]
+      dat_RL<-dat_RL[1:config$LIM_GBIF,]
+    }
   } else {dat_RL<-data.frame()}
   
   
@@ -120,6 +134,12 @@ sRL_createDataGBIF <- function(scientific_name, GBIF_SRC, Uploaded_Records) { # 
     dat_upload$gbifID<-paste0("Uploaded_", rownames(dat_upload))
     dat_upload$Link<-NA
     names(dat_upload)<-replace(names(dat_upload), names(dat_upload)=="Source", "source")
+    
+    # If too many data (with a higher threshold), keep a sample 
+    if(nrow(dat_upload) > 3*config$LIM_GBIF){
+      dat_upload$Source_type<-"Uploaded sample"
+      dat_upload<-dat_upload[1:(3*config$LIM_GBIF),]
+    }
   } else {dat_upload<-data.frame()}
 
   
@@ -321,7 +341,11 @@ sRL_MapDistributionGBIF<-function(dat, scientific_name, First_step, AltMIN, AltM
     
       Par_alpha<-Gbif_Param[1]
       EX<-extent(dat_subsample)
-      distGBIF<-convexHull(dat_subsample, alpha = Par_alpha * sqrt((EX@xmin-EX@xmax)^2 + (EX@ymin-EX@ymax)^2))
+      tryCatch({
+        Alpha_scaled <- Par_alpha * sqrt((EX@xmin-EX@xmax)^2 + (EX@ymin-EX@ymax)^2)
+        distGBIF<-convexHull(dat_subsample, alpha = Alpha_scaled)
+      } ,error=function(e){bug_alpha()})
+      
       st_crs(distGBIF)<-st_crs(dat_subsample)
       
   }
@@ -399,6 +423,7 @@ sRL_MapDistributionGBIF<-function(dat, scientific_name, First_step, AltMIN, AltM
   distGBIF$presence<-1
   distGBIF$origin<-1
   distGBIF$seasonal<-1
+  if(exists("Alpha_scaled")){distGBIF$alphaTEMPO<-Alpha_scaled} # Save alpha scaled if I use alpha hull
 
   return(distGBIF)
   

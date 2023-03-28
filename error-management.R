@@ -85,11 +85,15 @@ incorrect_GL <- function() {
 }
 
 neg_kernel <- function() {
-  api_error(message = "Kernel parameter cannot be negative", status = 400)
+  api_error(message = "Kernel parameter should be positive", status = 400)
 }
 
 neg_alpha <- function() {
-  api_error(message = "Alpha parameter cannot be negative", status = 400)
+  api_error(message = "Alpha parameter should be positive", status = 400)
+}
+
+bug_alpha <- function() {
+  api_error(message = "Alpha hull could not be calculated, try with a higher alpha parameter value or use another Starting point", status = 400)
 }
 
 coords_outofbound <- function() {
