@@ -35,6 +35,10 @@ species_not_in_distrib <- function() {
   api_error(message = "The species is not present in the shapefile, there may be a mistake in column 'binomial'", status = 400)
 }
 
+bug_distribution_loading <- function() {
+  api_error(message = "The distribution could not be loaded; check if it includes the 4 files required (.shp, .shx, .prk, .dbf)", status=400)
+}
+
 empty_distrib <- function() {
   api_error(message = "The distribution is empty", status = 400)
 }

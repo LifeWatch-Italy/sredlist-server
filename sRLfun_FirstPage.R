@@ -1,21 +1,20 @@
-############################################
-### Print log info inside future promise ###
-############################################
+
+
+### Print log info inside future promise
 sRL_loginfo<-function(x, scientific_name){
   print(paste0(x, " [", Sys.time(), " - ", scientific_name, "]"))
-#  insight::print_colour(paste0(x, " XX[", Sys.time(), "]", "\n"), "green")
+#insight::print_colour(paste0(x, " XX[", Sys.time(), "]", "\n"), "green")
 }
 
 
-###################################################
-### Function to identify levels not in a vector ###
-###################################################
+
+### Function to identify levels not in a vector
 `%not in%` <- function (x, table) is.na(match(x, table, nomatch=NA_integer_)) # nolint
 
 
-##############################################
+
+
 ### PERSONALISED THEMES FOR PLATFORM PLOTS ###
-##############################################
 sRLTheme_maps<-theme_void() %+replace%   theme(
   plot.title=element_text(hjust=0.5, size=14, face="bold"),
   plot.subtitle=element_text(hjust=0.5),
@@ -26,10 +25,7 @@ sRLTheme_maps<-theme_void() %+replace%   theme(
 
 
 
-##############################################
 ### Function to capitalise scientific name ###
-##############################################
-
 sRL_firstup <- function(x) {
   x <- tolower(x)
   substr(x, 1, 1) <- toupper(substr(x, 1, 1))
@@ -38,11 +34,45 @@ sRL_firstup <- function(x) {
 
 
 
+### Function to transform scientific name into a random number to use as id_no (so that it remains different between species and easy to calculate from just scientific name)
+sRL_CalcIdno <- function(scientific_name){
+  scientific_name<-sRL_decode(scientific_name)
+  
+  # If species already in RL I can use that number
+  if(scientific_name %in% speciesRL$scientific_name){
+    
+    ID<-speciesRL$taxonid[speciesRL$scientific_name==scientific_name]
+    
+  } else {
+    
+    # Number of characters
+    N1<-nchar(scientific_name)
+    
+    # First three letters of genus as numbers
+    N2<-paste0(
+      which(letters == tolower(substr(scientific_name,1,1))),
+      which(letters == tolower(substr(scientific_name,2,2))),
+      which(letters == tolower(substr(scientific_name,3,3)))
+    )
+    
+    # First three letters of species as numbers
+    SP<-scientific_name %>% strsplit(., " ") %>% unlist(.) %>% .[2]
+    N3<-paste0(
+      which(letters == tolower(substr(SP,1,1))),
+      which(letters == tolower(substr(SP,2,2))),
+      which(letters == tolower(substr(SP,3,3)))
+    )
+    
+    # Paste to get id_no
+    ID=paste0(N1, N2, N3) %>% as.numeric(.)
+    
+  }
+  
+  return(ID)
+}
 
-###################################################
+
 ### Function to plot the history of assessments ###
-###################################################
-
 sRL_PlotHistory <- function(sciname_fun){
   historic <- rl_history(sciname_fun, key = config$red_list_token)$result
   
@@ -67,9 +97,7 @@ sRL_PlotHistory <- function(sciname_fun){
 
 
 
-##########################################
 ### Functions to plot the distribution ###
-##########################################
 
 # Generated distribution from File by scientific_name of species and folder path
 sRL_ReadDistribution <- function(scientific_name, path) {
@@ -89,21 +117,32 @@ sRL_ReadDistribution <- function(scientific_name, path) {
   return(distributions)
 }
 
+
+
+
 ### Prepare distribution
 sRL_PrepareDistrib <- function(distributions, scientific_name){
   
   # Replace column names
-  names(distributions)[which(names(distributions) %in% c("SCINAME", "binomial", "BINOMIAL", "binomil"))] <- "binomial" # nolint
-  names(distributions)[which(names(distributions) %in% c("PRESENC", "PRESENCE", "presence", "presenc"))] <- "presence" # nolint
-  names(distributions)[which(names(distributions) %in% c("ORIGIN", "origin"))] <- "origin" # nolint
-  names(distributions)[which(names(distributions) %in% c("SEASONA", "SEASONAL", "seasonal", "seasonl"))] <- "seasonal" # nolint
-  names(distributions)[which(names(distributions) %in% c("taxonid", "sisid", "SISID"))] <- "id_no" # nolint
+  names(distributions)[which(tolower(names(distributions)) %in% c("sciname", "sci_name", "scientific_name", "binomial", "binomil"))] <- "binomial" # nolint
+  names(distributions)[which(tolower(names(distributions)) %in% c("presence", "presenc"))] <- "presence" # nolint
+  names(distributions)[which(tolower(names(distributions)) %in% c("origin"))] <- "origin" # nolint
+  names(distributions)[which(tolower(names(distributions)) %in% c("seasonal", "seasonl", "seasona"))] <- "seasonal" # nolint
+  names(distributions)[which(tolower(names(distributions)) %in% c("taxonid", "sisid", "id_no"))] <- "id_no" # nolint
   
   # If no column, add them
   if(!"binomial" %in% names(distributions)){distributions$binomial<-scientific_name}
   if(!"presence" %in% names(distributions)){distributions$presence<-1}
   if(!"origin" %in% names(distributions)){distributions$origin<-1}
   if(!"seasonal" %in% names(distributions)){distributions$seasonal<-1}
+  
+  # If empty values, I replace by 1
+  distributions$presence <- replace(distributions$presence, ! distributions$presence %in% c(1:6), 1) %>% as.numeric(.)
+  distributions$origin <- replace(distributions$origin, ! distributions$origin %in% c(1:6), 1) %>% as.numeric(.)
+  distributions$seasonal <- replace(distributions$seasonal, ! distributions$seasonal %in% c(1:5), 1) %>% as.numeric(.)
+  
+  # If no id_no
+  distributions$id_no<-sRL_CalcIdno(scientific_name)
   
   # Subset
   if(! scientific_name %in% distributions$binomial){species_not_in_distrib()}
@@ -115,6 +154,8 @@ sRL_PrepareDistrib <- function(distributions, scientific_name){
   
   return(distSP)
 }
+
+
 
 
 ### Colour the distribution
@@ -139,6 +180,8 @@ sRL_ColourDistrib <- function(distSP){
 }
 
 
+
+
 ### Prepare the cropped map of countries
 sRL_PrepareCountries <- function(LIMS){
   
@@ -156,6 +199,8 @@ sRL_PrepareCountries <- function(LIMS){
   
   return(CountrySP)
 }
+
+
 
 
 
@@ -184,6 +229,8 @@ sRL_StoreRead<-function(scientific_name){
 
 
 
+
+
 ### Functions to store parameters in output
 sRL_InitLog<-function(scientific_name, DisSource){
   output_to_save<-output
@@ -198,6 +245,8 @@ sRL_OutLog=function(STOR, Par, Val){
   for(i in 1:length(Par)){STOR$Output$Value[STOR$Output$Parameter==Par[i]]<-Val[i]}
   return(STOR)
 }
+
+
 
 
 

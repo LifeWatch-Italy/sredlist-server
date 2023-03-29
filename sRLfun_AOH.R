@@ -21,7 +21,7 @@ sRL_PrepareHabitatFile<-function(scientific_name, habitats_pref, habitats_pref_M
   # Columns for AOH package analyses
   habitats_pref_DF <- data.frame(code=as.character(c(habitats_pref, habitats_pref_MARGINAL)), suitability=c(rep("Suitable", length(habitats_pref)), rep("Unknown", length(habitats_pref_MARGINAL))))
   habitats_pref_DF$habitat<-crosswalk$iucn_habitat[match(habitats_pref_DF$code, crosswalk$iucn_code)]
-  if(scientific_name %in% speciesRL$scientific_name) {habitats_pref_DF$id_no<-speciesRL$taxonid[speciesRL$scientific_name==scientific_name][1]} else {habitats_pref_DF$id_no<-99999999999} 
+  habitats_pref_DF$id_no<-sRL_CalcIdno(scientific_name)
   habitats_pref_DF$season<-"Resident"
   
   # Remove if no habitat code
@@ -51,7 +51,7 @@ sRL_PrepareAltitudeFile<-function(scientific_name, altitudes_pref){
     altitudes_pref_DF <- as.data.frame(speciesRL[1,])
     altitudes_pref_DF[1,]<-NA
     altitudes_pref_DF$scientific_name<-scientific_name
-    altitudes_pref_DF$taxonid<-99999999999
+    altitudes_pref_DF$taxonid<-sRL_CalcIdno(scientific_name)
   }
   
   # Add altitude preferences (with and without uncertainty bounds)
@@ -146,6 +146,7 @@ sRL_largeAOH<-function(alt_crop, habitats_pref, altitudes_pref, rangeSP_clean, Y
   if(class(alt_suitable)[1] != "SpatRaster"){alt_suitable<-rast(alt_suitable)}
 
   AOH <- (CCI_sum*alt_suitable) %>% mask(., rangeSP_clean)
+  AOH <- replace(AOH, AOH>1000, NA) # NA is transformed as 100000 so I change everything above 1000 to NA (the max should always be 900)
   
   # Save AOH
   if(FILENAME != ""){terra::writeRaster(AOH, filename=FILENAME)}

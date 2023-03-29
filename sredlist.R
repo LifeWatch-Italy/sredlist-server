@@ -77,7 +77,11 @@ function(scientific_name, path = "") {
   }
   
   print(distributionPath)
-  distributions <- sf::st_read(distributionPath)
+  
+  # Charge distributions (and return error if it does not work)
+  tryCatch({
+    distributions <- sf::st_read(distributionPath)
+  } ,error=function(e){bug_distribution_loading()})
   
   ### Clean the distribution
   distSP <-sRL_PrepareDistrib(distributions, scientific_name) # nolint
@@ -116,6 +120,7 @@ Prom<-future({
   
 
   ### Load Distribution Species
+  sRL_loginfo("START - Prepare distribution", scientific_name)
   distributions <- sRL_ReadDistribution(scientific_name, path) %>% sRL_PrepareDistrib(., scientific_name)
   distSP_full <- subset(distributions, distributions$binomial == scientific_name) # nolint 
   choice_presence <- c(presences)
@@ -129,10 +134,12 @@ Prom<-future({
   
   ### Add id_no if not present
   names(distSP)<-replace(names(distSP), tolower(names(distSP)) %in% c("id_no", "sisid"), "id_no")
-  if(! "id_no" %in% names(distSP)){distSP$id_no<-1}
+  distSP$id_no<-sRL_CalcIdno(scientific_name)
+  sRL_loginfo("END - Prepare distribution", scientific_name)
   
   
   ### Colour the distributions
+  sRL_loginfo("START - Colour distribution", scientific_name)
   distSP<-sRL_ColourDistrib(distSP)
   
   ### Save the distribution in memory
@@ -257,7 +264,7 @@ Prom<-future({
 
 
   # Assign
-  output_to_save<-sRL_InitLog(scientific_name, DisSource = "Created") ; output_to_save$Value[output_to_save$Parameter=="Gbif_Source"]<-paste0(ifelse(Gbif_Source[1]==1, "GBIF ", ""), ifelse(Gbif_Source[2]==1, "OBIS ", ""), ifelse(Gbif_Source[3]==1, "Red_List ", ""), ifelse(is.null(nrow(Uploaded_Records)), "", "Uploaded"))
+  output_to_save<-sRL_InitLog(scientific_name, DisSource = "Created") ; output_to_save$Value[output_to_save$Parameter=="Gbif_Source"]<-c(ifelse(Gbif_Source[1]==1, "GBIF", ""), ifelse(Gbif_Source[2]==1, "OBIS", ""), ifelse(Gbif_Source[3]==1, "Red_List", ""), ifelse(is.null(nrow(Uploaded_Records)), "", "Uploaded")) %>% .[.!=""] %>% paste(., collapse=" + ")
   Storage_SP<-list(flags_raw_saved=flags_raw, Creation=Sys.time(), Output=output_to_save)
   sRL_StoreSave(scientific_name, Storage_SP)
   
@@ -406,6 +413,7 @@ Prom<-future({
   # Transform parameters GBIF filtering
   scientific_name <- sRL_decode(scientific_name)
   Gbif_Buffer<-replace(Gbif_Buffer, Gbif_Buffer<0, 0)
+  if(Gbif_Start==""){Gbif_Start<-"mcp"}
   print(Gbif_Start)
   print(Gbif_Buffer)
   print(Gbif_Altitude)
@@ -525,7 +533,7 @@ Prom<-future({
         countr<-distCountries_mapping %>% st_crop(., extent(distSP)) %>% dplyr::group_by() %>% dplyr::summarise(N = n())
         distSP<-st_difference(distSP, countr)}
       
-      distSP$id_no<-Storage_SP$distSP3_saved$id_no
+      distSP$id_no<-sRL_CalcIdno(scientific_name)
       distSP$seasonal<-distSP$origin<-distSP$presence<-1
     }
     TRY=1
@@ -1559,7 +1567,7 @@ function(scientific_name,
   ### Prepare SIS Connect files
   habitats_SIS<-Storage_SP$habitats_SIS[,6:13]
   habitats_SIS$assessment_id<-NA
-  habitats_SIS$internal_taxon_id<-NA
+  habitats_SIS$internal_taxon_id<-sRL_CalcIdno(scientific_name)
    
   sRL_loginfo("Start Allfields", scientific_name)
   
@@ -1570,13 +1578,11 @@ function(scientific_name,
   # # Take data from saved prepared dataset
   allfields$internal_taxon_name<-scientific_name
   allfields$assessment_id<-NA
-
+  allfields$internal_taxon_id<-sRL_CalcIdno(scientific_name)
+  
   if("AltPref_saved" %in% names(Storage_SP)){
     # Charge AltPref_saved
     AltPref_saved=Storage_SP$AltPref_saved
-    
-    # Add taxon id
-    allfields$internal_taxon_id<-AltPref_saved$taxonid[1]
     
     # Add elevation limits
     allfields$ElevationLower.limit<-paste0(c(AltPref_saved$elevation_lowerEXTREME[1], AltPref_saved$elevation_lower[1]), collapse="-")
@@ -1701,10 +1707,10 @@ function(scientific_name,
   sRL_loginfo("Start writting", scientific_name)
   output_dir<-paste0(sub(" ", "_", scientific_name), "_sRedList")
   dir.create(output_dir)
-  write.csv(allfields_to_save, paste0(output_dir, "/allfields.csv"), row.names = F)
+  write.csv(replace(allfields_to_save, is.na(allfields_to_save), ""), paste0(output_dir, "/allfields.csv"), row.names = F)
   write.csv(countries_SIS, paste0(output_dir, "/countries.csv"), row.names = F)
   write.csv(ref_SIS, paste0(output_dir, "/references.csv"), row.names = F)
-  write.csv(habitats_SIS, paste0(output_dir, "/habitats.csv"), row.names = F)
+  write.csv(replace(habitats_SIS, is.na(habitats_SIS), ""), paste0(output_dir, "/habitats.csv"), row.names = F)
   write.csv(Storage_SP$Output, paste0(output_dir, "/00.Output_log.csv"), row.names = F)
    
   # Save distribution and occurrences if from GBIF

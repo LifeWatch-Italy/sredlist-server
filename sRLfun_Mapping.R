@@ -25,6 +25,8 @@ sRL_FormatUploadedRecords <- function(Uploaded_Records, scientific_name){
   if((! "dec_long" %in% names(Uploaded_Records)) | (! "dec_lat" %in% names(Uploaded_Records))){no_coords_update()}
   Uploaded_Records$dec_long<-as.numeric(Uploaded_Records$dec_long)
   Uploaded_Records$dec_lat<-as.numeric(Uploaded_Records$dec_lat)
+  Uploaded_Records<-subset(Uploaded_Records, is.na(Uploaded_Records$dec_long)==F & is.na(Uploaded_Records$dec_lat)==F)
+  
   # Check they are within -180:180 and -90:90
   if(min(Uploaded_Records$dec_long)<(-180) |
      max(Uploaded_Records$dec_long)>(180) |
@@ -72,12 +74,13 @@ sRL_createDataGBIF <- function(scientific_name, GBIF_SRC, Uploaded_Records) { # 
     dat_gbif$Link<-paste0("https://gbif.org/occurrence/", dat_gbif$gbifID)
     
     # Extract citation (once per dataset then match)
+    if(is.data.frame(dat_gbif)){
     dat_gbif$source<-NA
     datasets<-data.frame(Dataset=levels(as.factor(dat_gbif$datasetKey)), source=NA)
     for(i in 1:nrow(datasets)){
       datasets$source[i]<-as.character(unlist(gbif_citation(datasets$Dataset[i]))[2])
     }
-    dat_gbif$source<-datasets$source[match(dat_gbif$datasetKey, datasets$Dataset)]
+    dat_gbif$source<-datasets$source[match(dat_gbif$datasetKey, datasets$Dataset)]} else {dat_gbif<-NULL}
     
     
   } else {dat_gbif<-NULL}
@@ -419,7 +422,7 @@ sRL_MapDistributionGBIF<-function(dat, scientific_name, First_step, AltMIN, AltM
   
   ### Prepare to export
   distGBIF$binomial<-scientific_name
-  distGBIF$id_no<-ifelse(scientific_name %in% speciesRL$scientific_name, speciesRL$taxonid[speciesRL$scientific_name==scientific_name], 99999999999)
+  distGBIF$id_no<-sRL_CalcIdno(scientific_name)
   distGBIF$presence<-1
   distGBIF$origin<-1
   distGBIF$seasonal<-1

@@ -19,7 +19,11 @@ sRL_OutputCountries<-function(scientific_name, countries){
   CO_SIS$CountryOccurrence.CountryOccurrenceSubfield.seasonality=NA # "Resident"
   CO_SIS$assessment_id=NA
   CO_SIS$internal_taxon_name=scientific_name
+  CO_SIS$id_no<-sRL_CalcIdno(scientific_name)
   }
+  
+  # Transform NA in "" to match SIS
+  CO_SIS<-replace(CO_SIS, is.na(CO_SIS), "")
   
   return(CO_SIS)
 }
@@ -64,7 +68,11 @@ sRL_OutputRef<-function(scientific_name, Storage_SP){
   
   # Add species name
   ref_SIS$internal_taxon_name<-scientific_name
-
+  ref_SIS$internal_taxon_id<-sRL_CalcIdno(scientific_name)
+  
+  # Transform NA in "" to match SIS
+  ref_SIS<-replace(ref_SIS, is.na(ref_SIS), "")
+  
   return(ref_SIS)
 }
 
@@ -81,15 +89,19 @@ sRL_OutputDistribution<-function(scientific_name, Storage_SP){
   distSP$OBJECTID<-1:nrow(distSP)
   distSP$sci_name<-scientific_name
   distSIS<-distSP[, c("OBJECTID", "sci_name")]
-  distSIS[,c("presence", "origin", "seasonal", "compiler", "yrcomplied", "citation", "subspecies", "subpop", "data_sens", "sens_comm", "source", "dist_comm", "island", "tax_comm", "generalisd", "id_no", "Shape_Leng", "Shape_Area")]<-NA
+  distSIS[,c("presence", "origin", "seasonal", "compiler", "yrcomplied", "citation", "subspecies", "subpop", "data_sens", "sens_comm", "source", "dist_comm", "island", "tax_comm", "id_no", "generalisd", "Shape_Leng", "Shape_Area")]<-NA
   
   # Fill in some information
   distSIS$yrcomplied<-Sys.time() %>% format(., "%Y")
   distSIS$citation<-"Citation to add" # To fill
   distSIS$source<-"sRedList platform"
+  distSIS$id_no<-sRL_CalcIdno(scientific_name)
   
   # Send geometry column at the end of the table
   distSIS<-distSIS[, c(names(distSIS)[names(distSIS) != "geometry"], "geometry")]
+  
+  # Transform NA in "" to match SIS
+  distSIS<-replace(distSIS, is.na(distSIS), "")
   
   return(distSIS)
 }
@@ -117,6 +129,7 @@ sRL_OutputOccurrences <- function(scientific_name, Storage_SP) {
   dat_SIS$event_year<-dat$event_year
   dat_SIS$citation<-"IUCN (International Union for Conservation of Nature)"
   dat_SIS$source<-dat$source
+  dat_SIS$id_no<-sRL_CalcIdno(scientific_name)
 
   # If data from the Red List, copy the information previously saved
   if("RL" %in% dat$Source){
@@ -132,6 +145,9 @@ sRL_OutputOccurrences <- function(scientific_name, Storage_SP) {
   # Remove geometry and make a csv file
   dat_SIS$geometry<-NULL
   dat_SIS<-as.data.frame(dat_SIS)
+  
+  # Transform NA in "" to match SIS
+  dat_SIS<-replace(dat_SIS, is.na(dat_SIS), "")
   
   return(dat_SIS)
 }
