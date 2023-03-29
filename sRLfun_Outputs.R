@@ -252,7 +252,7 @@ sRL_CriteriaCalculator <- function(allfields){
   # Thresholds
   if(is.na(allfields$PopulationReductionPastandFuture.direction)==F){
   if(allfields$PopulationReductionPastandFuture.direction == "Increase"){crit_A4<-"LC"} else{
-    crit_A4<-cut(extract_range(allfields$PopulationReductionPastandFuture.range), breaks=c(0,30,50,80,101), labels=c("LC", "VU", "EN", "CR"), include.lowest=T, right=F) %>% as.character(.)
+    crit_A4<-cut(extract_range(allfields$PopulationReductionPastandFuture.range), breaks=c(0,30,50,80,101), labels=c("LC", "VU", "EN", "CR"), include.lowest=T, right=F)# %>% as.character(.)
   }
   crit<-crit_apply(crit, "A4", crit_A4)
   }

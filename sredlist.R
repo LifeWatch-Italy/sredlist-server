@@ -911,7 +911,9 @@ Prom<-future({
 
       # Calculate optimistic AOH: but if marginal habitats all point at CCI modalities already included with habitats_pref and elevation are not different, I use AOH2 directly as there won't be any difference
       if(length(unique(crosswalk_to_use$value[crosswalk_to_use$code %in% habitats_pref]))==length(unique(crosswalk_to_use$value[crosswalk_to_use$code %in% c(habitats_pref, habitats_pref_MARGINAL)])) & !"elevation_lowerEXTREME" %in% names(altitudes_pref_DF) & !"elevation_upperEXTREME" %in% names(altitudes_pref_DF)){
-            AOH2_opt<-AOH2; sRL_loginfo("Identical AOH, no need to calculate", scientific_name)} else{
+            AOH2_opt<-AOH2; sRL_loginfo("Identical AOH, no need to calculate", scientific_name)
+            terra::writeRaster(rast(AOH2_opt), paste0("resources/AOH_stored/", gsub(" ", "_", scientific_name), "/Current_optimistic/Optimistic_identical.tif"))
+            } else{
 
             AOH2_opt<-sRL_calculateAOH(rangeSP_fun=rangeSP_cleanOPT,
                                  cci_fun=cci2_crop,
@@ -1067,7 +1069,7 @@ Prom<-future({
   plot2 <- base64enc::dataURI(file = paste0("resources/AOH_stored/", sub(" ", "_", scientific_name), "/Plots/aoo.png"), mime = "image/png", encoding = "base64") # nolint
 
   AOO_km2<- sRL_areaAOH(aoh_22[[1]], SCALE="2x2")
-  if(Uncertain=="Uncertain_yes"){AOO_km2_opt<- sRL_areaAOH(aoh_22_opt[[1]], SCALE="2x2")}
+  if(Uncertain=="Uncertain_yes"){AOO_km2_opt<- sRL_areaAOH(aoh_22_opt[[1]], SCALE="2x2") ; Storage_SP$aoo_km2_opt<-AOO_km2_opt}
   if (density_pref[1] != '-1') {Storage_SP$density_saved<-density_pref}
   Storage_SP$aoo_km2<-AOO_km2
   
@@ -1478,7 +1480,14 @@ function(scientific_name){
   
   
   ### AOO
-  AOO_val <- ifelse("aoo_km2" %in% names(Storage_SP), Storage_SP$aoo_km2, NA)
+  if("aoo_km2" %in% names(Storage_SP)){
+    AOO_val <- ifelse((Storage_SP$Uncertain=="Uncertain_no"), 
+           round(Storage_SP$aoo_km2), 
+           paste(round(Storage_SP$aoo_km2), round(Storage_SP$aoo_km2_opt), sep="-")
+           )
+  } else {
+    AOO_val <- NA
+  }
   AOO_justif <- ifelse("aoo_km2" %in% names(Storage_SP), "The upper bound of AOO has been estimated on the sRedList Platform by rescaling the Area of Habitat to a 2x2km2 grid.", NA)
   Storage_SP<-sRL_OutLog(Storage_SP, "Estimated_AOO_raw", AOO_val)
   
@@ -2104,10 +2113,10 @@ function(Uploaded_Zips=list()) {
   
   ### Save in a merged ZIP file
   unlink(paste0(Zip_Path, "/", list.files(Zip_Path)), recursive=T)
-  write.csv(allfieldsM, paste0(Zip_Path, "/allfields.csv"), row.names = F)
-  write.csv(countriesM, paste0(Zip_Path, "/countries.csv"), row.names = F)
-  write.csv(referencesM, paste0(Zip_Path, "/references.csv"), row.names = F)
-  write.csv(habitatsM, paste0(Zip_Path, "/habitats.csv"), row.names = F)
+  write.csv(replace(allfieldsM, is.na(allfieldsM), ""), paste0(Zip_Path, "/allfields.csv"), row.names = F)
+  write.csv(replace(countriesM, is.na(countriesM), ""), paste0(Zip_Path, "/countries.csv"), row.names = F)
+  write.csv(replace(referencesM, is.na(referencesM), ""), paste0(Zip_Path, "/references.csv"), row.names = F)
+  write.csv(replace(habitatsM, is.na(habitatsM), ""), paste0(Zip_Path, "/habitats.csv"), row.names = F)
   write.csv(LogM, paste0(Zip_Path, "/00.Output_log.csv"), row.names = F)
   
   # Save distribution and occurrences if from GBIF
