@@ -858,7 +858,9 @@ Prom<-future({
   ### Prepare distribution, altitude, and preference files (i.e., part of the AOH analysis that has to be run only once)
   # Distribution (assuming seasonal=resident after users decided what they keep)
   distSP$seasonal=1
-
+  names(distSP)<-replace(names(distSP), tolower(names(distSP)) %in% c("terrestrial", "terrestial", "terr"), "terrestrial")
+  distSP$terrestrial<-"true" # I have to make it manually so that it does not exclude pure freshwater species (it will be users choice in any case)
+  
   rangeSP_clean<-create_spp_info_data(distSP,
                                       keep_iucn_rl_presence = 1:6, # The selection has already been made, so I give fake numbers here
                                       keep_iucn_rl_seasonal = 1:5,
@@ -1505,7 +1507,7 @@ function(scientific_name){
     aohP<-abs(Storage_SP$aoh_lost_extrap)
     
     # If no uncertainty, I use aohP and signP as suggested estimates
-    if(Storage_SP$Uncertain=="Uncertain_no"){
+    if(Storage_SP$Uncertain=="Uncertain_no" | (! "aoh_lostOPT_saved" %in% names(Storage_SP))){
       Trends_dir<-revalue(as.character(signP), c("-1"="+", "1"="-"))
       Trends_val<-aohP
       

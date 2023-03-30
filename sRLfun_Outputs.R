@@ -14,9 +14,9 @@ sRL_OutputCountries<-function(scientific_name, countries){
     
   CO_SIS$CountryOccurrence.CountryOccurrenceSubfield.CountryOccurrenceLookup=NA
   CO_SIS$CountryOccurrence.CountryOccurrenceSubfield.formerlyBred=NA
-  CO_SIS$CountryOccurrence.CountryOccurrenceSubfield.origin=NA # "Native"
-  CO_SIS$CountryOccurrence.CountryOccurrenceSubfield.presence=NA # "Extant"
-  CO_SIS$CountryOccurrence.CountryOccurrenceSubfield.seasonality=NA # "Resident"
+  CO_SIS$CountryOccurrence.CountryOccurrenceSubfield.origin=1 # "Native"
+  CO_SIS$CountryOccurrence.CountryOccurrenceSubfield.presence=1 # "Extant"
+  CO_SIS$CountryOccurrence.CountryOccurrenceSubfield.seasonality=1 # "Resident"
   CO_SIS$assessment_id=NA
   CO_SIS$internal_taxon_name=scientific_name
   CO_SIS$id_no<-sRL_CalcIdno(scientific_name)
@@ -92,6 +92,9 @@ sRL_OutputDistribution<-function(scientific_name, Storage_SP){
   distSIS[,c("presence", "origin", "seasonal", "compiler", "yrcomplied", "citation", "subspecies", "subpop", "data_sens", "sens_comm", "source", "dist_comm", "island", "tax_comm", "id_no", "generalisd", "Shape_Leng", "Shape_Area")]<-NA
   
   # Fill in some information
+  distSIS$presence<-1
+  distSIS$origin<-1
+  distSIS$seasonal<-1
   distSIS$yrcomplied<-Sys.time() %>% format(., "%Y")
   distSIS$citation<-"Citation to add" # To fill
   distSIS$source<-"sRedList platform"
@@ -122,6 +125,9 @@ sRL_OutputOccurrences <- function(scientific_name, Storage_SP) {
   dat_SIS[,c("presence", "origin", "seasonal", "compiler", "yrcomplied", "citation", "dec_lat", "dec_long", "spatialref", "subspecies", "subpop", "data_sens", "sens_comm", "event_year", "source", "basisofrec", "catalog_no", "dist_comm", "island", "tax_comm", "id_no")]<-NA
   
   # Fill in some information
+  dat_SIS$presence<-1
+  dat_SIS$origin<-1
+  dat_SIS$seasonal<-1
   dat_SIS$yrcomplied<-Sys.time() %>% format(., "%Y")
   dat_SIS$dec_long<-st_coordinates(dat_SIS)[,1]
   dat_SIS$dec_lat<-st_coordinates(dat_SIS)[,2]
