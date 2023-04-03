@@ -356,6 +356,10 @@ sRL_MapDistributionGBIF<-function(dat, scientific_name, First_step, AltMIN, AltM
       
   }
   
+  if(First_step=="indivsites"){
+    distGBIF<-st_buffer(dat, 0.001) # The default is one meter, then they can add a buffer
+  }
+  
   if(First_step=="hydro"){
     hydro_sub<-st_crop(hydro_raw, extent(dat))
     interHyd<-st_join(dat, hydro_sub, join=st_intersects) %>% subset(., is.na(.$hybas_id)==F) # Identify hydrobasins with data 
