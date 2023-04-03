@@ -310,7 +310,7 @@ function(scientific_name) {
 #* @param Gbif_Sea:string Gbif_Sea
 #* @serializer htmlwidget
 #* @tag sRedList
-function(scientific_name, Gbif_Year= -1, Gbif_Uncertainty=-1, Gbif_Extent=list(), Gbif_Sea="") {
+function(scientific_name, Gbif_Year= -1, Gbif_Uncertainty=-1, Gbif_Extent=list(), Gbif_Sea="", Gbif_yearBin="", Gbif_uncertainBin="") {
 
 Prom<-future({
   sf::sf_use_s2(FALSE)  
@@ -324,19 +324,21 @@ Prom<-future({
   print(Gbif_Uncertainty)
   Gbif_Extent<-as.numeric(Gbif_Extent) ; print(Gbif_Extent)
   print(Gbif_Sea)
+  Gbif_yearBin<-Gbif_yearBin=="true" ; print(Gbif_yearBin)
+  Gbif_uncertainBin<-Gbif_uncertainBin=="true" ; print(Gbif_uncertainBin)
   
   ### Charge downloaded data
   Storage_SP<-sRL_StoreRead(scientific_name) ; print(names(Storage_SP))
   flags_raw<-Storage_SP$flags_raw_saved
   
   ### Subset the observations user wants to keep (can be run several times if users play with parameters)
-  flags <- sRL_cleanDataGBIF(flags_raw, as.numeric(Gbif_Year), as.numeric(Gbif_Uncertainty), keepyearNA_GBIF=T, Gbif_Sea, Gbif_Extent[1], Gbif_Extent[2], Gbif_Extent[3], Gbif_Extent[4])
+  flags <- sRL_cleanDataGBIF(flags_raw, as.numeric(Gbif_Year), as.numeric(Gbif_Uncertainty), Gbif_yearBin, Gbif_uncertainBin, Gbif_Sea, Gbif_Extent[1], Gbif_Extent[2], Gbif_Extent[3], Gbif_Extent[4])
   dat_proj=sRL_SubsetGbif(flags, scientific_name)
 
   ### Assign in Storage_SP
   Storage_SP$dat_proj_saved<-dat_proj
   Storage_SP$flags<-flags
-  Storage_SP<-sRL_OutLog(Storage_SP, c("Gbif_Year", "Gbif_Uncertainty", "Gbif_Sea", "Gbif_Extent"), c(Gbif_Year, Gbif_Uncertainty, Gbif_Sea, paste0(Gbif_Extent, collapse=",")))
+  Storage_SP<-sRL_OutLog(Storage_SP, c("Gbif_Year", "Gbif_Uncertainty", "Gbif_Sea", "Gbif_Extent", "Gbif_yearBin", "Gbif_uncertainBin"), c(Gbif_Year, Gbif_Uncertainty, Gbif_Sea, paste0(Gbif_Extent, collapse=","), Gbif_yearBin, Gbif_uncertainBin))
   sRL_StoreSave(scientific_name, Storage_SP)
   
   sRL_loginfo("END - GBIF Step 2", scientific_name)
@@ -400,7 +402,7 @@ function(scientific_name) {
 #* @param Gbif_Crop:string Gbif_Crop
 #* @serializer unboxedJSON
 #* @tag sRedList
-function(scientific_name, Gbif_Start="", Gbif_Param=list(), Gbif_Buffer=-1, Gbif_Altitude=list(), Gbif_Crop="") {
+function(scientific_name, Gbif_Start="", Gbif_Param=list(), Gbif_Buffer=-1, Gbif_Altitude=list(), Gbif_Crop="", Gbif_RLDistBin="") {
 
 # Parameter error
 if(Gbif_Start=="alpha" & Gbif_Param[1] <= 0){neg_alpha()}
@@ -419,6 +421,7 @@ Prom<-future({
   print(Gbif_Altitude)
   print(Gbif_Crop)
   Gbif_Param<-as.numeric(Gbif_Param) ; print(Gbif_Param)
+  Gbif_RLDistBin<-Gbif_RLDistBin=="true" ; print(Gbif_RLDistBin)
   
   #GBIF STEP 3: Map distribution from GBIF
   sRL_loginfo("START - Maps the distribution", scientific_name)
@@ -438,6 +441,23 @@ Prom<-future({
                                   Gbif_Param=Gbif_Param)
   sRL_loginfo("Map Distribution halfway", scientific_name)
   
+  # Merge with published range map
+  if(Gbif_RLDistBin==T){
+    sRL_loginfo("Merge with Red List map", scientific_name)
+    tryCatch({
+      # Load distribution
+      distRL0_path <- paste0(config$distribution_path, scientific_name, "/", sub(" ", "_", scientific_name), "_RL/", scientific_name, ".shp")
+      distRL <- sRL_PrepareDistrib(st_read(distRL0_path), scientific_name) # nolint
+      distRL <- subset(distRL, distRL$presence %in% c(1,2) & distRL$origin %in% c(1,2) & distRL$seasonal %in% c(1,2))
+      
+      # Merge with created range map
+      distSPM<-st_union(distSP, distRL) %>% dplyr::group_by("binomial") %>% dplyr::summarise(N= n()) 
+      distSP$geometry[1]<-distSPM$geometry[1]
+    
+    }, error=function(e){"Merging with published range map did not work"})
+  }
+  
+  
   # Map countries (keeping max extent between points and polygons)
   EXT_max <-  do.call(bind, sapply(c(extent(distSP), extent(dat_proj)), FUN = function(x){as(x, 'SpatialPolygons')}))  %>% bbox(.) %>% extent(.)
   CountrySP<-st_crop(distCountries, 1.15*EXT_max)
@@ -447,20 +467,22 @@ Prom<-future({
   Storage_SP$gbif_number_saved=nrow(dat_proj)
   
   # Plot distribution
-  ggsave(paste0("resources/AOH_stored/", sub(" ", "_", scientific_name), "/Plots/eoo.png"), (
-    ggplot() + 
-      geom_sf(data=CountrySP, fill="gray70")+
-      geom_sf(data = distSP, fill="darkred") + 
-      geom_sf(data=dat_proj)+
-      labs(caption=ifelse("alphaTEMPO" %in% names(distSP), paste0("The true alpha tension parameter used is ", round(distSP$alphaTEMPO[1],2)), ""))+
-      sRLTheme_maps
-  ), width=18, height=5.5) # nolint
-  plot3 <- base64enc::dataURI(file = paste0("resources/AOH_stored/", sub(" ", "_", scientific_name), "/Plots/eoo.png"), mime = "image/png") # nolint
+  GPlot<-ggplot() + 
+    geom_sf(data=CountrySP, fill="gray70")+
+    geom_sf(data = distSP, fill="darkred") + 
+    geom_sf(data=dat_proj)+
+    labs(caption=ifelse("alphaTEMPO" %in% names(distSP), paste0("The true alpha tension parameter used is ", round(distSP$alphaTEMPO[1],2)), ""))+
+    sRLTheme_maps
+  
+  if(exists("distSPM")){GPlot<-GPlot+geom_sf(data=distRL, fill="gold", alpha=0.5)+labs(caption="Polygons from published map are shown in orange")}
+  
+  ggsave(paste0("resources/AOH_stored/", sub(" ", "_", scientific_name), "/Plots/gbifStep3.png"), GPlot, width=18, height=5.5) # nolint
+  plot3 <- base64enc::dataURI(file = paste0("resources/AOH_stored/", sub(" ", "_", scientific_name), "/Plots/gbifStep3.png"), mime = "image/png") # nolint
   sRL_loginfo("END - Maps the distribution", scientific_name)
   
   # Keep distribution in memory
   Storage_SP$distSP3_saved=distSP[, names(distSP) != "alphaTEMPO"]
-  Storage_SP<-sRL_OutLog(Storage_SP, c("Mapping_Start", "Mapping_Crop", "Mapping_Buffer", "Mapping_Altitude", "Kernel_parameter", "Alpha_parameter"), c(Gbif_Start, Gbif_Crop, Gbif_Buffer, paste0(Gbif_Altitude, collapse=","), ifelse(Gbif_Start=="kernel", Gbif_Param[2], NA), ifelse(Gbif_Start=="alpha", Gbif_Param[1], NA)))
+  Storage_SP<-sRL_OutLog(Storage_SP, c("Mapping_Start", "Mapping_Crop", "Mapping_Buffer", "Mapping_Altitude", "Kernel_parameter", "Alpha_parameter", "Mapping_Merge"), c(Gbif_Start, Gbif_Crop, Gbif_Buffer, paste0(Gbif_Altitude, collapse=","), ifelse(Gbif_Start=="kernel", Gbif_Param[2], NA), ifelse(Gbif_Start=="alpha", Gbif_Param[1], NA), Gbif_RLDistBin))
   sRL_StoreSave(scientific_name, Storage_SP)
   
   return(list(

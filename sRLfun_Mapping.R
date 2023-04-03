@@ -254,7 +254,7 @@ sRL_StructureGBIF<-function(scientificName){
 
 
 # Step 2 --------------------------------
-sRL_cleanDataGBIF <- function(flags, year_GBIF, uncertainty_GBIF, keepyearNA_GBIF, sea_GBIF, GBIF_xmin, GBIF_xmax, GBIF_ymin, GBIF_ymax) { # nolint
+sRL_cleanDataGBIF <- function(flags, year_GBIF, uncertainty_GBIF, Gbif_yearBin, Gbif_uncertainBin, sea_GBIF, GBIF_xmin, GBIF_xmax, GBIF_ymin, GBIF_ymax) { # nolint
 
   flags$.summary<-NULL
   
@@ -263,11 +263,13 @@ sRL_cleanDataGBIF <- function(flags, year_GBIF, uncertainty_GBIF, keepyearNA_GBI
   if(sea_GBIF=="excludeland"){flags$.sea<-revalue(as.character(flags$.sea), c("TRUE"="FALSE", "FALSE"="TRUE"))} %>% as.factor(.) # If Sea=2, we keep only seas (so we flag land)
   
   ### Add flagging for year and uncertainty
+  flags$year<-replace(flags$year, flags$year==0, NA)
   flags$.year <- flags$year > year_GBIF
-  if(keepyearNA_GBIF==F){flags$.year[is.na(flags$.year)]<-F}
+  if(Gbif_yearBin==T){flags$.year[is.na(flags$.year)]<-F} # If 'remove NA' is clicked, I put False for the year filter
   
   if(!"coordinateUncertaintyInMeters" %in% names(flags)){flags$coordinateUncertaintyInMeters<-NA}
   flags$.uncertainty <- flags$coordinateUncertaintyInMeters < uncertainty_GBIF*1000 
+  if(Gbif_uncertainBin==T){flags$.uncertainty[is.na(flags$.uncertainty)]<-F} # If 'remove NA' is clicked, I put False for the uncertainty filter
   
   ### Add flagging for points outside GBIF_xmin...
   flags$.limits<-(flags$decimalLongitude < GBIF_xmin | flags$decimalLongitude > GBIF_xmax | flags$decimalLatitude < GBIF_ymin | flags$decimalLatitude > GBIF_ymax)==F
@@ -289,7 +291,8 @@ sRL_cleanDataGBIF <- function(flags, year_GBIF, uncertainty_GBIF, keepyearNA_GBI
   flags$PopText<- paste0("<b>", revalue(as.character(is.na(flags$Reason)), c("TRUE"="VALID OBSERVATION", "FALSE"="NOT VALID OBSERVATION")),"</b>", "<br>", "<br>",
                        "<b>","Source: ","</b>", flags$Source_type, "<br>",
                        "<b>","Observation ID: ","</b>", ifelse(is.na(flags$Link)==F, paste0("<a href='", flags$Link, "' target='_blank'>", flags$gbifID, "</a>"), flags$gbifID), "<br>",
-                       "<b>","Year: ","</b>", flags$year, "<br>")
+                       "<b>","Year: ","</b>", flags$year, "<br>",
+                       "<b>","Uncertainty (km): ","</b>", flags$coordinateUncertaintyInMeters/1000, "<br>")
   flags$PopText[is.na(flags$Reason)==F]<-paste0(flags$PopText[is.na(flags$Reason)==F], "<b>","Reason flagged: ","</b>", flags$Reason[is.na(flags$Reason)==F], "<br>")
   
   return(flags)
