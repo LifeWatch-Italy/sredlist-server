@@ -1383,8 +1383,14 @@ function(scientific_name) {
 #* @tag sRedList
 function(scientific_name, dispersion="-1", density_pref= '-1') {
   
-  if(density_pref =="-1" | is.null(density_pref)){no_density_fragm()}
-  print(density_pref)
+  # Check dispersion
+  dispersion <- dispersion %>% gsub(" ", "", .) %>% gsub(",", ".", .) %>% as.character(.) %>% strsplit(., "-") %>% unlist() %>% as.numeric(.)*1000 ; print(dispersion)
+  if(is.na(sum(dispersion))){wrong_dispersion()}
+  
+  # Check density
+  if(density_pref =="-1" | density_pref=="" | is.null(density_pref)){no_density_fragm()}
+  density_pref <- density_pref %>% gsub(" ", "", .) %>% gsub(",", ".", .) %>% as.character(.)  %>% strsplit(., "-") %>% unlist(.) %>% as.numeric(.) ; print(density_pref) 
+  if(NA %in% density_pref){wrong_density()}
   
 Prom<-future({
     sf::sf_use_s2(FALSE)
@@ -1394,46 +1400,94 @@ Prom<-future({
     Storage_SP<-sRL_StoreRead(scientific_name)
     aoh<-rast(paste0("resources/AOH_stored/", gsub(" ", "_", scientific_name), "/Current/", list.files(paste0("resources/AOH_stored/", gsub(" ", "_", scientific_name), "/Current"))[1]))[[1]]  ; crs(aoh)<-CRSMOLL
     aoh_type<-Storage_SP$AOH_type
-    dispersion <- dispersion %>% gsub(" ", "", .) %>% gsub(",", ".", .) %>% as.numeric(.)*1000 ; print(dispersion)
-    density_pref <- density_pref %>% gsub(" ", "", .) %>% gsub(",", ".", .)
+    
+    ### Save in output log
+    Storage_SP<-sRL_OutLog(Storage_SP, c("Fragmentation_Isolation", "Fragmentation_Density"), c(paste(dispersion/1000, collapse="-"), paste(density_pref, collapse="-")))
+    sRL_StoreSave(scientific_name, Storage_SP)
+    
+    ### If large range, I have to binarize the suitable habitat
+    if(aoh_type=="Large"){aoh<-ifel(aoh<=90, 0, 1)}
     
     ### Calculate fragmentation
-    res<-sRL_fragmentation(aoh, aoh_type, dispersion, density_pref)
+    res<-sRL_fragmentation(aoh, aoh_type, min(dispersion), density_pref)
+    if(length(dispersion)>1){
+      res2<-sRL_fragmentation(aoh, aoh_type, max(dispersion), density_pref) 
+    } else {res2<-res} # I create a res2 even if no uncertainty in isolation distance to avoid having to code 2 plots
     
     
     ### Plots
-    # AOH and clusters
+    ### AOH and clusters
     aohDF<-as.data.frame(aoh, xy = TRUE); names(aohDF)[3]<-"lyr1"
+    
+    NClust<-unique(c(nrow(res2$clusters), nrow(res$clusters)))
+    
     G1<-ggplot() + 
-      geom_tile(data = aohDF, aes(x = x, y = y, fill = factor(lyr1, levels=c("0", "1"))), alpha = 0.5, show.legend=F)+
-      geom_sf(data=st_transform(res$clusters, crs(aoh)), fill=NA)+
-      ggtitle(paste0("Population fragmentation in ", nrow(res$clusters), " clusters"))+
+      geom_tile(data = aohDF, aes(x = x, y = y, fill = factor(lyr1, levels=c("0", "1"))), alpha = 0.5, col=NA)+
+      geom_sf(data=st_transform(res2$clusters, crs(aoh)), aes(col="disp2"), fill=NA, lwd=2, show.legend = "line")+
+      geom_sf(data=st_transform(res$clusters, crs(aoh)), aes(col="disp1"), fill=NA, lwd=2, show.legend = "line")+
+      ggtitle(paste0("Population fragmentation in ", paste(NClust, collapse="-"), " clusters"))+
       scale_fill_manual(values=c("#FBCB3C", "#0D993F", NA), labels=c("Unsuitable", "Suitable", ""), name="", na.translate=F, drop=F) +
-      sRLTheme_maps
+      scale_colour_manual(name="", breaks=c("disp1", "disp2"), values=c("#A383FF", "#FF7F5E"), labels=c(paste0("Isolation ", min(dispersion)/1000, " km"), paste0("Isolation ", max(dispersion)/1000, " km")), na.translate=F, drop=T)+
+      sRLTheme_maps %+replace%   theme(legend.position="bottom") 
     
-    # Cumulative fragmentation (depends if one or two density estimates)
-    if(! "pop2" %in% names(res$prop.fragm)){
-      G2<-ggplot(res$prop.fragm)+
-        geom_step(aes(x=pop, y=CumSum), col="darkred", linewidth=2)+
-        geom_vline(xintercept=min(res$prop.fragm$pop[res$prop.fragm$CumSum>0.5], na.rm=T), linetype="dashed")+
-        geom_hline(yintercept=0.5, linetype="dashed")+
-        xlab("How many individuals constitute a 'small' population?")+ylab("Proportion of the population that is fragmented")+
-        ylim(c(0,1))+
-        labs(subtitle=paste0("Fragmented if you consider that a population lower \n than ", round(min(res$prop.fragm$pop[res$prop.fragm$CumSum>0.5], na.rm=T)), " mature individuals is 'small'"))+
-        theme_minimal() %+replace%   theme(text=element_text(size=20), plot.subtitle=element_text(hjust=0.5))
-    } else {
-      G2<-ggplot(res$prop.fragm)+
-        geom_step(aes(x=pop2, y=CumSum), col="coral2", linewidth=2)+
-        geom_step(aes(x=pop, y=CumSum), col="darkred", linewidth=2)+
-        geom_vline(xintercept=min(res$prop.fragm$pop[res$prop.fragm$CumSum>0.5], na.rm=T), linetype="dashed")+
-        geom_vline(xintercept=min(res$prop.fragm$pop2[res$prop.fragm$CumSum>0.5], na.rm=T), linetype="dashed")+
-        geom_hline(yintercept=0.5, linetype="dashed")+
-        xlab("How many individuals constitute a 'small' population?")+ylab("Proportion of the population that is fragmented")+
-        ylim(c(0,1))+
-        labs(subtitle=paste0("Fragmented if you consider that a population lower \n than ", round(min(res$prop.fragm$pop[res$prop.fragm$CumSum>0.5], na.rm=T)), "-", round(min(res$prop.fragm$pop2[res$prop.fragm$CumSum>0.5], na.rm=T)), " mature individuals is 'small'"))+
-        theme_minimal() %+replace%   theme(text=element_text(size=20), plot.subtitle=element_text(hjust=0.5))
+        
+    ### Cumulative fragmentation (depends if one or two density estimates)
+    # Subtitle for cumulative plot
+    V1<-min(res$prop.fragm$pop[res$prop.fragm$CumSum>0.5], na.rm=T)
+    V2<-min(res2$prop.fragm$pop[res2$prop.fragm$CumSum>0.5], na.rm=T)
+    V3<-ifelse("pop2" %in% names(res$prop.fragm), min(res$prop.fragm$pop2[res$prop.fragm$CumSum>0.5], na.rm=T), NA)
+    V4<-ifelse("pop2" %in% names(res$prop.fragm), min(res2$prop.fragm$pop2[res2$prop.fragm$CumSum>0.5], na.rm=T), NA)
+    VTOT<-c(min(c(V1, V2, V3, V4), na.rm=T), max(c(V1, V2, V3, V4), na.rm=T)) %>% round(.) %>% unique(.)
+    
+    SubTitle<-paste0("Fragmented if you consider that a population lower \n than ", paste(VTOT, collapse="-"), " mature individuals is 'small'")
+    
+    G2<-ggplot()+
+      geom_step(data=res$prop.fragm, aes(x=pop, y=CumSum, col="ShortMin"), linewidth=2.8)+
+      geom_vline(xintercept=min(res$prop.fragm$pop[res$prop.fragm$CumSum>0.5], na.rm=T), linetype="dashed")+
+      geom_hline(yintercept=0.5, linetype="dashed")+
+      xlab("How many individuals constitute a 'small' population?")+ylab("Proportion of the population that is fragmented")+
+      ylim(c(0,1))+
+      labs(subtitle=SubTitle)+
+      theme_minimal() %+replace%   theme(text=element_text(size=15), plot.subtitle=element_text(hjust=0.5), legend.position="bottom")
+    
+    LABS<-c("Cumulated population", "", "", "")
+    
+    # If uncertainty in density
+    if("pop2" %in% names(res$prop.fragm)){
+      G2<-G2+
+        geom_step(data=res$prop.fragm, aes(x=pop2, y=CumSum, col="ShortMax"), linewidth=2.2)+
+        geom_vline(xintercept=min(res$prop.fragm$pop2[res$prop.fragm$CumSum>0.5], na.rm=T), linetype="dashed")
+      
+      LABS<-c("Small density", "High density", "", "")
+    }  
+    
+    # If uncertainty in isolation distance
+    if(length(dispersion)==2){
+      G2<-G2+
+        geom_step(data=res2$prop.fragm, aes(x=pop, y=CumSum, col="LongMin"), linewidth=1.8)+
+        geom_vline(xintercept=min(res2$prop.fragm$pop[res2$prop.fragm$CumSum>0.5], na.rm=T), linetype="dashed")
+      
+      LABS<-c("Short isolation distance", "", "Long isolation distance", "")
+      
+      # If also uncertainty in density
+      if("pop2" %in% names(res2$prop.fragm)){
+        G2<-G2+
+          geom_step(data=res2$prop.fragm, aes(x=pop2, y=CumSum, col="LongMax"), linewidth=1.6)+
+          geom_vline(xintercept=min(res2$prop.fragm$pop2[res2$prop.fragm$CumSum>0.5], na.rm=T), linetype="dashed")
+        
+        LABS<-c("Short isolation / small density", "Short isolation / high density", "Long isolation / small density", "Long isolation / high density")
       }
+    }  
     
+    # Add legend
+    G2<-G2+
+      scale_colour_manual(name="", breaks=c("ShortMin", "ShortMax", "LongMin", "LongMax"), 
+                          values=c("#A383FF", "#2A2ABF", "#FF7F5E", "darkred"), 
+                          labels=LABS, 
+                          drop=T)+
+      guides(col=guide_legend(nrow=2,byrow=TRUE))
+    
+    ### Final plot
     Plot<-cowplot::plot_grid(G1, G2, ncol=2)
     return(Plot)
     

@@ -84,6 +84,14 @@ no_density_fragm <- function() {
   api_error(message = "A density must be provided in the AOH step to perform this step", status = 400)
 }
 
+wrong_density <- function() {
+  api_error(message = "Density estimate is not valid. Should be a number or two numbers separated by a hyphen", status = 400)
+}
+
+wrong_dispersion <- function() {
+  api_error(message = "Isolation distance estimate is not valid. Should be a number or two numbers separated by a hyphen", status = 400)
+}
+
 incorrect_GL <- function() {
   api_error(message = "The Generation Length value entered is not valid", status = 400)
 }
