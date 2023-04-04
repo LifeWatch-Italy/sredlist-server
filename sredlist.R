@@ -1428,7 +1428,8 @@ Prom<-future({
       ggtitle(paste0("Population fragmentation in ", paste(NClust, collapse="-"), " clusters"))+
       scale_fill_manual(values=c("#FBCB3C", "#0D993F", NA), labels=c("Unsuitable", "Suitable", ""), name="", na.translate=F, drop=F) +
       scale_colour_manual(name="", breaks=c("disp1", "disp2"), values=c("#A383FF", "#FF7F5E"), labels=c(paste0("Isolation ", min(dispersion)/1000, " km"), paste0("Isolation ", max(dispersion)/1000, " km")), na.translate=F, drop=T)+
-      sRLTheme_maps %+replace%   theme(legend.position="bottom") 
+      sRLTheme_maps %+replace%   theme(legend.position="bottom") +
+      guides(fill = guide_legend(override.aes = list(col=NA)))
     
         
     ### Cumulative fragmentation (depends if one or two density estimates)

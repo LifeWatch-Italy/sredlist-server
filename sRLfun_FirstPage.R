@@ -136,6 +136,9 @@ sRL_PrepareDistrib <- function(distributions, scientific_name){
   if(!"origin" %in% names(distributions)){distributions$origin<-1}
   if(!"seasonal" %in% names(distributions)){distributions$seasonal<-1}
   
+  # Normalise species name
+  distributions$binomial<-distributions$binomial %>% sRL_decode(.)
+  
   # If empty values, I replace by 1
   distributions$presence <- replace(distributions$presence, ! distributions$presence %in% c(1:6), 1) %>% as.numeric(.)
   distributions$origin <- replace(distributions$origin, ! distributions$origin %in% c(1:6), 1) %>% as.numeric(.)

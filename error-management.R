@@ -36,7 +36,7 @@ species_not_in_distrib <- function() {
 }
 
 bug_distribution_loading <- function() {
-  api_error(message = "The distribution could not be loaded; check if it includes the 4 files required (.shp, .shx, .prk, .dbf)", status=400)
+  api_error(message = "The distribution could not be loaded; check if it includes the 4 files required (.shp, .shx, .prj, .dbf)", status=400)
 }
 
 empty_distrib <- function() {
@@ -81,7 +81,7 @@ no_coords_update <- function() {
 }
 
 no_density_fragm <- function() {
-  api_error(message = "A density must be provided in the AOH step to perform this step", status = 400)
+  api_error(message = "A density must be provided to perform this step", status = 400)
 }
 
 wrong_density <- function() {
