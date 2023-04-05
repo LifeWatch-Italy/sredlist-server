@@ -20,6 +20,10 @@ sRL_OutputCountries<-function(scientific_name, countries){
   #CO_SIS$assessment_id=NA
   CO_SIS$internal_taxon_name=scientific_name
   CO_SIS$id_no<-sRL_CalcIdno(scientific_name)
+  
+  # Remove countries that appear twice (in EEZ and COO)
+  CO_SIS<-CO_SIS %>% distinct(., CountryOccurrence.CountryOccurrenceSubfield.CountryOccurrenceLookup, .keep_all=T)
+  
   }
   
   # Transform NA in "" to match SIS
@@ -417,7 +421,7 @@ sRL_CriteriaCalculator <- function(allfields){
   
   if(is.na(Crit_C2)==F){
     ## If no decline, then it's not met
-    if(is.na(allfields$PopulationContinuingDecline.isDeclining) | allfields$PopulationContinuingDecline.isDeclining == "No"){crit$Subcrit[crit$criterion=="C2"]<-0} else {
+    if(is.na(allfields$PopulationContinuingDecline.isDeclining) | allfields$PopulationContinuingDecline.isDeclining %in% c("Unknown", "No")){crit$Subcrit[crit$criterion=="C2"]<-0} else {
       
       ## If fluctuations, then it's automatically met
       if(is.na(allfields$PopulationExtremeFluctuation.isFluctuating)==F & allfields$PopulationExtremeFluctuation.isFluctuating == "Yes"){crit$Subcrit[crit$criterion=="C2"]<-1} else {
@@ -426,7 +430,8 @@ sRL_CriteriaCalculator <- function(allfields){
         # C2ai threshold (using the minimum value)
         C2ai_cat<-cut(min(extract_range(allfields$MaxSubpopulationSize.range)), breaks=c(0,50,250,1000,Inf), labels=c("CR", "EN", "VU", "LC"), include.lowest=T, right=T) %>% as.character(.)
         if(is.na(C2ai_cat)[1]){C2ai_cat<-"LC"} # If NA, it's not met
-        # C2aii threshold (using the maximum value)
+        # C2aii threshold (using the maximum value; if a single subpopulation we consider 100% in the same subpopulation)
+        if(allfields$SubpopulationSingle.value=="Yes"){allfields$MatureIndividualsSubpopulation.value<-100}
         C2aii_value<-max(extract_range(allfields$MatureIndividualsSubpopulation.value))
         C2aii_cat<-cut(C2aii_value, breaks=c(0,90,95,100,101), labels=c(0, "CR", "EN", 1), include.lowest=T, right=F) %>% as.character(.) %>% replace(., is.na(.), 0)
         if(C2aii_cat == 0){crit$Subcrit[crit$criterion=="C2"]<-0} # Will be overwritten if this does not apply
