@@ -1,2 +1,2 @@
-Reference_type,access_date,alternate_title,assessment_id,author,date,edition,externalBibCode,internal_taxon_id,internal_taxon_name,isbnissn,keywords,number,number_of_volumes,pages,place_published,publisher,secondary_author,secondary_title,section,short_title,submission_type,title,type,url,volume,year
-Assessment,,,NA,sRedList Working Group,,,,,,,,,,,,,,,,,,The sRedList platform (temporary reference),journal article,,,2023
+Reference_type,access_date,alternate_title,author,date,edition,externalBibCode,internal_taxon_id,internal_taxon_name,isbnissn,keywords,number,number_of_volumes,pages,place_published,publisher,secondary_author,secondary_title,section,short_title,submission_type,title,type,url,volume,year
+Assessment,,,sRedList Working Group,,,,,,,,,,,,,,,,,,The sRedList platform (temporary reference),journal article,,,2023

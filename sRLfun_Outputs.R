@@ -10,14 +10,14 @@ sRL_OutputCountries<-function(scientific_name, countries){
   countries$Name<-ifelse(is.na(countries$SIS_name1), countries$SIS_name0, countries$SIS_name1)
   
   # Prepare file
-  CO_SIS<-data.frame(CountryOccurrence.CountryOccurrenceSubfield.CountryOccurrenceName=countries$Name)
+  CO_SIS<-data.frame(CountryOccurrence.CountryOccurrenceSubfield.CountryOccurrenceName=countries$Name,
+                     CountryOccurrence.CountryOccurrenceSubfield.CountryOccurrenceLookup=countries$lookup)
     
-  CO_SIS$CountryOccurrence.CountryOccurrenceSubfield.CountryOccurrenceLookup=NA
   CO_SIS$CountryOccurrence.CountryOccurrenceSubfield.formerlyBred=NA
-  CO_SIS$CountryOccurrence.CountryOccurrenceSubfield.origin=1 # "Native"
-  CO_SIS$CountryOccurrence.CountryOccurrenceSubfield.presence=1 # "Extant"
-  CO_SIS$CountryOccurrence.CountryOccurrenceSubfield.seasonality=1 # "Resident"
-  CO_SIS$assessment_id=NA
+  CO_SIS$CountryOccurrence.CountryOccurrenceSubfield.origin="Native"
+  CO_SIS$CountryOccurrence.CountryOccurrenceSubfield.presence="Extant"
+  CO_SIS$CountryOccurrence.CountryOccurrenceSubfield.seasonality="Resident"
+  #CO_SIS$assessment_id=NA
   CO_SIS$internal_taxon_name=scientific_name
   CO_SIS$id_no<-sRL_CalcIdno(scientific_name)
   }
@@ -69,6 +69,7 @@ sRL_OutputRef<-function(scientific_name, Storage_SP){
   # Add species name
   ref_SIS$internal_taxon_name<-scientific_name
   ref_SIS$internal_taxon_id<-sRL_CalcIdno(scientific_name)
+  ref_SIS$Reference_type<-"Assessment"
   
   # Transform NA in "" to match SIS
   ref_SIS<-replace(ref_SIS, is.na(ref_SIS), "")

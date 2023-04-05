@@ -1638,7 +1638,7 @@ function(scientific_name,
          pastTrends_dir, pastTrends_qual, pastTrends_basis, pastTrends_reversible, pastTrends_understood, pastTrends_ceased, fragment, Fragment_justif,
          Extreme_EOO, Extreme_AOO, Extreme_Pop, Extreme_NLoc, Extreme_NSub, Extreme_EOO_justif, Extreme_AOO_justif, Extreme_Pop_justif, Extreme_NLoc_justif, Extreme_NSub_justif,
          Continuing_EOO, Continuing_AOO, Continuing_Hab, Continuing_Pop, Continuing_NLoc, Continuing_NSub, Continuing_EOO_justif, Continuing_AOO_justif, Continuing_Hab_justif, Continuing_Pop_justif, Continuing_NLoc_justif, Continuing_NSub_justif,
-         locationNumber,	locationNumber_justif, SubNumber,	SubNumber_justif,	Num_Largest, OneSubpop,	VeryRestricted,	VeryRestricted_justif,
+         locationNumber,	locationNumber_justif, SubNumber,	SubNumber_justif,	Num_Largest, Percent_Largest, OneSubpop,	VeryRestricted,	VeryRestricted_justif,
          populationTrend, currentTrends_basis, currentPop_years, futureTrends_quality, futureTrends_basis, futureTrends, futureTrends_dir, futureTrends_justif, ongoingTrends_NY, ongoingTrends_quality, ongoingTrends_basis, ongoingTrends_reversible, ongoingTrends_understood, ongoingTrends_ceased, ongoingTrends, ongoingTrends_dir, ongoingTrends_justif,
          C_igen_value, C_igen_qual, C_igen_justif, C_iigen_value, C_iigen_qual, C_iigen_justif, C_iiigen_value, C_iiigen_qual, C_iiigen_justif
          ) {
@@ -1654,7 +1654,7 @@ function(scientific_name,
 
   ### Prepare SIS Connect files
   habitats_SIS<-Storage_SP$habitats_SIS[,6:13]
-  habitats_SIS$assessment_id<-NA
+  #habitats_SIS$assessment_id<-NA
   habitats_SIS$internal_taxon_id<-sRL_CalcIdno(scientific_name)
    
   sRL_loginfo("Start Allfields", scientific_name)
@@ -1665,7 +1665,7 @@ function(scientific_name,
 
   # # Take data from saved prepared dataset
   allfields$internal_taxon_name<-scientific_name
-  allfields$assessment_id<-NA
+  #allfields$assessment_id<-NA
   allfields$internal_taxon_id<-sRL_CalcIdno(scientific_name)
   
   if("AltPref_saved" %in% names(Storage_SP)){
@@ -1697,7 +1697,7 @@ function(scientific_name,
   if(Estimates[6] %in% c("+", "-")){allfields$PopulationReductionPast.direction<-revalue(Estimates[6], c("-"="Reduction", "+"="Increase"))} # Replace by Increase or Reduction (if users wrote something else, we don't report it in allfields)
   if(is.na(Estimates[6])==T & is.na(Estimates[7])==F){allfields$PopulationReductionPast.direction<-"Increase"}
   allfields$PopulationReductionPast.range<-Estimates[7]
-  allfields$PopulationReductionPast.justification<-allfields$PopulationDeclineGenerations3.justification<-Estimates[8]
+  allfields$PopulationReductionPast.justification<-Estimates[8]
 
   
   # Population trends details
@@ -1720,7 +1720,8 @@ function(scientific_name,
   allfields$SubpopulationNumber.range<-SubNumber
   allfields$SubpopulationNumber.justification<-SubNumber_justif
   allfields$MaxSubpopulationSize.range<-Num_Largest
-  allfields$MatureIndividualsSubpopulation.value<-OneSubpop
+  allfields$MatureIndividualsSubpopulation.value<-Percent_Largest
+  allfields$SubpopulationSingle.value<-OneSubpop
 
   # Population trends
   allfields$TrendInWildOfftake.value<-populationTrend
