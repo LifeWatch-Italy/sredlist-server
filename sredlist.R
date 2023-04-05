@@ -975,10 +975,14 @@ Prom<-future({
   } else {
 
     # Prepare altitude raster
+    sRL_loginfo("START - Large altitude crop", scientific_name)
     alt_large<-raster(paste0(config$cciStack2_path, "/ElevationAgg30.tif"))
     alt_crop<-crop(alt_large, extent(rangeSP_clean))
     writeRaster(alt_crop, paste0(output_dir, "/alt_crop.tif"), overwrite=T)
-    
+    print("Extent range") ; print(extent(rangeSP_clean)) # TBR
+    print("Summary Alt crop"); print(summary(alt_crop)) # TBR
+    sRL_loginfo("END - Large altitude crop", scientific_name)
+
     # Calculate AOH
     AOH2<-sRL_largeAOH(alt_crop, habitats_pref, altitudes_pref_DF[, c("elevation_lower", "elevation_upper")], rangeSP_clean, config$YearAOH2, paste0(output_dir, "/Current/aoh.tif"))
 
@@ -1049,12 +1053,17 @@ Prom<-future({
   aoh_22<-terra::resample(AOH2[[1]], grid22_crop, method="max")>0
 
   if(Uncertain=="Uncertain_no"){
-    plot2 <- gplot(aoh_22[[1]]>0) +
+    plot2 <- cowplot::plot_grid(gplot(aoh_22[[1]]>0) +
       coord_fixed()+
-      geom_tile(aes(fill = factor(as.character(value), c("0", "1")))) +
+      geom_tile(aes(fill = factor(value, levels=c("0", "1")))) +
       scale_fill_manual(values=c("#FBCB3C", "#0D993F"), labels=c("Unsuitable", "Suitable"), name="", na.translate=F, drop=F) +
       labs(title="", subtitle=ifelse(AOH_type=="Large", "Likely slightly overestimated (using a 10x10km aggregate raster)", ""))+
-      sRLTheme_maps
+      sRLTheme_maps,
+      ncol=1)
+    
+    ggsave(filename = paste0("resources/AOH_stored/", sub(" ", "_", scientific_name), "/Plots/aoo_TEMPO1.png"), plot = plot2, width=6, height=ifelse(Uncertain=="Uncertain_no" | AOH_type=="Small", 6, 10)) #TBR
+    cowplot::save_plot(filename = paste0("resources/AOH_stored/", sub(" ", "_", scientific_name), "/Plots/aoo_TEMPO2.png"), plot = plot(plot2), base_width=9, base_height=ifelse(Uncertain=="Uncertain_no" | AOH_type=="Small", 9, 15)) #TBR
+    
   }
 
   if(Uncertain=="Uncertain_yes"){
@@ -1090,6 +1099,8 @@ Prom<-future({
   }
 
   ggsave(filename = paste0("resources/AOH_stored/", sub(" ", "_", scientific_name), "/Plots/aoo.png"), plot = plot2, width=9, height=ifelse(Uncertain=="Uncertain_no" | AOH_type=="Small", 9, 15))
+  cowplot::save_plot(filename = paste0("resources/AOH_stored/", sub(" ", "_", scientific_name), "/Plots/aoo_TEMPO3.png"), plot = plot(plot2), base_width=9, base_height=ifelse(Uncertain=="Uncertain_no" | AOH_type=="Small", 9, 15)) #TBR
+  
   plot2 <- base64enc::dataURI(file = paste0("resources/AOH_stored/", sub(" ", "_", scientific_name), "/Plots/aoo.png"), mime = "image/png", encoding = "base64") # nolint
 
   AOO_km2<- sRL_areaAOH(aoh_22[[1]], SCALE="2x2")
