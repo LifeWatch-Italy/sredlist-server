@@ -108,6 +108,10 @@ bug_alpha <- function() {
   api_error(message = "Alpha hull could not be calculated, try with a higher alpha parameter value or use another Starting point", status = 400)
 }
 
+too_few_occurrences <- function() {
+  api_error(message = "There are not enough occurrence records to create the distribution with mcp, alpha hull, or kernel. Please add some occurrence records or choose another starting point", status = 400)
+}
+
 coords_outofbound <- function() {
   api_error(message = "Coordinates should be in decimal with longitude (dec_long) between -180 and 180 and latitude (dec_lat) between -90 and 90. Make sure you used dots and not commas to write decimals in your csv file, this may cause issues.", status = 400)
 }

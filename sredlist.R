@@ -432,6 +432,9 @@ Prom<-future({
   if(nrow(dat_proj)==0){no_gbif_data()}
   
   
+  # Display some errors
+  if(nrow(dat_proj)<2 & Gbif_Start %in% c("mcp", "kernel", "alpha")){too_few_occurrences()}
+  
   # Create distribution
   distSP<-sRL_MapDistributionGBIF(dat_proj, scientific_name,
                                   First_step=Gbif_Start,
@@ -979,8 +982,6 @@ Prom<-future({
     alt_large<-raster(paste0(config$cciStack2_path, "/ElevationAgg30.tif"))
     alt_crop<-crop(alt_large, extent(rangeSP_clean))
     writeRaster(alt_crop, paste0(output_dir, "/alt_crop.tif"), overwrite=T)
-    print("Extent range") ; print(extent(rangeSP_clean)) # TBR
-    print("Summary Alt crop"); print(summary(alt_crop)) # TBR
     sRL_loginfo("END - Large altitude crop", scientific_name)
 
     # Calculate AOH
@@ -1060,10 +1061,6 @@ Prom<-future({
       labs(title="", subtitle=ifelse(AOH_type=="Large", "Likely slightly overestimated (using a 10x10km aggregate raster)", ""))+
       sRLTheme_maps,
       ncol=1)
-    
-    ggsave(filename = paste0("resources/AOH_stored/", sub(" ", "_", scientific_name), "/Plots/aoo_TEMPO1.png"), plot = plot2, width=6, height=ifelse(Uncertain=="Uncertain_no" | AOH_type=="Small", 6, 10)) #TBR
-    cowplot::save_plot(filename = paste0("resources/AOH_stored/", sub(" ", "_", scientific_name), "/Plots/aoo_TEMPO2.png"), plot = plot(plot2), base_width=9, base_height=ifelse(Uncertain=="Uncertain_no" | AOH_type=="Small", 9, 15)) #TBR
-    
   }
 
   if(Uncertain=="Uncertain_yes"){
@@ -1099,8 +1096,7 @@ Prom<-future({
   }
 
   ggsave(filename = paste0("resources/AOH_stored/", sub(" ", "_", scientific_name), "/Plots/aoo.png"), plot = plot2, width=9, height=ifelse(Uncertain=="Uncertain_no" | AOH_type=="Small", 9, 15))
-  cowplot::save_plot(filename = paste0("resources/AOH_stored/", sub(" ", "_", scientific_name), "/Plots/aoo_TEMPO3.png"), plot = plot(plot2), base_width=9, base_height=ifelse(Uncertain=="Uncertain_no" | AOH_type=="Small", 9, 15)) #TBR
-  
+
   plot2 <- base64enc::dataURI(file = paste0("resources/AOH_stored/", sub(" ", "_", scientific_name), "/Plots/aoo.png"), mime = "image/png", encoding = "base64") # nolint
 
   AOO_km2<- sRL_areaAOH(aoh_22[[1]], SCALE="2x2")
@@ -1815,7 +1811,12 @@ function(scientific_name,
    
   # Save distribution and occurrences if from GBIF
   if(is.null(Storage_SP$gbif_number_saved)==F){
-   st_write(sRL_OutputDistribution(scientific_name, Storage_SP), paste0(output_dir, "/sRedList_", gsub(" ", ".", scientific_name), "_Distribution.shp"), append=F)
+    distSIS<-sRL_OutputDistribution(scientific_name, Storage_SP)
+    if("hybas_concat" %in% names(Storage_SP$distSP_saved)){
+      hydroSIS<-sRL_OutputHydrobasins(distSIS, Storage_SP)
+      write.csv(hydroSIS, paste0(output_dir, "/sRedList_", gsub(" ", ".", scientific_name), "_Hydrobasins.csv"), row.names=F)
+    }
+   st_write(distSIS, paste0(output_dir, "/sRedList_", gsub(" ", ".", scientific_name), "_Distribution.shp"), append=F)
    write.csv(sRL_OutputOccurrences(scientific_name, Storage_SP), paste0(output_dir, "/sRedList_", gsub(" ", ".", scientific_name), "_Occurrences.csv"), row.names=F)
   }
   

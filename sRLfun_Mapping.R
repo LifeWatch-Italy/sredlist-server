@@ -434,7 +434,8 @@ sRL_MapDistributionGBIF<-function(dat, scientific_name, First_step, AltMIN, AltM
   distGBIF$origin<-1
   distGBIF$seasonal<-1
   if(exists("Alpha_scaled")){distGBIF$alphaTEMPO<-Alpha_scaled} # Save alpha scaled if I use alpha hull
-
+  if(First_step=="hydro" | First_step=="hydroMCP"){distGBIF$hybas_concat<-paste0(unique(interHyd$hybas_id), collapse=",")}
+  
   return(distGBIF)
   
 }

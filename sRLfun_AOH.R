@@ -127,22 +127,11 @@ sRL_largeAOH<-function(alt_crop, habitats_pref, altitudes_pref, rangeSP_clean, Y
     CCI_fun<-stackOpen(paste0(config$cciStack2_path, "/", YR, "/CCI_Stack_Agg30_Year", YR, ".stk"))
     names(CCI_fun)<-read.table(paste0(config$cciStack2_path, "/", YR, "/CCI_Stack_Agg30_Year", YR, ".stk"))[,1] %>% gsub(config$cciStack2_path, "", .) %>% substr(., 7, (nchar(.)-4)) # I have to rename them because update in raster package made a change in the names. I checked that the order of the rasters in Stack were the same as in the .stk file
   }
-  print("Summary CCI_fun") ; print(summary(CCI_fun)) # TBR
-  print("Names CCI_fun") ; print(names(CCI_fun)) # TBR
-  print("Config path") ; print(config$cciStack2_path) # TBR
-  print("Year") ; print(YR) # TBR
-  print("FILENAME") ; print(FILENAME)
-  print("habitats preferences") ; print(habitats_pref)
-  print("Altitude preferences") ; print(altitudes_pref)
   sRL_loginfo("START - Large AOH function", scientific_name)
   
   # Select rasters to keep (I have to replace . by x in codes otherwise it's used as a joker in grepl; also inside the semicolumn to ensure this is the exact habitat and that 5.3 is not included in 15.3 for instance)
   CCI_to_keep<-NA
   for(i in 1:length(habitats_pref)){CCI_to_keep<-c(CCI_to_keep, crosswalkLARGE$Stack_Name[grepl(paste0(";", gsub("[.]", "x", habitats_pref[i]), ";"), gsub("[.]", "x", crosswalkLARGE$Codes))])  %>% unique(.) %>% .[is.na(.)==F] %>% sort(.)}
-  print("Layers to keep") ; print(gsub("[.]", "x", crosswalkLARGE$Codes)) # TBR
-  print("Categories kept") ; print(crosswalkLARGE$Stack_Name[grepl(paste0(";", gsub("[.]", "x", habitats_pref[i]), ";"), gsub("[.]", "x", crosswalkLARGE$Codes))]) # TBR
-  print("crosswalk Large") ; print(crosswalkLARGE) # TBR
-  print("CCI_to_keep") ; print(CCI_to_keep) # TBR
   CCI_suitable<-CCI_fun[[which(names(CCI_fun) %in% paste0("Agg30_CCI", YR, "_", CCI_to_keep))]]
   print("Suitable CCI groups:") ; print(names(CCI_suitable))
   

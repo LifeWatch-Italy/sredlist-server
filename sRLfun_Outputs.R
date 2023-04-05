@@ -91,17 +91,17 @@ sRL_OutputDistribution<-function(scientific_name, Storage_SP){
   distSP<-Storage_SP$distSP_saved
   
   # Create template
-  distSP$OBJECTID<-1:nrow(distSP)
   distSP$sci_name<-scientific_name
-  distSIS<-distSP[, c("OBJECTID", "sci_name")]
-  distSIS[,c("presence", "origin", "seasonal", "compiler", "yrcomplied", "citation", "subspecies", "subpop", "data_sens", "sens_comm", "source", "dist_comm", "island", "tax_comm", "id_no", "generalisd", "Shape_Leng", "Shape_Area")]<-NA
+  distSIS<-distSP[, c("sci_name")]
+  distSIS[,c("presence", "origin", "seasonal", "compiler", "yrcomplied", "citation", "spatialref", "subspecies", "subpop", "data_sens", "sens_comm", "source", "dist_comm", "island", "tax_comm", "id_no", "Shape_Leng", "Shape_Area")]<-NA
   
   # Fill in some information
   distSIS$presence<-1
   distSIS$origin<-1
   distSIS$seasonal<-1
+  distSIS$spatialref<-"WGS84"
   distSIS$yrcomplied<-Sys.time() %>% format(., "%Y")
-  distSIS$citation<-"Citation to add" # To fill
+  distSIS$citation<-"sRedList Working Group 2023" # To fill
   distSIS$source<-"sRedList platform"
   distSIS$id_no<-sRL_CalcIdno(scientific_name)
   
@@ -115,20 +115,34 @@ sRL_OutputDistribution<-function(scientific_name, Storage_SP){
 }
 
 
+sRL_OutputHydrobasins<-function(distSIS, Storage_SP){
+  
+  # Extract hyrobasin list
+  Hydro_list<-Storage_SP$distSP_saved$hybas_concat %>% strsplit(., ",") %>% unlist(.)
+  
+  # distSIS to data frame
+  distSIS<-as.data.frame(distSIS)
+  distSIS$geometry<-NULL
+  
+  # Export hydrobasins with as many lines as hydrobasins
+  HydroSIS<-distSIS[1,]
+  HydroSIS[1:length(Hydro_list),]<-distSIS[1,]
+  HydroSIS$hybas_id<-Hydro_list
+  
+  return(HydroSIS)
+}
 
 ### Save occurrences shapefile from the GBIF procedure
 sRL_OutputOccurrences <- function(scientific_name, Storage_SP) {
   
   # Transform in lat/lon
   dat<-Storage_SP$dat_proj_saved %>% st_transform(., "+init=epsg:4326")
-  names(dat)<-replace(names(dat), names(dat)=="objectid", "OBJECTID")
-  
+
   # Create template shape
-  if(!"OBJECTID" %in% names(dat)){dat$OBJECTID<-1:nrow(dat)}
   dat$sci_name<-scientific_name
-  dat_SIS<-dat[, c("OBJECTID", "sci_name")]
+  dat_SIS<-dat[, c("sci_name")]
   dat_SIS[,c("presence", "origin", "seasonal", "compiler", "yrcomplied", "citation", "dec_lat", "dec_long", "spatialref", "subspecies", "subpop", "data_sens", "sens_comm", "event_year", "source", "basisofrec", "catalog_no", "dist_comm", "island", "tax_comm", "id_no")]<-NA
-  
+
   # Fill in some information
   dat_SIS$presence<-1
   dat_SIS$origin<-1
@@ -146,7 +160,7 @@ sRL_OutputOccurrences <- function(scientific_name, Storage_SP) {
   if("RL" %in% dat$Source){
     RL<-read.csv(paste0(config$POINTdistribution_path, scientific_name, ".csv"))
   
-    for(COL in names(dat_SIS)[!names(dat_SIS) %in% c("OBJECTID", "sci_name", "geometry", "yrcomplied", "citation", "dec_lat", "dec_long", "spatialref")]){
+    for(COL in names(dat_SIS)[!names(dat_SIS) %in% c("sci_name", "geometry", "yrcomplied", "citation", "dec_lat", "dec_long", "spatialref")]){
       if(COL %in% names(RL)){
       dat_SIS[,COL]<-RL[,COL][match(dat_SIS$OBJECTID, RL$objectid)]
     }}

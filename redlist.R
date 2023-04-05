@@ -111,7 +111,9 @@ Prom<-future({
   # Filter param
   scientific_name <- sRL_decode(scientific_name)
   hab_pref <- rl_habitats(scientific_name, key = config$red_list_token)#$result
-  hab_pref$result <- hab_pref$result %>% distinct(., code, .keep_all=T) # Remove double (when habitats are used in several seasons)
+  if(exists("hab_pref$result")){
+    hab_pref$result <- hab_pref$result %>% distinct(., code, .keep_all=T) # Remove double (when habitats are used in several seasons)
+  }
   
   return(hab_pref)
 
