@@ -1560,8 +1560,33 @@ return(Prom)
 #* @serializer unboxedJSON
 #* @tag sRedList
 function(scientific_name){
-  
+  scientific_name<-sRL_decode(scientific_name)
   Storage_SP<-sRL_StoreRead(scientific_name) ; print(names(Storage_SP))
+  
+  ### MANAGE TAXONOMY ###
+  #Redlist_id ?
+  
+  ### Extract existing taxonomy
+  if(scientific_name %in% speciesRL$scientific_name){
+    # If species already in the Red List, we use its information
+    Official<-speciesRL[speciesRL$scientific_name == scientific_name,][1,]} else {
+    # Otherwise we look if there is another species of the same genus (except for authority)
+      Genus<-scientific_name %>% strsplit(., " ") %>% unlist(.) %>% .[1]
+      if(Genus %in% speciesRL$genus){Official<-speciesRL[speciesRL$genus==Genus,][1,] ; Official$authority<-NA}
+    }
+  
+  ### Assign to that species
+  kingdom   <-  ifelse(exists("Official"), Official$kingdom[1], NA)
+  phylum    <-  ifelse(exists("Official"), Official$phylum[1], NA)
+  classname <-  ifelse(exists("Official"), Official$class[1], NA)
+  ordername <-  ifelse(exists("Official"), Official$order[1], NA)
+  family    <-  ifelse(exists("Official"), Official$family[1], NA)
+  taxonomicAuthority <- ifelse(exists("Official"), Official$authority[1], NA)
+
+  
+
+  
+  ### MANAGE ESTIMATES ###
   
   ### EOO
   EOO_val <- ifelse("eoo_km2" %in% names(Storage_SP), Storage_SP$eoo_km2, NA)
@@ -1626,14 +1651,22 @@ function(scientific_name){
   ### Save Storage_SP
   sRL_StoreSave(scientific_name, Storage_SP)
   
-  Estimates_df=data.frame(EOO_val=EOO_val, 
-                       EOO_justif=EOO_justif, 
-                       AOO_val=AOO_val, 
-                       AOO_justif=AOO_justif, 
-                       Pop_val=Pop_val, 
-                       Trends_dir=Trends_dir, 
-                       Trends_val=Trends_val, 
-                       Trends_justif=Trends_justif)
+  Estimates_df=data.frame(
+    kingdom=kingdom,
+    phylum=phylum,
+    classname=classname,
+    ordername=ordername,
+    family=family,
+    taxonomicAuthority=taxonomicAuthority,
+    EOO_val=EOO_val, 
+    EOO_justif=EOO_justif, 
+    AOO_val=AOO_val, 
+    AOO_justif=AOO_justif, 
+    Pop_val=Pop_val, 
+    Trends_dir=Trends_dir, 
+    Trends_val=Trends_val, 
+    Trends_justif=Trends_justif
+    )
   
   return(list(Estimates=Estimates_df))
 }
@@ -1694,21 +1727,21 @@ function(scientific_name,
   allfields$GenerationLength.range<-Storage_SP$GL_saved
   
   # EOO
-  allfields$EOO.range<-Estimates[1]
-  allfields$EOO.justification<-Estimates[2]
+  allfields$EOO.range<-Estimates[7]
+  allfields$EOO.justification<-Estimates[8]
   
   # AOO
-  allfields$AOO.range<-Estimates[3]
-  allfields$AOO.justification<-Estimates[4]
+  allfields$AOO.range<-Estimates[9]
+  allfields$AOO.justification<-Estimates[10]
   
   # Population size
-  allfields$PopulationSize.range<-Estimates[5]
+  allfields$PopulationSize.range<-Estimates[11]
   
   # Decline for A2
-  if(Estimates[6] %in% c("+", "-")){allfields$PopulationReductionPast.direction<-revalue(Estimates[6], c("-"="Reduction", "+"="Increase"))} # Replace by Increase or Reduction (if users wrote something else, we don't report it in allfields)
-  if(is.na(Estimates[6])==T & is.na(Estimates[7])==F){allfields$PopulationReductionPast.direction<-"Increase"}
-  allfields$PopulationReductionPast.range<-Estimates[7]
-  allfields$PopulationReductionPast.justification<-Estimates[8]
+  if(Estimates[12] %in% c("+", "-")){allfields$PopulationReductionPast.direction<-revalue(Estimates[12], c("-"="Reduction", "+"="Increase"))} # Replace by Increase or Reduction (if users wrote something else, we don't report it in allfields)
+  if(is.na(Estimates[12])==T & is.na(Estimates[13])==F){allfields$PopulationReductionPast.direction<-"Increase"}
+  allfields$PopulationReductionPast.range<-Estimates[13]
+  allfields$PopulationReductionPast.justification<-Estimates[14]
 
   
   # Population trends details
@@ -1802,13 +1835,15 @@ function(scientific_name,
   sRL_loginfo("Start Countries and refs", scientific_name)
   countries_SIS<-Storage_SP$countries_SIS
   ref_SIS<-sRL_OutputRef(scientific_name, Storage_SP) 
-   
+  taxo_SIS<-sRL_OutputTaxo(scientific_name, Estimates)
+  
   # Save csv files in a folder
   sRL_loginfo("Start writting", scientific_name)
   output_dir<-paste0(sub(" ", "_", scientific_name), "_sRedList")
   dir.create(output_dir)
   write.csv(replace(allfields_to_save, is.na(allfields_to_save), ""), paste0(output_dir, "/allfields.csv"), row.names = F)
   write.csv(countries_SIS, paste0(output_dir, "/countries.csv"), row.names = F)
+  write.csv(taxo_SIS, paste0(output_dir, "/taxonomy.csv"), row.names = F)
   write.csv(ref_SIS, paste0(output_dir, "/references.csv"), row.names = F)
   write.csv(replace(habitats_SIS, is.na(habitats_SIS), ""), paste0(output_dir, "/habitats.csv"), row.names = F)
   write.csv(Storage_SP$Output, paste0(output_dir, "/00.Output_log.csv"), row.names = F)

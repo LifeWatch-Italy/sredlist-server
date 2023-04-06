@@ -75,10 +75,77 @@ sRL_OutputRef<-function(scientific_name, Storage_SP){
   ref_SIS$internal_taxon_id<-sRL_CalcIdno(scientific_name)
   ref_SIS$Reference_type<-"Assessment"
   
+  ### TRY SHAPING REFERENCES
+  tryCatch({
+    # Put references that are ready aside
+    ref_ready<-subset(ref_SIS, is.na(ref_SIS$author)==F & ref_SIS$author !="")
+    ref<-ref_SIS[! ref_SIS$title %in% ref_ready$title,]
+    
+    # Keep entire reference
+    ref$Original_reference<-ref$title
+    
+    # Look for year in brackets
+    ref$titleYEAR<-gsub("[0-9]", "$", ref$title)
+    ref$GREPL<-grepl("($$$$)", ref$titleYEAR, fixed=T)
+    
+    for(i in which(ref$GREPL==TRUE)){
+      
+      # Split the title in 3
+      char<-unlist(gregexpr('($$$$)', ref$titleYEAR[i], fixed=T))
+      AUTHOR<-substr(ref$title[i], 1, (char-1))
+      YEAR<-substr(ref$title[i], (char+1), (char+4))
+      TITLE<-substr(ref$title[i], (char+6), 10000)
+      
+      if(is.na(as.numeric(YEAR))==F & as.numeric(YEAR)>1500){
+        # Save Author if valid
+        ref$author[i]<-AUTHOR
+        # Save Year if valid
+        ref$year[i]<-as.numeric(YEAR)
+        # Save title if valid and remove dots or spaces at the beginning
+        while(substr(TITLE,1,1) %in% c(".", " ", ",", "/", ")")){
+          TITLE<-substr(TITLE, 2, 10000)
+        }
+        ref$title[i]<-TITLE
+        
+      }
+    }
+    
+    ### Remove working columns
+    ref$titleYEAR<-ref$GREPL<-NULL
+    
+    ### Merge with original references
+    ref_SIS<-rbind.fill(ref_ready, ref)
+  })
+  
   # Transform NA in "" to match SIS
   ref_SIS<-replace(ref_SIS, is.na(ref_SIS), "")
   
   return(ref_SIS)
+}
+
+
+
+### Prepare references output csv
+sRL_OutputTaxo<-function(scientific_name, Estimates){
+
+  # Load empty file
+  taxo<-read.csv("Species/SIS_taxonomy_empty.csv")
+  
+  # Add scientific name
+  taxo$genus<-scientific_name %>% strsplit(., " ") %>% unlist(.) %>% .[1]
+  taxo$species<-scientific_name %>% strsplit(., " ") %>% unlist(.) %>% .[2]
+  
+  # Add taxonomy
+  taxo$kingdom<-Estimates[1]
+  taxo$phylum<-Estimates[2]
+  taxo$classname<-Estimates[3]
+  taxo$ordername<-Estimates[4]
+  taxo$family<-Estimates[5]
+  taxo$taxonomicAuthority<-Estimates[6]
+  
+  # Return
+  return(taxo)
+  
 }
 
 
