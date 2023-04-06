@@ -143,6 +143,10 @@ sRL_OutputTaxo<-function(scientific_name, Estimates){
   taxo$family<-toupper(Estimates[5])
   taxo$taxonomicAuthority<-Estimates[6]
   
+  # Add internal_taxon_name
+  taxo$internal_taxon_id<-sRL_CalcIdno(scientific_name)
+  taxo$Redlist_id<-sRL_CalcIdno(scientific_name)
+  
   # Return
   return(taxo)
   
