@@ -136,11 +136,11 @@ sRL_OutputTaxo<-function(scientific_name, Estimates){
   taxo$species<-scientific_name %>% strsplit(., " ") %>% unlist(.) %>% .[2]
   
   # Add taxonomy
-  taxo$kingdom<-Estimates[1]
-  taxo$phylum<-Estimates[2]
-  taxo$classname<-Estimates[3]
-  taxo$ordername<-Estimates[4]
-  taxo$family<-Estimates[5]
+  taxo$kingdom<-toupper(Estimates[1])
+  taxo$phylum<-toupper(Estimates[2])
+  taxo$classname<-toupper(Estimates[3])
+  taxo$ordername<-toupper(Estimates[4])
+  taxo$family<-toupper(Estimates[5])
   taxo$taxonomicAuthority<-Estimates[6]
   
   # Return
