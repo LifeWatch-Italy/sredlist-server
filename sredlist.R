@@ -1052,11 +1052,11 @@ Prom<-future({
   grid22<-sRL_ChargeGrid22Raster()
   grid22_crop<-crop(grid22, AOH2[[1]])
   aoh_22<-terra::resample(AOH2[[1]], grid22_crop, method="max")>0
-writeRaster(grid22_crop, paste0(output_dir, "/TEST_grid22crop.tif")) # TBR 
-writeRaster(aoh_22, paste0(output_dir, "/TEST_aoh_22.tif")) # TBR 
-writeRaster(AOH2[[1]], paste0(output_dir, "/TEST_aoh21.tif")) # TBR 
-
+writeRaster(grid22_crop, paste0(output_dir, "/TEST_grid22crop.tif")) # TBR
+writeRaster(aoh_22, paste0(output_dir, "/TEST_aoh_22.tif")) # TBR
+writeRaster(AOH2[[1]], paste0(output_dir, "/TEST_aoh21.tif")) # TBR
   
+
   if(Uncertain=="Uncertain_no"){
     plot2 <- cowplot::plot_grid(gplot(aoh_22[[1]]>0) +
       coord_fixed()+
@@ -1074,7 +1074,7 @@ writeRaster(AOH2[[1]], paste0(output_dir, "/TEST_aoh21.tif")) # TBR
     if(AOH_type=="Small"){
       plot2<-gplot((aoh_22[[1]]>0)+(aoh_22_opt[[1]]>0))+
         coord_fixed()+
-        geom_tile(aes(fill = factor(value, levels=c("0", "1", "2")))) +
+        geom_tile(aes(fill = factor(as.character(as.numeric(value)), levels=c("0", "1", "2")))) +
         scale_fill_manual(values=c("#FBCB3C", "#90D79E", "#0D993F", NA), labels=c("Unsuitable", "Unknown", "Suitable", ""), name="", na.translate=F, drop=F) +
         ggtitle("") +
         sRLTheme_maps
@@ -1083,16 +1083,16 @@ writeRaster(AOH2[[1]], paste0(output_dir, "/TEST_aoh21.tif")) # TBR
     plot2 <- cowplot::plot_grid(
       gplot(aoh_22[[1]]>0) +
         coord_fixed()+
-        geom_tile(aes(fill = factor(as.character(value), c("0", "1")))) +
+        geom_tile(aes(fill = factor(as.character(as.numeric(value)), c("0", "1")))) +
         scale_fill_manual(values=c("#FBCB3C", "#0D993F"), labels=c("Unsuitable", "Suitable"), name="", na.translate=F, drop=F) +
-        labs(title="Likely slightly overestimated (using a 10x10km aggregate raster) \n\n Minimum", subtitle= "(marginal or unknown habitats / extreme elevations excluded)")+
+        labs(title="Likely slightly overestimated (using a 10x10km aggregate raster) \n\n Minimum AOH at 2x2km scale", subtitle= "(marginal or unknown habitats / extreme elevations excluded)")+
         sRLTheme_maps,
 
       gplot(aoh_22_opt[[1]]>0) +
         coord_fixed()+
-        geom_tile(aes(fill = factor(as.character(value), c("0", "1")))) +
+        geom_tile(aes(fill = factor(as.character(as.numeric(value)), c("0", "1")))) +
         scale_fill_manual(values=c("#FBCB3C", "#0D993F"), labels=c("Unsuitable", "Suitable"), name="", na.translate=F, drop=F) +
-        labs(title="Maximum AOH", subtitle= "(marginal or unknown habitats / extreme elevations included)")+
+        labs(title="Maximum AOH at 2x2km scale", subtitle= "(marginal or unknown habitats / extreme elevations included)")+
         sRLTheme_maps,
 
       ncol=1)
