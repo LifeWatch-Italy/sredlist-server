@@ -112,6 +112,10 @@ Prom<-future({
   #Filter param
   scientific_name <- sRL_decode(scientific_name)
   Storage_SP=sRL_StoreRead(scientific_name) ; print(names(Storage_SP))
+  
+  # If outlog not present (I don't think this should happen but just in case)
+  if(! "Output" %in% names(Storage_SP)){Storage_SP$Output<-sRL_InitLog(scientific_name, DisSource = "Unknown")}
+  
   print(path)
   path <- ifelse(path == "", paste0(R.utils::capitalize(trim(gsub(" ", "_", scientific_name))), '_RL'), path ) # nolint
   if (length(presences) != 0) presences <- as.character(presences);
@@ -150,7 +154,8 @@ Prom<-future({
   if("CountrySP_saved" %not in% names(Storage_SP)){Storage_SP$CountrySP_saved<-sRL_PrepareCountries(extent(distSP_full))} 
   CountrySP<-st_crop(Storage_SP$CountrySP_saved, extent(distSP))
   Storage_SP<-sRL_OutLog(Storage_SP, c("Distribution_Presence", "Distribution_Seasonal", "Distribution_Origin"), c(paste0(presences, collapse=","), paste0(seasons, collapse=","), paste0(origins, collapse=",")))
-  Storage_SP<-sRL_OutLog(Storage_SP, "Distribution_Source", ifelse(substr(path, nchar(path)-2, nchar(path))=="_RL", "Red List", "Uploaded")) # If path ends by _RL it comes from the RL, uploaded otherwise
+  DisSource<-ifelse(substr(path, nchar(path)-2, nchar(path))=="_RL", "Red List", ifelse(is.na(as.numeric(substr(path, nchar(path)-2, nchar(path))))==F, "StoredOnPlatform", "Uploaded"))
+  Storage_SP<-sRL_OutLog(Storage_SP, "Distribution_Source", DisSource) # If path ends by _RL it comes from the RL, uploaded otherwise
   sRL_StoreSave(scientific_name, Storage_SP)
   sRL_loginfo("Plot distribution", scientific_name)
   
@@ -794,7 +799,7 @@ function(scientific_name) {
   
   density = density$Density[density$Species == scientific_name] %>% round(., 2)
   if(length(density)>1){density<-mean(density, na.rm=T)}
-  
+
   return(list(
     density=density
   ));
@@ -1052,10 +1057,7 @@ Prom<-future({
   grid22<-sRL_ChargeGrid22Raster()
   grid22_crop<-crop(grid22, AOH2[[1]])
   aoh_22<-terra::resample(AOH2[[1]], grid22_crop, method="max")>0
-writeRaster(grid22_crop, paste0(output_dir, "/TEST_grid22crop.tif")) # TBR
-writeRaster(aoh_22, paste0(output_dir, "/TEST_aoh_22.tif")) # TBR
-writeRaster(AOH2[[1]], paste0(output_dir, "/TEST_aoh21.tif")) # TBR
-  
+
 
   if(Uncertain=="Uncertain_no"){
     plot2 <- cowplot::plot_grid(gplot(aoh_22[[1]]>0) +
@@ -1537,7 +1539,12 @@ Prom<-future({
   if(RSproduct=="Human_density"){List_trendsRS<-sRL_CalcHumandensity(scientific_name, distSP, GL)}
   if(RSproduct=="Forest_cover"){List_trendsRS<-sRL_CalcForestchange(scientific_name, distSP)}
   if(RSproduct=="NDVI"){List_trendsRS<-sRL_CalcNDVIchange(scientific_name, distSP, GL)}
-
+  
+  # Save usage
+  RS_stored<-Storage_SP$Output$Value[Storage_SP$Output$Parameter=="Usage_RS"]
+  Storage_SP<-sRL_OutLog(Storage_SP, "Usage_RS", paste(RS_stored, RSproduct, sep="."))
+  sRL_StoreSave(scientific_name, Storage_SP)
+  
   # Return
   return(List_trendsRS)
 
@@ -1564,8 +1571,6 @@ function(scientific_name){
   Storage_SP<-sRL_StoreRead(scientific_name) ; print(names(Storage_SP))
   
   ### MANAGE TAXONOMY ###
-  #Redlist_id ?
-  
   ### Extract existing taxonomy
   if(scientific_name %in% speciesRL$scientific_name){
     # If species already in the Red List, we use its information
@@ -1915,8 +1920,40 @@ function(scientific_name,
 function(scientific_name) {
   scientific_name <- sRL_decode(scientific_name)
   
+  sRL_loginfo("Start Zipping", scientific_name)
+  
   # Prepare the ZIP to return
   zip_to_extract<-readBin(paste0(gsub(" ", "_", scientific_name), "_sRedList.zip"), "raw", n = file.info(paste0(gsub(" ", "_", scientific_name), "_sRedList.zip"))$size)
+  
+  # Prepare Outputs (remove definitions, empty fields, those at default)
+  output_species<-sRL_StoreRead(scientific_name)$Output
+  output_species$Definition<-NULL
+  output_species$Value<-replace(output_species$Value, is.na(output_species$Value), "") # I replace NA to make the next line work and then remove all empty fields
+  output_species$Value[output_species$Parameter=="Original_GL"] <- ifelse(scientific_name %in% GL_file$internal_taxon_name, GL_file$GL_estimate[GL_file$internal_taxon_name==scientific_name][1], NA)
+  output_species$Value[output_species$Parameter=="Original_density"] <- density$Density[density$Species == scientific_name] %>% round(., 2) %>% mean(., na.rm=T)
+  if(output_species$Value[output_species$Parameter=="Gbif_Extent"]=="-180,180,-90,90"){output_species<-output_species[-which(output_species$Parameter=="Gbif_Extent"),]}
+  if(output_species$Value[output_species$Parameter=="Gbif_yearBin"]=="FALSE"){output_species<-output_species[-which(output_species$Parameter=="Gbif_yearBin"),]}
+  if(output_species$Value[output_species$Parameter=="Gbif_uncertainBin"]=="FALSE"){output_species<-output_species[-which(output_species$Parameter=="Gbif_uncertainBin"),]}
+  if(output_species$Value[output_species$Parameter=="Mapping_Buffer"]=="0"){output_species<-output_species[-which(output_species$Parameter=="Mapping_Buffer"),]}
+  if(output_species$Value[output_species$Parameter=="Mapping_Altitude"]=="0,9000"){output_species<-output_species[-which(output_species$Parameter=="Mapping_Altitude"),]}
+  if(output_species$Value[output_species$Parameter=="Mapping_Merge"]=="FALSE"){output_species<-output_species[-which(output_species$Parameter=="Mapping_Merge"),]}
+  if(output_species$Value[output_species$Parameter=="Mapping_Smooth"]=="0"){output_species<-output_species[-which(output_species$Parameter=="Mapping_Smooth"),]}
+  if(output_species$Value[output_species$Parameter=="Distribution_Presence"]=="1,2"){output_species<-output_species[-which(output_species$Parameter=="Distribution_Presence"),]}
+  if(output_species$Value[output_species$Parameter=="Distribution_Origin"]=="1,2"){output_species<-output_species[-which(output_species$Parameter=="Distribution_Origin"),]}
+  if(output_species$Value[output_species$Parameter=="Distribution_Seasonal"]=="1,2"){output_species<-output_species[-which(output_species$Parameter=="Distribution_Seasonal"),]}
+  output_species$Value[output_species$Parameter=="Col_allfields"]<-paste(names(read.csv(paste0(sub(" ", "_", scientific_name), "_sRedList/allfields.csv"))), collapse=",")
+  output_species<-subset(output_species, is.na(output_species$Value)==F & output_species$Value != "" & substr(output_species$Parameter, 1, 9) != "Estimated")
+  output_species$Date<-Sys.time() %>% as.character(.)
+  
+  # Save Outputs
+  tryCatch({
+    FileStored<-paste0("Species/Stored_outputs/Stored_", substr(Sys.Date(), 1, 7), ".csv")
+    if(file.exists(FileStored)){
+      Saved_output<-read.csv(FileStored)
+    } else {Saved_output<-read.csv("Species/Output_save_empty.csv")}
+    Saved_output<-rbind.fill(Saved_output, output_species)
+    write.csv(Saved_output, FileStored, row.names=F)
+  })
   
   # Remove the local files
   unlink(paste0(gsub(" ", "_", scientific_name), "_sRedList"), recursive=T)

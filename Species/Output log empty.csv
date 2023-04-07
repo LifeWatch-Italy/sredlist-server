@@ -1,5 +1,5 @@
 Species,Date,Parameter,Definition,Value
-NA,NA,Distribution_Source,"Source of the distribution map. Could be either ""Red List"" (if the last range map published in the Red List has been used), ""Uploaded"" (if you uploaded a range map on the platform), or ""Created"" (if you created a range map from occurrence data)",NA
+NA,NA,Distribution_Source,"Source of the distribution map. Could be either ""Red List"" (if the last range map published in the Red List has been used), ""Uploaded"" (if you uploaded a range map on the platform), “StoredOnPlatform” (if you used a distribution that was previously created or uploaded on the platform), or ""Created"" (if you created a range map from occurrence data)",NA
 NA,NA,Gbif_Source,"Source of occurrence data used to create a range map. Could include ""GBIF"" (automatic download from GBIF website), ""OBIS"" (automatic download from OBIS website), ""Red List"" (use of Red List occurrence points), ""Uploaded"" (upload of your own records)",NA
 NA,NA,Gbif_Year,Minimum year of observations. All observations made before this date have been removed from the occurrences,NA
 NA,NA,Gbif_Uncertainty,Maximum coordinate uncertainty. All observations with higher localisation uncertainty than this value (in km) will be removed. Only applies to GBIF / OBIS data,NA
@@ -30,3 +30,8 @@ NA,NA,Estimated_EOO_raw,This is the original EOO value calculated by the platfor
 NA,NA,Estimated_AOO_raw,This is the original AOO value calculated by the platform (it might differ from the value in allfields.csv if you manually edited this value),NA
 NA,NA,Estimated_PopSize_raw,This is the original Population Size value calculated by the platform (it might differ from the value in allfields.csv if you manually edited this value),NA
 NA,NA,Estimated_PopTrends_raw,This is the original Population Trends value calculated by the platform (it might differ from the value in allfields.csv if you manually edited this value),NA
+NA,NA,Original_density,Only used to track usage,NA
+NA,NA,Original_GL,Only used to track usage,NA
+NA,NA,Original_altpref,Only used to track usage,NA
+NA,NA,Col_allfields,Only used to track usage,NA
+NA,NA,Usage_RS,Only used to track usage,NA

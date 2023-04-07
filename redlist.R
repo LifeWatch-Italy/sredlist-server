@@ -107,13 +107,15 @@ function(scientific_name, path = "") {
 function(scientific_name) {
 
 Prom<-future({
-  
+
+    scientific_name <- sRL_decode(scientific_name)
+  sRL_loginfo("START - Habitat extract", scientific_name)
   # Filter param
-  scientific_name <- sRL_decode(scientific_name)
   hab_pref <- rl_habitats(scientific_name, key = config$red_list_token)#$result
   if(exists("hab_pref$result")){
     hab_pref$result <- hab_pref$result %>% distinct(., code, .keep_all=T) # Remove double (when habitats are used in several seasons)
   }
+  sRL_loginfo("END - Habitat extract", scientific_name)
   
   return(hab_pref)
 
@@ -140,7 +142,9 @@ Prom<-future({
 
   #Extract alt_pref
   if(scientific_name %in% speciesRL$scientific_name){
-  alt_pref <- rl_search(scientific_name, key = config$red_list_token)} else {
+    alt_pref <- rl_search(scientific_name, key = config$red_list_token)
+    tryCatch({Storage_SP<-sRL_OutLog(Storage_SP, "Original_altpref", paste(alt_pref$result$elevation_lower[1], alt_pref$result$elevation_upper[1], "fromRL", sep=","))})
+  } else {
     alt_pref<-list(name=scientific_name, result=sRL_PrepareAltitudeFile(scientific_name, altitudes_pref=c(NA,NA)))
   }
 
@@ -173,6 +177,7 @@ Prom<-future({
         alt_pref$result$elevation_upper<-ceiling(max(EXTR_max, na.rm=T))
         }
     }
+    tryCatch({Storage_SP<-sRL_OutLog(Storage_SP, "Original_altpref", paste(alt_pref$result$elevation_lower[1], alt_pref$result$elevation_upper[1], "Calculated", sep=","))})
   }
 
   # If something remains NA -> 0, 9000
@@ -180,6 +185,7 @@ Prom<-future({
   if(is.na(alt_pref$result$elevation_upper)==T){alt_pref$result$elevation_upper<-9000}
   
   sRL_loginfo("END - Altitude extract", scientific_name)
+  sRL_StoreSave(scientific_name, Storage_SP)
   print(alt_pref)
   return(alt_pref)
   
