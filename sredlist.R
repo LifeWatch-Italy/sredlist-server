@@ -111,7 +111,7 @@ Prom<-future({
 
   #Filter param
   scientific_name <- sRL_decode(scientific_name)
-  Storage_SP=sRL_StoreRead(scientific_name) ; print(names(Storage_SP))
+  Storage_SP=sRL_StoreRead(scientific_name, MANDAT=0) ; print(names(Storage_SP))
   
   # If outlog not present (I don't think this should happen but just in case)
   if(! "Output" %in% names(Storage_SP)){Storage_SP$Output<-sRL_InitLog(scientific_name, DisSource = "Unknown")}
@@ -174,7 +174,7 @@ Prom<-future({
                   ggtitle("The distribution is empty"))
   }
 
-}, seed=T)
+}, seed=T) %>% then(onRejected=function(err) {return(ggplot()+ggtitle("ERROR: we are not able to create this plot, please report that error")+labs(subtitle=err))})
 
 return(Prom %...>% plot())
 }
@@ -333,7 +333,7 @@ Prom<-future({
   Gbif_uncertainBin<-Gbif_uncertainBin=="true" ; print(Gbif_uncertainBin)
   
   ### Charge downloaded data
-  Storage_SP<-sRL_StoreRead(scientific_name) ; print(names(Storage_SP))
+  Storage_SP<-sRL_StoreRead(scientific_name, MANDAT=1) ; print(names(Storage_SP))
   flags_raw<-Storage_SP$flags_raw_saved
   
   ### Subset the observations user wants to keep (can be run several times if users play with parameters)
@@ -432,7 +432,7 @@ Prom<-future({
   sRL_loginfo("START - Maps the distribution", scientific_name)
   
   # Get back GBIF observations
-  Storage_SP=sRL_StoreRead(scientific_name)
+  Storage_SP=sRL_StoreRead(scientific_name, MANDAT=1)
   dat_proj=Storage_SP$dat_proj_saved
   if(nrow(dat_proj)==0){no_gbif_data()}
   
@@ -529,7 +529,7 @@ Prom<-future({
     ### Transform parameters GBIF filtering
     sRL_loginfo("Start GBIF 4", scientific_name)
     scientific_name <- sRL_decode(scientific_name)
-    Storage_SP=sRL_StoreRead(scientific_name)
+    Storage_SP=sRL_StoreRead(scientific_name, MANDAT=1)
     Crop_par<-Storage_SP$Output$Value[Storage_SP$Output$Parameter=="Mapping_Crop"]
     
     ### Smooth if parameter >0
@@ -638,7 +638,7 @@ Prom<-future({
 
   # Filter parameters
   scientific_name<-sRL_decode(scientific_name)
-  Storage_SP<-sRL_StoreRead(scientific_name) ; print(names(Storage_SP))
+  Storage_SP<-sRL_StoreRead(scientific_name, MANDAT=1) ; print(names(Storage_SP))
   rownames(coo_raw)<-1:nrow(coo_raw)
   distSP<-Storage_SP$distSP_savedORIGINAL
   domain_pref<-revalue(as.character(domain_pref), c("1"="Terrestrial", "2"="Marine", "3"="Freshwater"))
@@ -740,7 +740,7 @@ Prom<-future({
     
   #Filter param
   scientific_name <- sRL_decode(scientific_name)
-  Storage_SP=sRL_StoreRead(scientific_name) ; print(names(Storage_SP))
+  Storage_SP=sRL_StoreRead(scientific_name, MANDAT=1) ; print(names(Storage_SP))
 
   # Load distribution
   distSP<-Storage_SP$distSP_saved
@@ -856,7 +856,7 @@ Prom<-future({
   
   #Filter param
   scientific_name <- sRL_decode(scientific_name)
-  Storage_SP=sRL_StoreRead(scientific_name) ; print(names(Storage_SP))
+  Storage_SP=sRL_StoreRead(scientific_name, MANDAT=1) ; print(names(Storage_SP))
   distSP=Storage_SP$distSP_saved
 
   # Habitat table (for aoh analysis and for SIS Connect)
@@ -1171,8 +1171,8 @@ Prom<-future({
   
   #Filter param
   scientific_name <- sRL_decode(scientific_name)
-  Storage_SP=sRL_StoreRead(scientific_name)
-  GL_species<-GL_species %>% gsub(" ", "", .) %>% sub(",", ".", .) %>% as.numeric(.) ; if(is.na(GL_species)){incorrect_GL()}
+  Storage_SP=sRL_StoreRead(scientific_name, MANDAT=1)
+  GL_species<-GL_species %>% gsub(" ", "", .) %>% sub(",", ".", .) %>% as.numeric(.) ; print(GL_species) ; if(is.na(GL_species)){incorrect_GL()}
 
   distSP=Storage_SP$distSP_saved
   alt_crop=rast(paste0("resources/AOH_stored/", gsub(" ", "_", scientific_name), "/alt_crop.tif")) ; crs(alt_crop)<-CRSMOLL
@@ -1400,17 +1400,17 @@ function(scientific_name, dispersion="-1", density_pref= '-1') {
   dispersion <- dispersion %>% gsub(" ", "", .) %>% gsub(",", ".", .) %>% as.character(.) %>% strsplit(., "-") %>% unlist() %>% as.numeric(.)*1000 ; print(dispersion)
   if(is.na(sum(dispersion))){wrong_dispersion()}
   
-  # Check density
-  if(density_pref =="-1" | density_pref=="" | is.null(density_pref)){no_density_fragm()}
-  density_pref <- density_pref %>% gsub(" ", "", .) %>% gsub(",", ".", .) %>% as.character(.)  %>% strsplit(., "-") %>% unlist(.) %>% as.numeric(.) ; print(density_pref) 
-  if(NA %in% density_pref){wrong_density()}
+  # # Check density
+  # if(density_pref =="-1" | density_pref=="" | is.null(density_pref)){no_density_fragm()}
+  # density_pref <- density_pref %>% gsub(" ", "", .) %>% gsub(",", ".", .) %>% as.character(.)  %>% strsplit(., "-") %>% unlist(.) %>% as.numeric(.) ; print(density_pref) 
+  # if(NA %in% density_pref){wrong_density()}
   
 Prom<-future({
     sf::sf_use_s2(FALSE)
   
     ### Filter param
     scientific_name<-sRL_decode(scientific_name)
-    Storage_SP<-sRL_StoreRead(scientific_name)
+    Storage_SP<-sRL_StoreRead(scientific_name, MANDAT=1)
     aoh<-rast(paste0("resources/AOH_stored/", gsub(" ", "_", scientific_name), "/Current/", list.files(paste0("resources/AOH_stored/", gsub(" ", "_", scientific_name), "/Current"))[1]))[[1]]  ; crs(aoh)<-CRSMOLL
     aoh_type<-Storage_SP$AOH_type
     
@@ -1505,7 +1505,7 @@ Prom<-future({
     Plot<-cowplot::plot_grid(G1, G2, ncol=2)
     return(Plot)
     
-  }, seed=T) 
+  }, seed=T) %>% then(onRejected=function(err) {return(ggplot()+ggtitle("ERROR: we are not able to create this plot, please report that error")+labs(subtitle=err))})
   
   ### Plot the distribution
   return(Prom %...>% plot())
@@ -1530,7 +1530,7 @@ Prom<-future({
   
   # Charge parameters
   scientific_name<-sRL_decode(scientific_name)
-  Storage_SP<-sRL_StoreRead(scientific_name)
+  Storage_SP<-sRL_StoreRead(scientific_name, MANDAT=1)
   distSP<-Storage_SP$RangeClean_saved
   GL<-Storage_SP$GL_saved
   print(RSproduct)
@@ -1568,7 +1568,7 @@ return(Prom)
 #* @tag sRedList
 function(scientific_name){
   scientific_name<-sRL_decode(scientific_name)
-  Storage_SP<-sRL_StoreRead(scientific_name) ; print(names(Storage_SP))
+  Storage_SP<-sRL_StoreRead(scientific_name, MANDAT=1) ; print(names(Storage_SP))
   
   ### MANAGE TAXONOMY ###
   ### Extract existing taxonomy
@@ -1698,7 +1698,7 @@ function(scientific_name,
   #Filter param
   sRL_loginfo("Start Criteria calculation", scientific_name)
   scientific_name <- sRL_decode(scientific_name)
-  Storage_SP<-sRL_StoreRead(scientific_name)
+  Storage_SP<-sRL_StoreRead(scientific_name, MANDAT=1)
   print(names(Storage_SP))
 
   ### Prepare SIS Connect files
@@ -1926,7 +1926,7 @@ function(scientific_name) {
   zip_to_extract<-readBin(paste0(gsub(" ", "_", scientific_name), "_sRedList.zip"), "raw", n = file.info(paste0(gsub(" ", "_", scientific_name), "_sRedList.zip"))$size)
   
   # Prepare Outputs (remove definitions, empty fields, those at default)
-  output_species<-sRL_StoreRead(scientific_name)$Output
+  output_species<-sRL_StoreRead(scientific_name, MANDAT=1)$Output
   output_species$Definition<-NULL
   output_species$Value<-replace(output_species$Value, is.na(output_species$Value), "") # I replace NA to make the next line work and then remove all empty fields
   output_species$Value[output_species$Parameter=="Original_GL"] <- ifelse(scientific_name %in% GL_file$internal_taxon_name, GL_file$GL_estimate[GL_file$internal_taxon_name==scientific_name][1], NA)

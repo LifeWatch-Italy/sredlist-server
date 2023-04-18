@@ -215,7 +215,7 @@ sRL_StoreSave<-function(scientific_name, Storage_SP){
   saveRDS(Storage_SP, file=FILE)
 }
 
-sRL_StoreRead<-function(scientific_name){
+sRL_StoreRead<-function(scientific_name, MANDAT){
   SCI<-sRL_decode(scientific_name)
   
   # Read if it exists or charge it
@@ -223,6 +223,7 @@ sRL_StoreRead<-function(scientific_name){
   if(file.exists(FILE)){
     Storage<-readRDS(FILE)
   } else {
+    if(MANDAT==1){no_storage()}
     Storage<-list(Creation=Sys.time())
   }
   

@@ -10,7 +10,7 @@ error_handler <- function(req, res, err) {
   if (!inherits(err, "api_error")) {
     # Read Error Message in Response Object
     res$status <- 500
-    messageBody <- paste0("Internal server error: ", err$message) # nolint
+    messageBody <- paste0("Internal server error, please try again in a few seconds. \n", err$message) # nolint
     # Print the internal error so we can see it from the server side. A more
     # robust implementation would use proper logging.
     log_error(err$message)
@@ -118,4 +118,8 @@ coords_outofbound <- function() {
 
 wrong_species_upload <- function() {
   api_error(message = "At least one of the uploaded observations has a different species name (sci_name) than the name of the species you are assessing. Please edit your csv file before uploading again.", status = 400)
+}
+
+no_storage <- function() {
+  api_error(message = "The session was inactive for more than 45 minutes so all files have been deleted... We are sorry but you have to start again from the beginning", status=400)
 }

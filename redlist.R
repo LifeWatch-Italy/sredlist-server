@@ -43,7 +43,7 @@ function(scientific_name) {
     HistoPlot<-sRL_PlotHistory(sciname_fun=scientific_name)
     
     HistoPlot
-   }, seed=T)
+   }, seed=T) %>% then(onRejected=function(err) {return(ggplot()+ggtitle("ERROR: we are not able to create this plot, please report that error")+labs(subtitle=err))})
 
   return(Prom %...>% plot())
 }
@@ -91,7 +91,7 @@ function(scientific_name, path = "") {
       }
   
     Plot_Dist
-    }, seed=T) 
+    }, seed=T) %>% then(onRejected=function(err) {return(ggplot()+ggtitle("ERROR: we are not able to create this plot, please report that error")+labs(subtitle=err))})
   
     ### Plot the distribution
     return(Prom %...>% plot())
@@ -138,7 +138,7 @@ Prom<-future({
 
   #Filter param
   scientific_name <- sRL_decode(scientific_name)
-  Storage_SP=sRL_StoreRead(scientific_name)
+  Storage_SP=sRL_StoreRead(scientific_name, MANDAT=1)
 
   #Extract alt_pref
   if(scientific_name %in% speciesRL$scientific_name){
