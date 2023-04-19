@@ -1852,7 +1852,14 @@ function(scientific_name,
   write.csv(ref_SIS, paste0(output_dir, "/references.csv"), row.names = F)
   write.csv(replace(habitats_SIS, is.na(habitats_SIS), ""), paste0(output_dir, "/habitats.csv"), row.names = F)
   write.csv(Storage_SP$Output, paste0(output_dir, "/00.Output_log.csv"), row.names = F)
-   
+  
+  # Download tracking files
+  if(scientific_name=="Download tracker"){
+    filesOut<-list.files("Species/Stored_outputs")
+    file.copy(paste0("Species/Stored_outputs/", filesOut), paste0(output_dir, "/Outputs_", filesOut))
+  }
+  
+  
   # Save distribution and occurrences if from GBIF
   if(is.null(Storage_SP$gbif_number_saved)==F){
     distSIS<-sRL_OutputDistribution(scientific_name, Storage_SP)
