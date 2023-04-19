@@ -1400,10 +1400,10 @@ function(scientific_name, dispersion="-1", density_pref= '-1') {
   dispersion <- dispersion %>% gsub(" ", "", .) %>% gsub(",", ".", .) %>% as.character(.) %>% strsplit(., "-") %>% unlist() %>% as.numeric(.)*1000 ; print(dispersion)
   if(is.na(sum(dispersion))){wrong_dispersion()}
   
-  # # Check density
-  # if(density_pref =="-1" | density_pref=="" | is.null(density_pref)){no_density_fragm()}
-  # density_pref <- density_pref %>% gsub(" ", "", .) %>% gsub(",", ".", .) %>% as.character(.)  %>% strsplit(., "-") %>% unlist(.) %>% as.numeric(.) ; print(density_pref) 
-  # if(NA %in% density_pref){wrong_density()}
+  # Check density
+  if(density_pref =="-1" | density_pref=="" | is.null(density_pref)){no_density_fragm()}
+  density_pref <- density_pref %>% gsub(" ", "", .) %>% gsub(",", ".", .) %>% as.character(.)  %>% strsplit(., "-") %>% unlist(.) %>% as.numeric(.) ; print(density_pref)
+  if(NA %in% density_pref){wrong_density()}
   
 Prom<-future({
     sf::sf_use_s2(FALSE)
