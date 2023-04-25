@@ -1838,7 +1838,13 @@ function(scientific_name,
   
   
   sRL_loginfo("Start Countries and refs", scientific_name)
-  countries_SIS<-Storage_SP$countries_SIS
+  
+  # Countries (but enabling skipping step)
+  if("countries_SIS" %in% names(Storage_SP)){
+    countries_SIS<-Storage_SP$countries_SIS
+    write.csv(countries_SIS, paste0(output_dir, "/countries.csv"), row.names = F)
+  }
+  
   ref_SIS<-sRL_OutputRef(scientific_name, Storage_SP) 
   taxo_SIS<-sRL_OutputTaxo(scientific_name, Estimates)
   
@@ -1847,7 +1853,6 @@ function(scientific_name,
   output_dir<-paste0(sub(" ", "_", scientific_name), "_sRedList")
   dir.create(output_dir)
   write.csv(replace(allfields_to_save, is.na(allfields_to_save), ""), paste0(output_dir, "/allfields.csv"), row.names = F)
-  write.csv(countries_SIS, paste0(output_dir, "/countries.csv"), row.names = F)
   write.csv(taxo_SIS, paste0(output_dir, "/taxonomy.csv"), row.names = F)
   write.csv(ref_SIS, paste0(output_dir, "/references.csv"), row.names = F)
   write.csv(replace(habitats_SIS, is.na(habitats_SIS), ""), paste0(output_dir, "/habitats.csv"), row.names = F)

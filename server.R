@@ -45,6 +45,7 @@ library(scales)
 
 ### Config
 config <- config::get()
+#config <- config::get(file="C:/Users/Victor/Documents/sRedList/Platform/InProgress/config_Victor.yml")
 
 # The CRS we use in all the platform
 CRSMOLL<-"+proj=moll +lon_0=0 +x_0=0 +y_0=0 +ellps=WGS84 +units=m +no_defs"

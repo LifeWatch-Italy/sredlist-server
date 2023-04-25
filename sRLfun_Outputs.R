@@ -147,6 +147,9 @@ sRL_OutputTaxo<-function(scientific_name, Estimates){
   taxo$internal_taxon_id<-sRL_CalcIdno(scientific_name)
   taxo$Redlist_id<-sRL_CalcIdno(scientific_name)
   
+  # Remove NAs
+  taxo[1,]<-replace(taxo[1,], is.na(taxo[1,]), "")
+  
   # Return
   return(taxo)
   
