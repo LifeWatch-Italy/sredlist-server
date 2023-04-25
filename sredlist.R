@@ -649,7 +649,7 @@ Prom<-future({
   if(Crop_Country != ""){
     if(Crop_Country %in% c(coo_raw$SIS_name0, "", "Europe", "EU27")){
       distSP<-sRL_CropCountry(distSP, domain_pref, Crop_Country)
-      Storage_SP<-sRL_OutLog(Storage_SP, "Crop_Country", Crop_Country)} 
+      Storage_SP<-sRL_OutLog(Storage_SP, c("Crop_Country", "System_pref"), c(Crop_Country, paste(domain_pref, collapse=",")))} 
     else {
       distSP<-data.frame()
       }

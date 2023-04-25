@@ -19,6 +19,7 @@ NA,NA,Distribution_Presence,Presence parameters filtered in the Red List or uplo
 NA,NA,Distribution_Origin,Origin parameters filtered in the Red List or uploaded distribution,NA
 NA,NA,Distribution_Seasonal,Seasonal parameters filtered in the Red List or uploaded distribution,NA
 NA,NA,Crop_Country,Country used to restrict species' distribution in case of National (or European) Red Listing,NA
+NA,NA,System_pref,"System preferences selected for the species. Could include terrestrial, freshwater, marine",NA
 NA,NA,AOH_HabitatPreference,Habitat preference used to calculate Area of Habitat,NA
 NA,NA,AOH_MarginalHabitatPreference,Marginal habitat preference used to calculate Area of Habitat (we calculate an AOH without them and one with them to provide the range of AOH),NA
 NA,NA,AOH_ElevationPreference,Elevation preference used to calculate Area of Habitat,NA
