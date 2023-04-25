@@ -5,7 +5,7 @@ default:
   POINTdistribution_path: "resources/Point.distributions/"
   YearAOH2: 2020
   LIM_GBIF: 2000
-  Size_LargeRange: 50000
+  Size_LargeRange: 500000
   engine_AOH: "terra"
   crosswalk: "Lumbierres"
   RAMmax_GB: 10
