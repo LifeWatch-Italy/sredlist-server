@@ -5,7 +5,7 @@ RUN apt-get update && apt-get install -y libsecret-1-0
 RUN R -e "install.packages('remotes')"
 RUN R -e 'remotes::install_github("prioritizr/aoh")'
 RUN R -e 'remotes::install_github("jeffreyevans/spatialEco")'
-RUN R -e "install.packages(c('plumber', 'config', 'tictoc', 'logger','glue', 'urltools', 'Rook', 'ggplot2', 'gridExtra' , 'plyr', 'dplyr', 'tidyr', 'ggalluvial', 'rredlist', 'tools', 'rgbif', 'rCAT', 'maps', 'countrycode', 'rnaturalearthdata', 'exactextractr', 'rasterVis', 'readr', 'R.utils', 'CoordinateCleaner', 'terra', 'plotly', 'gdalUtilities', 'smoothr', 'adehabitatHR', 'robis', 'future', 'promises', 'scales', 'plotly', 'maptools', 'leaflet', 'htmltools', 'leafem', 'protolite', 'cowplot', 'alphahull'))"
+RUN R -e "install.packages(c('plumber', 'config', 'tictoc', 'logger','glue', 'urltools', 'Rook', 'ggplot2', 'gridExtra' , 'plyr', 'dplyr', 'tidyr', 'ggalluvial', 'rredlist', 'tools', 'rgbif', 'rCAT', 'maps', 'countrycode', 'rnaturalearthdata', 'exactextractr', 'rasterVis', 'readr', 'R.utils', 'CoordinateCleaner', 'terra', 'plotly', 'gdalUtilities', 'smoothr', 'adehabitatHR', 'robis', 'future', 'promises', 'scales', 'plotly', 'maptools', 'leaflet', 'htmltools', 'leafem', 'protolite', 'cowplot', 'alphahull', 'taxize'))"
 
 #FIX: https://github.com/ropensci/CoordinateCleaner/issues/63
 #RUN R -e "devtools::install_github('ropensci/CoordinateCleaner')"

@@ -1571,23 +1571,35 @@ function(scientific_name){
   Storage_SP<-sRL_StoreRead(scientific_name, MANDAT=1) ; print(names(Storage_SP))
   
   ### MANAGE TAXONOMY ###
+  sRL_loginfo("START - Extract taxonomy", scientific_name)
+  kingdom<-phylum<-classname<-ordername<-family<-taxonomicAuthority<-NA
   ### Extract existing taxonomy
   if(scientific_name %in% speciesRL$scientific_name){
     # If species already in the Red List, we use its information
-    Official<-speciesRL[speciesRL$scientific_name == scientific_name,][1,]} else {
+    Official<-speciesRL[speciesRL$scientific_name == scientific_name,][1,]
+    sRL_loginfo("Using RL from same species", scientific_name)
+    } else {
     # Otherwise we look if there is another species of the same genus (except for authority)
       Genus<-scientific_name %>% strsplit(., " ") %>% unlist(.) %>% .[1]
-      if(Genus %in% speciesRL$genus){Official<-speciesRL[speciesRL$genus==Genus,][1,] ; Official$authority<-NA}
+      if(Genus %in% speciesRL$genus){Official<-speciesRL[speciesRL$genus==Genus,][1,] ; Official$authority<-NA ; sRL_loginfo("Using RL from same genus", scientific_name)}
     }
   
-  ### Assign to that species
-  kingdom   <-  ifelse(exists("Official"), Official$kingdom[1], NA)
-  phylum    <-  ifelse(exists("Official"), Official$phylum[1], NA)
-  classname <-  ifelse(exists("Official"), Official$class[1], NA)
-  ordername <-  ifelse(exists("Official"), Official$order[1], NA)
-  family    <-  ifelse(exists("Official"), Official$family[1], NA)
-  taxonomicAuthority <- ifelse(exists("Official"), Official$authority[1], NA)
-
+  ### If genus not in RL, I use taxize
+  tryCatch({
+    if(exists("Official")==F){
+      sRL_loginfo("Using taxize", scientific_name)
+      classif<-classification(scientific_name, db="gbif", rows=1)[[1]]
+    }
+    
+    ### Assign to that species
+    kingdom   <-  ifelse(exists("Official"), Official$kingdom[1], toupper(classif$name[classif$rank=="kingdom"]))
+    phylum    <-  ifelse(exists("Official"), Official$phylum[1], toupper(classif$name[classif$rank=="phylum"]))
+    classname <-  ifelse(exists("Official"), Official$class[1], toupper(classif$name[classif$rank=="class"]))
+    ordername <-  ifelse(exists("Official"), Official$order[1], toupper(classif$name[classif$rank=="order"]))
+    family    <-  ifelse(exists("Official"), Official$family[1], toupper(classif$name[classif$rank=="family"]))
+    taxonomicAuthority <- ifelse(exists("Official"), Official$authority[1], NA)
+  }, error=function(e){"Taxonomic extract with taxize was not complete"})
+  sRL_loginfo("END - Extract taxonomy", scientific_name)
   
 
   
@@ -1904,6 +1916,28 @@ function(scientific_name,
   TITLE<-ifelse(CAT_MAX=="LC", "The species does not seem to trigger a threatened category under any criterion; \n it could thus be LC or NT) \n", paste0("The species seems to meet the ", CAT_MAX, " category", CRIT_MAX, "\n"))
   SUBTITLE<-ifelse(nrow(speciesRL[speciesRL$scientific_name == scientific_name,])==1, paste0("Last published category: ", speciesRL$category[speciesRL$scientific_name == scientific_name], "\n"), "")
   
+  # Prepare Tag in case taxonomy not complete
+  Tag<-""
+  if(NA %in% Estimates[1:6]){Tag<-paste0("\n\n WARNING: The taxonomy information is incomplete (missing: ", 
+                                         paste0(c("Kingdom", "Phylum", "Class", "Order", "Family", "Authority")[which(is.na(Estimates[1:6]))], collapse=", "), 
+                                         "), \n this will cause issue if you want to push the output ZIP file to SIS Connect")
+  } else {
+    if((! toupper(Estimates[1]) %in% speciesRL$kingdom) |
+       (! toupper(Estimates[2]) %in% speciesRL$phylum) |
+       (! toupper(Estimates[3]) %in% speciesRL$class) |
+       (! toupper(Estimates[4]) %in% speciesRL$order) |
+       (! toupper(Estimates[5]) %in% speciesRL$family)){
+      Tag<-paste0("\n\n WARNING: Some of the entered taxonomy (", 
+                  c(ifelse(toupper(Estimates[1]) %in% speciesRL$kingdom, NA, "kingdom"),
+                    ifelse(toupper(Estimates[2]) %in% speciesRL$phylum, NA, "phylum"),
+                    ifelse(toupper(Estimates[3]) %in% speciesRL$class, NA, "class"),
+                    ifelse(toupper(Estimates[4]) %in% speciesRL$order, NA, "order"),
+                    ifelse(toupper(Estimates[5]) %in% speciesRL$family, NA, "family")) %>% 
+                    .[is.na(.)==F] %>% paste0(., collapse=", "), 
+                  ") does not correspond to any of the published species. \n Make sure it fits with the Red List taxonomic backbone before pushing to SIS Connect.")}
+  }
+  
+  
   return(
     plot(ggplot(criteria, aes(y = criterion)) +
       geom_linerange(aes(xmin=Cat_ThresholdMIN, xmax=Cat_ThresholdMAX), linewidth=10, colour="gray75")+
@@ -1914,8 +1948,8 @@ function(scientific_name,
       scale_x_discrete(drop = F, na.translate = FALSE) + scale_y_discrete(drop=F, na.translate = FALSE) +
       xlab("Red List Category triggered") + ylab("Criteria")+
       scale_colour_manual(drop = F, values=c("#006666ff", "#cc9900ff", "#cc6633ff", "#cc3333ff", "#b3d1d1ff", "#f0e1b3ff", "#f0d1c2ff", "#f0c2c2ff"))+
-      ggtitle(TITLE, subtitle=SUBTITLE)+
-      theme_bw()  %+replace% theme(text=element_text(size=18), plot.title=element_text(hjust=0.5), plot.subtitle=element_text(hjust=0.5, size=15))
+      labs(title=TITLE, subtitle=SUBTITLE, tag=Tag)+
+      theme_bw()  %+replace% theme(text=element_text(size=18), plot.title=element_text(hjust=0.5), plot.subtitle=element_text(hjust=0.5, size=15), plot.tag=element_text(hjust=0.5, size=14, colour="darkred"), plot.tag.position = "bottom")
     )
   )
 
