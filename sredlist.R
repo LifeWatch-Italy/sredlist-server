@@ -1538,6 +1538,7 @@ Prom<-future({
   # Run functions to calculate trends
   if(RSproduct=="Human_density"){List_trendsRS<-sRL_CalcHumandensity(scientific_name, distSP, GL)}
   if(RSproduct=="Forest_cover"){List_trendsRS<-sRL_CalcForestchange(scientific_name, distSP)}
+  if(RSproduct=="Human_modification"){List_trendsRS<-sRL_CalcModification(scientific_name, distSP)}
   if(RSproduct=="NDVI"){List_trendsRS<-sRL_CalcNDVIchange(scientific_name, distSP, GL)}
   
   # Save usage

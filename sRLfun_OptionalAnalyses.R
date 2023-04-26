@@ -73,7 +73,7 @@ sRL_CalcHumandensity<-function(scientific_name, distSP, GL){
     gplot(human_change)+
       coord_fixed()+
       geom_tile(aes(fill = value)) +
-      scale_fill_gradient2(low="#8c510a", mid="azure2", midpoint=0, high="#018571", name="Ind/km2", na.value="white")+
+      scale_fill_gradient2(low="#018571", mid="azure2", midpoint=0, high="#8c510a", name="Ind/km2", na.value="white")+
       ggtitle(paste0("Change ", Year1, "-", Year2)) +
       sRLTheme_maps
     
@@ -160,6 +160,65 @@ sRL_CalcForestchange<-function(scientific_name, distSP){
     RS_current=paste0(round(RS_current,1), "%"),
     RS_trendsABS=paste0(round(RS_trendsABS,1), " %"),
     RS_trendsREL=paste0(100*round(RS_trendsREL,3), " %"),
+    RS_timewindow=RS_timewindow
+  ))
+  
+}
+
+
+# sRL_CalcModification
+sRL_CalcModification<-function(scientific_name, distSP){
+  
+  ### Charge human modification layers
+  human1<-rast(gsub("XXXX", 1990, config$Human_modification_path))
+  human2<-rast(gsub("XXXX", 2015, config$Human_modification_path))
+  
+  ### Mask
+  distSP<-st_transform(distSP, st_crs(human1))
+  human1_crop<-crop(human1, distSP) %>% mask(., distSP)
+  human2_crop<-crop(human2, distSP) %>% mask(., distSP)
+  human_change<-human2_crop-human1_crop
+  
+  ### Plots
+  RS_name="Human modification index"
+  
+  GG_RS=cowplot::plot_grid(
+    
+    gplot(human2_crop)+
+      coord_fixed()+
+      geom_tile(aes(fill = value)) +
+      scale_fill_viridis_c(option="viridis", na.value = "white", name="")+
+      ggtitle(paste0("In ", 2015)) +
+      sRLTheme_maps,
+    
+    gplot(human_change)+
+      coord_fixed()+
+      geom_tile(aes(fill = value)) +
+      scale_fill_gradient2(low="#018571", mid="azure2", midpoint=0, high="#8c510a", name="", na.value="white")+
+      ggtitle(paste0("Change ", 1990, "-", 2015)) +
+      sRLTheme_maps
+    
+    ,ncol=2
+  )
+  
+  ggsave(filename = paste0("resources/AOH_stored/", sub(" ", "_", scientific_name), "/Plots/RS_plot.png"), plot = GG_RS, width=10, height=6)
+  RS_plot <- base64enc::dataURI(file = paste0("resources/AOH_stored/", sub(" ", "_", scientific_name), "/Plots/RS_plot.png"), mime = "image/png", encoding = "base64") # nolint
+  
+  
+  ### Calculate outputs
+  RS_current<-exact_extract(human2_crop, distSP, "mean") 
+  RS_old<-exact_extract(human1_crop, distSP, "mean")
+  RS_timewindow<-"1990-2015"
+  RS_trendsABS<-RS_current-RS_old
+  RS_trendsREL<-(RS_current-RS_old)/RS_current
+  
+  ### Return
+  return(list(
+    RS_prodname=RS_name,
+    RS_plot=RS_plot,
+    RS_current=paste0(round(RS_current), " (mean)"),
+    RS_trendsABS=round(RS_trendsABS),
+    RS_trendsREL=paste0(100*round(RS_trendsREL, 3), " % change"),
     RS_timewindow=RS_timewindow
   ))
   
