@@ -199,7 +199,7 @@ return(Prom %...>% plot())
 #* @param Uploaded_Records:file A file
 #* @serializer unboxedJSON
 #* @tag sRedList
-function(scientific_name, Gbif_Source=list(), Uploaded_Records="") {
+function(scientific_name, Gbif_Source=list(), Gbif_Synonym="", Uploaded_Records="") {
 
 Prom<-future({
   sf::sf_use_s2(FALSE)
@@ -208,6 +208,7 @@ Prom<-future({
   scientific_name <- sRL_decode(scientific_name)
   print(scientific_name)
   print(Gbif_Source)
+  print(Gbif_Synonym)
   
   # Uploaded Records if we uploaded data (it's a list with 1 element being the title of the uploaded csv file); I edit the csv if separator not good
   if(Uploaded_Records != ""){
@@ -218,7 +219,31 @@ Prom<-future({
   ### GBIF procedure
   sRL_loginfo("START - Create data", scientific_name)
   dat <- sRL_createDataGBIF(scientific_name, Gbif_Source, Uploaded_Records)
-
+  
+  
+  ## If there are synonyms
+  if(Gbif_Synonym != ""){
+    
+    # Prepare synonyms
+    Gbif_Synonym <- Gbif_Synonym %>% gsub("  ", " ", .) %>% strsplit(., "[,;]+") %>% unlist(.) %>% ifelse(substr(., 1, 1)==" ", substr(., 2, 1000), .) %>% .[. != scientific_name]
+    print(Gbif_Synonym)
+    
+    # Record name of first download
+    dat$species_download<-scientific_name
+    
+    # Run again the data collection (in a tryCatch to avoid errors if the name does not exist)
+    for(SY in 1:length(Gbif_Synonym)){
+      tryCatch({
+        dat_syn<-sRL_createDataGBIF(Gbif_Synonym[SY], Gbif_Source, "") # Same Source options as it can be useful for GBIF, OBIS but also Red List (eg species name was changed)
+        dat_syn$species<-scientific_name
+        dat_syn$species_download<-Gbif_Synonym[SY]
+        dat_syn$Source_type=paste0("Synonyms_", dat_syn$Source_type)
+        dat<-rbind.fill(dat, dat_syn)
+      }, error=function(e){paste0("The synonym ", Gbif_Synonym[SY], " was not downloaded")})
+    }
+    
+  }
+  
   ### Create storage folder if it does not exist
   dir.create(paste0("resources/AOH_stored/", sub(" ", "_", scientific_name), "/Plots"), recursive=T)
   
@@ -1562,6 +1587,7 @@ return(Prom)
 
 # M7: Outputs ----------------------------------------------------------------
 
+## Final estimates -------
 #* Upload all parameters
 #* @get species/<scientific_name>/final-estimates
 #* @param scientific_name:string Scientific Name
@@ -1690,6 +1716,7 @@ function(scientific_name){
 }
 
 
+## Assign category -------
 #* Plot Red List category
 #* @post species/<scientific_name>/assessment/red-list-criteria
 #* @param scientific_name:string Scientific Name
@@ -1869,7 +1896,7 @@ function(scientific_name,
   write.csv(taxo_SIS, paste0(output_dir, "/taxonomy.csv"), row.names = F)
   write.csv(ref_SIS, paste0(output_dir, "/references.csv"), row.names = F)
   write.csv(replace(habitats_SIS, is.na(habitats_SIS), ""), paste0(output_dir, "/habitats.csv"), row.names = F)
-  write.csv(Storage_SP$Output, paste0(output_dir, "/00.Output_log.csv"), row.names = F)
+  write.csv(Storage_SP$Output[Storage_SP$Output$Definition !="Only used to track usage",], paste0(output_dir, "/00.Output_log.csv"), row.names = F)
   
   # Download tracking files
   if(scientific_name=="Download tracker"){
@@ -1958,7 +1985,7 @@ function(scientific_name,
 }
 
 
-
+## Download zip -------
 #* Download .zip assesment file of the species
 #* @get species/<scientific_name>/assessment/red-list-criteria/zip
 #* @param scientific_name:string Scientific Name

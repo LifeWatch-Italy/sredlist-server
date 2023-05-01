@@ -225,7 +225,7 @@ sRL_StoreRead<-function(scientific_name, MANDAT){
   FILE<-paste0("resources/AOH_stored/", gsub(" ", "_", SCI), "/Storage_SP.rds")
   if(file.exists(FILE)){
     Storage<-readRDS(FILE)
-  } else {
+  } else { # Create a folder for the first functions, if it's with MANDAT=1 (ie after COO), then return an error that Storage_SP was removed
     if(MANDAT==1){no_storage()}
     Storage<-list(Creation=Sys.time())
   }
