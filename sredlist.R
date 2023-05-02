@@ -936,7 +936,7 @@ Prom<-future({
   terraOptions(tempdir=paste0(output_dir, "/Temporary"), memmax=config$RAMmax_GB)
   rasterOptions(tmpdir=paste0(output_dir, "/Temporary"), maxmemory=config$RAMmax_GB)
 
-  ### SMALL-RANGES
+  ### SMALL-RANGES -----
   Range_size<-as.numeric(st_area(rangeSP_clean))/10^6 ; print(Range_size)
   AOH_type<-ifelse(Range_size < as.numeric(config$Size_LargeRange), "Small", "Large") ; print(AOH_type)
   if(AOH_type=="Small"){
@@ -987,7 +987,7 @@ Prom<-future({
       plot1 <- gplot(AOH2[[1]]) +
         coord_fixed()+
         geom_tile(aes(fill = factor(value, levels=c("0", "1")))) +
-        scale_fill_manual(values=c("#FBCB3C", "#0D993F", NA), labels=c("Unsuitable", "Suitable", ""), name="", na.translate=F, drop=F) +
+        scale_fill_manual(values=c("#FBCB3C", "#25BC5A", NA), labels=c("Unsuitable", "Suitable", ""), name="", na.translate=F, drop=F) +
         ggtitle("Area of Habitat in 2020") +
         sRLTheme_maps
     }
@@ -998,13 +998,13 @@ Prom<-future({
       plot1<-gplot(AOH2[[1]]+AOH2_opt[[1]])+
         coord_fixed()+
         geom_tile(aes(fill = factor(value, levels=c("0", "1", "2")))) +
-        scale_fill_manual(values=c("#FBCB3C", "#90D79E", "#0D993F", NA), labels=c("Unsuitable", "Unknown", "Suitable", ""), name="", na.translate=F, drop=F) +
+        scale_fill_manual(values=c("#FBCB3C", "#ADEFBA", "#25BC5A", NA), labels=c("Unsuitable", "Unknown", "Suitable", ""), name="", na.translate=F, drop=F) +
         ggtitle(paste0("Area of Habitat in ", config$YearAOH2)) +
         sRLTheme_maps
     }
 
 
-    ### LARGE-RANGES
+    ### LARGE-RANGES --------
   } else {
 
     # Prepare altitude raster
@@ -1021,7 +1021,7 @@ Prom<-future({
       plot1 <- gplot((AOH2[[1]]/9)) + # Divide by 9 to get percents
         coord_fixed()+
         geom_tile(aes(fill = value)) +
-        scale_fill_gradient(low="#FBCB3C", high="#0D993F", name="Suitability (%)", limits=c(0,100), na.value=NA)+
+        scale_fill_gradient(low="#FBCB3C", high="#25BC5A", name="Suitability (%)", limits=c(0,100), na.value=NA)+
         ggtitle(paste0("Area of Habitat in ", config$YearAOH2)) +
         sRLTheme_maps
 
@@ -1047,7 +1047,7 @@ Prom<-future({
         gplot((AOH2[[1]]/9)) + # Divide by 9 to get percents
           coord_fixed()+
           geom_tile(aes(fill = value)) +
-          scale_fill_gradient(low="#FBCB3C", high="#0D993F", name="Suitability (%)", limits=c(0,100), na.value=NA)+
+          scale_fill_gradient(low="#FBCB3C", high="#25BC5A", name="Suitability (%)", limits=c(0,100), na.value=NA)+
           ggtitle(paste0("Minimum AOH in ", config$YearAOH2)) +
           labs(subtitle= "(marginal or unknown habitats / extreme elevations excluded)") +
           sRLTheme_maps,
@@ -1055,7 +1055,7 @@ Prom<-future({
         gplot((AOH2_opt[[1]]/9)) + # Divide by 9 to get percents
           coord_fixed()+
           geom_tile(aes(fill = value)) +
-          scale_fill_gradient(low="#FBCB3C", high="#0D993F", name="Suitability (%)", limits=c(0,100), na.value=NA)+
+          scale_fill_gradient(low="#FBCB3C", high="#25BC5A", name="Suitability (%)", limits=c(0,100), na.value=NA)+
           ggtitle(paste0("Maximum AOH in ", config$YearAOH2)) +
           labs(subtitle= "(marginal or unknown habitats / extreme elevations included)") +
           sRLTheme_maps,
@@ -1078,7 +1078,7 @@ Prom<-future({
   if(Uncertain=="Uncertain_yes"){AOH_km2_opt <-  sRL_areaAOH(AOH2_opt[[1]], "cci") ;  Storage_SP$AOHkm2OPT_saved<-AOH_km2_opt}
   Storage_SP$AOHkm2_saved<-AOH_km2
 
-  ### Calculate Area of Habitat in a resolution of 2x2km (as is the map of altitude provided), in order to use it as an upper bound of species Area of Occupancy under criterion B2 (each cell covers 4km2)
+  ### Upper AOO ----
   grid22<-sRL_ChargeGrid22Raster()
   grid22_crop<-crop(grid22, AOH2[[1]])
   aoh_22<-terra::resample(AOH2[[1]], grid22_crop, method="max")>0
@@ -1088,7 +1088,7 @@ Prom<-future({
     plot2 <- cowplot::plot_grid(gplot(aoh_22[[1]]>0) +
       coord_fixed()+
       geom_tile(aes(fill = factor(as.character(as.numeric(value)), levels=c("0", "1")))) +
-      scale_fill_manual(values=c("#FBCB3C", "#0D993F"), labels=c("Unsuitable", "Suitable"), name="", na.translate=F, drop=F) +
+      scale_fill_manual(values=c("#FBCB3C", "#25BC5A"), labels=c("Unsuitable", "Suitable"), name="", na.translate=F, drop=F) +
       labs(title="", subtitle=ifelse(AOH_type=="Large", "Likely slightly overestimated (using a 10x10km aggregate raster)", ""))+
       sRLTheme_maps,
       ncol=1)
@@ -1102,7 +1102,7 @@ Prom<-future({
       plot2<-gplot((aoh_22[[1]]>0)+(aoh_22_opt[[1]]>0))+
         coord_fixed()+
         geom_tile(aes(fill = factor(as.character(as.numeric(value)), levels=c("0", "1", "2")))) +
-        scale_fill_manual(values=c("#FBCB3C", "#90D79E", "#0D993F", NA), labels=c("Unsuitable", "Unknown", "Suitable", ""), name="", na.translate=F, drop=F) +
+        scale_fill_manual(values=c("#FBCB3C", "#ADEFBA", "#25BC5A", NA), labels=c("Unsuitable", "Unknown", "Suitable", ""), name="", na.translate=F, drop=F) +
         ggtitle("") +
         sRLTheme_maps
 
@@ -1111,14 +1111,14 @@ Prom<-future({
       gplot(aoh_22[[1]]>0) +
         coord_fixed()+
         geom_tile(aes(fill = factor(as.character(as.numeric(value)), c("0", "1")))) +
-        scale_fill_manual(values=c("#FBCB3C", "#0D993F"), labels=c("Unsuitable", "Suitable"), name="", na.translate=F, drop=F) +
+        scale_fill_manual(values=c("#FBCB3C", "#25BC5A"), labels=c("Unsuitable", "Suitable"), name="", na.translate=F, drop=F) +
         labs(title="Likely slightly overestimated (using a 10x10km aggregate raster) \n\n Minimum AOH at 2x2km scale", subtitle= "(marginal or unknown habitats / extreme elevations excluded)")+
         sRLTheme_maps,
 
       gplot(aoh_22_opt[[1]]>0) +
         coord_fixed()+
         geom_tile(aes(fill = factor(as.character(as.numeric(value)), c("0", "1")))) +
-        scale_fill_manual(values=c("#FBCB3C", "#0D993F"), labels=c("Unsuitable", "Suitable"), name="", na.translate=F, drop=F) +
+        scale_fill_manual(values=c("#FBCB3C", "#25BC5A"), labels=c("Unsuitable", "Suitable"), name="", na.translate=F, drop=F) +
         labs(title="Maximum AOH at 2x2km scale", subtitle= "(marginal or unknown habitats / extreme elevations included)")+
         sRLTheme_maps,
 
@@ -1142,7 +1142,7 @@ Prom<-future({
   rasterOptions(tmpdir=tempdir())
   gc()
 
-  ### Calculate population size (with uncertainty to due uncertainty in AOH and in density estimate)
+  ### Population size (with uncertainty to due uncertainty in AOH and in density estimate) -------
   sRL_loginfo("START - Calcualte population size", scientific_name)
   if (density_pref[1] != '-1') {
     density_pref <- unlist(strsplit(as.character(density_pref), "-")) %>% as.numeric(.) ; print(density_pref) # Density_pref has one value if certain, 2 values otherwise
@@ -1153,6 +1153,45 @@ Prom<-future({
     Storage_SP$pop_size<-pop_size
   }
   sRL_loginfo("END - Calcualte population size", scientific_name)
+  
+  
+  ### AOO based on occurrence records -------
+  if("dat_proj_saved" %in% names(Storage_SP)){
+    sRL_loginfo("START - AOO calculation from points", scientific_name)
+    
+    # Prepare grid 22
+    dat_proj=Storage_SP$dat_proj_saved
+    grid22<-raster("resources/EmptyGrid2x2/Empty.grid.2x2.Mollweide.tif")
+    grid_crop<-crop(grid22, extent(dat_proj), snap="out")
+    
+    # Map AOO
+    pts<-dat_proj %>% as_Spatial() %>% as(., 'SpatialPoints')
+    AOO_pts <- terra::rasterize(pts, grid_crop, fun='count')>=1
+    
+    # Calculate AOO
+    aoo_pts_km2<-sum(as.vector(AOO_pts), na.rm=T)*4
+    print(paste0("AOO from points: ", aoo_pts_km2))
+    Storage_SP$aoo_points<-aoo_pts_km2
+    
+    # Plot
+    aooDF<-as.data.frame(AOO_pts, xy = TRUE); names(aooDF)[3]<-"lyr1"
+    Plot_AOOpoints<-ggplot() + 
+      geom_tile(data = aooDF, aes(x = x, y = y, fill = lyr1), col=NA)+
+      geom_sf(data=distSP, aes(col=as.character("Distribution")), fill=NA, lwd=2, show.legend = "line")+
+      geom_sf(data=dat_proj, aes(size="1"), fill=NA, col="black")+
+      scale_fill_manual(values=c("#25BC5A"), labels="Occupied cell", name="", na.translate=F)+
+      scale_colour_manual(values=c("#EF9884"), name="")+
+      scale_size_manual(values=1.6, name="", labels="Occurrences")+
+      sRLTheme_maps+guides(fill = guide_legend(override.aes = list(col="#25BC5A")), size=guide_legend(override.aes = list(linetype=0, shape=16, size=1.6)))+
+      theme(legend.position = "bottom")
+    ggsave(filename = paste0("resources/AOH_stored/", sub(" ", "_", scientific_name), "/Plots/aoo_from_points.png"), plot = Plot_AOOpoints, width=6, height=6)
+    plot3<-base64enc::dataURI(file = paste0("resources/AOH_stored/", sub(" ", "_", scientific_name), "/Plots/aoo_from_points.png"), mime = "image/png")
+
+    sRL_loginfo("END - AOO calculation from points", scientific_name)
+  }
+
+  
+  ### Save Storage_SP
   sRL_StoreSave(scientific_name, Storage_SP)
   
   ### Return list of arguments + calculate population size
@@ -1162,10 +1201,16 @@ Prom<-future({
     plot_aoh = plot1,
     plot_aoh_2x2 = plot2
   )
+  
+  if("dat_proj_saved" %in% names(Storage_SP)){
+    LIST$plot_aoopts<-plot3
+    LIST$aoo_pts_km2<-aoo_pts_km2
+  }
 
   if (density_pref[1] != '-1') {
     LIST$pop_size <- pop_size
   }
+  
 
   return(LIST)
 }, seed=T)
@@ -1464,7 +1509,7 @@ Prom<-future({
       geom_sf(data=st_transform(res2$clusters, crs(aoh)), aes(col="disp2"), fill=NA, lwd=2, show.legend = "line")+
       geom_sf(data=st_transform(res$clusters, crs(aoh)), aes(col="disp1"), fill=NA, lwd=2, show.legend = "line")+
       ggtitle(paste0("Population fragmentation in ", paste(NClust, collapse="-"), " clusters"))+
-      scale_fill_manual(values=c("#FBCB3C", "#0D993F", NA), labels=c("Unsuitable", "Suitable", ""), name="", na.translate=F, drop=F) +
+      scale_fill_manual(values=c("#FBCB3C", "#25BC5A", NA), labels=c("Unsuitable", "Suitable", ""), name="", na.translate=F, drop=F) +
       scale_colour_manual(name="", breaks=c("disp1", "disp2"), values=c("#A383FF", "#FF7F5E"), labels=c(paste0("Isolation ", min(dispersion)/1000, " km"), paste0("Isolation ", max(dispersion)/1000, " km")), na.translate=F, drop=T)+
       sRLTheme_maps %+replace%   theme(legend.position="bottom") +
       guides(fill = guide_legend(override.aes = list(col=NA)))
@@ -1639,16 +1684,49 @@ function(scientific_name){
   
   
   ### AOO
-  if("aoo_km2" %in% names(Storage_SP)){
-    AOO_val <- ifelse((Storage_SP$Uncertain=="Uncertain_no"), 
-           round(Storage_SP$aoo_km2), 
-           paste(round(Storage_SP$aoo_km2), round(Storage_SP$aoo_km2_opt), sep="-")
-           )
-  } else {
-    AOO_val <- NA
+  tryCatch({
+  # If no estimates of AOO
+  if(! "aoo_km2" %in% names(Storage_SP)){
+    AOO_val<-AOO_justif<-NA
   }
-  AOO_justif <- ifelse("aoo_km2" %in% names(Storage_SP), "The upper bound of AOO has been estimated on the sRedList Platform by rescaling the Area of Habitat to a 2x2km2 grid.", NA)
+  
+  # If only AOO from habitat
+  if("aoo_km2" %in% names(Storage_SP) & (! "aoo_points" %in% names(Storage_SP))){
+    AOO_val <- ifelse((Storage_SP$Uncertain=="Uncertain_no"), 
+                      round(Storage_SP$aoo_km2), 
+                      paste(round(Storage_SP$aoo_km2), round(Storage_SP$aoo_km2_opt), sep="-")
+    )
+    AOO_justif <- "The area of occupancy has been estimated on the sRedList Platform by rescaling the map of Area of Habitat to a 2x2km2 grid. This estimates corresponds to the upper bound of area of occupancy, as it assumes that all suitable habitat is occupied (at a 2x2km scale)."
+  }
+  
+  # If AOO from habitat and occurrences
+  if("aoo_points" %in% names(Storage_SP)){
+    aooA<-round(Storage_SP$aoo_points)
+    Nrec<-nrow(Storage_SP$dat_proj_saved)
+    
+    # Extract source from points
+    SRCdf<-table(Storage_SP$dat_proj_saved$Source_type) %>% as.data.frame(.)
+    SRCdf$Name<-revalue(SRCdf$Var1, c("GBIF sample"="a geographically representative sample of data downloaded from GBIF", "OBIS sample"="a sample of data downloaded from OBIS", "Red List"="Red List occurrence records", "Red List sample"="a sample of Red List occurrence records", "Uploaded"="occurrence records uploaded by sRedList user", "Uploaded sample"="a sample of occurrence records uploaded by sRedList user"))
+    SRCdf$paste<-paste0(SRCdf$Name, " (N=", SRCdf$Freq, ")")
+    SRC<-paste(SRCdf$paste, collapse=", ")
+    
+    # Extract AOO estimates from habitat
+    aoo_hab <- ifelse(Storage_SP$Uncertain=="Uncertain_no", Storage_SP$aoo_km2, paste(Storage_SP$aoo_km2, Storage_SP$aoo_km2_opt, sep="-"))%>% as.character(.) %>% strsplit(., "-") %>% unlist(.) %>% as.vector(.) %>% as.numeric(.)
+    
+    # If AOO from occurrence records is bigger, I keep only this one. Otherwise, I take the range
+    if(aooA > max(aoo_hab, na.rm=T)){
+      AOO_val<-aooA
+      AOO_justif<-paste0("The area of occupancy was estimated on the sRedList platform as the area of 2x2km grid cells intersecting with the ", Nrec, " occurrence records retrieved from ", SRC, ". This estimate assumes that the species range has been extensively surveyed at a 2x2km scale. The upper bound of area of occupancy estimated from suitable habitat was lower than this estimate (", paste(aoo_hab, collapse="-"), "km2) and was thus dismissed.")
+    } else {
+      AOO_val <- paste(aooA, max(aoo_hab, na.rm=T), sep="-")
+      AOO_justif <- paste0("The area of occupancy was estimated on the sRedList platform. ",
+                            "Its lower bound (", aooA, "km2) was estimated as the area of 2x2km grid cells intersecting with occurrence records (", Nrec, " occurrence records were retrieved from ", SRC, "); this estimate assumes that the species range has been extensively surveyed at a 2x2km scale. ",
+                            "The upper bound of area of occupancy (", paste(unique(aoo_hab), collapse="-"), "km2) has been estimated by rescaling the map of Area of Habitat to a 2x2km grid; this estimates assumes that all suitable habitat is occupied by the species (at a 2x2km scale).")
+    }
+  }
+  
   Storage_SP<-sRL_OutLog(Storage_SP, "Estimated_AOO_raw", AOO_val)
+  }, error=function(e){"Error in AOO estimates"})
   
   
   ### Pop size
