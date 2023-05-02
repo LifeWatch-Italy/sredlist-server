@@ -160,7 +160,7 @@ sRL_createDataGBIF <- function(scientific_name, GBIF_SRC, Uploaded_Records) { # 
   dat <- dat %>%
     dplyr::select(any_of(c("species", "decimalLongitude", "decimalLatitude", "countryCode", "individualCount", # nolint
                            "gbifID", "id", "objectid", "family", "taxonRank", "coordinateUncertaintyInMeters", "year",
-                           "basisOfRecord", "institutionCode", "datasetName", "Source_type", "source", "citation", "Link")))
+                           "basisOfRecord", "institutionCode", "datasetName", "genericName", "specificEpithet", "Source_type", "source", "citation", "Link")))
   
   # Remove records with no spatial coordinates
   dat <- dat %>% filter(!is.na(decimalLongitude)) %>% filter(!is.na(decimalLatitude)) # nolint

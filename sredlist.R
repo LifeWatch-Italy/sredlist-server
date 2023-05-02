@@ -224,8 +224,9 @@ Prom<-future({
   ## If there are synonyms
   if(Gbif_Synonym != ""){
     
-    # Prepare synonyms
-    Gbif_Synonym <- Gbif_Synonym %>% gsub("  ", " ", .) %>% strsplit(., "[,;]+") %>% unlist(.) %>% ifelse(substr(., 1, 1)==" ", substr(., 2, 1000), .) %>% .[. != scientific_name]
+    # Prepare synonyms + remove those already in the downloaded data (dat)
+    Gbif_Synonym <- Gbif_Synonym %>% gsub("  ", " ", .) %>% strsplit(., "[,;]+") %>% unlist(.) %>% ifelse(substr(., 1, 1)==" ", substr(., 2, 1000), .) %>% sRL_decode(.) %>% .[. != scientific_name]
+    if("genericName" %in% names(dat) & "specificEpithet" %in% names(dat)){Gbif_Synonym <- subset(Gbif_Synonym, ! Gbif_Synonym %in% levels(as.factor(paste(dat$genericName, dat$specificEpithet, sep=" "))))}
     print(Gbif_Synonym)
     
     # Record name of first download
