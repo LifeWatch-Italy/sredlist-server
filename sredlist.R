@@ -1138,7 +1138,7 @@ Prom<-future({
   
 
   ### Save parameters and results
-  Storage_SP<-sRL_OutLog(Storage_SP, c("AOH_HabitatPreference", "AOH_MarginalHabitatPreference", "AOH_ElevationPreference", "AOH_Density"), c(paste0(habitats_pref, collapse=","), paste0(habitats_pref_MARGINAL, collapse=","), paste0(altitudes_pref, collapse=", "), ifelse(density_pref=='-1', NA, density_pref)))
+  Storage_SP<-sRL_OutLog(Storage_SP, c("AOH_HabitatPreference", "AOH_MarginalHabitatPreference", "AOH_ElevationPreference", "AOH_Density", "AOH_RangeType"), c(paste0(habitats_pref, collapse=","), paste0(habitats_pref_MARGINAL, collapse=","), paste0(altitudes_pref, collapse=", "), ifelse(density_pref=='-1', NA, density_pref), AOH_type))
   terraOptions(tempdir=tempdir())
   rasterOptions(tmpdir=tempdir())
   gc()
@@ -1192,7 +1192,7 @@ Prom<-future({
   }
 
   
-  ### Save Storage_SP
+  ### Save Storage_SP ----
   sRL_StoreSave(scientific_name, Storage_SP)
   
   ### Return list of arguments + calculate population size

@@ -108,14 +108,21 @@ function(scientific_name) {
 
 Prom<-future({
 
-    scientific_name <- sRL_decode(scientific_name)
+  scientific_name <- sRL_decode(scientific_name)
   sRL_loginfo("START - Habitat extract", scientific_name)
-  # Filter param
+  
+  # Extract habitats
   hab_pref <- rl_habitats(scientific_name, key = config$red_list_token)#$result
-  if(exists("hab_pref$result")){
+  if(is.null(nrow(hab_pref$result))==F){
     hab_pref$result <- hab_pref$result %>% distinct(., code, .keep_all=T) # Remove double (when habitats are used in several seasons)
+  
+    # Save in Storage SP
+    Storage_SP<-sRL_StoreRead(scientific_name, MANDAT=1)
+    Storage_SP<-sRL_OutLog(Storage_SP, c("AOH_HabitatORIGINAL", "AOH_HabitatMarginalORIGINAL"), c(hab_pref$result$code[hab_pref$result$suitability=="Suitable"] %>% paste(., collapse=","), hab_pref$result$code[hab_pref$result$suitability!="Suitable"] %>% paste(., collapse=",")))
+    sRL_StoreSave(scientific_name, Storage_SP)
   }
   sRL_loginfo("END - Habitat extract", scientific_name)
+  
   
   return(hab_pref)
 
