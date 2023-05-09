@@ -352,7 +352,7 @@ Prom<-future({
   ### Transform parameters GBIF filtering
   scientific_name <- sRL_decode(scientific_name)
   print(Gbif_Year)
-  print(Gbif_Uncertainty)
+  if(is.na(Gbif_Uncertainty) | Gbif_Uncertainty==-1){Gbif_Uncertainty<-10000} ; print(Gbif_Uncertainty) # If no Gbif_Uncertainty provided, I put a high threshold so that it's never triggered
   Gbif_Extent<-as.numeric(Gbif_Extent) ; print(Gbif_Extent)
   print(Gbif_Sea)
   Gbif_yearBin<-Gbif_yearBin=="true" ; print(Gbif_yearBin)
