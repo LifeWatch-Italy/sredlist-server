@@ -290,21 +290,61 @@ sRL_cleaningMemory<-function(Time_limit){
   }
   } ,error=function(e){cat("Problem removing Zip files")}) 
   
-  # Remove temporary folders
+  
+  
+  # Remove AOH_stored
   tryCatch({
     list_temp<-paste0("resources/AOH_stored/", list.files("resources/AOH_stored"))
-  if(length(list.files("resources/AOH_stored"))>0){
-    Time_diff_temp<-difftime(Time_now, file.info(paste(list_temp, "Storage_SP.rds", sep="/"))$mtime, units="mins") %>% as.numeric(.) #I use the modification time of Storage_SP because the folder modification time is not updated when Storage_SP is updated (which made problems when you started working on the same species after more than 45 minutes)
-    toremove_temp<-list_temp[Time_diff_temp>Time_limit]
-    unlink(toremove_temp, recursive=T)
-    temp_prop_removed<- (length(list_temp)-length(list.files("resources/AOH_stored")))
-    cat(paste0(length(toremove_temp), " / ", length(list_temp), " temporary folders should be removed, (", temp_prop_removed, " were correctly removed)", "\n"))
+    
+    if(length(list.files("resources/AOH_stored"))>0){
+      # List files to remove
+      Time_diff_temp<-difftime(Time_now, file.info(paste(list_temp, "Storage_SP.rds", sep="/"))$mtime, units="mins") %>% as.numeric(.) #I use the modification time of Storage_SP because the folder modification time is not updated when Storage_SP is updated (which made problems when you started working on the same species after more than 45 minutes)
+      toremove_temp<-list_temp[Time_diff_temp>Time_limit | is.na(Time_diff_temp)] # If time higher than Time_limit or if time is NA (which can happen if Storage_SP does not exist) I remove them
+      
+      # Keep track in Stored_Output
+      tryCatch({
+        FileStored<-paste0("Species/Stored_outputs/Stored_", substr(Sys.Date(), 1, 7), ".csv")
+        if(file.exists(FileStored)){Saved_output<-read.csv(FileStored)} else {Saved_output<-read.csv("Species/Output_save_empty.csv")}
+        for(SP in 1:length(toremove_temp)){
+          tryCatch({
+          SP_name<-toremove_temp[SP] %>% strsplit(., "/") %>% unlist(.) %>% .[length(.)] %>% sub("_", " ", .)
+          St_SP<-sRL_StoreRead(SP_name, 0)
+          Step<-sRL_LastStep(St_SP)
+          Saved_output[nrow(Saved_output)+1,]<-c(SP_name, as.character(St_SP$Creation[1]), "NotCompleted", Step)
+          }, error=function(e){cat(paste0("Problem tracking SP: ", SP_name))})
+        }
+        
+        write.csv(Saved_output, FileStored, row.names=F)
+      }, error=function(e){cat("Problem tracking incomplete assessments")})
+      
+      # Remove
+      unlink(toremove_temp, recursive=T)
+      
+      # Print
+      temp_prop_removed<- (length(list_temp)-length(list.files("resources/AOH_stored")))
+      cat(paste0(length(toremove_temp), " / ", length(list_temp), " stored folders should be removed, (", temp_prop_removed, " were correctly removed)", "\n"))
   }
-} ,error=function(e){cat("Problem removing temporary files")}) 
+}, error=function(e){cat("Problem removing Stored files")}) 
 
 }
 
 
+
+### Function sRL_LastStep: Extract last step run in incomplete assessment
+sRL_LastStep <- function(St_SP){
+  Out<-St_SP$Output
+  Out<-subset(Out, is.na(Out$Value)==F)
+  Step<-ifelse("Estimated_EOO_raw" %in% Out$Parameter, "7",
+            ifelse(("Usage_RS" %in% Out$Parameter | "Fragmentation_Isolation" %in% Out$Parameter), "6",
+               ifelse("AOH_GenerationLength" %in% Out$Parameter, "5", 
+                      ifelse("AOH_HabitatPreference" %in% Out$Parameter, "4", 
+                             ifelse("eoo_km2" %in% names(St_SP), "3",
+                                    ifelse("System_pref" %in% Out$Parameter, "2", 
+                                           ifelse(! "Distribution_Source" %in% Out$Parameter, "0",
+                                                  ifelse(Out$Value[Out$Parameter=="Distribution_Source"]=="Created", "1b", "1a"))))))))
+  
+  return(as.character(Step))
+}
 
 
 ### Function sRL_decode : it combines url_decode and control of the case of scientific name

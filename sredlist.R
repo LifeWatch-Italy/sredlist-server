@@ -670,12 +670,13 @@ Prom<-future({
   domain_pref<-revalue(as.character(domain_pref), c("1"="Terrestrial", "2"="Marine", "3"="Freshwater"))
   print(domain_pref)
   print(Crop_Country)
+  Storage_SP<-sRL_OutLog(Storage_SP, "System_pref", paste(domain_pref, collapse=","))
   
   # Crop for National Red Listing
   if(Crop_Country != ""){
     if(Crop_Country %in% c(coo_raw$SIS_name0, "", "Europe", "EU27")){
       distSP<-sRL_CropCountry(distSP, domain_pref, Crop_Country)
-      Storage_SP<-sRL_OutLog(Storage_SP, c("Crop_Country", "System_pref"), c(Crop_Country, paste(domain_pref, collapse=",")))} 
+      Storage_SP<-sRL_OutLog(Storage_SP, "Crop_Country", Crop_Country)}
     else {
       distSP<-data.frame()
       }
@@ -870,7 +871,7 @@ if(!"TRUE" %in% (c(habitats_pref, habitats_pref_MARGINAL) %in% crosswalk_to_use$
 # Clean memory
 Prom_clean<-future({
   sRL_loginfo("START - Cleaning memory", scientific_name)
-  sRL_cleaningMemory(Time_limit=45)
+  sRL_cleaningMemory(Time_limit=60)
   sRL_loginfo("END - Cleaning memory", scientific_name)
 }, seed=T)  
 Prom_clean %...>% print(.)
@@ -1957,6 +1958,7 @@ function(scientific_name,
   
   
   sRL_loginfo("Start Countries and refs", scientific_name)
+  output_dir<-paste0(sub(" ", "_", scientific_name), "_sRedList")
   
   # Countries (but enabling skipping step)
   if("countries_SIS" %in% names(Storage_SP)){
@@ -1969,7 +1971,6 @@ function(scientific_name,
   
   # Save csv files in a folder
   sRL_loginfo("Start writting", scientific_name)
-  output_dir<-paste0(sub(" ", "_", scientific_name), "_sRedList")
   dir.create(output_dir)
   write.csv(replace(allfields_to_save, is.na(allfields_to_save), ""), paste0(output_dir, "/allfields.csv"), row.names = F)
   write.csv(taxo_SIS, paste0(output_dir, "/taxonomy.csv"), row.names = F)
