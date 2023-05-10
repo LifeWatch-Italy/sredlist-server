@@ -867,6 +867,15 @@ function(scientific_name, habitats_pref= list(), habitats_pref_MARGINAL=list(), 
 if(length(habitats_pref)==0){no_habitat_pref()}
 if(!"TRUE" %in% (c(habitats_pref, habitats_pref_MARGINAL) %in% crosswalk_to_use$code)){no_habitats_crosswalk()}
 
+# Check elevation
+if(length(altitudes_pref)==0){altitudes_pref<-c(0,9000)}
+TestALT1<-altitudes_pref[1] %>% strsplit(., "-") %>% unlist(.) %>% as.numeric(.)
+TestALT2<-altitudes_pref[2] %>% strsplit(., "-") %>% unlist(.) %>% as.numeric(.)
+if(is.na(sum(TestALT1)) | is.na(sum(TestALT2)) | length(TestALT1)>2 | length(TestALT2)>2){elev_not_valid()} # Could be NA if text inside, could be length > 2 if two hyphens
+if(max(TestALT1)>min(TestALT2) | is.unsorted(TestALT1) | is.unsorted(TestALT2)){elev_decreasing()}
+
+# Check density
+if(density_pref!='-1' & is.na(sum(as.numeric(unlist(strsplit(density_pref, "-")))))){wrong_density()}
 
 # Clean memory
 Prom_clean<-future({
@@ -895,7 +904,6 @@ Prom<-future({
   Storage_SP$habitats_SIS=habitats_pref_DF
 
   # Altitude table (for aoh analysis and for SIS Connect)
-  if(length(altitudes_pref)==0){altitudes_pref<-c(0,9000)}
   altitudes_pref_DF<-sRL_PrepareAltitudeFile(scientific_name, altitudes_pref)
   Storage_SP$AltPref_saved=altitudes_pref_DF
   density_pref <- density_pref %>% gsub(" ", "", .) %>% gsub(",", ".", .)
@@ -1468,14 +1476,12 @@ function(scientific_name) {
 #* @tag sRedList
 function(scientific_name, dispersion="-1", density_pref= '-1') {
   
-  # Check dispersion
-  dispersion <- dispersion %>% gsub(" ", "", .) %>% gsub(",", ".", .) %>% as.character(.) %>% strsplit(., "-") %>% unlist() %>% as.numeric(.)*1000 ; print(dispersion)
-  if(is.na(sum(dispersion))){wrong_dispersion()}
   
-  # Check density
-  if(density_pref =="-1" | density_pref=="" | is.null(density_pref)){no_density_fragm()}
-  density_pref <- density_pref %>% gsub(" ", "", .) %>% gsub(",", ".", .) %>% as.character(.)  %>% strsplit(., "-") %>% unlist(.) %>% as.numeric(.) ; print(density_pref)
-  if(NA %in% density_pref){wrong_density()}
+  # Prepare dispersion and density
+  dispersion <- dispersion %>% gsub(" ", "", .) %>% gsub(",", ".", .) %>% as.character(.) %>% strsplit(., "-") %>% unlist() %>% as.numeric(.)*1000 ; print(dispersion)
+  density_raw<-density_pref ; density_pref <- density_pref %>% gsub(" ", "", .) %>% gsub(",", ".", .) %>% as.character(.)  %>% strsplit(., "-") %>% unlist(.) %>% as.numeric(.) ; print(density_pref)
+  if(is.na(sum(dispersion)) | density_raw =="-1" | density_raw=="" | is.null(density_raw) | is.na(sum(density_pref)) | length(dispersion)>2 | length(density_pref)>2){wrong_density()} # The error does not matter here, the error text is in the client
+
   
 Prom<-future({
     sf::sf_use_s2(FALSE)

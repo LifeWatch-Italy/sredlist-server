@@ -80,16 +80,8 @@ no_coords_update <- function() {
   api_error(message = "Longitude (dec_long) and latitude (dec_lat) columns were not found in uploaded data", status = 400)
 }
 
-no_density_fragm <- function() {
-  api_error(message = "A density must be provided to perform this step", status = 400)
-}
-
 wrong_density <- function() {
   api_error(message = "Density estimate is not valid. Should be a number or two numbers separated by a hyphen", status = 400)
-}
-
-wrong_dispersion <- function() {
-  api_error(message = "Isolation distance estimate is not valid. Should be a number or two numbers separated by a hyphen", status = 400)
 }
 
 incorrect_GL <- function() {
@@ -117,9 +109,17 @@ coords_outofbound <- function() {
 }
 
 wrong_species_upload <- function() {
-  api_error(message = "At least one of the uploaded observations has a different species name (sci_name) than the name of the species you are assessing. Please edit your csv file before uploading again.", status = 400)
+  api_error(message = "At least one of the uploaded observations has a different species name (sci_name) than the name of the species you are assessing. Please edit your csv file before uploading again", status = 400)
 }
 
 no_storage <- function() {
-  api_error(message = "The session was inactive for more than 45 minutes so all files have been deleted... We are sorry but you have to start again from the beginning", status=400)
+  api_error(message = "The session was inactive for more than 60 minutes so all files have been deleted... We are sorry but you have to start again from the beginning", status=400)
+}
+
+elev_not_valid <- function(){
+  api_error(message = "Elevation preference is not valid: it should be either a number or two numbers separated by a hyphen.", status=400)
+}
+
+elev_decreasing <- function(){
+  api_error(message = "Elevation preference is not valid: minimum elevation higher than maximum.", status=400)
 }
