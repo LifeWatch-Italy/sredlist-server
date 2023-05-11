@@ -1472,7 +1472,8 @@ function(scientific_name) {
 #* @get species/<scientific_name>/analysis/fragmentation
 #* @param scientific_name:string Scientific Name
 #* @param dispersion:string dispersion
-#* @serializer png list(width = 1200, height = 600)
+#* @param density_pref:string density_pref
+#* @serializer unboxedJSON
 #* @tag sRedList
 function(scientific_name, dispersion="-1", density_pref= '-1') {
   
@@ -1480,7 +1481,7 @@ function(scientific_name, dispersion="-1", density_pref= '-1') {
   # Prepare dispersion and density
   dispersion <- dispersion %>% gsub(" ", "", .) %>% gsub(",", ".", .) %>% as.character(.) %>% strsplit(., "-") %>% unlist() %>% as.numeric(.)*1000 ; print(dispersion)
   density_raw<-density_pref ; density_pref <- density_pref %>% gsub(" ", "", .) %>% gsub(",", ".", .) %>% as.character(.)  %>% strsplit(., "-") %>% unlist(.) %>% as.numeric(.) ; print(density_pref)
-  if(is.na(sum(dispersion)) | density_raw =="-1" | density_raw=="" | is.null(density_raw) | is.na(sum(density_pref)) | length(dispersion)>2 | length(density_pref)>2){wrong_density()} # The error does not matter here, the error text is in the client
+  if(is.na(sum(dispersion)) | density_raw =="-1" | density_raw=="" | is.null(density_raw) | is.na(sum(density_pref)) | length(dispersion)>2 | length(density_pref)>2 | is.unsorted(density_pref) | is.unsorted(dispersion)){wrong_density()} # The error does not matter here, the error text is in the client
 
   
 Prom<-future({
@@ -1492,10 +1493,6 @@ Prom<-future({
     aoh<-rast(paste0("resources/AOH_stored/", gsub(" ", "_", scientific_name), "/Current/", list.files(paste0("resources/AOH_stored/", gsub(" ", "_", scientific_name), "/Current"))[1]))[[1]]  ; crs(aoh)<-CRSMOLL
     aoh_type<-Storage_SP$AOH_type
     
-    ### Save in output log
-    Storage_SP<-sRL_OutLog(Storage_SP, c("Fragmentation_Isolation", "Fragmentation_Density"), c(paste(dispersion/1000, collapse="-"), paste(density_pref, collapse="-")))
-    sRL_StoreSave(scientific_name, Storage_SP)
-    
     ### If large range, I have to binarize the suitable habitat
     if(aoh_type=="Large"){aoh<-ifel(aoh<=90, 0, 1)}
     
@@ -1505,6 +1502,16 @@ Prom<-future({
       res2<-sRL_fragmentation(aoh, aoh_type, max(dispersion), density_pref) 
     } else {res2<-res} # I create a res2 even if no uncertainty in isolation distance to avoid having to code 2 plots
     
+    ### Subcriteria C2
+    Max_pops<-c(max(res$clusters$pop, na.rm=T), max(res2$clusters$pop, na.rm=T), max(res$clusters$pop2, na.rm=T), max(res2$clusters$pop2, na.rm=T)) %>% subset(., abs(.) != Inf) %>% unique(.) %>% round(.)
+    Pop_max<-c(min(Max_pops, na.rm=T), max(Max_pops, na.rm=T)) %>% unique(.)
+    Pop_prop<-c((max(res$clusters$pop, na.rm=T)/sum(res$clusters$pop, na.rm=T)), (max(res2$clusters$pop, na.rm=T)/sum(res2$clusters$pop, na.rm=T))) %>% unique(.) %>% as.numeric(.) %>% round(.,2)*100 # Density uncertainty does not make any difference there
+    
+    ### Save in output log
+    Storage_SP<-sRL_OutLog(Storage_SP, c("Fragmentation_Isolation", "Fragmentation_Density"), c(paste(dispersion/1000, collapse="-"), paste(density_pref, collapse="-")))
+    Storage_SP$Pop_max<-Pop_max
+    Storage_SP$Pop_prop<-Pop_prop
+    sRL_StoreSave(scientific_name, Storage_SP)
     
     ### Plots
     ### AOH and clusters
@@ -1540,7 +1547,7 @@ Prom<-future({
       xlab("How many individuals constitute a 'small' population?")+ylab("Proportion of the population that is fragmented")+
       ylim(c(0,1))+
       labs(subtitle=SubTitle)+
-      theme_minimal() %+replace%   theme(text=element_text(size=15), plot.subtitle=element_text(hjust=0.5), legend.position="bottom")
+      theme_minimal() %+replace%   theme(text=element_text(size=15), plot.subtitle=element_text(hjust=0.5), legend.position="bottom", plot.background=element_rect(fill="white", colour="white"))
     
     LABS<-c("Cumulated population", "", "", "")
     
@@ -1580,13 +1587,23 @@ Prom<-future({
       guides(col=guide_legend(nrow=2,byrow=TRUE))
     
     ### Final plot
-    Plot<-cowplot::plot_grid(G1, G2, ncol=2)
-    return(Plot)
+    ggsave(filename = paste0("resources/AOH_stored/", sub(" ", "_", scientific_name), "/Plots/fragmentation.png"), plot = cowplot::plot_grid(G1, G2, ncol=2), width=15, height=8)
+    Frag_plot <- base64enc::dataURI(file = paste0("resources/AOH_stored/", sub(" ", "_", scientific_name), "/Plots/fragmentation.png"), mime = "image/png", encoding = "base64") # nolint
     
-  }, seed=T) %>% then(onRejected=function(err) {return(ggplot()+ggtitle("ERROR: we are not able to create this plot, please report that error")+labs(subtitle=err))})
+    
+    LIST<-list(
+      Frag_plot=Frag_plot,
+      Frag_result=SubTitle,
+      Frag_PopMax=paste(Pop_max, collapse="-"),
+      Frag_PopProp=paste(Pop_prop, collapse="-")
+    )
+    
+    return(LIST)
+    
+  }, seed=T)
   
-  ### Plot the distribution
-  return(Prom %...>% plot())
+  ### Return list
+  return(Prom)
 }
 
 
@@ -1778,6 +1795,13 @@ function(scientific_name){
   }
   
   
+  ### Pop max and prop
+  if(!"Pop_prop" %in% names(Storage_SP)){Pop_max<-Pop_prop<- NA} else {
+    Pop_max<-Storage_SP$Pop_max %>% paste(., collapse="-")
+    Pop_prop<-Storage_SP$Pop_prop %>% paste(., collapse="-")
+  }
+  
+  
   ### Save Storage_SP
   sRL_StoreSave(scientific_name, Storage_SP)
   
@@ -1795,7 +1819,9 @@ function(scientific_name){
     Pop_val=Pop_val, 
     Trends_dir=Trends_dir, 
     Trends_val=Trends_val, 
-    Trends_justif=Trends_justif
+    Trends_justif=Trends_justif,
+    Pop_max=Pop_max,
+    Pop_prop=Pop_prop
     )
   
   return(list(Estimates=Estimates_df))
@@ -1813,7 +1839,7 @@ function(scientific_name,
          pastTrends_dir, pastTrends_qual, pastTrends_basis, pastTrends_reversible, pastTrends_understood, pastTrends_ceased, fragment, Fragment_justif,
          Extreme_EOO, Extreme_AOO, Extreme_Pop, Extreme_NLoc, Extreme_NSub, Extreme_EOO_justif, Extreme_AOO_justif, Extreme_Pop_justif, Extreme_NLoc_justif, Extreme_NSub_justif,
          Continuing_EOO, Continuing_AOO, Continuing_Hab, Continuing_Pop, Continuing_NLoc, Continuing_NSub, Continuing_EOO_justif, Continuing_AOO_justif, Continuing_Hab_justif, Continuing_Pop_justif, Continuing_NLoc_justif, Continuing_NSub_justif,
-         locationNumber,	locationNumber_justif, SubNumber,	SubNumber_justif,	Num_Largest, Percent_Largest, OneSubpop,	VeryRestricted,	VeryRestricted_justif,
+         locationNumber,	locationNumber_justif, SubNumber,	SubNumber_justif, OneSubpop,	VeryRestricted,	VeryRestricted_justif,
          populationTrend, currentTrends_basis, currentPop_years, futureTrends_quality, futureTrends_basis, futureTrends, futureTrends_dir, futureTrends_justif, ongoingTrends_NY, ongoingTrends_quality, ongoingTrends_basis, ongoingTrends_reversible, ongoingTrends_understood, ongoingTrends_ceased, ongoingTrends, ongoingTrends_dir, ongoingTrends_justif,
          C_igen_value, C_igen_qual, C_igen_justif, C_iigen_value, C_iigen_qual, C_iigen_justif, C_iiigen_value, C_iiigen_qual, C_iiigen_justif
          ) {
@@ -1894,8 +1920,8 @@ function(scientific_name,
   allfields$AreaRestricted.justification<-VeryRestricted_justif
   allfields$SubpopulationNumber.range<-SubNumber
   allfields$SubpopulationNumber.justification<-SubNumber_justif
-  allfields$MaxSubpopulationSize.range<-Num_Largest
-  allfields$MatureIndividualsSubpopulation.value<-Percent_Largest
+  allfields$MaxSubpopulationSize.range<-Estimates[15]
+  allfields$MatureIndividualsSubpopulation.value<-Estimates[16]
   allfields$SubpopulationSingle.value<-OneSubpop
 
   # Population trends
