@@ -9,6 +9,7 @@ default:
   engine_AOH: "terra"
   crosswalk: "Lumbierres"
   RAMmax_GB: 10
+  sRL_version: "2023.0"
   #Development
   access_control_allow_origin: "*"
   # Development Victor

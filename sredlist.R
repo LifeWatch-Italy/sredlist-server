@@ -942,7 +942,7 @@ Prom<-future({
   dir.create(paste0(output_dir, "/Current"), recursive=T)
   dir.create(paste0(output_dir, "/Current_optimistic"), recursive=T)
   dir.create(paste0(output_dir, "/Temporary"))
-  do.call(file.remove, list.files(output_dir, full.names = TRUE, recursive=T) %>% .[! grepl("Storage_SP", .)] %>% list(.))
+  do.call(file.remove, list.files(output_dir, full.names = TRUE, recursive=T) %>% .[! (grepl("Storage_SP", .) | grepl("Plots/", .))] %>% list(.)) # Remove all files but Storage_SP and plots (needed for Rmarkdown)
   terraOptions(tempdir=paste0(output_dir, "/Temporary"), memmax=config$RAMmax_GB)
   rasterOptions(tmpdir=paste0(output_dir, "/Temporary"), maxmemory=config$RAMmax_GB)
 
@@ -1853,11 +1853,7 @@ function(scientific_name,
   Storage_SP<-sRL_StoreRead(scientific_name, MANDAT=1)
   print(names(Storage_SP))
 
-  ### Prepare SIS Connect files
-  habitats_SIS<-Storage_SP$habitats_SIS[,6:13]
-  #habitats_SIS$assessment_id<-NA
-  habitats_SIS$internal_taxon_id<-sRL_CalcIdno(scientific_name)
-   
+  
   sRL_loginfo("Start Allfields", scientific_name)
   
   # Charge empty allfields
@@ -1991,6 +1987,7 @@ function(scientific_name,
   
   sRL_loginfo("Start Countries and refs", scientific_name)
   output_dir<-paste0(sub(" ", "_", scientific_name), "_sRedList")
+  dir.create(output_dir)
   
   # Countries (but enabling skipping step)
   if("countries_SIS" %in% names(Storage_SP)){
@@ -1998,16 +1995,20 @@ function(scientific_name,
     write.csv(countries_SIS, paste0(output_dir, "/countries.csv"), row.names = F)
   }
   
+  # Habitats (if AOH not skipped)
+  if("habitats_SIS" %in% names(Storage_SP)){
+    habitats_SIS<-Storage_SP$habitats_SIS[,6:13]
+    habitats_SIS$internal_taxon_id<-sRL_CalcIdno(scientific_name)
+    write.csv(habitats_SIS, paste0(output_dir, "/habitats.csv"), row.names = F)
+  }
+  
   ref_SIS<-sRL_OutputRef(scientific_name, Storage_SP) 
   taxo_SIS<-sRL_OutputTaxo(scientific_name, Estimates)
   
   # Save csv files in a folder
-  sRL_loginfo("Start writting", scientific_name)
-  dir.create(output_dir)
   write.csv(replace(allfields_to_save, is.na(allfields_to_save), ""), paste0(output_dir, "/allfields.csv"), row.names = F)
   write.csv(taxo_SIS, paste0(output_dir, "/taxonomy.csv"), row.names = F)
   write.csv(ref_SIS, paste0(output_dir, "/references.csv"), row.names = F)
-  write.csv(replace(habitats_SIS, is.na(habitats_SIS), ""), paste0(output_dir, "/habitats.csv"), row.names = F)
   write.csv(Storage_SP$Output[Storage_SP$Output$Definition !="Only used to track usage",], paste0(output_dir, "/00.Output_log.csv"), row.names = F)
   
   # Download tracking files
@@ -2139,7 +2140,7 @@ function(scientific_name) {
     } else {Saved_output<-read.csv("Species/Output_save_empty.csv")}
     Saved_output<-rbind.fill(Saved_output, output_species)
     write.csv(Saved_output, FileStored, row.names=F)
-  })
+  }, error=function(e){cat("TryCatch save output while zipping")})
   
   # Remove the local files
   unlink(paste0(gsub(" ", "_", scientific_name), "_sRedList"), recursive=T)
@@ -2373,7 +2374,7 @@ function(scientific_name) {
 
 
 
-#* Merge ZIP files
+#* Merge ZIP files ----
 #* @post assessment/merge-zip
 #* @param Uploaded_Zips:[file] A zip files
 #* @serializer  contentType list(type="application/octet-stream")
@@ -2399,21 +2400,24 @@ function(Uploaded_Zips=list()) {
   
   ### MERGE
   # Merge habitats
-  Hab_files<-list.files(Zip_Path, recursive = T)[grepl('habitats.csv', list.files(Zip_Path, recursive = T))] %>% paste0(Zip_Path, "/", .)
+  Hab_files<-list.files(Zip_Path, recursive = T)[grepl('habitats.csv', list.files(Zip_Path, recursive = T))] %>% paste0(Zip_Path, "/", .) %>% subset(., .!= paste0(Zip_Path, "/"))
   
-  eval(parse(text=
+  if(length(Hab_files)>0){
+    eval(parse(text=
                paste0("habitatsM<-rbind.fill(",
                       paste0("read.csv(Hab_files[", 1:length(Hab_files), "])", collapse=','),")"
                )))
-  
+  }
   
   # Merge countries
-  Coun_files<-list.files(Zip_Path, recursive = T)[grepl('countries.csv', list.files(Zip_Path, recursive = T))] %>% paste0(Zip_Path, "/", .)
+  Coun_files<-list.files(Zip_Path, recursive = T)[grepl('countries.csv', list.files(Zip_Path, recursive = T))] %>% paste0(Zip_Path, "/", .) %>% subset(., .!= paste0(Zip_Path, "/"))
   
-  eval(parse(text=
+  if(length(Coun_files)>0){
+    eval(parse(text=
                paste0("countriesM<-rbind.fill(",
                       paste0("read.csv(Coun_files[", 1:length(Coun_files), "])", collapse=','),")"
                )))
+  }
   
   # Merge references
   Ref_files<-list.files(Zip_Path, recursive = T)[grepl('references.csv', list.files(Zip_Path, recursive = T))] %>% paste0(Zip_Path, "/", .)
@@ -2468,9 +2472,9 @@ function(Uploaded_Zips=list()) {
   ### Save in a merged ZIP file
   unlink(paste0(Zip_Path, "/", list.files(Zip_Path)), recursive=T)
   write.csv(replace(allfieldsM, is.na(allfieldsM), ""), paste0(Zip_Path, "/allfields.csv"), row.names = F)
-  write.csv(replace(countriesM, is.na(countriesM), ""), paste0(Zip_Path, "/countries.csv"), row.names = F)
+  if(exists("countriesM")){write.csv(replace(countriesM, is.na(countriesM), ""), paste0(Zip_Path, "/countries.csv"), row.names = F)}
   write.csv(replace(referencesM, is.na(referencesM), ""), paste0(Zip_Path, "/references.csv"), row.names = F)
-  write.csv(replace(habitatsM, is.na(habitatsM), ""), paste0(Zip_Path, "/habitats.csv"), row.names = F)
+  if(exists("habitatsM")){write.csv(replace(habitatsM, is.na(habitatsM), ""), paste0(Zip_Path, "/habitats.csv"), row.names = F)}
   write.csv(LogM, paste0(Zip_Path, "/00.Output_log.csv"), row.names = F)
   
   # Save distribution and occurrences if from GBIF

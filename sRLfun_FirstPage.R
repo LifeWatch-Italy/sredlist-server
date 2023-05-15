@@ -304,7 +304,15 @@ sRL_cleaningMemory<-function(Time_limit){
       # Keep track in Stored_Output
       tryCatch({
         FileStored<-paste0("Species/Stored_outputs/Stored_", substr(Sys.Date(), 1, 7), ".csv")
-        if(file.exists(FileStored)){Saved_output<-read.csv(FileStored)} else {Saved_output<-read.csv("Species/Output_save_empty.csv")}
+        
+        if(file.exists(FileStored)){
+          Saved_output<-read.csv(FileStored)
+          RMDIST<-ifelse(("NotCompleted" %in% Saved_output$Parameter | "AOH_HabitatPreference" %in% Saved_output$Parameter), 0, 1) # If AOH has never been called (ie if there is no NotCompleted saved this month, AND no complete assessment with AOH performed)n then I clean distributions
+        } else {
+          Saved_output<-read.csv("Species/Output_save_empty.csv")
+          RMDIST<-1 # If it's the first Output_save run of the month, clean distributions (but later so that it does not delay saving output_save)
+        }
+        
         for(SP in 1:length(toremove_temp)){
           tryCatch({
           SP_name<-toremove_temp[SP] %>% strsplit(., "/") %>% unlist(.) %>% .[length(.)] %>% sub("_", " ", .)
@@ -314,7 +322,7 @@ sRL_cleaningMemory<-function(Time_limit){
           }, error=function(e){cat(paste0("Problem tracking SP: ", SP_name))})
         }
         
-        write.csv(Saved_output, FileStored, row.names=F)
+        if(length(toremove_temp)>0){write.csv(Saved_output, FileStored, row.names=F)}
       }, error=function(e){cat("Problem tracking incomplete assessments")})
       
       # Remove
@@ -324,7 +332,14 @@ sRL_cleaningMemory<-function(Time_limit){
       temp_prop_removed<- (length(list_temp)-length(list.files("resources/AOH_stored")))
       cat(paste0(length(toremove_temp), " / ", length(list_temp), " stored folders should be removed, (", temp_prop_removed, " were correctly removed)", "\n"))
   }
-}, error=function(e){cat("Problem removing Stored files")}) 
+}, error=function(e){cat("Problem removing Stored files")})
+  
+  ### Clean distributions (should be called once per month)
+  tryCatch({
+    if(RMDIST==1){
+      sRL_RemoveDistrib(15)
+    }
+  }, error=function(e){cat("Problem cleaning distributions")})
 
 }
 
@@ -355,3 +370,38 @@ sRL_decode<-function(scientific_name){
 }
 
 
+
+
+### Function sRL_RemoveDistrib: removes distributions created with GBIF or uploaded in >15 days
+sRL_RemoveDistrib<-function(Max_Days){
+  
+  cat("START - Cleaning distributions \n")
+  
+  
+  # List all distribution files
+  list_dist<-list.files(config$distribution_path, recursive = T)
+  
+  # Extract non-RL distributions (and remove config$distribution_path which occurs if nothing to remove)
+  list_remove<-list_dist[! grepl("_RL", list_dist)] %>% paste0(config$distribution_path, .) %>% subset(., . != config$distribution_path)
+  
+  # Restrict to distributions from > 15 days
+  Recent_dates <- (Sys.Date()-c(1:Max_Days)) %>% as.character(.) %>% gsub("-", "", .)
+  list_remove_filtered<-subset(list_remove, ! grepl(paste(Recent_dates, collapse="|"), list_remove))
+  
+  # Remove them
+  unlink(list_remove_filtered, recursive=T)
+  
+  # Remove empty directories in distribution folders
+  COUNT<-0
+  for(FIL in list_remove_filtered){
+    Dir0<-FIL %>% sub(config$distribution_path, "", .) %>% strsplit(., "/") %>% unlist(.) %>% .[1] %>% paste0(config$distribution_path, .)
+    TAF::rmdir(Dir0, recursive=T)
+    COUNT<-COUNT+1
+  }
+
+  
+  # Return result of the cleaning
+  cat(paste0("There are ", length(list_remove_filtered), " files and ", COUNT, " empty folders to remove", "\n"))
+  
+  cat("END - Cleaning distributions \n")
+}
