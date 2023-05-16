@@ -1,41 +1,42 @@
-Species,Date,Parameter,Definition,Value
-NA,NA,Distribution_Source,"Source of the distribution map. Could be either ""Red List"" (if the last range map published in the Red List has been used), ""Uploaded"" (if you uploaded a range map on the platform), “StoredOnPlatform” (if you used a distribution that was previously created or uploaded on the platform), or ""Created"" (if you created a range map from occurrence data)",NA
-NA,NA,Gbif_Source,"Source of occurrence data used to create a range map. Could include ""GBIF"" (automatic download from GBIF website), ""OBIS"" (automatic download from OBIS website), ""Red List"" (use of Red List occurrence points), ""Uploaded"" (upload of your own records)",NA
-NA,NA,Gbif_Year,Minimum year of observations. All observations made before this date have been removed from the occurrences,NA
-NA,NA,Gbif_Uncertainty,Maximum coordinate uncertainty. All observations with higher localisation uncertainty than this value (in km) will be removed. Only applies to GBIF / OBIS data,NA
-NA,NA,Gbif_Sea,Selection of land / sea data. 'excludesea'= Occurrence records made at sea were excluded (Terrestrial species) - 'excludeland'= Occurence records made at land were excluded (Marine species),NA
-NA,NA,Gbif_Extent,"Filtering for a geographic extent. Removes observations outside these coordinates (min longitude, max longitude, min latitude, max latitude)",NA
-NA,NA,Gbif_yearBin,Exclude records with no year information (if equals “TRUE” this means that records with missing information were removed),NA
-NA,NA,Gbif_uncertainBin,Exclude records with no coordinate uncertainty information (if equals “TRUE” this means that records with missing information were removed),NA
-NA,NA,Mapping_Start,First step of the mapping procedure to create a range map. 'mcp'= Minimum Convex Polygon around occurence records - 'alpha'= Alphahull around occurrence records - 'kernel'= Kernel distribution – ‘indivsites’= Individual sites - 'hydro'=Hydrobasins with occurrence records - 'hydroMCP= Hydrobasins overlapping with the Minimum Convex Polygon around occurrence records,NA
-NA,NA,Mapping_Buffer,A buffer of X km has been made around the first range,NA
-NA,NA,Mapping_Crop,Has the range been cropped to keep only land or sea. cropland= Only land was kept (sea areas excluded) - cropsea= only sea was kept (land areas excluded),NA
-NA,NA,Mapping_Altitude,Minimum and maximum elevation allowed in the range,NA
-NA,NA,Mapping_Merge,Merge with published range map (if “TRUE” it means that the distribution created from occurrence records has been merged with the published range map),NA
-NA,NA,Mapping_Smooth,Smoothing parameter of the obtained range,NA
-NA,NA,Kernel_parameter,Value of the kernel parameter (only important if Kernel has been chosen as the method to map distribution with the Mapping_Start parameter,NA
-NA,NA,Alpha_parameter,Value of the Alphahull parameter (only important if Alphahull has been chosen as the method to map distribution with the Mapping_Start parameter,NA
-NA,NA,Distribution_Presence,Presence parameters filtered in the Red List or uploaded distribution,NA
-NA,NA,Distribution_Origin,Origin parameters filtered in the Red List or uploaded distribution,NA
-NA,NA,Distribution_Seasonal,Seasonal parameters filtered in the Red List or uploaded distribution,NA
-NA,NA,Crop_Country,Country used to restrict species' distribution in case of National (or European) Red Listing,NA
-NA,NA,System_pref,"System preferences selected for the species. Could include terrestrial, freshwater, marine",NA
-NA,NA,AOH_HabitatPreference,Habitat preference used to calculate Area of Habitat,NA
-NA,NA,AOH_MarginalHabitatPreference,Marginal habitat preference used to calculate Area of Habitat (we calculate an AOH without them and one with them to provide the range of AOH),NA
-NA,NA,AOH_ElevationPreference,Elevation preference used to calculate Area of Habitat,NA
-NA,NA,AOH_GenerationLength,Generation Length used to calculate trends in Area of Habitat,NA
-NA,NA,AOH_Density,Density (mature ind per km2) used to calculate population size,NA
-NA,NA,Fragmentation_Density,Density (mature ind per km2) used to calculate fragmentation,NA
-NA,NA,Fragmentation_Isolation,Distance (in km) above which subpopulations are considered isolated,NA
-NA,NA,Estimated_EOO_raw,This is the original EOO value calculated by the platform (it might differ from the value in allfields.csv if you manually edited this value),NA
-NA,NA,Estimated_AOO_raw,This is the original AOO value calculated by the platform (it might differ from the value in allfields.csv if you manually edited this value),NA
-NA,NA,Estimated_PopSize_raw,This is the original Population Size value calculated by the platform (it might differ from the value in allfields.csv if you manually edited this value),NA
-NA,NA,Estimated_PopTrends_raw,This is the original Population Trends value calculated by the platform (it might differ from the value in allfields.csv if you manually edited this value),NA
-NA,NA,Original_density,Only used to track usage,NA
-NA,NA,Original_GL,Only used to track usage,NA
-NA,NA,Original_altpref,Only used to track usage,NA
-NA,NA,Col_allfields,Only used to track usage,NA
-NA,NA,Usage_RS,Only used to track usage,NA
-NA,NA,AOH_RangeType,Only used to track usage,NA
-NA,NA,AOH_HabitatORIGINAL,Only used to track usage,NA
-NA,NA,AOH_HabitatMarginalORIGINAL,Only used to track usage,NA
+Species,Date,Parameter,Count,Definition,Value
+NA,NA,Distribution_Source,0,"Source of the distribution map. Could be either ""Red List"" (if the last range map published in the Red List has been used), ""Uploaded"" (if you uploaded a range map on the platform), “StoredOnPlatform” (if you used a distribution that was previously created or uploaded on the platform), or ""Created"" (if you created a range map from occurrence data)",NA
+NA,NA,Gbif_Source,0,"Source of occurrence data used to create a range map. Could include ""GBIF"" (automatic download from GBIF website), ""OBIS"" (automatic download from OBIS website), ""Red List"" (use of Red List occurrence points), ""Uploaded"" (upload of your own records)",NA
+NA,NA,Gbif_Year,0,Minimum year of observations. All observations made before this date have been removed from the occurrences,NA
+NA,NA,Gbif_Uncertainty,0,Maximum coordinate uncertainty. All observations with higher localisation uncertainty than this value (in km) will be removed. Only applies to GBIF / OBIS data,NA
+NA,NA,Gbif_Sea,0,Selection of land / sea data. 'excludesea'= Occurrence records made at sea were excluded (Terrestrial species) - 'excludeland'= Occurence records made at land were excluded (Marine species),NA
+NA,NA,Gbif_Extent,0,"Filtering for a geographic extent. Removes observations outside these coordinates (min longitude, max longitude, min latitude, max latitude)",NA
+NA,NA,Gbif_yearBin,0,Exclude records with no year information (if equals “TRUE” this means that records with missing information were removed),NA
+NA,NA,Gbif_uncertainBin,0,Exclude records with no coordinate uncertainty information (if equals “TRUE” this means that records with missing information were removed),NA
+NA,NA,Mapping_Start,0,First step of the mapping procedure to create a range map. 'mcp'= Minimum Convex Polygon around occurence records - 'alpha'= Alphahull around occurrence records - 'kernel'= Kernel distribution – ‘indivsites’= Individual sites - 'hydro'=Hydrobasins with occurrence records - 'hydroMCP= Hydrobasins overlapping with the Minimum Convex Polygon around occurrence records,NA
+NA,NA,Mapping_Buffer,0,A buffer of X km has been made around the first range,NA
+NA,NA,Mapping_Crop,0,Has the range been cropped to keep only land or sea. cropland= Only land was kept (sea areas excluded) - cropsea= only sea was kept (land areas excluded),NA
+NA,NA,Mapping_Altitude,0,Minimum and maximum elevation allowed in the range,NA
+NA,NA,Mapping_Merge,0,Merge with published range map (if “TRUE” it means that the distribution created from occurrence records has been merged with the published range map),NA
+NA,NA,Mapping_Smooth,0,Smoothing parameter of the obtained range,NA
+NA,NA,Kernel_parameter,0,Value of the kernel parameter (only important if Kernel has been chosen as the method to map distribution with the Mapping_Start parameter,NA
+NA,NA,Alpha_parameter,0,Value of the Alphahull parameter (only important if Alphahull has been chosen as the method to map distribution with the Mapping_Start parameter,NA
+NA,NA,Distribution_Presence,0,Presence parameters filtered in the Red List or uploaded distribution,NA
+NA,NA,Distribution_Origin,0,Origin parameters filtered in the Red List or uploaded distribution,NA
+NA,NA,Distribution_Seasonal,0,Seasonal parameters filtered in the Red List or uploaded distribution,NA
+NA,NA,Crop_Country,0,Country used to restrict species' distribution in case of National (or European) Red Listing,NA
+NA,NA,System_pref,0,"System preferences selected for the species. Could include terrestrial, freshwater, marine",NA
+NA,NA,AOH_HabitatPreference,0,Habitat preference used to calculate Area of Habitat,NA
+NA,NA,AOH_MarginalHabitatPreference,0,Marginal habitat preference used to calculate Area of Habitat (we calculate an AOH without them and one with them to provide the range of AOH),NA
+NA,NA,AOH_ElevationPreference,0,Elevation preference used to calculate Area of Habitat,NA
+NA,NA,AOH_GenerationLength,0,Generation Length used to calculate trends in Area of Habitat,NA
+NA,NA,AOH_Density,0,Density (mature ind per km2) used to calculate population size,NA
+NA,NA,Fragmentation_Density,0,Density (mature ind per km2) used to calculate fragmentation,NA
+NA,NA,Fragmentation_Isolation,0,Distance (in km) above which subpopulations are considered isolated,NA
+NA,NA,Estimated_EOO_raw,0,This is the original EOO value calculated by the platform (it might differ from the value in allfields.csv if you manually edited this value),NA
+NA,NA,Estimated_AOO_raw,0,This is the original AOO value calculated by the platform (it might differ from the value in allfields.csv if you manually edited this value),NA
+NA,NA,Estimated_PopSize_raw,0,This is the original Population Size value calculated by the platform (it might differ from the value in allfields.csv if you manually edited this value),NA
+NA,NA,Estimated_PopTrends_raw,0,This is the original Population Trends value calculated by the platform (it might differ from the value in allfields.csv if you manually edited this value),NA
+NA,NA,Original_density,0,Only used to track usage,NA
+NA,NA,Original_GL,0,Only used to track usage,NA
+NA,NA,Original_altpref,0,Only used to track usage,NA
+NA,NA,Col_allfields,0,Only used to track usage,NA
+NA,NA,Usage_RS,0,Only used to track usage,NA
+NA,NA,AOH_RangeType,0,Only used to track usage,NA
+NA,NA,AOH_HabitatORIGINAL,0,Only used to track usage,NA
+NA,NA,AOH_HabitatMarginalORIGINAL,0,Only used to track usage,NA
+NA,NA,AOH_time,0,Only used to track usage,NA

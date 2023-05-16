@@ -294,8 +294,9 @@ Prom<-future({
   # sRL_loginfo("END - Extracting elevation values")
 
 
-  # Assign
+  # Assign + count use of step 1
   output_to_save<-sRL_InitLog(scientific_name, DisSource = "Created") ; output_to_save$Value[output_to_save$Parameter=="Gbif_Source"]<-c(ifelse(Gbif_Source[1]==1, "GBIF", ""), ifelse(Gbif_Source[2]==1, "OBIS", ""), ifelse(Gbif_Source[3]==1, "Red_List", ""), ifelse(is.null(nrow(Uploaded_Records)), "", "Uploaded")) %>% .[.!=""] %>% paste(., collapse=" + ")
+  output_to_save$Count[output_to_save$Parameter=="Gbif_Source"]<-ifelse(file.exists(paste0("resources/AOH_stored/", gsub(" ", "_", sRL_decode(scientific_name)), "/Storage_SP.rds")), (sRL_StoreRead(scientific_name, 1)$Output$Count[2]+1), 1)
   Storage_SP<-list(flags_raw_saved=flags_raw, Creation=Sys.time(), Output=output_to_save)
   sRL_StoreSave(scientific_name, Storage_SP)
   
@@ -889,6 +890,7 @@ Prom_clean %...>% print(.)
 Prom<-future({
   sf::sf_use_s2(FALSE)
   sRL_loginfo("START - AOH API", scientific_name)
+  TIC<-Sys.time()
   
   #Filter param
   scientific_name <- sRL_decode(scientific_name)
@@ -1202,6 +1204,7 @@ Prom<-future({
 
   
   ### Save Storage_SP ----
+  Storage_SP<-sRL_OutLog(Storage_SP, "AOH_time", as.numeric(format(Sys.time(), "%s"))-as.numeric(format(TIC, "%s")))
   sRL_StoreSave(scientific_name, Storage_SP)
   
   ### Return list of arguments + calculate population size
@@ -2009,7 +2012,8 @@ function(scientific_name,
   write.csv(replace(allfields_to_save, is.na(allfields_to_save), ""), paste0(output_dir, "/allfields.csv"), row.names = F)
   write.csv(taxo_SIS, paste0(output_dir, "/taxonomy.csv"), row.names = F)
   write.csv(ref_SIS, paste0(output_dir, "/references.csv"), row.names = F)
-  write.csv(Storage_SP$Output[Storage_SP$Output$Definition !="Only used to track usage",], paste0(output_dir, "/00.Output_log.csv"), row.names = F)
+  out_save<-Storage_SP$Output[Storage_SP$Output$Definition !="Only used to track usage",] %>% subset(., select=names(.)[names(.) != "Count"])
+  write.csv(out_save, paste0(output_dir, "/00.Output_log.csv"), row.names = F)
   
   # Download tracking files
   if(scientific_name=="Download tracker"){

@@ -249,7 +249,10 @@ sRL_InitLog<-function(scientific_name, DisSource){
 }
 
 sRL_OutLog=function(STOR, Par, Val){
-  for(i in 1:length(Par)){STOR$Output$Value[STOR$Output$Parameter==Par[i]]<-Val[i]}
+  for(i in 1:length(Par)){
+    STOR$Output$Value[STOR$Output$Parameter==Par[i]]<-Val[i]
+    STOR$Output$Count[STOR$Output$Parameter==Par[i]]<-STOR$Output$Count[STOR$Output$Parameter==Par[i]]+1
+    }
   return(STOR)
 }
 
