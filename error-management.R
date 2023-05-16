@@ -123,3 +123,7 @@ elev_not_valid <- function(){
 elev_decreasing <- function(){
   api_error(message = "Elevation preference is not valid: minimum elevation higher than maximum.", status=400)
 }
+
+no_hab_API <- function(){
+  api_error(message = "We cannot find habitat/elevation preferences because the Red List API is not working. Please add them manually.", status=400)
+}

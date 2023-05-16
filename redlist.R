@@ -17,7 +17,19 @@ function(scientific_name) {
 #* @serializer json
 #* @tag RedList
 function(scientific_name) {
-  species <- rl_search(scientific_name, key = config$red_list_token)#$result
+  
+  # Call the RL API to get information. If it does not work, use the default
+  tryCatch({
+    species <- rl_search(scientific_name, key = config$red_list_token)#$result
+  }, error=function(e){cat("TryCatch Red List API for detail does not work")})
+
+  if(exists("species")==F){
+    species<-list(result=speciesRL[1,] %>% replace(., is.na(.)==F, NA))
+    species$result$scientific_name<-sRL_decode(scientific_name)
+    species$result$assessment_date<-"The Red List API is not working, sorry!"
+    species$result$category<-"We cannot provide the usual information on this page, but you can click Next"
+  }
+  
   return(species)
 }
 
@@ -28,8 +40,14 @@ function(scientific_name) {
 #* @param scientific_name:str Scientific Name
 #* @tag RedList
 function(scientific_name) {
-  # Get link to current assessment (this link could go where I wrote "link to assessment" in the PNG file) # nolint
-  cite <- unlist(strsplit(as.character(rl_sp_citation(name = scientific_name, key=config$red_list_token)$result), " ")) # nolint
+  
+  tryCatch({
+    # Get link to current assessment (this link could go where I wrote "link to assessment" in the PNG file) # nolint
+    cite <- unlist(strsplit(as.character(rl_sp_citation(name = scientific_name, key=config$red_list_token)$result), " ")) # nolint
+  }, error=function(e){cat("TryCatch Red List API for link does not work")})
+  
+  if(exists("cite")==F){cite<-"https://www.iucnredlist.org/"}
+  
   return(list(link = cite[substr(cite, 1, 4) == "http"]))
 }
 
@@ -40,7 +58,12 @@ function(scientific_name) {
 #* @tag RedList
 function(scientific_name) {
   Prom<-future({
-    HistoPlot<-sRL_PlotHistory(sciname_fun=scientific_name)
+    
+    tryCatch({
+      HistoPlot<-sRL_PlotHistory(sciname_fun=scientific_name)
+    }, error=function(e){cat("TryCatch Red List API for historic plot does not work")})
+    
+    if(exists("HistoPlot")==F){HistoPlot<-ggplot()+labs(title="The Red List API is not working, sorry!", subtitle="We cannot provide the usual information on this page, but you can click Next")}
     
     HistoPlot
    }, seed=T) %>% then(onRejected=function(err) {return(ggplot()+ggtitle("ERROR: we are not able to create this plot, please report that error")+labs(subtitle=err))})
@@ -112,7 +135,11 @@ Prom<-future({
   sRL_loginfo("START - Habitat extract", scientific_name)
   
   # Extract habitats
-  hab_pref <- rl_habitats(scientific_name, key = config$red_list_token)#$result
+  tryCatch({
+    hab_pref <- rl_habitats(scientific_name, key = config$red_list_token)#$result
+  }, error=function(e){cat("TryCatch RL API altitude")})
+  if(exists("hab_pref")==FALSE){no_hab_API()}
+  
   if(is.null(nrow(hab_pref$result))==F){
     hab_pref$result <- hab_pref$result %>% distinct(., code, .keep_all=T) # Remove double (when habitats are used in several seasons)
   
@@ -149,7 +176,8 @@ Prom<-future({
 
   #Extract alt_pref
   if(scientific_name %in% speciesRL$scientific_name){
-    alt_pref <- rl_search(scientific_name, key = config$red_list_token)
+    tryCatch({alt_pref <- rl_search(scientific_name, key = config$red_list_token)}, error=function(e){cat("TryCatch RL API altitude")})
+    if(exists("alt_pref")==FALSE){no_hab_API()}
     tryCatch({Storage_SP<-sRL_OutLog(Storage_SP, "Original_altpref", paste(alt_pref$result$elevation_lower[1], alt_pref$result$elevation_upper[1], "fromRL", sep=","))})
   } else {
     alt_pref<-list(name=scientific_name, result=sRL_PrepareAltitudeFile(scientific_name, altitudes_pref=c(NA,NA)))

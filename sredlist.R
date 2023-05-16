@@ -862,7 +862,7 @@ function(scientific_name) {
 #* @param path:string Distribution Folder default RedList
 #* @serializer unboxedJSON
 #* @tag sRedList
-function(scientific_name, habitats_pref= list(), habitats_pref_MARGINAL=list(), altitudes_pref= list(), density_pref= '-1', isGbifDistribution = FALSE, path = "") { # nolint    
+function(scientific_name, habitats_pref= list(), habitats_pref_MARGINAL=list(), altitudes_pref= c("0","9000"), density_pref= '-1', isGbifDistribution = FALSE, path = "") { # nolint    
 
 # If no habitat preference or habitats not in crosswalk, return error
 if(length(habitats_pref)==0){no_habitat_pref()}
