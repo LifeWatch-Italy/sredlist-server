@@ -1854,6 +1854,8 @@ function(scientific_name,
   sRL_loginfo("Start Criteria calculation", scientific_name)
   scientific_name <- sRL_decode(scientific_name)
   Storage_SP<-sRL_StoreRead(scientific_name, MANDAT=1)
+  Storage_SP$Output$Count[Storage_SP$Output$Parameter=="Col_allfields"]<-as.numeric(Storage_SP$Output$Count[Storage_SP$Output$Parameter=="Col_allfields"])+1 # Count number of times Assign categories is run
+  sRL_StoreSave(scientific_name, Storage_SP)
   print(names(Storage_SP))
 
   
