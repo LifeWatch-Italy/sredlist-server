@@ -161,18 +161,25 @@ Prom<-future({
   
   ### Plot
   if (nrow(distSP) > 0) {
-    return(ggplot() +
+    plot_dist<-ggplot() +
                   geom_sf(data = CountrySP, fill="gray96", col="gray50") + # nolint
                   geom_sf(data = distSP, fill = distSP$cols) +
                   theme_void() +
-                  ggtitle(""))
+                  ggtitle("")
   } else{
     sf::sf_use_s2(FALSE)
-    return(ggplot() +
+    plot_dist<-ggplot() +
                   geom_sf(data = CountrySP, fill="white96", col="gray50") + # nolint
                   theme_void() +
-                  ggtitle("The distribution is empty"))
+                  ggtitle("The distribution is empty")
   }
+  
+  # Save plot for RMarkDown (and create repository)
+  dir.create(paste0("resources/AOH_stored/", sub(" ", "_", scientific_name), "/Plots"), recursive=T)
+  ggsave(paste0("resources/AOH_stored/", sub(" ", "_", scientific_name), "/Plots/plot_dist.png"), plot_dist, width=18, height=5.5)
+  
+  # Return
+  return(plot_dist)
 
 }, seed=T) %>% then(onRejected=function(err) {return(ggplot()+ggtitle("ERROR: we are not able to create this plot, please report that error")+labs(subtitle=err))})
 
@@ -367,27 +374,31 @@ Prom<-future({
   flags <- sRL_cleanDataGBIF(flags_raw, as.numeric(Gbif_Year), as.numeric(Gbif_Uncertainty), Gbif_yearBin, Gbif_uncertainBin, Gbif_Sea, Gbif_Extent[1], Gbif_Extent[2], Gbif_Extent[3], Gbif_Extent[4])
   dat_proj=sRL_SubsetGbif(flags, scientific_name)
 
+  ### Create Leaflet
+  Leaflet_Filter<-leaflet(flags) %>%
+    addTiles() %>%
+    addCircleMarkers(lng=flags$decimalLongitude,
+                     lat=flags$decimalLatitude,
+                     color=ifelse(is.na(flags$Reason)==T, "#fde725ff", "#440154ff"),
+                     fillOpacity=0.5,
+                     stroke=F,
+                     popup=flags$PopText,
+                     radius=8) %>%
+    addLegend(position="bottomleft", colors=c('#fde725ff', '#440154ff'), labels=c("Valid", "Not valid")) %>%
+    addMouseCoordinates() %>%
+    addScaleBar(position = "bottomright")
+  
   ### Assign in Storage_SP
   Storage_SP$dat_proj_saved<-dat_proj
   Storage_SP$flags<-flags
+  Storage_SP$Leaflet_Filter<-Leaflet_Filter
   Storage_SP<-sRL_OutLog(Storage_SP, c("Gbif_Year", "Gbif_Uncertainty", "Gbif_Sea", "Gbif_Extent", "Gbif_yearBin", "Gbif_uncertainBin"), c(Gbif_Year, Gbif_Uncertainty, Gbif_Sea, paste0(Gbif_Extent, collapse=","), Gbif_yearBin, Gbif_uncertainBin))
   sRL_StoreSave(scientific_name, Storage_SP)
   
   sRL_loginfo("END - GBIF Step 2", scientific_name)
   
   return(
-    leaflet(flags) %>%
-      addTiles() %>%
-      addCircleMarkers(lng=flags$decimalLongitude,
-                       lat=flags$decimalLatitude,
-                       color=ifelse(is.na(flags$Reason)==T, "#fde725ff", "#440154ff"),
-                       fillOpacity=0.5,
-                       stroke=F,
-                       popup=flags$PopText,
-                       radius=8) %>%
-      addLegend(position="bottomleft", colors=c('#fde725ff', '#440154ff'), labels=c("Valid", "Not valid")) %>%
-      addMouseCoordinates() %>%
-      addScaleBar(position = "bottomright")
+    Leaflet_Filter
   )
   
 }, seed=T)
@@ -713,25 +724,30 @@ Prom<-future({
     coo$colour<-paste0(coo$Domain, coo$Level0_occupied, coo$Level1_occupied) 
     coo$colour<-col.df$Col[match(coo$colour, col.df$Code)]
     
-    # Save for SIS
-    Storage_SP$countries_SIS<-sRL_OutputCountries(scientific_name, subset(coo, coo$presence>0))
-    sRL_StoreSave(scientific_name, Storage_SP)
-    
     # Prepare extent
     EXT<-1.2*extent(coo[coo$Level0_occupied==T,])
     if(is.na(EXT[1]) | is.na(EXT[2]) | is.na(EXT[3]) | is.na(EXT[4])){EXT<-1.2*extent(distSP_WGS)} # In case there is no overlap with countries (e.g., distribution at sea because of simplification)
     
+    # Create plot
+    Leaflet_COO<-leaflet() %>%
+      fitBounds(lng1=EXT[1], lng2=EXT[2], lat1=EXT[3], lat2=EXT[4]) %>%
+      addPolygons(data=coo,
+                  color=ifelse(coo$Level0_occupied==T, "black", "grey"),
+                  fillColor=coo$colour,
+                  popup=coo$Popup,
+                  stroke=T, weight=2, fillOpacity=1) %>%
+      addPolygons(data=distSP_WGS, color="#D69F32", fillOpacity=0.4) %>%
+      addLegend(position="bottomleft", colors=c(col.df$Col[col.df$Col %in% coo$colour], "#D69F32"), labels=c(col.df$Label[col.df$Col %in% coo$colour], "Distribution"), opacity=1)
+    
+    # Save for SIS
+    Storage_SP$countries_SIS<-sRL_OutputCountries(scientific_name, subset(coo, coo$presence>0))
+    Storage_SP$Leaflet_COO<-Leaflet_COO
+    sRL_StoreSave(scientific_name, Storage_SP)
+    
+    
     # Plot
     return(
-      leaflet() %>%
-        fitBounds(lng1=EXT[1], lng2=EXT[2], lat1=EXT[3], lat2=EXT[4]) %>%
-        addPolygons(data=coo,
-                    color=ifelse(coo$Level0_occupied==T, "black", "grey"),
-                    fillColor=coo$colour,
-                    popup=coo$Popup,
-                    stroke=T, weight=2, fillOpacity=1) %>%
-        addPolygons(data=distSP_WGS, color="#D69F32", fillOpacity=0.4) %>%
-        addLegend(position="bottomleft", colors=c(col.df$Col[col.df$Col %in% coo$colour], "#D69F32"), labels=c(col.df$Label[col.df$Col %in% coo$colour], "Distribution"), opacity=1)
+      Leaflet_COO
     )
   }
   
@@ -1188,7 +1204,7 @@ Prom<-future({
     # Plot
     aooDF<-as.data.frame(AOO_pts, xy = TRUE); names(aooDF)[3]<-"lyr1"
     Plot_AOOpoints<-ggplot() + 
-      geom_tile(data = aooDF, aes(x = x, y = y, fill = lyr1), col=NA)+
+      geom_tile(data = aooDF, aes(x = x, y = y, fill = as.character(lyr1)), col=NA)+
       geom_sf(data=distSP, aes(col=as.character("Distribution")), fill=NA, lwd=2, show.legend = "line")+
       geom_sf(data=dat_proj, aes(size="1"), fill=NA, col="black")+
       scale_fill_manual(values=c("#25BC5A"), labels="Occupied cell", name="", na.translate=F)+
@@ -1644,6 +1660,7 @@ Prom<-future({
   Storage_SP<-sRL_OutLog(Storage_SP, "Usage_RS", paste(RS_stored, RSproduct, sep="."))
   sRL_StoreSave(scientific_name, Storage_SP)
   
+  
   # Return
   return(List_trendsRS)
 
@@ -2084,20 +2101,26 @@ function(scientific_name,
                   ") does not correspond to any of the published species. \n Make sure it fits with the Red List taxonomic backbone before pushing to SIS Connect.")}
   }
   
+  # Prepare plot
+  plot_assign<-ggplot(criteria, aes(y = criterion)) +
+    geom_linerange(aes(xmin=Cat_ThresholdMIN, xmax=Cat_ThresholdMAX), linewidth=10, colour="gray75")+
+    geom_point(aes(x = Cat_ThresholdMIN, col = ColMin), size = 20, stroke=6, show.legend=F) +
+    geom_text(aes(x=Cat_ThresholdMIN, label=Cat_ThresholdMIN), col="white", size=5)+
+    geom_point(aes(x = Cat_ThresholdMAX, col = ColMax), size = 20, stroke=6, show.legend=F) +
+    geom_text(aes(x=Cat_ThresholdMAX, label=Cat_ThresholdMAX), col="white", size=5)+
+    scale_x_discrete(drop = F, na.translate = FALSE) + scale_y_discrete(drop=F, na.translate = FALSE) +
+    xlab("Red List Category triggered") + ylab("Criteria")+
+    scale_colour_manual(drop = F, values=c("#006666ff", "#cc9900ff", "#cc6633ff", "#cc3333ff", "#b3d1d1ff", "#f0e1b3ff", "#f0d1c2ff", "#f0c2c2ff"))+
+    labs(title=TITLE, subtitle=SUBTITLE, tag=Tag)+
+    theme_bw()  %+replace% theme(text=element_text(size=18), plot.title=element_text(hjust=0.5), plot.subtitle=element_text(hjust=0.5, size=15), plot.tag=element_text(hjust=0.5, size=14, colour="darkred"), plot.tag.position = "bottom")
   
+  # Save for RMarkDown
+  ggsave(paste0("resources/AOH_stored/", sub(" ", "_", scientific_name), "/Plots/Plot_assign.png"), plot_assign, width=10, height=8)
+  
+  
+  # Return
   return(
-    plot(ggplot(criteria, aes(y = criterion)) +
-      geom_linerange(aes(xmin=Cat_ThresholdMIN, xmax=Cat_ThresholdMAX), linewidth=10, colour="gray75")+
-      geom_point(aes(x = Cat_ThresholdMIN, col = ColMin), size = 20, stroke=6, show.legend=F) +
-      geom_text(aes(x=Cat_ThresholdMIN, label=Cat_ThresholdMIN), col="white", size=5)+
-      geom_point(aes(x = Cat_ThresholdMAX, col = ColMax), size = 20, stroke=6, show.legend=F) +
-      geom_text(aes(x=Cat_ThresholdMAX, label=Cat_ThresholdMAX), col="white", size=5)+
-      scale_x_discrete(drop = F, na.translate = FALSE) + scale_y_discrete(drop=F, na.translate = FALSE) +
-      xlab("Red List Category triggered") + ylab("Criteria")+
-      scale_colour_manual(drop = F, values=c("#006666ff", "#cc9900ff", "#cc6633ff", "#cc3333ff", "#b3d1d1ff", "#f0e1b3ff", "#f0d1c2ff", "#f0c2c2ff"))+
-      labs(title=TITLE, subtitle=SUBTITLE, tag=Tag)+
-      theme_bw()  %+replace% theme(text=element_text(size=18), plot.title=element_text(hjust=0.5), plot.subtitle=element_text(hjust=0.5, size=15), plot.tag=element_text(hjust=0.5, size=14, colour="darkred"), plot.tag.position = "bottom")
-    )
+    plot(plot_assign)
   )
 
 

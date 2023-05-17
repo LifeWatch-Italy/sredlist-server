@@ -80,8 +80,8 @@ sRL_CalcHumandensity<-function(scientific_name, distSP, GL){
     ,ncol=2
   )
   
-  ggsave(filename = paste0("resources/AOH_stored/", sub(" ", "_", scientific_name), "/Plots/RS_plot.png"), plot = GG_RS, width=10, height=6)
-  RS_plot <- base64enc::dataURI(file = paste0("resources/AOH_stored/", sub(" ", "_", scientific_name), "/Plots/RS_plot.png"), mime = "image/png", encoding = "base64") # nolint
+  ggsave(filename = paste0("resources/AOH_stored/", sub(" ", "_", scientific_name), "/Plots/RS_plot_humandensity.png"), plot = GG_RS, width=10, height=6)
+  RS_plot <- base64enc::dataURI(file = paste0("resources/AOH_stored/", sub(" ", "_", scientific_name), "/Plots/RS_plot_humandensity.png"), mime = "image/png", encoding = "base64") # nolint
   
   
   ### Calculate outputs
@@ -141,8 +141,8 @@ sRL_CalcForestchange<-function(scientific_name, distSP){
     ncol=2
   )
   
-  ggsave(filename = paste0("resources/AOH_stored/", sub(" ", "_", scientific_name), "/Plots/RS_plot.png"), plot = GG_RS, width=10, height=6)
-  RS_plot <- base64enc::dataURI(file = paste0("resources/AOH_stored/", sub(" ", "_", scientific_name), "/Plots/RS_plot.png"), mime = "image/png", encoding = "base64") # nolint
+  ggsave(filename = paste0("resources/AOH_stored/", sub(" ", "_", scientific_name), "/Plots/RS_plot_forest.png"), plot = GG_RS, width=10, height=6)
+  RS_plot <- base64enc::dataURI(file = paste0("resources/AOH_stored/", sub(" ", "_", scientific_name), "/Plots/RS_plot_forest.png"), mime = "image/png", encoding = "base64") # nolint
   
   
   ### Calculate outputs
@@ -201,8 +201,8 @@ sRL_CalcModification<-function(scientific_name, distSP){
     ,ncol=2
   )
   
-  ggsave(filename = paste0("resources/AOH_stored/", sub(" ", "_", scientific_name), "/Plots/RS_plot.png"), plot = GG_RS, width=10, height=6)
-  RS_plot <- base64enc::dataURI(file = paste0("resources/AOH_stored/", sub(" ", "_", scientific_name), "/Plots/RS_plot.png"), mime = "image/png", encoding = "base64") # nolint
+  ggsave(filename = paste0("resources/AOH_stored/", sub(" ", "_", scientific_name), "/Plots/RS_plot_modif.png"), plot = GG_RS, width=10, height=6)
+  RS_plot <- base64enc::dataURI(file = paste0("resources/AOH_stored/", sub(" ", "_", scientific_name), "/Plots/RS_plot_modif.png"), mime = "image/png", encoding = "base64") # nolint
   
   
   ### Calculate outputs
