@@ -176,7 +176,7 @@ Prom<-future({
   
   # Save plot for RMarkDown (and create repository)
   dir.create(paste0("resources/AOH_stored/", sub(" ", "_", scientific_name), "/Plots"), recursive=T)
-  ggsave(paste0("resources/AOH_stored/", sub(" ", "_", scientific_name), "/Plots/plot_dist.png"), plot_dist, width=18, height=5.5)
+  ggsave(paste0("resources/AOH_stored/", sub(" ", "_", scientific_name), "/Plots/plot_dist.png"), plot_dist, width=10, height=8)
   
   # Return
   return(plot_dist)
@@ -797,8 +797,8 @@ Prom<-future({
   EOO <- st_as_sf(st_convex_hull(st_union(distSP))) ## Needed to avoid having different sub-polygons
   ggsave(paste0("resources/AOH_stored/", sub(" ", "_", scientific_name), "/Plots/plot_eoo.png"), 
     ggplot() +
-      geom_sf(data=EOO, fill="#ef3b2c", col=NA) +
       geom_sf(data=distSP, fill="#fcbba1", col=NA) +
+      geom_sf(data=EOO, col="#ef3b2c", fill=NA, lwd=2) +
       geom_sf(data=st_crop(Storage_SP$CountrySP_saved, extent(EOO)), fill=NA, col="black")+
       ggtitle("EOO map") +
       sRLTheme_maps, 
