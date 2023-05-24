@@ -1658,6 +1658,7 @@ Prom<-future({
   # Save usage
   RS_stored<-Storage_SP$Output$Value[Storage_SP$Output$Parameter=="Usage_RS"]
   Storage_SP<-sRL_OutLog(Storage_SP, "Usage_RS", paste(RS_stored, RSproduct, sep="."))
+  Storage_SP<-sRL_OutLog(Storage_SP, paste0("RS_result_", RSproduct), paste0(List_trendsRS[3:6], collapse="/"))
   sRL_StoreSave(scientific_name, Storage_SP)
   
   
