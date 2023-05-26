@@ -1,6 +1,7 @@
 Species,Date,Parameter,Count,Definition,Value
 NA,NA,Distribution_Source,0,"Source of the distribution map. Could be either ""Red List"" (if the last range map published in the Red List has been used), ""Uploaded"" (if you uploaded a range map on the platform), “StoredOnPlatform” (if you used a distribution that was previously created or uploaded on the platform), or ""Created"" (if you created a range map from occurrence data)",NA
 NA,NA,Gbif_Source,0,"Source of occurrence data used to create a range map. Could include ""GBIF"" (automatic download from GBIF website), ""OBIS"" (automatic download from OBIS website), ""Red List"" (use of Red List occurrence points), ""Uploaded"" (upload of your own records)",NA
+NA,NA,Gbif_Synonyms,0,Species synonyms used to gather occurrence records.,NA
 NA,NA,Gbif_Year,0,Minimum year of observations. All observations made before this date have been removed from the occurrences,NA
 NA,NA,Gbif_Uncertainty,0,Maximum coordinate uncertainty. All observations with higher localisation uncertainty than this value (in km) will be removed. Only applies to GBIF / OBIS data,NA
 NA,NA,Gbif_Sea,0,Selection of land / sea data. 'excludesea'= Occurrence records made at sea were excluded (Terrestrial species) - 'excludeland'= Occurence records made at land were excluded (Marine species),NA

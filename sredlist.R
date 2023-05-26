@@ -304,6 +304,7 @@ Prom<-future({
   # Assign + count use of step 1
   output_to_save<-sRL_InitLog(scientific_name, DisSource = "Created") ; output_to_save$Value[output_to_save$Parameter=="Gbif_Source"]<-c(ifelse(Gbif_Source[1]==1, "GBIF", ""), ifelse(Gbif_Source[2]==1, "OBIS", ""), ifelse(Gbif_Source[3]==1, "Red_List", ""), ifelse(is.null(nrow(Uploaded_Records)), "", "Uploaded")) %>% .[.!=""] %>% paste(., collapse=" + ")
   output_to_save$Count[output_to_save$Parameter=="Gbif_Source"]<-ifelse(file.exists(paste0("resources/AOH_stored/", gsub(" ", "_", sRL_decode(scientific_name)), "/Storage_SP.rds")), (sRL_StoreRead(scientific_name, 1)$Output$Count[2]+1), 1)
+  output_to_save$Value[output_to_save$Parameter=="Gbif_Synonyms"]<-ifelse(Gbif_Synonym=="", NA, paste(Gbif_Synonym, collapse="+"))
   Storage_SP<-list(flags_raw_saved=flags_raw, Creation=Sys.time(), Output=output_to_save)
   sRL_StoreSave(scientific_name, Storage_SP)
   
@@ -1526,12 +1527,7 @@ Prom<-future({
     Pop_max<-c(min(Max_pops, na.rm=T), max(Max_pops, na.rm=T)) %>% unique(.)
     Pop_prop<-c((max(res$clusters$pop, na.rm=T)/sum(res$clusters$pop, na.rm=T)), (max(res2$clusters$pop, na.rm=T)/sum(res2$clusters$pop, na.rm=T))) %>% unique(.) %>% as.numeric(.) %>% round(.,2)*100 # Density uncertainty does not make any difference there
     
-    ### Save in output log
-    Storage_SP<-sRL_OutLog(Storage_SP, c("Fragmentation_Isolation", "Fragmentation_Density"), c(paste(dispersion/1000, collapse="-"), paste(density_pref, collapse="-")))
-    Storage_SP$Pop_max<-Pop_max
-    Storage_SP$Pop_prop<-Pop_prop
-    sRL_StoreSave(scientific_name, Storage_SP)
-    
+
     ### Plots
     ### AOH and clusters
     aohDF<-as.data.frame(aoh, xy = TRUE); names(aohDF)[3]<-"lyr1"
@@ -1557,7 +1553,7 @@ Prom<-future({
     V4<-ifelse("pop2" %in% names(res$prop.fragm), min(res2$prop.fragm$pop2[res2$prop.fragm$CumSum>0.5], na.rm=T), NA)
     VTOT<-c(min(c(V1, V2, V3, V4), na.rm=T), max(c(V1, V2, V3, V4), na.rm=T)) %>% round(.) %>% unique(.)
     
-    SubTitle<-paste0("Fragmented if you consider that a population lower \n than ", paste(VTOT, collapse="-"), " mature individuals is 'small'")
+    SubTitle<-paste0("Fragmented if you consider that a subpopulation lower \n than ", paste(VTOT, collapse="-"), " mature individuals is 'small'")
     
     G2<-ggplot()+
       geom_step(data=res$prop.fragm, aes(x=pop, y=CumSum, col="ShortMin"), linewidth=2.8)+
@@ -1609,7 +1605,15 @@ Prom<-future({
     ggsave(filename = paste0("resources/AOH_stored/", sub(" ", "_", scientific_name), "/Plots/fragmentation.png"), plot = cowplot::plot_grid(G1, G2, ncol=2), width=15, height=8)
     Frag_plot <- base64enc::dataURI(file = paste0("resources/AOH_stored/", sub(" ", "_", scientific_name), "/Plots/fragmentation.png"), mime = "image/png", encoding = "base64") # nolint
     
+    ### Save in output log
+    Storage_SP<-sRL_OutLog(Storage_SP, c("Fragmentation_Isolation", "Fragmentation_Density"), c(paste(dispersion/1000, collapse="-"), paste(density_pref, collapse="-")))
+    Storage_SP$Pop_max<-Pop_max
+    Storage_SP$Pop_prop<-Pop_prop
+    Storage_SP$Frag_result<-paste(VTOT, collapse="-")
+    sRL_StoreSave(scientific_name, Storage_SP)
     
+    
+    ### Return
     LIST<-list(
       Frag_plot=Frag_plot,
       Frag_result=SubTitle,
@@ -1658,7 +1662,7 @@ Prom<-future({
   # Save usage
   RS_stored<-Storage_SP$Output$Value[Storage_SP$Output$Parameter=="Usage_RS"]
   Storage_SP<-sRL_OutLog(Storage_SP, "Usage_RS", paste(RS_stored, RSproduct, sep="."))
-  Storage_SP<-sRL_OutLog(Storage_SP, paste0("RS_result_", RSproduct), paste0(List_trendsRS[3:6], collapse="/"))
+  Storage_SP<-sRL_OutLog(Storage_SP, paste0("RS_result_", RSproduct), paste0(List_trendsRS[3:6], collapse=" & "))
   sRL_StoreSave(scientific_name, Storage_SP)
   
   
@@ -1803,7 +1807,7 @@ function(scientific_name){
         Trends_val<-paste(min(c(aohP, aohO)), max(c(aohP, aohO)), sep="-")
         # If they have different sign, I put the negative and suggest it can go down to 0
       } else {
-        Trends_dir<-"Reduction"
+        Trends_dir<-"-"
         Trends_val<-paste(0, aohP, sep="-")
       }
     }
@@ -1813,6 +1817,7 @@ function(scientific_name){
                           ifelse(Storage_SP$Year1theo_saved==Storage_SP$Year1_saved, "", " (using expontential extrapolation for the period before 1992)")) # Specify extrapolation if needed
     
     Storage_SP<-sRL_OutLog(Storage_SP, "Estimated_PopTrends_raw", Trends_val)
+    Storage_SP<-sRL_OutLog(Storage_SP, "Estimated_PopTrendsDir_raw", Trends_dir)
   }
   
   

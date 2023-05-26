@@ -187,6 +187,7 @@ Prom<-future({
   # If no altitude preference, take from raster
   if(is.na(alt_pref$result$elevation_lower+alt_pref$result$elevation_upper)){
     
+    CALCU<-ifelse((is.na(alt_pref$result$elevation_lower) & is.na(alt_pref$result$elevation_upper)), "Calculated", "Half_Calculated")
     ### Small ranges
     Range_size<-as.numeric(sum(st_area(Storage_SP$distSP_saved)))/(10^6)
     
@@ -212,7 +213,7 @@ Prom<-future({
         alt_pref$result$elevation_upper<-ceiling(max(EXTR_max, na.rm=T))
         }
     }
-    tryCatch({Storage_SP<-sRL_OutLog(Storage_SP, "Original_altpref", paste(alt_pref$result$elevation_lower[1], alt_pref$result$elevation_upper[1], "Calculated", sep=","))})
+    tryCatch({Storage_SP<-sRL_OutLog(Storage_SP, "Original_altpref", paste(alt_pref$result$elevation_lower[1], alt_pref$result$elevation_upper[1], CALCU, sep=","))})
   }
 
   # If something remains NA -> 0, 9000
