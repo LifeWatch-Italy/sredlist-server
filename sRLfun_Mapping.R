@@ -56,7 +56,8 @@ sRL_createDataGBIF <- function(scientific_name, GBIF_SRC, Uploaded_Records) { # 
   
   ### Download data
   # From GBIF
-  TaxKey<-name_backbone(name=scientific_name)$usageKey
+  Taxon<-name_backbone(name=scientific_name)
+  if(Taxon$rank=="SPECIES"){TaxKey<-Taxon$usageKey} else {TaxKey<-NULL} # Needed to avoid a wrong species from an existing genus to download all occurrences from that genus
   if(GBIF_SRC[1]==1 & is.null(TaxKey)==F){
     
     #Calculate the total number of data in GBIF

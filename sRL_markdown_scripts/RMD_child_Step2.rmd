@@ -1,0 +1,23 @@
+
+Countries of occurrence were extracted by overlapping the distribution saved in step 1 with a map of countries matching the list of countries and subnational entities from the Red List (see the sRedList documentation for further details). As you selected the species occurs in the system(s): `r outlog$Value[outlog$Parameter=="System_pref"]`, we used a `r c(ifelse(grepl("Terrestrial", outlog$Value[outlog$Parameter=="System_pref"]) | grepl("Freshwater", outlog$Value[outlog$Parameter=="System_pref"]), "terrestrial", NA), ifelse(grepl("Marine", outlog$Value[outlog$Parameter=="System_pref"]), "marine (using EEZs)", NA)) %>% .[is.na(.)==F] %>% paste(., collapse=" and ")` map of countries. `r ifelse(is.na(outlog$Value[outlog$Parameter=="Crop_Country"]), "", paste0("You only kept the part of the distribution that is included in ", outlog$Value[outlog$Parameter=="Crop_Country"], " (National Red Listing option)."))` The following map was obtained:
+
+```{r leaflet_coo, fig.align = "center", out.width = '100%'}
+Storage_SP$Leaflet_COO
+```
+
+
+The list of countries of occurrence is:
+
+```{r print_coo, out.width='100%'}
+COO_df<-data.frame(Countries=Storage_SP$countries_SIS$CountryOccurrence.CountryOccurrenceSubfield.CountryOccurrenceName)
+COO_df$Country<-NA
+for(C in 1:nrow(COO_df)){COO_df$Country[C]<-ifelse(COO_df$Countries[C] %in% coo_raw$SIS_name0, COO_df$Countries[C], coo_raw$SIS_name0[match(COO_df$Countries[C], coo_raw$SIS_name1)])}
+COO_df$Subnational<-COO_df$Countries %>% replace(., .== COO_df$Country, "")
+COO_df$Countries<-NULL
+flextable::flextable(COO_df) %>% flextable::set_table_properties(layout="autofit")
+```
+
+<br>
+By default, we assumed for all countries the codes "Extant" for presence, "Native" for origin, "Resident" for seasonality. If you want to edit those, or the list of countries, you will have to do that manually in SIS. If you do not want to use this list at all, you can delete the 'countries.csv' file from the ZIP output.
+
+

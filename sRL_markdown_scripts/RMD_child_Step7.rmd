@@ -1,0 +1,20 @@
+
+After the summary step, these are the parameters that are included in the final output allfields.csv:
+
+```{r table_output}
+all_DF<-data.frame(Variable=as.vector(names(allfields)), Value=as.vector(unlist(allfields[1,])))
+flextable::flextable(all_DF) %>% flextable::set_table_properties(layout="autofit")
+
+```
+
+
+<br><br>
+These parameters lead to the following Red List criteria application (note though that this is just for visualisation and will not be pushed to SIS):
+
+<br>
+<center>
+![](`r paste0(outDir, '/Plots/Plot_assign.png')`){width=1000px}
+</center>
+
+
+

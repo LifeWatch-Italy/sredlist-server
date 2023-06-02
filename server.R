@@ -40,6 +40,9 @@ library(terra)
 library(scales)
 library(taxize)
 
+### RMarkDown
+library(knitr) ; library(rmarkdown) ; library(flextable) ; library(png) ; library(grid) ; library(magick)
+
 
 #####################################
 ### CHARGE CODE FOR THE FUNCTIONS ###

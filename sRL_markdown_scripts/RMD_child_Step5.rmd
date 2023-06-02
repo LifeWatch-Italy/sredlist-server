@@ -1,0 +1,10 @@
+
+Trends in Area of Habitat were calculated with the same data and approach than Step 4. The generation length you provided is `r outlog$Value[outlog$Parameter=="AOH_GenerationLength"]` years. The platform calculated trends between `r Storage_SP$Year1_saved` and `r config$YearAOH2`, `r ifelse(Storage_SP$Year1_saved==Storage_SP$Year1theo_saved, "which corresponds to the minimum between 10 years and 3 generations", "which is less than the time of three generations, but the data we use don't go before 1992 so we extrapolate for the period before 1992 (see the sRedList documentation for further details)")`.
+
+The platform found a `r paste0(revalue(outlog$Value[outlog$Parameter=="Estimated_PopTrendsDir_raw"], c("-"="reduction", "+"="increase")), " of ", outlog$Value[outlog$Parameter=="Estimated_PopTrends_raw"], "%")` in Area of Habitat between `r Storage_SP$Year1theo_saved` and `r config$YearAOH2` `r if(Storage_SP$Year1_saved!=Storage_SP$Year1theo_saved){"using exponential extrapolation for trends before 1992"}`.
+
+
+<br>
+<center>
+![](`r paste0(outDir, '/Plots/trends_aoh.png')`){width=800px}
+</center>

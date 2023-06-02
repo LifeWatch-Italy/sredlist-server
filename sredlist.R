@@ -1814,7 +1814,7 @@ function(scientific_name){
     
     Trends_justif<-paste0("This trend has been measured from the sRedList platform as the trend in Area of Habitat between ", 
                           paste0(Storage_SP$Year1theo_saved, " and ",config$YearAOH2), # Give years if no extrapolation
-                          ifelse(Storage_SP$Year1theo_saved==Storage_SP$Year1_saved, "", " (using expontential extrapolation for the period before 1992)")) # Specify extrapolation if needed
+                          ifelse(Storage_SP$Year1theo_saved==Storage_SP$Year1_saved, "", " (using exponential extrapolation for the period before 1992)")) # Specify extrapolation if needed
     
     Storage_SP<-sRL_OutLog(Storage_SP, "Estimated_PopTrends_raw", Trends_val)
     Storage_SP<-sRL_OutLog(Storage_SP, "Estimated_PopTrendsDir_raw", Trends_dir)
@@ -2057,10 +2057,6 @@ function(scientific_name,
    st_write(distSIS, paste0(output_dir, "/sRedList_", gsub(" ", ".", scientific_name), "_Distribution.shp"), append=F)
    write.csv(sRL_OutputOccurrences(scientific_name, Storage_SP), paste0(output_dir, "/sRedList_", gsub(" ", ".", scientific_name), "_Occurrences.csv"), row.names=F)
   }
-  
-  # Zip that folder
-  #zip(zipfile = output_dir, files = output_dir,  zip = "C:/Program Files/7-Zip/7z", flags="a -tzip")
-  zip(zipfile = output_dir, files = output_dir)
 
 
   ### Calculate criteria
@@ -2124,6 +2120,22 @@ function(scientific_name,
   ggsave(paste0("resources/AOH_stored/", sub(" ", "_", scientific_name), "/Plots/Plot_assign.png"), plot_assign, width=10, height=8)
   
   
+  # Call RMarkDown
+  WD<-getwd()
+  tryCatch({
+    render("sRL_markdown_scripts/General_RMarkDown_script.Rmd",
+           output_format="all",
+           output_file=paste0("sRedList_report_", sub(" ", "_", scientific_name), ".html"),
+           output_dir=paste0(sub(" ", "_", scientific_name), "_sRedList"),
+           knit_root_dir=WD
+    )
+  }, error=function(e){"Error in creating Markdown report"})
+  
+  # ZIP folder
+  #zip(zipfile = paste0(sub(" ", "_", scientific_name), "_sRedList"), files = paste0(sub(" ", "_", scientific_name), "_sRedList"),  zip = "C:/Program Files/7-Zip/7z", flags="a -tzip")
+  zip(zipfile = paste0(sub(" ", "_", scientific_name), "_sRedList"), files = paste0(sub(" ", "_", scientific_name), "_sRedList"))
+  
+  
   # Return
   return(
     plot(plot_assign)
@@ -2143,9 +2155,11 @@ function(scientific_name) {
   scientific_name <- sRL_decode(scientific_name)
   
   sRL_loginfo("Start Zipping", scientific_name)
+
   
-  # Prepare the ZIP to return
+  # Charge ZIP file
   zip_to_extract<-readBin(paste0(gsub(" ", "_", scientific_name), "_sRedList.zip"), "raw", n = file.info(paste0(gsub(" ", "_", scientific_name), "_sRedList.zip"))$size)
+  
   
   # Prepare Outputs (remove definitions, empty fields, those at default)
   output_species<-sRL_StoreRead(scientific_name, MANDAT=1)$Output
@@ -2176,12 +2190,12 @@ function(scientific_name) {
     Saved_output<-rbind.fill(Saved_output, output_species)
     write.csv(Saved_output, FileStored, row.names=F)
   }, error=function(e){cat("TryCatch save output while zipping")})
-  
+
   # Remove the local files
   unlink(paste0(gsub(" ", "_", scientific_name), "_sRedList"), recursive=T)
   unlink(paste0("resources/AOH_stored/", sub(" ", "_", scientific_name)), recursive=T)
   unlink(paste0(gsub(" ", "_", scientific_name), "_sRedList.zip"), recursive=T)
-  
+
   # Return
   return(zip_to_extract)
 }

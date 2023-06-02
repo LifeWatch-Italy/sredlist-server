@@ -1,0 +1,52 @@
+
+
+### Habitat preferences
+`r if("AOH_HabitatORIGINAL" %in% outlog$Parameter){paste0("Habitat preferences were retrieved from a previous assessment with suitable habitats: ", sub(',', ', ', outlog$Value[outlog$Parameter=="AOH_HabitatORIGINAL"]), ifelse(outlog$Value[outlog$Parameter=="AOH_HabitatMarginalORIGINAL"]=="", "", paste0("; and as marginal/unknown suitability: ", sub(',', ', ', outlog$Value[outlog$Parameter=="AOH_HabitatMarginalORIGINAL"]), ".")))}`
+
+After a possibility to manually edit these, the habitat preferences used to map Area of Habitat were:
+```{r table_hab}
+hab_SIS<-read.csv(paste0(sub(" ", "_", scientific_name), "_sRedList/habitats.csv")) %>% subset(., select=c("GeneralHabitats.GeneralHabitatsSubfield.GeneralHabitatsLookup", "GeneralHabitats.GeneralHabitatsSubfield.GeneralHabitatsName", "GeneralHabitats.GeneralHabitatsSubfield.suitability"))
+names(hab_SIS)<-c("Habitat lookup", "Habitat name", "Suitability")
+
+flextable::flextable(hab_SIS) %>% flextable::set_table_properties(layout="autofit")
+```
+
+Note that the major importance and seasonality fields are left empty from the habitats.csv file, so you might want to complete that information in SIS later. 
+
+
+
+### Elevation preferences
+```{r prep_elevation}
+Original_elev<-outlog$Value[outlog$Parameter=="Original_altpref"] %>% strsplit(., ",") %>% unlist(.) %>% revalue(., c("fromRL"=" (extracted from the last Red List assessment)", "Calculated"=" (calculated as the minimum and maximum elevation within the species range)", "Half_Calculated"=" (one of min/max was extracted from the last Red List assessment and the other one was calculated within species range)"))
+```
+
+Elevation preferences were suggested by the platform with a lower elevation limit of `r Original_elev[1]`m and an upper elevation limit of `r Original_elev[2]`m `r Original_elev[3]`. 
+After a possibility to manually edit these values and add uncertainty in the estimates, the elevation preferences used to map Area of Habitat were `r outlog$Value[outlog$Parameter=="AOH_ElevationPreference"]`.
+
+
+
+### Density
+`r if("Original_density" %in% outlog$Parameter){paste0("A density estimate was suggested by the platform with a value of ", outlog$Value[outlog$Parameter=="Original_density"], " mature individuals / km2 (check the sRedList documentation for more information).")}`
+`r ifelse("AOH_Density" %in% outlog$Parameter, paste0("The density value you used to estimate population size is ", outlog$Value[outlog$Parameter=="AOH_Density"], " mature individuals / km2."), "You did not provide a density value and thus did not estimate population size.")`
+
+
+### AOH calculation
+
+The calculated Area of Habitat has a value of `r round(Storage_SP$AOHkm2_saved)` km2. 
+
+<br>
+<center>
+![](`r paste0(outDir, '/Plots/aoh.png')`){width=800px}
+</center>
+
+
+When rescaled at a 2x2km grid, this provides a value of `r round(Storage_SP$aoo_km2)` km2; this value can be used (if you trust the map) as an upper bound of area of occupancy if you consider likely that all the mapped suitable habitat is occupied by the species. If you know part of it is not occupied, you might want to reduce this estimate. `r if(Storage_SP$AOH_type=="Large"){"Note that, as your species has a large range, the platform used a simplified version of land-cover which may lead the upper bound of AOO to be slightly overestimated."}`.
+
+<br>
+<center>
+![](`r paste0(outDir, '/Plots/aoo.png')`){width=800px}
+</center>
+
+`r if("pop_size" %in% names(Storage_SP)){paste0("Based on the estimated Area of Habitat and the density value provided, we estimate the population size of your species is ", Storage_SP$pop_size, " mature individuals.")}`
+
+

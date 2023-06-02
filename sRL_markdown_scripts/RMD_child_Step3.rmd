@@ -1,0 +1,9 @@
+
+The extent of occurrence was calculated as the area of the minimum convex polygon around the distribution saved in Step 1. If you are confident that the distribution represents the true range of your species (including inferred presences), you can use this estimate in criterion B1. 
+
+<br>
+<center>
+![](`r paste0(outDir, '/Plots/plot_eoo.png')`){width=800px}
+</center>
+
+The extent of occurrence calculated by the platform was `r outlog$Value[outlog$Parameter=="Estimated_EOO_raw"]`km^2^. `r ifelse("EOO.range" %in% names(allfields), paste0("The final extent of occurrence (present in the downloaded output) has a value of ", allfields$EOO.range[1], "km2 and as justification :'", allfields$EOO.justification[1], "'."), "This estimate was then manually removed and is not present in the downloaded output.")`
