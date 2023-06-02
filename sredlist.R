@@ -898,7 +898,7 @@ if(density_pref!='-1' & is.na(sum(as.numeric(unlist(strsplit(density_pref, "-"))
 # Clean memory
 Prom_clean<-future({
   sRL_loginfo("START - Cleaning memory", scientific_name)
-  sRL_cleaningMemory(Time_limit=60)
+  sRL_cleaningMemory(Time_limit=180)
   sRL_loginfo("END - Cleaning memory", scientific_name)
 }, seed=T)  
 Prom_clean %...>% print(.)
@@ -1207,12 +1207,13 @@ Prom<-future({
     Plot_AOOpoints<-ggplot() + 
       geom_tile(data = aooDF, aes(x = x, y = y, fill = as.character(lyr1)), col=NA)+
       geom_sf(data=distSP, aes(col=as.character("Distribution")), fill=NA, lwd=2, show.legend = "line")+
-      geom_sf(data=dat_proj, aes(size="1"), fill=NA, col="black")+
+      geom_sf(data=dat_proj, aes(size="1"), fill=NA, col="black", shape=1)+
       scale_fill_manual(values=c("#25BC5A"), labels="Occupied cell", name="", na.translate=F)+
       scale_colour_manual(values=c("#EF9884"), name="")+
       scale_size_manual(values=1.6, name="", labels="Occurrences")+
-      sRLTheme_maps+guides(fill = guide_legend(override.aes = list(col="#25BC5A")), size=guide_legend(override.aes = list(linetype=0, shape=16, size=1.6)))+
-      theme(legend.position = "bottom")
+      labs(caption=ifelse(Range_size<5000, "", "\n You might not see the green cells because they are too small, \n but the calculation worked correctly"))+
+      sRLTheme_maps+guides(fill = guide_legend(override.aes = list(col="#25BC5A")), size=guide_legend(override.aes = list(linetype=0, shape=1, size=1.6)))+
+      theme(legend.position = "bottom", plot.caption=element_text(size=8.5))
     ggsave(filename = paste0("resources/AOH_stored/", sub(" ", "_", scientific_name), "/Plots/aoo_from_points.png"), plot = Plot_AOOpoints, width=6, height=6)
     plot3<-base64enc::dataURI(file = paste0("resources/AOH_stored/", sub(" ", "_", scientific_name), "/Plots/aoo_from_points.png"), mime = "image/png")
 
