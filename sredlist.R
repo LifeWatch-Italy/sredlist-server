@@ -807,8 +807,8 @@ Prom<-future({
   plot3 <- base64enc::dataURI(file = paste0("resources/AOH_stored/", sub(" ", "_", scientific_name), "/Plots/plot_eoo.png"), mime = "image/png") # nolint
   sRL_loginfo("END - Plot EOO \n", scientific_name)
 
-  ### Calculate EOO area
-  EOO_km2 <- round(as.numeric(st_area(EOO))/1000000)
+  ### Calculate EOO area (it cannot be lower than 4km2 so I keep the max between both)
+  EOO_km2 <- round(as.numeric(st_area(EOO))/1000000) %>% max(c(., 4), na.rm=T)
   
   ### Save EOO area
   Storage_SP$eoo_km2<-EOO_km2

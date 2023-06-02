@@ -35,7 +35,7 @@ An assessment has been completed on the sRedList platform for the species `r sRL
 
 
 ## Step 3: Extent of occurrence
-`r tryCatch({knit_child("sRL_markdown_scripts/RMD_child_Step3.rmd")}, error=function(e){"!! Error in reporting step 3 !!"})`
+`r if("Estimated_EOO_raw" %in% outlog$Parameter){tryCatch({knit_child("sRL_markdown_scripts/RMD_child_Step3.rmd")}, error=function(e){"!! Error in reporting step 3 !!"})} else {NO_STEP}`
 <br><br><br>
 
 
