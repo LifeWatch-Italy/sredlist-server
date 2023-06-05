@@ -391,6 +391,7 @@ Prom<-future({
   
   ### Assign in Storage_SP
   Storage_SP$dat_proj_saved<-dat_proj
+  Storage_SP$dat_proj_savedORIGINAL<-dat_proj # I need the original ones for Crop_Country step
   Storage_SP$flags<-flags
   Storage_SP$Leaflet_Filter<-Leaflet_Filter
   Storage_SP<-sRL_OutLog(Storage_SP, c("Gbif_Year", "Gbif_Uncertainty", "Gbif_Sea", "Gbif_Extent", "Gbif_yearBin", "Gbif_uncertainBin"), c(Gbif_Year, Gbif_Uncertainty, Gbif_Sea, paste0(Gbif_Extent, collapse=","), Gbif_yearBin, Gbif_uncertainBin))
@@ -695,6 +696,17 @@ Prom<-future({
       }
   }
   
+  # If distribution from occurrence records and National cropping, I keep only occurrences within distribution
+  if("dat_proj_savedORIGINAL" %in% names(Storage_SP) & nrow(distSP)>0){
+    if(Crop_Country == ""){
+      Storage_SP$dat_proj_saved<-Storage_SP$dat_proj_savedORIGINAL # This is needed in case dat_proj have been previously subsetted to a single country
+    } else{
+      dat_proj<-Storage_SP$dat_proj_savedORIGINAL
+      dat_proj$JOIN<-st_join(dat_proj, distSP, join=st_intersects)$presence
+      Storage_SP$dat_proj_saved<-subset(dat_proj, dat_proj$JOIN==1)
+    }
+  }
+  
   # If empty, return an empty plot
   if(nrow(distSP)==0){
     TITLE<-ifelse(Crop_Country %in% c(coo_raw$SIS_name0, "", "Europe", "EU27"),
@@ -741,7 +753,7 @@ Prom<-future({
       addLegend(position="bottomleft", colors=c(col.df$Col[col.df$Col %in% coo$colour], "#D69F32"), labels=c(col.df$Label[col.df$Col %in% coo$colour], "Distribution"), opacity=1)
     
     # Save for SIS
-    Storage_SP$countries_SIS<-sRL_OutputCountries(scientific_name, subset(coo, coo$presence>0))
+    Storage_SP$countries_SIS<-sRL_OutputCountries(scientific_name, subset(coo, paste0(coo$Level0_occupied, coo$Level1_occupied) =="TRUETRUE")) # Keep only those occupied
     Storage_SP$Leaflet_COO<-Leaflet_COO
     sRL_StoreSave(scientific_name, Storage_SP)
     
