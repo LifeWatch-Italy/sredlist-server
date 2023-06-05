@@ -741,6 +741,17 @@ Prom<-future({
     EXT<-1.2*extent(coo[coo$Level0_occupied==T,])
     if(is.na(EXT[1]) | is.na(EXT[2]) | is.na(EXT[3]) | is.na(EXT[4])){EXT<-1.2*extent(distSP_WGS)} # In case there is no overlap with countries (e.g., distribution at sea because of simplification)
     
+    # Prepare command for results button
+    Storage_SP$countries_SIS<-sRL_OutputCountries(scientific_name, subset(coo, paste0(coo$Level0_occupied, coo$Level1_occupied) =="TRUETRUE")) # Keep only those occupied
+    
+    info.box <- HTML(paste0(
+      HTML('<div class="modal fade" id="infobox" role="dialog"><div class="modal-dialog"><!-- Modal content--><div class="modal-content"><div class="modal-header"><button type="button" class="close" data-dismiss="modal">&times;</button>'),
+      
+      HTML(paste0('<h4>List of countries of occurrence</h4> <p>',
+                  Storage_SP$countries_SIS$CountryOccurrence.CountryOccurrenceSubfield.CountryOccurrenceName %>% sort(.) %>% paste(., collapse=", "),
+                  '</p><hr>'))
+    ))
+    
     # Create plot
     Leaflet_COO<-leaflet() %>%
       fitBounds(lng1=EXT[1], lng2=EXT[2], lat1=EXT[3], lat2=EXT[4]) %>%
@@ -750,10 +761,16 @@ Prom<-future({
                   popup=coo$Popup,
                   stroke=T, weight=2, fillOpacity=1) %>%
       addPolygons(data=distSP_WGS, color="#D69F32", fillOpacity=0.4) %>%
-      addLegend(position="bottomleft", colors=c(col.df$Col[col.df$Col %in% coo$colour], "#D69F32"), labels=c(col.df$Label[col.df$Col %in% coo$colour], "Distribution"), opacity=1)
+      addLegend(position="bottomleft", colors=c(col.df$Col[col.df$Col %in% coo$colour], "#D69F32"), labels=c(col.df$Label[col.df$Col %in% coo$colour], "Distribution"), opacity=1) %>%
+      leaflet.extras::addBootstrapDependency() %>% # Add Bootstrap to be able to use a modal
+      addEasyButton(easyButton(
+        icon = "fa fa-list-ul", 
+        title = "Check out the list of countries of occurrence",
+        onClick = JS("function(btn, map){ $('#infobox').modal('show'); }")
+      )) %>% # Trigger the infobox
+      htmlwidgets::appendContent(info.box)  
     
     # Save for SIS
-    Storage_SP$countries_SIS<-sRL_OutputCountries(scientific_name, subset(coo, paste0(coo$Level0_occupied, coo$Level1_occupied) =="TRUETRUE")) # Keep only those occupied
     Storage_SP$Leaflet_COO<-Leaflet_COO
     sRL_StoreSave(scientific_name, Storage_SP)
     
