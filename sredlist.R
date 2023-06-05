@@ -32,7 +32,7 @@ function(scientific_name, req) {
   # The file is downloaded in a temporary folder
   tmpfile <- fileInfo$formContents$req$tempfile
   #print(fileInfo) # nolint
-  upload_folder_scientific_name <- R.utils::capitalize(paste0(stringr::str_replace(scientific_name, " ", "_"), format(Sys.time(), "_%Y%m%d"))) # nolint
+  upload_folder_scientific_name <- R.utils::capitalize(paste0(stringr::str_replace(scientific_name, " ", "_"), "_Uploaded_", format(Sys.time(), "_%Y%m%d"))) # nolint
   # Create a file path E.g: Distributions/Nile tilapia/Nile_tilapia_20211207/
   filePath <- paste0(config$distribution_path, scientific_name, "/", upload_folder_scientific_name, "/") # nolint
   if (dir.exists(filePath)) {
