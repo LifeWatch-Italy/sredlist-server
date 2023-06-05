@@ -358,7 +358,7 @@ sRL_MapDistributionGBIF<-function(dat, scientific_name, First_step, AltMIN, AltM
   }
   
   if(First_step=="indivsites"){
-    distGBIF<-st_buffer(dat, 0.001) # The default is one meter, then they can add a buffer
+    distGBIF<-st_buffer(dat, 1) # The default is one meter, then they can add a buffer
   }
   
   if(First_step=="hydro"){

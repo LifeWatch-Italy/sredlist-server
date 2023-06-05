@@ -357,7 +357,7 @@ sRL_CriteriaCalculator <- function(allfields){
   }
   
   # Subcriteria
-  crit$Subcrit[crit$criterion=="A4"]<-ifelse(allfields$PopulationReductionPast.qualifier %in% c("Observed", "Estimated", "Projected", "Inferred", "Suspected") &
+  crit$Subcrit[crit$criterion=="A4"]<-ifelse(allfields$PopulationReductionPastandFuture.qualifier %in% c("Observed", "Estimated", "Projected", "Inferred", "Suspected") &
                                                (allfields$PopulationReductionPastandFutureUnderstood.value=="No" |
                                                 allfields$PopulationReductionPastandFutureCeased.value=="No" |
                                                 allfields$PopulationReductionPastandFutureReversible.value=="No"),
