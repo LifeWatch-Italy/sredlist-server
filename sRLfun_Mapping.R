@@ -57,7 +57,7 @@ sRL_createDataGBIF <- function(scientific_name, GBIF_SRC, Uploaded_Records) { # 
   ### Download data
   # From GBIF
   Taxon<-name_backbone(name=scientific_name)
-  if(Taxon$rank=="SPECIES"){TaxKey<-Taxon$usageKey} else {TaxKey<-NULL} # Needed to avoid a wrong species from an existing genus to download all occurrences from that genus
+  if("SPECIES" %in% Taxon$rank[1]){TaxKey<-Taxon$usageKey} else {TaxKey<-NULL} # Needed to avoid a wrong species from an existing genus to download all occurrences from that genus
   if(GBIF_SRC[1]==1 & is.null(TaxKey)==F){
     
     #Calculate the total number of data in GBIF
@@ -161,7 +161,7 @@ sRL_createDataGBIF <- function(scientific_name, GBIF_SRC, Uploaded_Records) { # 
   dat <- dat %>%
     dplyr::select(any_of(c("species", "decimalLongitude", "decimalLatitude", "countryCode", "individualCount", # nolint
                            "gbifID", "id", "objectid", "family", "taxonRank", "coordinateUncertaintyInMeters", "year",
-                           "basisOfRecord", "institutionCode", "datasetName", "genericName", "specificEpithet", "Source_type", "source", "citation", "Link")))
+                           "basisOfRecord", "institutionCode", "datasetName", "genericName", "specificEpithet", "Source_type", "source", "citation", "Link", "presence")))
   
   # Remove records with no spatial coordinates
   dat <- dat %>% filter(!is.na(decimalLongitude)) %>% filter(!is.na(decimalLatitude)) # nolint
@@ -275,6 +275,9 @@ sRL_cleanDataGBIF <- function(flags, year_GBIF, uncertainty_GBIF, Gbif_yearBin, 
   ### Add flagging for points outside GBIF_xmin...
   flags$.limits<-(flags$decimalLongitude < GBIF_xmin | flags$decimalLongitude > GBIF_xmax | flags$decimalLatitude < GBIF_ymin | flags$decimalLatitude > GBIF_ymax)==F
   
+  ### Flag points with presence 4,5,6 (for uploaded or RL points)
+  if("presence" %in% names(flags)){flags$.pres<-as.character(! flags$presence %in% c("4", "5", "6"))}
+  
   ### Add a column with pasted reasons
   flags$Reason<-apply(
     flags[, which(substr(names(flags), 1, 1)==".")], # Apply to the columns that start with a dot (i.e., the column added by clean_coordinates)
@@ -283,7 +286,7 @@ sRL_cleanDataGBIF <- function(flags, year_GBIF, uncertainty_GBIF, Gbif_yearBin, 
       Reas<-names(x)[x==F] %>% .[is.na(.)==F] # Extract all reasons, i.e., column names where valid==F
       if(length(Reas)==0){NA} else{ # If no reason, I put NA as the reason
         Reas %>% # If there is a reason I rename and paste the reasons
-          revalue(., c(".val"="Validity", ".equ"="Equal_LonLat", ".zer"="Zero_Coordinates", ".cap"="Capitals", ".cen"="Country_centroids", ".gbf"="GBIF_headquarters", ".inst"="Institutions", ".sea"="Sea", ".year"="Year", ".uncertainty"="Coordinates_uncertainty", ".limits"="Outside_extent"), warn_missing=F) %>%
+          revalue(., c(".val"="Validity", ".equ"="Equal_LonLat", ".zer"="Zero_Coordinates", ".cap"="Capitals", ".cen"="Country_centroids", ".gbf"="GBIF_headquarters", ".inst"="Institutions", ".sea"="Sea", ".year"="Year", ".uncertainty"="Coordinates_uncertainty", ".limits"="Outside_extent", ".pres"="Presence_456"), warn_missing=F) %>%
           paste(collapse="; ")
       }}
   )
