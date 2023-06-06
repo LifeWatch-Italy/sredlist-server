@@ -32,7 +32,7 @@ function(scientific_name, req) {
   # The file is downloaded in a temporary folder
   tmpfile <- fileInfo$formContents$req$tempfile
   #print(fileInfo) # nolint
-  upload_folder_scientific_name <- R.utils::capitalize(paste0(stringr::str_replace(scientific_name, " ", "_"), "_Uploaded_", format(Sys.time(), "_%Y%m%d"))) # nolint
+  upload_folder_scientific_name <- R.utils::capitalize(paste0(stringr::str_replace(scientific_name, " ", "_"), "_Uploaded", format(Sys.time(), "_%Y%m%d"))) # nolint
   # Create a file path E.g: Distributions/Nile tilapia/Nile_tilapia_20211207/
   filePath <- paste0(config$distribution_path, scientific_name, "/", upload_folder_scientific_name, "/") # nolint
   if (dir.exists(filePath)) {
@@ -49,6 +49,17 @@ function(scientific_name, req) {
   #Copies the file into the designated folder
   file.copy(tmpfile, fn)
   #file.rename(fn , fn)
+  
+  # Save a json
+  text <- paste0(
+    "A distribution has been stored for the species: ",
+    scientific_name,
+    ".\nIt was uploaded to the sRedList platform on the ",
+    Sys.time(),
+    " CET from a file named ", sub(".shx", ".shp", file_name)
+  )
+  tryCatch({jsonlite::write_json(list(info = text), paste0(filePath, upload_folder_scientific_name, ".json"), auto_unbox= TRUE)}, error=function(e){cat("TryCatch JSON upload failed")})
+  
   
 
   print(paste0("Your file is now stored in ", fn))
@@ -2302,6 +2313,7 @@ function(start = 0, end = 10, filter = "") {
     for(fileName in list.files(paste0(config$distribution_path, directoryName))) {
       # Red list distributions cannot be deleted
       if (grepl("_RL", fileName)) edit <- FALSE;  # nolint
+      if (grepl("_Uploaded", fileName)) edit <- TRUE;  # nolint
       subDirectorySize <- 0
       subFiles <- list()
       for( subFileName in list.files(paste0(config$distribution_path, directoryName, "/", fileName))) { # nolint 
@@ -2415,12 +2427,17 @@ function(scientific_name) {
     distributions <- list()
     for(distributionFolder in list.files(paste0(config$distribution_path, scientific_name))) { # nolint
       # GBIF distributions cannot be selected
-      if (!grepl("_GBIF", distributionFolder)){
+      #if (!grepl("_GBIF", distributionFolder)){
         files <- list();
         directorySize <- 0;
         for(fileName in list.files(paste0(config$distribution_path, scientific_name, "/", distributionFolder))) {  # nolint
           fileSize <- (file.info(paste0(config$distribution_path, scientific_name, "/", distributionFolder, "/", fileName))$size) / 1024 # nolint 
           fileCreated <- (file.info(paste0(config$distribution_path, scientific_name, "/", distributionFolder, "/", fileName))$ctime) # nolint 
+          metadata <- NULL
+          if (file_ext(fileName) == "json") {
+            metadata = jsonlite::read_json(paste0(config$distribution_path, scientific_name, "/", distributionFolder, "/", fileName), simplifyVector = FALSE)  # nolint 
+            print(metadata)
+          }
           files <- append(files, list(
             list(
               data = list(
@@ -2428,7 +2445,8 @@ function(scientific_name) {
                 size = fileSize,
                 created = fileCreated,
                 path = distributionFolder,
-                type = "file")
+                type = "file",
+                metadata=metadata)
             )));
           directorySize <- directorySize + fileSize;
         }
@@ -2443,7 +2461,7 @@ function(scientific_name) {
               type = "folder"),
             children = files
           )));
-      }
+      #}
     }
     return(distributions)
     

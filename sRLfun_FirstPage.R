@@ -153,6 +153,7 @@ sRL_PrepareDistrib <- function(distributions, scientific_name){
   if(nrow(distSP)==0){empty_distrib()}
   
   # Transform CRS
+  distSP<-st_transform(distSP, st_crs(4326)) # Needed in case uploaded distribution has a different CRS and because GBIF distributions are stored in WGS
   sf::sf_use_s2(FALSE)
   EXT<-extent(distSP)
   if(EXT[1]<=(-180) | EXT[2]>=180 | EXT[3]<=(-90) | EXT[4]>=90){distSP<-st_crop(distSP, xmin=-180, xmax=180, ymin=-90, ymax=90)}
