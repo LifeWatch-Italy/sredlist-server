@@ -322,7 +322,7 @@ sRL_cleaningMemory<-function(Time_limit){
           SP_name<-toremove_temp[SP] %>% strsplit(., "/") %>% unlist(.) %>% .[length(.)] %>% sub("_", " ", .)
           St_SP<-sRL_StoreRead(SP_name, 0)
           Step<-sRL_LastStep(St_SP)
-          Saved_output[nrow(Saved_output)+1,]<-c(SP_name, as.character(St_SP$Creation[1]), "NotCompleted", Step)
+          Saved_output[nrow(Saved_output)+1,]<-c(SP_name, as.character(St_SP$Creation[1]), "NotCompleted", NA, Step)
           }, error=function(e){cat(paste0("Problem tracking SP: ", SP_name))})
         }
         
