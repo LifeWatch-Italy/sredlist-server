@@ -127,3 +127,10 @@ elev_decreasing <- function(){
 no_hab_API <- function(){
   api_error(message = "We cannot find habitat/elevation preferences because the Red List API is not working. Please add them manually.", status=400)
 }
+
+run_Step2 <- function(){
+  api_error(message = "You need to run Step 2 (filtering records) once again before creating range map since you updated Step 1", status=400)
+}
+
+
+

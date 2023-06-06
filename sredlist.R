@@ -463,13 +463,16 @@ function(scientific_name, Gbif_Start="", Gbif_Param=list(), Gbif_Buffer=-1, Gbif
 # Parameter error
 if(Gbif_Start=="alpha" & Gbif_Param[1] <= 0){neg_alpha()}
 if(Gbif_Start=="kernel" & Gbif_Param[2] <= 0){neg_kernel()}
-  
+
+# Check the Step 2 has been run since Step 1 was last updated  
+scientific_name <- sRL_decode(scientific_name)
+Storage_SP=sRL_StoreRead(scientific_name, MANDAT=1)
+if(! "dat_proj_saved" %in% names(Storage_SP)){run_Step2()}  
   
 Prom<-future({
   sf::sf_use_s2(FALSE)
 
   # Transform parameters GBIF filtering
-  scientific_name <- sRL_decode(scientific_name)
   Gbif_Buffer<-replace(Gbif_Buffer, Gbif_Buffer<0, 0)
   if(Gbif_Start==""){Gbif_Start<-"mcp"}
   print(Gbif_Start)
@@ -483,7 +486,6 @@ Prom<-future({
   sRL_loginfo("START - Maps the distribution", scientific_name)
   
   # Get back GBIF observations
-  Storage_SP=sRL_StoreRead(scientific_name, MANDAT=1)
   dat_proj=Storage_SP$dat_proj_saved
   if(nrow(dat_proj)==0){no_gbif_data()}
   
