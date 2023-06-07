@@ -1220,7 +1220,7 @@ Prom<-future({
   
 
   ### Save parameters and results
-  Storage_SP<-sRL_OutLog(Storage_SP, c("AOH_HabitatPreference", "AOH_MarginalHabitatPreference", "AOH_ElevationPreference", "AOH_Density", "AOH_RangeType"), c(paste0(habitats_pref, collapse=","), paste0(habitats_pref_MARGINAL, collapse=","), paste0(altitudes_pref, collapse=", "), ifelse(density_pref=='-1', NA, density_pref), AOH_type))
+  Storage_SP<-sRL_OutLog(Storage_SP, c("AOH_HabitatPreference", "AOH_MarginalHabitatPreference", "AOH_ElevationPreference", "AOH_Density", "AOH_RangeType", "Estimated_AOH22"), c(paste0(habitats_pref, collapse=","), paste0(habitats_pref_MARGINAL, collapse=","), paste0(altitudes_pref, collapse=", "), ifelse(density_pref=='-1', NA, density_pref), AOH_type, AOO_km2))
   terraOptions(tempdir=tempdir())
   rasterOptions(tmpdir=tempdir())
   gc()
