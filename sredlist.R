@@ -734,7 +734,7 @@ Prom<-future({
     Storage_SP$distSP_saved<-distSP # I have to save it even if Crop_Country is empty because maybe it was not empty at previous call
     
     # Prepare distribution and calculate COO
-    distSP_WGS<-distSP %>% dplyr::group_by(origin, presence, seasonal) %>% dplyr::summarise(N= n()) %>% st_transform(., st_crs(coo_raw))
+    distSP_WGS<-distSP %>% st_transform(., st_crs(coo_raw)) %>% dplyr::group_by(origin, presence, seasonal) %>% dplyr::summarise(N= n())
     coo<-sRL_cooExtract(distSP_WGS, domain_pref, Crop_Country)
     
     # Simplify distribution if large distribution
@@ -755,13 +755,22 @@ Prom<-future({
     if(is.na(EXT[1]) | is.na(EXT[2]) | is.na(EXT[3]) | is.na(EXT[4])){EXT<-1.2*extent(distSP_WGS)} # In case there is no overlap with countries (e.g., distribution at sea because of simplification)
     
     # Prepare command for results button
-    Storage_SP$countries_SIS<-sRL_OutputCountries(scientific_name, subset(coo, paste0(coo$Level0_occupied, coo$Level1_occupied) =="TRUETRUE")) # Keep only those occupied
+    coo_occ<-subset(coo, coo$Level1_occupied==T)
+    RES<-NULL
+    for(C in levels(droplevels(as.factor(coo_occ$SIS_name0)))){
+      Country<-subset(coo_occ, coo_occ$SIS_name0==C)
+      if(nrow(Country)==1 & is.na(Country$SIS_name1[1])){
+        RES[length(RES)+1]<-C
+      }else {
+        RES[length(RES)+1]<-paste0(C, " [", paste(sort(Country$SIS_name1), collapse=", "), "]")
+      }
+    }
     
     info.box <- HTML(paste0(
       HTML('<div class="modal fade" id="infobox" role="dialog"><div class="modal-dialog"><!-- Modal content--><div class="modal-content"><div class="modal-header"><button type="button" class="close" data-dismiss="modal">&times;</button>'),
       
       HTML(paste0('<h4>List of countries of occurrence</h4> <p>',
-                  Storage_SP$countries_SIS$CountryOccurrence.CountryOccurrenceSubfield.CountryOccurrenceName %>% sort(.) %>% paste(., collapse=", "),
+                  RES %>% sort(.) %>% paste(., collapse="; "),
                   '</p><hr>'))
     ))
     
@@ -784,6 +793,7 @@ Prom<-future({
       htmlwidgets::appendContent(info.box)  
     
     # Save for SIS
+    Storage_SP$countries_SIS<-sRL_OutputCountries(scientific_name, subset(coo, paste0(coo$Level0_occupied, coo$Level1_occupied) =="TRUETRUE")) # Keep only those occupied
     Storage_SP$Leaflet_COO<-Leaflet_COO
     sRL_StoreSave(scientific_name, Storage_SP)
     
