@@ -361,7 +361,7 @@ function(scientific_name) {
 #* @param Gbif_Sea:string Gbif_Sea
 #* @serializer htmlwidget
 #* @tag sRedList
-function(scientific_name, Gbif_Year= -1, Gbif_Uncertainty=-1, Gbif_Extent=list(), Gbif_Sea="", Gbif_yearBin="", Gbif_uncertainBin="") {
+function(scientific_name, Gbif_Year= -1, Gbif_Uncertainty=-1, Gbif_Extent=list(), Gbif_Sea="", Gbif_automatedBin="", Gbif_yearBin="", Gbif_uncertainBin="") {
 
 Prom<-future({
   sf::sf_use_s2(FALSE)  
@@ -371,6 +371,7 @@ Prom<-future({
 
   ### Transform parameters GBIF filtering
   scientific_name <- sRL_decode(scientific_name)
+  print(Gbif_automatedBin)
   print(Gbif_Year)
   if(is.na(Gbif_Uncertainty) | Gbif_Uncertainty==-1){Gbif_Uncertainty<-10000} ; print(Gbif_Uncertainty) # If no Gbif_Uncertainty provided, I put a high threshold so that it's never triggered
   Gbif_Extent<-as.numeric(Gbif_Extent) ; print(Gbif_Extent)
@@ -381,6 +382,7 @@ Prom<-future({
   ### Charge downloaded data
   Storage_SP<-sRL_StoreRead(scientific_name, MANDAT=1) ; print(names(Storage_SP))
   flags_raw<-Storage_SP$flags_raw_saved
+  if(Gbif_automatedBin != "true"){flags_raw$.val<-flags_raw$.equ<-flags_raw$.zer<-flags_raw$.cap<-flags_raw$.cen<-flags_raw$.gbf<-flags_raw$.inst<-TRUE}
   
   ### Subset the observations user wants to keep (can be run several times if users play with parameters)
   flags <- sRL_cleanDataGBIF(flags_raw, as.numeric(Gbif_Year), as.numeric(Gbif_Uncertainty), Gbif_yearBin, Gbif_uncertainBin, Gbif_Sea, Gbif_Extent[1], Gbif_Extent[2], Gbif_Extent[3], Gbif_Extent[4])
@@ -405,7 +407,7 @@ Prom<-future({
   Storage_SP$dat_proj_savedORIGINAL<-dat_proj # I need the original ones for Crop_Country step
   Storage_SP$flags<-flags
   Storage_SP$Leaflet_Filter<-Leaflet_Filter
-  Storage_SP<-sRL_OutLog(Storage_SP, c("Gbif_Year", "Gbif_Uncertainty", "Gbif_Sea", "Gbif_Extent", "Gbif_yearBin", "Gbif_uncertainBin"), c(Gbif_Year, Gbif_Uncertainty, Gbif_Sea, paste0(Gbif_Extent, collapse=","), Gbif_yearBin, Gbif_uncertainBin))
+  Storage_SP<-sRL_OutLog(Storage_SP, c("Gbif_Year", "Gbif_Uncertainty", "Gbif_Sea", "Gbif_Extent", "Gbif_automatedBin", "Gbif_yearBin", "Gbif_uncertainBin"), c(Gbif_Year, Gbif_Uncertainty, Gbif_Sea, paste0(Gbif_Extent, collapse=","), Gbif_automatedBin=="true", Gbif_yearBin, Gbif_uncertainBin))
   sRL_StoreSave(scientific_name, Storage_SP)
   
   sRL_loginfo("END - GBIF Step 2", scientific_name)

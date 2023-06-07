@@ -6,6 +6,7 @@ NA,NA,Gbif_Year,0,Minimum year of observations. All observations made before thi
 NA,NA,Gbif_Uncertainty,0,Maximum coordinate uncertainty. All observations with higher localisation uncertainty than this value (in km) will be removed. Only applies to GBIF / OBIS data,NA
 NA,NA,Gbif_Sea,0,Selection of land / sea data. 'excludesea'= Occurrence records made at sea were excluded (Terrestrial species) - 'excludeland'= Occurence records made at land were excluded (Marine species),NA
 NA,NA,Gbif_Extent,0,"Filtering for a geographic extent. Removes observations outside these coordinates (min longitude, max longitude, min latitude, max latitude)",NA
+NA,NA,Gbif_automatedBin,0,"Whether automated filtering (for capitals, zero coordinates, institutions, etc) was run or not",NA
 NA,NA,Gbif_yearBin,0,Exclude records with no year information (if equals “TRUE” this means that records with missing information were removed),NA
 NA,NA,Gbif_uncertainBin,0,Exclude records with no coordinate uncertainty information (if equals “TRUE” this means that records with missing information were removed),NA
 NA,NA,Mapping_Start,0,First step of the mapping procedure to create a range map. 'mcp'= Minimum Convex Polygon around occurence records - 'alpha'= Alphahull around occurrence records - 'kernel'= Kernel distribution – ‘indivsites’= Individual sites - 'hydro'=Hydrobasins with occurrence records - 'hydroMCP= Hydrobasins overlapping with the Minimum Convex Polygon around occurrence records,NA

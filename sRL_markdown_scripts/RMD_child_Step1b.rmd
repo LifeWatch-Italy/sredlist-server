@@ -2,7 +2,8 @@
 You used the sRedList platform to create a distribution map of your species from occurrence records. 
 
 ### Download data
-You gathered `r nrow(Storage_SP$flags_raw_saved)` raw occurrence records from `r outlog$Value[outlog$Parameter=="Gbif_Source"] %>% gsub(" + ", ", ", .)` `r if(outlog$Value[outlog$Parameter=="Gbif_Synonyms"] != ""){paste0(" (using ", outlog$Value[outlog$Parameter=="Gbif_Synonyms"], " as synonym species)")}`. They are distributed as follows:
+You gathered `r nrow(Storage_SP$flags_raw_saved)` raw occurrence records from `r outlog$Value[outlog$Parameter=="Gbif_Source"] %>% gsub(" + ", ", ", .)`
+`r if("Gbif_Synonyms" %in% outlog$Parameter){paste0(" (using ", outlog$Value[outlog$Parameter=="Gbif_Synonyms"], " as synonym species)")}`. They are distributed as follows:
 
 <br>
 <center>
@@ -12,7 +13,7 @@ You gathered `r nrow(Storage_SP$flags_raw_saved)` raw occurrence records from `r
 
 ### Filter data
 
-To filter occurrence records, we apply some automated filters from the CoordinateCleanR package (see sRedList documentation for more information). 
+To filter occurrence records, the platform offers some automated filters from the CoordinateCleanR package (see sRedList documentation for more information); you chose `r ifelse(as.character(outlog$Value[outlog$Parameter=="Gbif_automatedBin"])=="TRUE", "", "not")` to apply those filters in your assessment. 
 In addition, you excluded all records made before `r outlog$Value[outlog$Parameter=="Gbif_Year"]` (`r ifelse(outlog$Value[outlog$Parameter=="Gbif_yearBin"]=="TRUE", "also excluding", "but keeping")` records that do not have year information).
 You also excluded all records with coordinates uncertainty higher than `r outlog$Value[outlog$Parameter=="Gbif_Uncertainty"]`km (`r ifelse(outlog$Value[outlog$Parameter=="Gbif_uncertainBin"]=="TRUE", "also excluding", "but keeping")` records that do not have coordinate uncertainty information).
 `r ifelse(outlog$Value[outlog$Parameter=="Gbif_Extent"]=="-180,180,-90,90", "", paste0("You restricted to occurrence records included in a square of coordinates: ", outlog$Value[outlog$Parameter=="Gbif_Extent"], "."))` 
