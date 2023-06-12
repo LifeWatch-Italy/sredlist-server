@@ -1213,8 +1213,8 @@ Prom<-future({
 
   plot2 <- base64enc::dataURI(file = paste0("resources/AOH_stored/", sub(" ", "_", scientific_name), "/Plots/aoo.png"), mime = "image/png", encoding = "base64") # nolint
 
-  AOO_km2<- sRL_areaAOH(aoh_22[[1]], SCALE="2x2")
-  if(Uncertain=="Uncertain_yes"){AOO_km2_opt<- sRL_areaAOH(aoh_22_opt[[1]], SCALE="2x2") ; Storage_SP$aoo_km2_opt<-AOO_km2_opt}
+  AOO_km2<- sRL_areaAOH(aoh_22[[1]], SCALE="2x2") ; if(AOH_km2==0){AOO_km2<-0}
+  if(Uncertain=="Uncertain_yes"){AOO_km2_opt<- sRL_areaAOH(aoh_22_opt[[1]], SCALE="2x2") ; if(AOH_km2_opt==0){AOO_km2_opt<-0} ; Storage_SP$aoo_km2_opt<-AOO_km2_opt}
   if (density_pref[1] != '-1') {Storage_SP$density_saved<-density_pref}
   Storage_SP$aoo_km2<-AOO_km2
   
@@ -1260,9 +1260,9 @@ Prom<-future({
     aooDF<-as.data.frame(AOO_pts, xy = TRUE); names(aooDF)[3]<-"lyr1"
     Plot_AOOpoints<-ggplot() + 
       geom_tile(data = aooDF, aes(x = x, y = y, fill = as.character(lyr1)), col=NA)+
+      scale_fill_manual(values=c("#25BC5A"), labels="Occupied cell", name="", na.translate=F)+
       geom_sf(data=distSP, aes(col=as.character("Distribution")), fill=NA, lwd=2, show.legend = "line")+
       geom_sf(data=dat_proj, aes(size="1"), fill=NA, col="black", shape=1)+
-      scale_fill_manual(values=c("#25BC5A"), labels="Occupied cell", name="", na.translate=F)+
       scale_colour_manual(values=c("#EF9884"), name="")+
       scale_size_manual(values=1.6, name="", labels="Occurrences")+
       labs(caption=ifelse(Range_size<5000, "", "\n You might not see the green cells because they are too small, \n but the calculation worked correctly"))+
