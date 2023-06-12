@@ -229,6 +229,13 @@ sRL_StructureGBIF<-function(scientificName){
   # Determine number of data to download per group to sum at LIM_GBIF
   TAB$N_download<-ifelse(TAB$N < (config$LIM_GBIF/nrow(TAB)), TAB$N, NA)
   TAB$N_download[is.na(TAB$N_download)]<-round((config$LIM_GBIF-sum(TAB$N_download, na.rm=T))/nrow(TAB[is.na(TAB$N_download),]))
+  TAB$N_download<-ifelse((TAB$N_download>TAB$N), TAB$N, TAB$N_download)
+  i=0
+  while(i<config$LIM_GBIF){
+    TAB$N_download[TAB$N_download<TAB$N]<-TAB$N_download[TAB$N_download<TAB$N]+1
+    i=sum(TAB$N_download)
+  }
+  if(sum(TAB$N_download)>config$LIM_GBIF){TAB$N_download[which(TAB$N_download==max(TAB$N_download))[1:(sum(TAB$N_download)-config$LIM_GBIF)]]<-TAB$N_download[which(TAB$N_download==max(TAB$N_download))[1:(sum(TAB$N_download)-config$LIM_GBIF)]]-1}
   
   
   ##### STRUCTURE DOWNLOAD
