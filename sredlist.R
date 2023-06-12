@@ -1982,7 +1982,7 @@ function(scientific_name,
   
   # Population trends details
   allfields$PopulationReductionPast.qualifier<-pastTrends_qual
-  allfields$PopulationReductionPastBasis.value<-pastTrends_basis
+  allfields$PopulationReductionPastBasis.value<-pastTrends_basis %>% subset(., nchar(.)>1 & . != "Unknown") %>% paste(., collapse="|") %>% ifelse(.=="", "Unknown", .) # Remove single letters, remove Unknown if with something else, paste with | as in SIS Connect Sample set
   allfields$PopulationReductionPastReversible.value<-pastTrends_reversible
   allfields$PopulationReductionPastUnderstood.value<-pastTrends_understood
   allfields$PopulationReductionPastCeased.value<-pastTrends_ceased
@@ -2011,13 +2011,13 @@ function(scientific_name,
   allfields$PopulationReductionFuture.range<-futureTrends
   allfields$PopulationReductionFuture.justification<-futureTrends_justif
   allfields$PopulationReductionFuture.qualifier<-futureTrends_quality
-  allfields$PopulationReductionFutureBasis.value<-futureTrends_basis
+  allfields$PopulationReductionFutureBasis.value<-futureTrends_basis %>% subset(., nchar(.)>1 & . != "Unknown") %>% paste(., collapse="|") %>% ifelse(.=="", "Unknown", .) # Remove single letters, remove Unknown if with something else, paste with | as in SIS Connect Sample set
 
   allfields$PopulationReductionPastandFuture.direction<-ongoingTrends_dir
   allfields$PopulationReductionPastandFuture.range<-ongoingTrends
   allfields$PopulationReductionPastandFuture.justification<-ongoingTrends_justif
   allfields$PopulationReductionPastandFuture.qualifier<-ongoingTrends_quality
-  allfields$PopulationReductionPastandFutureBasis.value<-ongoingTrends_basis
+  allfields$PopulationReductionPastandFutureBasis.value<-ongoingTrends_basis %>% subset(., nchar(.)>1 & . != "Unknown") %>% paste(., collapse="|") %>% ifelse(.=="", "Unknown", .) # Remove single letters, remove Unknown if with something else, paste with | as in SIS Connect Sample set
   allfields$PopulationReductionPastandFuture.numYears<-ongoingTrends_NY
   allfields$PopulationReductionPastandFutureCeased.value<-ongoingTrends_ceased
   allfields$PopulationReductionPastandFutureReversible.value<-ongoingTrends_reversible
