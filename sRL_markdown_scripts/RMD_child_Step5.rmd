@@ -8,3 +8,7 @@ The platform found a `r paste0(revalue(outlog$Value[outlog$Parameter=="Estimated
 <center>
 ![](`r paste0(outDir, '/Plots/trends_aoh.png')`){width=800px}
 </center>
+
+```{r leaflet_trends, fig.align = "center", out.width = '100%'}
+if("Trends_leaflet" %in% names(Storage_SP)){Storage_SP$Trends_leaflet}
+```

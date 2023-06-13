@@ -39,6 +39,9 @@ The calculated Area of Habitat has a value of `r round(Storage_SP$AOHkm2_saved)`
 ![](`r paste0(outDir, '/Plots/aoh.png')`){width=800px}
 </center>
 
+```{r leaflet_aoh, fig.align = "center", out.width = '100%'}
+if("AOH_leaflet" %in% names(Storage_SP)){Storage_SP$AOH_leaflet}
+```
 
 When rescaled at a 2x2km grid, this provides a value of `r round(Storage_SP$aoo_km2)` km2; this value can be used (if you trust the map) as an upper bound of area of occupancy if you consider likely that all the mapped suitable habitat is occupied by the species. If you know part of it is not occupied, you might want to reduce this estimate. `r if(Storage_SP$AOH_type=="Large"){"Note that, as your species has a large range, the platform used a simplified version of land-cover which may lead the upper bound of AOO to be slightly overestimated."}`.
 

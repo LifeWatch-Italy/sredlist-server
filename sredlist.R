@@ -822,7 +822,7 @@ return(Prom)
 
 # M4: EOO ----------------------------------------------------------------
 
-
+## Calculation -----
 #* Estimate the Extent of Occurrence (EOO) from range
 #* @get species/<scientific_name>/analysis/eoo
 #* @param scientific_name:string Scientific Name
@@ -880,6 +880,45 @@ return(Prom)
 }
 
 
+## Leaflet -----
+#* EOO Leaflet
+#* @get species/<scientific_name>/analysis/eoo_leaflet
+#* @param scientific_name:string Scientific Name
+#* @serializer htmlwidget
+#* @tag sRedList
+function(scientific_name) { # nolint
+  
+  Prom<-future({
+    sf::sf_use_s2(FALSE)
+    
+    #Filter param
+    scientific_name <- sRL_decode(scientific_name)
+    Storage_SP=sRL_StoreRead(scientific_name, MANDAT=1) ; print(names(Storage_SP))
+    
+    # Load distribution and EOO
+    distSP<-Storage_SP$distSP_saved %>% st_transform(st_crs(4326))
+    EOO <- st_as_sf(st_convex_hull(st_union(distSP))) ## Needed to avoid having different sub-polygons
+    
+    ### Plot EOO
+    EOO_leaflet<-leaflet() %>%
+      addTiles() %>%
+      addPolygons(data=distSP, color="#D69F32", fillOpacity=0.5) %>% 
+      addPolygons(data=EOO, color="#ef3b2c", fillOpacity=0) %>% 
+      addMouseCoordinates() 
+    
+    ### Store usage
+    Storage_SP<-sRL_OutLog(Storage_SP, "EOO_leaflet", "Used")
+    Storage_SP$EOO_leaflet<-EOO_leaflet
+    sRL_StoreSave(scientific_name, Storage_SP)
+    
+    
+    return(EOO_leaflet)
+    
+  }, seed=T)
+  
+  return(Prom)
+}
+
 
 
 
@@ -922,6 +961,8 @@ function(scientific_name) {
 
 
 ## b: Current AOH ----------------------------------------------------------------
+
+### Calculation ---- 
 #* Calculate Area of Habitat (AOH)
 #* @get species/<scientific_name>/analysis/aoh
 #* @param scientific_name:string Scientific Name
@@ -1030,6 +1071,7 @@ Prom<-future({
     writeRaster(alt_crop, paste0(output_dir, "/alt_crop.tif"))
     cci2<-sRL_ChargeCci2Raster()
     cci2_crop<-crop(cci2, extent(distSP))
+    writeRaster(cci2_crop, paste0(output_dir, "/cci2_crop.tif"), overwrite=T)
 
     # Calculate AOH with "Suitable" habitats only (ie pessimistic)
     AOH2<-sRL_calculateAOH(rangeSP_fun=rangeSP_clean,
@@ -1149,6 +1191,7 @@ Prom<-future({
   }
 
   Storage_SP$AOH_type<-AOH_type
+  Storage_SP$Range_size<-Range_size
 
   # Plot AOH and calculate area
   sRL_loginfo("START - Plot AOH", scientific_name)
@@ -1244,12 +1287,13 @@ Prom<-future({
     
     # Prepare grid 22
     dat_proj=Storage_SP$dat_proj_saved
-    grid22<-raster("resources/EmptyGrid2x2/Empty.grid.2x2.Mollweide.tif")
+    grid22<-raster("resources/EmptyGrid2x2/Empty.grid.2x2.Mollweide.tif") # Keep as raster (not terra)
     grid_crop<-crop(grid22, extent(dat_proj), snap="out")
     
     # Map AOO
     pts<-dat_proj %>% as_Spatial() %>% as(., 'SpatialPoints')
     AOO_pts <- terra::rasterize(pts, grid_crop, fun='count')>=1
+    writeRaster(AOO_pts, paste0("resources/AOH_stored/", gsub(" ", "_", scientific_name), "/AOO_known.tif"), overwrite=T)
     
     # Calculate AOO
     aoo_pts_km2<-sum(as.vector(AOO_pts), na.rm=T)*4
@@ -1304,8 +1348,125 @@ return(Prom)
 }
 
 
+### Leaflet ----
+
+#### AOH Leaflet ----
+#* AOH Leaflet
+#* @get species/<scientific_name>/analysis/aoh_leaflet
+#* @param scientific_name:string Scientific Name
+#* @serializer htmlwidget
+#* @tag sRedList
+function(scientific_name) { # nolint
+  
+  Prom<-future({
+    sf::sf_use_s2(FALSE)
+    
+    #Filter param
+    scientific_name <- sRL_decode(scientific_name)
+    Storage_SP=sRL_StoreRead(scientific_name, MANDAT=1) ; print(names(Storage_SP))
+    aohPROJ<-raster(paste0("resources/AOH_stored/", gsub(" ", "_", scientific_name), "/Current/", list.files(paste0("resources/AOH_stored/", gsub(" ", "_", scientific_name), "/Current"))[1])) ; crs(aohPROJ)<-CRSMOLL
+    distSP<-Storage_SP$distSP_saved
+    distPROJ<-st_transform(distSP, st_crs(4326))
+    
+    ### Plot
+    AOH_leaflet<-leaflet() %>%
+      addTiles() %>%
+      addProviderTiles("Esri.WorldImagery", group = "Satellite") %>%
+      addPolygons(data=distPROJ, color="#D69F32", fillOpacity=0) %>% 
+      addMouseCoordinates()
+    
+    
+    ### Color palette
+    ColPal<-colorNumeric(colorRamp(c("#FBCB3C", "#25BC5A"), interpolate = "spline"), c(0,1), na.color = NA)
+  
+    ### Divide by factor (1 if small-range, 900 if large-range) so that the range is always 0-1
+    FACT<-ifelse(Storage_SP$AOH_type=="Large", 900, 1)
+    
+    ### Add uncertainty if available
+    opt_path<-paste0("resources/AOH_stored/", gsub(" ", "_", scientific_name), "/Current_optimistic/") %>% paste0(., list.files(.)[1])
+    if(file.exists(opt_path)){
+      AOH_opt<-raster(opt_path) ; crs(AOH_opt)<-CRSMOLL
+      
+      AOH_leaflet<-AOH_leaflet %>%
+        addRasterImage(aohPROJ/FACT, method="ngb", group="Minimum AOH", opacity=0.5, colors=ColPal) %>%
+        addRasterImage(AOH_opt/FACT, method="ngb", group="Maximum AOH", opacity=0.5, colors=ColPal) %>%
+        addLayersControl(baseGroups=c("Minimum AOH", "Maximum AOH", "Satellite"), position="topleft", options=layersControlOptions(collapsed = FALSE))
+        
+    } else {
+      AOH_leaflet<-AOH_leaflet %>%
+        addRasterImage(aohPROJ/FACT, method="ngb", group="AOH", opacity=0.5, colors=ColPal) %>%
+        addLayersControl(baseGroups=c("AOH", "Satellite"), position="topleft", options=layersControlOptions(collapsed = FALSE))
+    }
+
+
+    ### Store usage
+    Storage_SP<-sRL_OutLog(Storage_SP, "AOH_leaflet", "Used")
+    Storage_SP$AOH_leaflet<-AOH_leaflet
+    sRL_StoreSave(scientific_name, Storage_SP)
+
+    
+    return(AOH_leaflet)
+    
+  }, seed=T)
+  
+  return(Prom)
+}
+
+
+
+#### AOO Leaflet ----
+#* AOO Leaflet
+#* @get species/<scientific_name>/analysis/aoo_leaflet
+#* @param scientific_name:string Scientific Name
+#* @serializer htmlwidget
+#* @tag sRedList
+function(scientific_name) { # nolint
+  
+  Prom<-future({
+    sf::sf_use_s2(FALSE)
+    
+    #Filter param
+    scientific_name <- sRL_decode(scientific_name)
+    Storage_SP=sRL_StoreRead(scientific_name, MANDAT=1) ; print(names(Storage_SP))
+    dat_proj<-Storage_SP$dat_proj_saved %>% st_transform(., st_crs(4326))
+    COORDS<-st_coordinates(dat_proj)
+    dat_proj$lon<-COORDS[,1] ; dat_proj$lat<-COORDS[,2]
+    aoo<-raster(paste0("resources/AOH_stored/", gsub(" ", "_", scientific_name), "/AOO_known.tif")) %>% projectRaster(., crs=("+init=epsg:4326")) %>% round(.)
+    distPROJ<-st_transform(Storage_SP$distSP_saved, st_crs(4326))
+    
+    ### Plot AOO
+    AOO_leaflet<-leaflet() %>%
+      addTiles() %>%
+      addProviderTiles("Esri.WorldImagery", group = "Satellite") %>%
+      addRasterImage(aoo, method="ngb", group="AOO", opacity=0.5, colors=c("#FBCB3C", "#25BC5A")) %>%
+      addPolygons(data=distPROJ, color="#D69F32", fillOpacity=0) %>% 
+      addLayersControl(baseGroups=c("AOO", "Satellite"), position="topleft") %>% 
+      addCircleMarkers(lng=dat_proj$lon,
+                       lat=dat_proj$lat,
+                       color="black",
+                       fillOpacity=0.5,
+                       stroke=F,
+                       radius=3) %>%
+      addMouseCoordinates()
+    
+      
+    ### Store usage
+    Storage_SP<-sRL_OutLog(Storage_SP, "AOO_leaflet", "Used")
+    Storage_SP$AOO_leaflet<-AOO_leaflet
+    sRL_StoreSave(scientific_name, Storage_SP)
+    
+    
+    return(AOO_leaflet)
+    
+  }, seed=T)
+  
+  return(Prom)
+}
+
 
 ## c: Trends in AOH ----------------------------------------------------------------
+
+### Calculation -----
 #* Estimate trends in AOH as a proxy of population trends (Criterion A2)
 #* @get species/<scientific_name>/analysis/trends-aoh
 #* @param scientific_name:string Scientific Name
@@ -1355,8 +1516,8 @@ Prom<-future({
   Year1_theo<-config$YearAOH2-max(10, round(3*GL_species))
   Year1<-max(Year1_theo, 1992) ; print(Year1)
   
-  ### SMALL-RANGES
   if(AOH_type=="Small"){
+    ### SMALL-RANGES ----
     
     # Charge and crop CCI1
     sRL_loginfo("START - Cropping rasters", scientific_name)
@@ -1414,10 +1575,10 @@ Prom<-future({
   
    
   } else {
-  ### LARGE-RANGES
+  ### LARGE-RANGES ----
 
     # Calculate AOH
-    AOH1<-sRL_largeAOH(alt_crop, habitats_pref_DF$code[habitats_pref_DF$suitability=="Suitable"], altitude_pref_DF[, c("elevation_lower", "elevation_upper")], rangeSP_clean, Year1, FILENAME="")
+    AOH1<-sRL_largeAOH(alt_crop, habitats_pref_DF$code[habitats_pref_DF$suitability=="Suitable"], altitude_pref_DF[, c("elevation_lower", "elevation_upper")], rangeSP_clean, Year1, FILENAME=paste0(output_dir, "/Initial/aoh.tif"))
     
     # If no uncertainty, plot directly
     if(Storage_SP$Uncertain=="Uncertain_no"){
@@ -1433,7 +1594,7 @@ Prom<-future({
       alt_pref_extreme<-c(min(c(altitude_pref_DF$elevation_lower, altitude_pref_DF$elevation_lowerEXTREME), na.rm=T),
                           max(c(altitude_pref_DF$elevation_upper, altitude_pref_DF$elevation_upperEXTREME), na.rm=T)) ; print(alt_pref_extreme)
 
-      AOH1_opt<-sRL_largeAOH(alt_crop, habitats_pref_DF$code, alt_pref_extreme, rangeSP_clean, Year1, FILENAME="")
+      AOH1_opt<-sRL_largeAOH(alt_crop, habitats_pref_DF$code, alt_pref_extreme, rangeSP_clean, Year1, FILENAME=paste0(output_dir, "/Initial_optimistic/aoh.tif"))
 
       plot1 <- cowplot::plot_grid(
         gplot((AOH2[[1]]-AOH1[[1]])/9) + # Divide by 9 to get percents
@@ -1524,6 +1685,93 @@ return(Prom)
 
 
 
+### Leaflet -----
+#* Trends Leaflet
+#* @get species/<scientific_name>/analysis/trends_leaflet
+#* @param scientific_name:string Scientific Name
+#* @serializer htmlwidget
+#* @tag sRedList
+function(scientific_name) { # nolint
+  
+  Prom<-future({
+    sf::sf_use_s2(FALSE)
+    
+    #Filter param
+    scientific_name <- sRL_decode(scientific_name)
+    Storage_SP=sRL_StoreRead(scientific_name, MANDAT=1) ; print(names(Storage_SP))
+    aoh2PROJ<-raster(paste0("resources/AOH_stored/", gsub(" ", "_", scientific_name), "/Current/", list.files(paste0("resources/AOH_stored/", gsub(" ", "_", scientific_name), "/Current"))[1])) ; crs(aoh2PROJ)<-CRSMOLL
+    aoh1PROJ<-raster(paste0("resources/AOH_stored/", gsub(" ", "_", scientific_name), "/Initial/", list.files(paste0("resources/AOH_stored/", gsub(" ", "_", scientific_name), "/Initial"))[1])) ; crs(aoh1PROJ)<-CRSMOLL
+    distSP<-Storage_SP$distSP_saved
+    distPROJ<-st_transform(distSP, st_crs(4326))
+    
+    ### Charge optimistic if exists
+    Uncert<-Storage_SP$Uncertain
+    if(Uncert=="Uncertain_yes"){
+      opt_path<-paste0("resources/AOH_stored/", gsub(" ", "_", scientific_name), "/Current_optimistic/") %>% paste0(., list.files(.)[1])
+      AOH2_opt<-raster(opt_path) ; crs(AOH2_opt)<-CRSMOLL
+      AOH1_opt<-raster(gsub("Current", "Initial", opt_path)) ; crs(AOH1_opt)<-CRSMOLL
+    }
+    
+    ### Basic plot
+    Trends_leaflet<-leaflet() %>%
+      addTiles() %>%
+      addProviderTiles("Esri.WorldImagery", group = "Satellite") %>%
+      addPolygons(data=distPROJ, color="#D69F32", fillOpacity=0) %>% 
+      addMouseCoordinates()
+    
+    
+    ### Create Trends and palettes (depend on AOH_type)
+    if(Storage_SP$AOH_type=="Small"){
+      
+      # Calculate trends
+      Trends<-(aoh2PROJ*2+3)-aoh1PROJ
+      if(Uncert=="Uncertain_yes"){Trends_opt<-(AOH2_opt*2+3)-AOH1_opt}
+      
+      # Fix color palette
+      ColPal<-colorFactor(c("#a6611a", "gray90", "#80cdc1", "#018571"), domain=c("2", "3", "4", "5"), na.color = NA)
+      
+      
+    } else {
+    ### Large range  
+      
+      # Calculate trends
+      Trends<-(aoh2PROJ-aoh1PROJ)/9
+      if(Uncert=="Uncertain_yes"){Trends_opt<-(AOH2_opt-AOH1_opt)/9}
+      
+      # Fix color palette
+      ColPal<-colorNumeric(c("#8c510a", "azure2", "#018571"), domain=c(-100, 0, 100), na.color = NA)
+      
+    
+    }
+      
+    ### Add trends in plots
+    # No uncertainty
+    if(Uncert=="Uncertain_no"){
+      Trends_leaflet<-Trends_leaflet %>%
+        addRasterImage(Trends, method="ngb", group="Trends in AOH", opacity=0.7, colors=ColPal) %>%
+        addLayersControl(baseGroups=c("Trends in AOH", "Satellite"), position="topleft", options=layersControlOptions(collapsed = FALSE))
+      
+      # With uncertainty
+    } else {
+      Trends_leaflet<-Trends_leaflet %>%
+        addRasterImage(Trends, method="ngb", group="Trends in AOH (min AOH)", opacity=0.7, colors=ColPal) %>%
+        addRasterImage(Trends_opt, method="ngb", group="Trends in AOH (max AOH)", opacity=0.7, colors=ColPal) %>% 
+        addLayersControl(baseGroups=c("Trends in AOH (min AOH)", "Trends in AOH (max AOH)", "Satellite"), position="topleft", options=layersControlOptions(collapsed = FALSE))
+    }
+    
+    
+    ### Store usage
+    Storage_SP<-sRL_OutLog(Storage_SP, "Trends_leaflet", "Used")
+    Storage_SP$Trends_leaflet<-Trends_leaflet
+    sRL_StoreSave(scientific_name, Storage_SP)
+    
+    
+    return(Trends_leaflet)
+    
+  }, seed=T)
+  
+  return(Prom)
+}
 
 
 # M6: Optional analyses ----------------------------------------------------------------

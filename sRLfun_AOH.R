@@ -148,7 +148,7 @@ sRL_largeAOH<-function(alt_crop, habitats_pref, altitudes_pref, rangeSP_clean, Y
   AOH <- replace(AOH, AOH>1000, NA) # NA is transformed as 100000 so I change everything above 1000 to NA (the max should always be 900)
   
   # Save AOH
-  if(FILENAME != ""){terra::writeRaster(AOH, filename=FILENAME)}
+  if(FILENAME != ""){terra::writeRaster(AOH, filename=FILENAME, overwrite=T)}
   
   
   sRL_loginfo("END - Large AOH function", scientific_name)

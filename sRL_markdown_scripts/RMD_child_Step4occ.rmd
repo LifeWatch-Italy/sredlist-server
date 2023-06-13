@@ -7,3 +7,7 @@ As you have drawn distribution maps from occurrence points, we calculate the spe
 <center>
 ![](`r paste0(outDir, '/Plots/aoo_from_points.png')`){width=800px}
 </center>
+
+```{r leaflet_aoo, fig.align = "center", out.width = '100%'}
+if("AOO_leaflet" %in% names(Storage_SP)){Storage_SP$AOO_leaflet}
+```
