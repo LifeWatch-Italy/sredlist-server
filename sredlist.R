@@ -630,7 +630,7 @@ Prom<-future({
   ### Keep distribution in memory
   Storage_SP$distSP_saved <- distSP
   Storage_SP$distSP_savedORIGINAL <- distSP # I need to save it twice for country croping for National RL
-  Storage_SP<-sRL_OutLog(Storage_SP, "Mapping_Smooth", Gbif_Smooth)
+  Storage_SP<-sRL_OutLog(Storage_SP, "Mapping_Smooth", Gbif_Smooth*10) # Gbif_Smooth*10 because it is divided by 10 at the beginning of the API but should be reported raw in the RmarkDown and output files
   sRL_StoreSave(scientific_name, Storage_SP)
     
   ### Plot
@@ -776,8 +776,8 @@ Prom<-future({
                   '</p><hr>'))
     ))
     
-    # Create plot
-    Leaflet_COO<-leaflet() %>%
+    # Create plot (first the one to export without the result - it makes the rmarkdown bug and it's not needed - and second adding the text results)
+    Leaflet_COOtoexport<-leaflet() %>%
       fitBounds(lng1=EXT[1], lng2=EXT[2], lat1=EXT[3], lat2=EXT[4]) %>%
       addPolygons(data=coo,
                   color=ifelse(coo$Level0_occupied==T, "black", "grey"),
@@ -785,7 +785,9 @@ Prom<-future({
                   popup=coo$Popup,
                   stroke=T, weight=2, fillOpacity=1) %>%
       addPolygons(data=distSP_WGS, color="#D69F32", fillOpacity=0.4) %>%
-      addLegend(position="bottomleft", colors=c(col.df$Col[col.df$Col %in% coo$colour], "#D69F32"), labels=c(col.df$Label[col.df$Col %in% coo$colour], "Distribution"), opacity=1) %>%
+      addLegend(position="bottomleft", colors=c(col.df$Col[col.df$Col %in% coo$colour], "#D69F32"), labels=c(col.df$Label[col.df$Col %in% coo$colour], "Distribution"), opacity=1)
+    
+    Leaflet_COO<-Leaflet_COOtoexport %>%
       leaflet.extras::addBootstrapDependency() %>% # Add Bootstrap to be able to use a modal
       addEasyButton(easyButton(
         icon = "fa fa-list-ul", 
@@ -796,7 +798,7 @@ Prom<-future({
     
     # Save for SIS
     Storage_SP$countries_SIS<-sRL_OutputCountries(scientific_name, subset(coo, paste0(coo$Level0_occupied, coo$Level1_occupied) =="TRUETRUE")) # Keep only those occupied
-    Storage_SP$Leaflet_COO<-Leaflet_COO
+    Storage_SP$Leaflet_COO<-Leaflet_COOtoexport
     sRL_StoreSave(scientific_name, Storage_SP)
     
     
@@ -2131,9 +2133,6 @@ function(scientific_name){
   }
   
   
-  ### Save Storage_SP
-  sRL_StoreSave(scientific_name, Storage_SP)
-  
   Estimates_df=data.frame(
     kingdom=kingdom,
     phylum=phylum,
@@ -2152,6 +2151,10 @@ function(scientific_name){
     Pop_max=Pop_max,
     Pop_prop=Pop_prop
     )
+  
+  ### Save Storage_SP
+  Storage_SP$Estimates_saved<-Estimates_df
+  sRL_StoreSave(scientific_name, Storage_SP)
   
   return(list(Estimates=Estimates_df))
 }

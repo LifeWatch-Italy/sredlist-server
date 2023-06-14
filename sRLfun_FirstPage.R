@@ -353,7 +353,7 @@ sRL_cleaningMemory<-function(Time_limit){
 sRL_LastStep <- function(St_SP){
   Out<-St_SP$Output
   Out<-subset(Out, is.na(Out$Value)==F)
-  Step<-ifelse("Estimated_EOO_raw" %in% Out$Parameter, "7",
+  Step<-ifelse("Estimates_saved" %in% names(St_SP), "7",
             ifelse(("Usage_RS" %in% Out$Parameter | "Fragmentation_Isolation" %in% Out$Parameter), "6",
                ifelse("AOH_GenerationLength" %in% Out$Parameter, "5", 
                       ifelse("AOH_HabitatPreference" %in% Out$Parameter, "4", 

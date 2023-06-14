@@ -235,8 +235,7 @@ sRL_StructureGBIF<-function(scientificName){
     TAB$N_download[TAB$N_download<TAB$N]<-TAB$N_download[TAB$N_download<TAB$N]+1
     i=sum(TAB$N_download)
   }
-  if(sum(TAB$N_download)>config$LIM_GBIF){TAB$N_download[which(TAB$N_download==max(TAB$N_download))[1:(sum(TAB$N_download)-config$LIM_GBIF)]]<-TAB$N_download[which(TAB$N_download==max(TAB$N_download))[1:(sum(TAB$N_download)-config$LIM_GBIF)]]-1}
-  
+
   
   ##### STRUCTURE DOWNLOAD
   # Download one data (just for column names)
