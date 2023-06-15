@@ -8,7 +8,7 @@ The fragmentation resulting map was:
 ![](`r paste0(outDir, '/Plots/fragmentation.png')`){width=1000px}
 </center>
 
-Assuming that you trust the map of Area of Habitat and that mapped clusters correspond to isolated subpopulation, this plot means that you can consider the population severely fragmented if you consider that a subpopulation lower than `r Storage_SP$Frag_result` mature individuals is small. You can check the sRedList documentation for interpretation. 
+Assuming that you trust the map of Area of Habitat and that mapped clusters correspond to isolated subpopulations, this plot means that you can consider the population severely fragmented if you consider that a subpopulation lower than `r Storage_SP$Frag_result` mature individuals is small. You can check the sRedList documentation for interpretation. 
 
 If you trust that clusters represent isolated subpopulations, you can also use this analysis to inform subcriterion C2(a). We estimate that the largest subpopulation hosts `r Storage_SP$Pop_max` mature individuals (C2(ai)), representing `r Storage_SP$Pop_prop`% of the total population.
 

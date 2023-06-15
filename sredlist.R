@@ -2076,7 +2076,7 @@ function(scientific_name){
       AOO_val <- paste(aooA, max(aoo_hab, na.rm=T), sep="-")
       AOO_justif <- paste0("The area of occupancy was estimated on the sRedList platform. ",
                             "Its lower bound (", aooA, "km2) was estimated as the area of 2x2km grid cells intersecting with occurrence records (", Nrec, " occurrence records were retrieved from ", SRC, "); this estimate assumes that the species range has been extensively surveyed at a 2x2km scale. ",
-                            "The upper bound of area of occupancy (", paste(unique(aoo_hab), collapse="-"), "km2) has been estimated by rescaling the map of Area of Habitat to a 2x2km grid; this estimates assumes that all suitable habitat is occupied by the species (at a 2x2km scale).")
+                            "The upper bound of area of occupancy (", paste(unique(aoo_hab), collapse="-"), "km2) has been estimated by rescaling the map of Area of Habitat to a 2x2km grid; this estimate assumes that all suitable habitat is occupied by the species (at a 2x2km scale).")
     }
   }
   
