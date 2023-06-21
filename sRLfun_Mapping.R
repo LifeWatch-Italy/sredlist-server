@@ -1,7 +1,7 @@
 
 
 # Step 1 --------------------------------
-sRL_FormatUploadedRecords <- function(Uploaded_Records, scientific_name){
+sRL_FormatUploadedRecords <- function(Uploaded_Records, scientific_name, Gbif_Synonym){
   
   # Charge and deal with tab separator
   Uploaded_Records<-Uploaded_Records[[1]] 
@@ -14,10 +14,17 @@ sRL_FormatUploadedRecords <- function(Uploaded_Records, scientific_name){
     names(Uploaded_Records)<-replace(names(Uploaded_Records), tolower(names(Uploaded_Records)) %in% c("sci_name", "binomial", "species", "scientific_name", "species_name"), "sci_name")
     if(! "sci_name" %in% names(Uploaded_Records)){Uploaded_Records$sci_name<-scientific_name}
   }
+  Uploaded_Records$species_download<-Uploaded_Records$sci_name
   if(as.logical(table(factor(is.na(replace(Uploaded_Records$sci_name, Uploaded_Records$sci_name=="", NA)), c("TRUE", "FALSE")))["FALSE"]==0)){Uploaded_Records$sci_name<-scientific_name}
   
   # If another species name than scientific_name, return an error (I could deal with it but this might introduce errors that users won't sea)
-  if(as.logical(table(factor(Uploaded_Records$sci_name %in% c(scientific_name, NA, ""), c("TRUE", "FALSE")))["FALSE"] >0)){wrong_species_upload()}
+  if(as.logical(table(factor(Uploaded_Records$sci_name %in% c(scientific_name, Gbif_Synonym, NA, ""), c("TRUE", "FALSE")))["FALSE"] >0)){wrong_species_upload()}
+  
+  # Assign Source to Upload (and Synonyms_Upload if synonym)
+  Uploaded_Records$Source_type<-"Uploaded"
+  if(Gbif_Synonym[1] != ""){
+    Uploaded_Records$Source_type<-ifelse(Uploaded_Records$sci_name==scientific_name, "Uploaded", "Synonyms_Uploaded")
+  }
   
   # Check longitude and latitude are provided
   if(! "dec_lat" %in% names(Uploaded_Records)){names(Uploaded_Records)<-replace(names(Uploaded_Records), tolower(names(Uploaded_Records)) %in% c("y", "dec_lat", "latitude", "lat"), "dec_lat")}
@@ -41,7 +48,7 @@ sRL_FormatUploadedRecords <- function(Uploaded_Records, scientific_name){
   names(Uploaded_Records)<-replace(names(Uploaded_Records), tolower(names(Uploaded_Records)) %in% c("year", "event_year", "year_event"), "year")
   if(! "year" %in% names(Uploaded_Records)){Uploaded_Records$year<-NA}
   Uploaded_Records$year<-as.numeric(as.character(Uploaded_Records$year))
-  
+
   # Return
   return(Uploaded_Records)
 }
@@ -73,6 +80,7 @@ sRL_createDataGBIF <- function(scientific_name, GBIF_SRC, Uploaded_Records) { # 
     
     dat_gbif$ID<-paste0(dat_gbif$decimalLongitude, dat_gbif$decimalLatitude, dat_gbif$year)
     dat_gbif$Link<-paste0("https://gbif.org/occurrence/", dat_gbif$gbifID)
+    dat_gbif$species_download<-scientific_name
     
     # Extract citation (once per dataset then match)
     if(is.data.frame(dat_gbif)){
@@ -96,6 +104,7 @@ sRL_createDataGBIF <- function(scientific_name, GBIF_SRC, Uploaded_Records) { # 
     dat_obis_sub$source<-dat_obis_sub$bibliographicCitation
     dat_obis_sub$Link<-paste0("https://obis.org/taxon/", dat_obis_sub$aphiaID[1])
     dat_obis_sub$gbifID<-dat_obis_sub$occurrenceID
+    dat_obis_sub$species_download<-scientific_name
     
     # If too many data, keep a sample (most recent)
     if(nrow(dat_obis_sub) > config$LIM_GBIF){
@@ -116,6 +125,7 @@ sRL_createDataGBIF <- function(scientific_name, GBIF_SRC, Uploaded_Records) { # 
     dat_RL$coordinateUncertaintyInMeters<-NA
     dat_RL$gbifID<-dat_RL$objectid
     dat_RL$Link<-NA
+    dat_RL$species_download<-scientific_name
     names(dat_RL)<-replace(names(dat_RL), names(dat_RL)=="Source", "source")
     
     # If too many data, keep a sample (most recent)
@@ -130,7 +140,6 @@ sRL_createDataGBIF <- function(scientific_name, GBIF_SRC, Uploaded_Records) { # 
   # From uploaded data
   if(!is.null(nrow(Uploaded_Records))){
     dat_upload<-Uploaded_Records
-    dat_upload$Source_type<-"Uploaded"
     dat_upload$decimalLongitude<-dat_upload$dec_long
     dat_upload$decimalLatitude<-dat_upload$dec_lat
     dat_upload$species<-dat_upload$sci_name
@@ -159,7 +168,7 @@ sRL_createDataGBIF <- function(scientific_name, GBIF_SRC, Uploaded_Records) { # 
   
   # Select columns of interest
   dat <- dat %>%
-    dplyr::select(any_of(c("species", "decimalLongitude", "decimalLatitude", "countryCode", "individualCount", # nolint
+    dplyr::select(any_of(c("species", "species_download", "decimalLongitude", "decimalLatitude", "countryCode", "individualCount", # nolint
                            "gbifID", "id", "objectid", "family", "taxonRank", "coordinateUncertaintyInMeters", "year",
                            "basisOfRecord", "institutionCode", "datasetName", "genericName", "specificEpithet", "Source_type", "source", "citation", "Link", "presence")))
   
@@ -297,9 +306,14 @@ sRL_cleanDataGBIF <- function(flags, year_GBIF, uncertainty_GBIF, Gbif_yearBin, 
       }}
   )
   
-  # Prepare the box popup for the leaflet map
+  ### Prepare the box popup for the leaflet map
+  # Popup text to have only if there are some synonyms
+  flags$Only_for_syn<-"" ; if("TRUE" %in% grepl("Synonyms_", flags$Source_type)){flags$Only_for_syn<-paste0("<b>","Species: ","</b>", flags$species_download, "<br>")}
+  
+  # Create popup text
   flags$PopText<- paste0("<b>", revalue(as.character(is.na(flags$Reason)), c("TRUE"="VALID OBSERVATION", "FALSE"="NOT VALID OBSERVATION")),"</b>", "<br>", "<br>",
                        "<b>","Source: ","</b>", flags$Source_type, "<br>",
+                       flags$Only_for_syn,
                        "<b>","Observation ID: ","</b>", ifelse(is.na(flags$Link)==F, paste0("<a href='", flags$Link, "' target='_blank'>", flags$gbifID, "</a>"), flags$gbifID), "<br>",
                        "<b>","Year: ","</b>", flags$year, "<br>",
                        "<b>","Uncertainty (km): ","</b>", flags$coordinateUncertaintyInMeters/1000, "<br>")

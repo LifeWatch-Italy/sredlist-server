@@ -226,11 +226,14 @@ Prom<-future({
   scientific_name <- sRL_decode(scientific_name)
   print(scientific_name)
   print(Gbif_Source)
+  
+  # Prepare synonyms
+  if(Gbif_Synonym != ""){Gbif_Synonym <- Gbif_Synonym %>% gsub("  ", " ", .) %>% strsplit(., "[,;]+") %>% unlist(.) %>% ifelse(substr(., 1, 1)==" ", substr(., 2, 1000), .) %>% sRL_decode(.) %>% .[. != scientific_name]}
   print(Gbif_Synonym)
   
   # Uploaded Records if we uploaded data (it's a list with 1 element being the title of the uploaded csv file); I edit the csv if separator not good
   if(Uploaded_Records != ""){
-    Uploaded_Records<-sRL_FormatUploadedRecords(Uploaded_Records, scientific_name)
+    Uploaded_Records<-sRL_FormatUploadedRecords(Uploaded_Records, scientific_name, Gbif_Synonym)
     print(head(Uploaded_Records))
   }
 
@@ -240,22 +243,17 @@ Prom<-future({
   
   
   ## If there are synonyms
-  if(Gbif_Synonym != ""){
+  if(Gbif_Synonym[1] != ""){
     
-    # Prepare synonyms + remove those already in the downloaded data (dat)
-    Gbif_Synonym <- Gbif_Synonym %>% gsub("  ", " ", .) %>% strsplit(., "[,;]+") %>% unlist(.) %>% ifelse(substr(., 1, 1)==" ", substr(., 2, 1000), .) %>% sRL_decode(.) %>% .[. != scientific_name]
+    # Remove synonyms already in the downloaded data (dat)
     if("genericName" %in% names(dat) & "specificEpithet" %in% names(dat)){Gbif_Synonym <- subset(Gbif_Synonym, ! Gbif_Synonym %in% levels(as.factor(paste(dat$genericName, dat$specificEpithet, sep=" "))))}
     print(Gbif_Synonym)
-    
-    # Record name of first download
-    dat$species_download<-scientific_name
     
     # Run again the data collection (in a tryCatch to avoid errors if the name does not exist)
     for(SY in 1:length(Gbif_Synonym)){
       tryCatch({
         dat_syn<-sRL_createDataGBIF(Gbif_Synonym[SY], Gbif_Source, "") # Same Source options as it can be useful for GBIF, OBIS but also Red List (eg species name was changed)
         dat_syn$species<-scientific_name
-        dat_syn$species_download<-Gbif_Synonym[SY]
         dat_syn$Source_type=paste0("Synonyms_", dat_syn$Source_type)
         dat<-rbind.fill(dat, dat_syn)
       }, error=function(e){paste0("The synonym ", Gbif_Synonym[SY], " was not downloaded")})
