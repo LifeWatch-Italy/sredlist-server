@@ -8,7 +8,8 @@ After a possibility to manually edit these, the habitat preferences used to map 
 hab_SIS<-read.csv(paste0(sub(" ", "_", scientific_name), "_sRedList/habitats.csv")) %>% subset(., select=c("GeneralHabitats.GeneralHabitatsSubfield.GeneralHabitatsLookup", "GeneralHabitats.GeneralHabitatsSubfield.GeneralHabitatsName", "GeneralHabitats.GeneralHabitatsSubfield.suitability"))
 names(hab_SIS)<-c("Habitat lookup", "Habitat name", "Suitability")
 
-flextable::flextable(hab_SIS) %>% flextable::set_table_properties(layout="autofit")
+knitr::kable(hab_SIS, "simple")
+#flextable::flextable(hab_SIS) %>% flextable::set_table_properties(layout="autofit")
 ```
 
 Note that the major importance and seasonality fields are left empty from the habitats.csv file, so you might want to complete that information in SIS later. 

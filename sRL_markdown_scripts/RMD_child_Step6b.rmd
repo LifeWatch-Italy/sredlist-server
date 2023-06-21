@@ -11,7 +11,8 @@ Trends in some remote-sensing products have been calculated. You can check the s
 if(grepl("Forest_cover", outlog$Value[outlog$Parameter=="Usage_RS"])){
   readPNG(paste0("resources/AOH_stored/", sub(" ", "_", scientific_name), "/Plots/RS_plot_forest.png")) %>% rasterGrob() %>% grid.arrange()
   DF_forest<-data.frame(Calc=c("Current value", "Absolute trends", "Relative trends", "Time-window"), Value=unlist(strsplit(outlog$Value[outlog$Parameter=="RS_result_Forest_cover"], " & ")))
-  flextable::flextable(DF_forest) %>% flextable::set_table_properties(layout="autofit")
+  knitr::kable(DF_forest, "simple", col.names = c("", "Value"))
+  #flextable::flextable(DF_forest) %>% flextable::set_table_properties(layout="autofit")
 }
 ```
 
@@ -25,7 +26,8 @@ if(grepl("Forest_cover", outlog$Value[outlog$Parameter=="Usage_RS"])){
 if(grepl("Human_modification", outlog$Value[outlog$Parameter=="Usage_RS"])){
   readPNG(paste0("resources/AOH_stored/", sub(" ", "_", scientific_name), "/Plots/RS_plot_modif.png")) %>% rasterGrob() %>% grid.arrange()
   DF_modif<-data.frame(Calc=c("Current value", "Absolute trends", "Relative trends", "Time-window"), Value=unlist(strsplit(outlog$Value[outlog$Parameter=="RS_result_Human_modification"], " & ")))
-  flextable::flextable(DF_modif) %>% flextable::set_table_properties(layout="autofit")
+  knitr::kable(DF_modif, "simple", col.names = c("", "Value"))
+  #flextable::flextable(DF_modif) %>% flextable::set_table_properties(layout="autofit")
 }
 ```
 
@@ -39,7 +41,8 @@ if(grepl("Human_modification", outlog$Value[outlog$Parameter=="Usage_RS"])){
 if(grepl("Human_density", outlog$Value[outlog$Parameter=="Usage_RS"])){
   readPNG(paste0("resources/AOH_stored/", sub(" ", "_", scientific_name), "/Plots/RS_plot_humandensity.png")) %>% rasterGrob() %>% grid.arrange()
   DF_density<-data.frame(Calc=c("Current value", "Absolute trends", "Relative trends", "Time-window"), Value=unlist(strsplit(outlog$Value[outlog$Parameter=="RS_result_Human_density"], " & ")))
-  flextable::flextable(DF_density) %>% flextable::set_table_properties(layout="autofit")
+  knitr::kable(DF_density, "simple", col.names = c("", "Value"))
+  #flextable::flextable(DF_density) %>% flextable::set_table_properties(layout="autofit")
 }
 ```
 

@@ -14,7 +14,8 @@ COO_df$Country<-NA
 for(C in 1:nrow(COO_df)){COO_df$Country[C]<-ifelse(COO_df$Countries[C] %in% coo_raw$SIS_name0, COO_df$Countries[C], coo_raw$SIS_name0[match(COO_df$Countries[C], coo_raw$SIS_name1)])}
 COO_df$Subnational<-COO_df$Countries %>% replace(., .== COO_df$Country, "")
 COO_df$Countries<-NULL
-flextable::flextable(COO_df) %>% flextable::set_table_properties(layout="autofit")
+knitr::kable(COO_df, "simple")
+#flextable::flextable(COO_df) %>% flextable::set_table_properties(layout="autofit")
 ```
 
 <br>
