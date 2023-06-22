@@ -755,24 +755,7 @@ Prom<-future({
     if(is.na(EXT[1]) | is.na(EXT[2]) | is.na(EXT[3]) | is.na(EXT[4])){EXT<-1.2*extent(distSP_WGS)} # In case there is no overlap with countries (e.g., distribution at sea because of simplification)
     
     # Prepare command for results button
-    coo_occ<-subset(coo, coo$Level1_occupied==T)
-    RES<-NULL
-    for(C in levels(droplevels(as.factor(coo_occ$SIS_name0)))){
-      Country<-subset(coo_occ, coo_occ$SIS_name0==C)
-      if(nrow(Country)==1 & is.na(Country$SIS_name1[1])){
-        RES[length(RES)+1]<-C
-      }else {
-        RES[length(RES)+1]<-paste0(C, " [", paste(sort(Country$SIS_name1), collapse=", "), "]")
-      }
-    }
-    
-    info.box <- HTML(paste0(
-      HTML('<div class="modal fade" id="infobox" role="dialog"><div class="modal-dialog"><!-- Modal content--><div class="modal-content"><div class="modal-header"><button type="button" class="close" data-dismiss="modal">&times;</button>'),
-      
-      HTML(paste0('<h4>List of countries of occurrence</h4> <p>',
-                  RES %>% sort(.) %>% paste(., collapse="; "),
-                  '</p><hr>'))
-    ))
+    info.box<-sRL_cooInfoBox(coo, Storage_SP)
     
     # Create plot (first the one to export without the result - it makes the rmarkdown bug and it's not needed - and second adding the text results)
     Leaflet_COOtoexport<-leaflet() %>%
@@ -782,9 +765,24 @@ Prom<-future({
                   fillColor=coo$colour,
                   popup=coo$Popup,
                   stroke=T, weight=2, fillOpacity=1) %>%
-      addPolygons(data=distSP_WGS, color="#D69F32", fillOpacity=0.4) %>%
+      addPolygons(data=distSP_WGS, color="#D69F32", fillOpacity=0.4, group="Range map") %>%
       addLegend(position="bottomleft", colors=c(col.df$Col[col.df$Col %in% coo$colour], "#D69F32"), labels=c(col.df$Label[col.df$Col %in% coo$colour], "Distribution"), opacity=1)
     
+    # Add points if we had occurrences and add layer control
+    if("dat_proj_saved" %in% names(Storage_SP)){
+      
+      Coords<-Storage_SP$dat_proj_saved %>% st_transform(., st_crs(4326)) %>% st_coordinates(.) %>% as.data.frame()
+      Leaflet_COOtoexport<-Leaflet_COOtoexport %>%
+        addCircleMarkers(lng=Coords[,1], lat=Coords[,2], color="black", fillOpacity=0.3, stroke=F, radius=2, group="Occurrence records") %>%
+        addLayersControl(overlayGroups=c("Range map", "Occurrence records"), position="topleft", options=layersControlOptions(collapsed = FALSE))
+      
+    } else {
+      Leaflet_COOtoexport<-Leaflet_COOtoexport %>% addLayersControl(overlayGroups=c("Range map"), position="topleft", options=layersControlOptions(collapsed = FALSE))
+    }
+    
+
+    
+    # Create final plot for the platform
     Leaflet_COO<-Leaflet_COOtoexport %>%
       leaflet.extras::addBootstrapDependency() %>% # Add Bootstrap to be able to use a modal
       addEasyButton(easyButton(
@@ -793,6 +791,8 @@ Prom<-future({
         onClick = JS("function(btn, map){ $('#infobox').modal('show'); }")
       )) %>% # Trigger the infobox
       htmlwidgets::appendContent(info.box)  
+    
+    
     
     # Save for SIS
     Storage_SP$countries_SIS<-sRL_OutputCountries(scientific_name, subset(coo, paste0(coo$Level0_occupied, coo$Level1_occupied) =="TRUETRUE")) # Keep only those occupied

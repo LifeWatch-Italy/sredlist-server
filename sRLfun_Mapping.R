@@ -316,7 +316,7 @@ sRL_cleanDataGBIF <- function(flags, year_GBIF, uncertainty_GBIF, Gbif_yearBin, 
                        flags$Only_for_syn,
                        "<b>","Observation ID: ","</b>", ifelse(is.na(flags$Link)==F, paste0("<a href='", flags$Link, "' target='_blank'>", flags$gbifID, "</a>"), flags$gbifID), "<br>",
                        "<b>","Year: ","</b>", flags$year, "<br>",
-                       "<b>","Uncertainty (km): ","</b>", flags$coordinateUncertaintyInMeters/1000, "<br>")
+                       "<b>","Uncertainty (km): ","</b>", as.numeric(as.character(flags$coordinateUncertaintyInMeters))/1000, "<br>")
   flags$PopText[is.na(flags$Reason)==F]<-paste0(flags$PopText[is.na(flags$Reason)==F], "<b>","Reason flagged: ","</b>", flags$Reason[is.na(flags$Reason)==F], "<br>")
   
   return(flags)
@@ -611,4 +611,52 @@ sRL_CropCountry<-function(distSP, domain_pref, Crop_Country){
 }
 
 
+
+### Function to prepare results of COO analysis
+sRL_cooInfoBox<-function(coo, Storage_SP){
+  
+  # Subset coo with presence + if needed I group by (needed when marine + terrestrial since there are 2 polygons, one with occurrence and one without)
+  coo_occ<-subset(coo, coo$Level1_occupied==T) 
+  if(nlevels(as.factor(paste0(coo_occ$SIS_name0, coo_occ$SIS_name1))) < nrow(coo_occ)){coo_occ <- coo_occ %>% dplyr::group_by(SIS_name0, SIS_name1) %>% dplyr::summarise(N= n())}
+  
+  # If occurrences, check which entities have occurrence records
+  if("dat_proj_saved" %in% names(Storage_SP)){
+    dat_proj<-Storage_SP$dat_proj_saved %>% st_transform(., st_crs(coo_occ))
+    coo_occ$Records<-st_intersects(coo_occ, dat_proj) %>% lengths(.)>0
+    coo_occ$SIS_name0[coo_occ$Records==F & is.na(coo_occ$SIS_name1)] <- paste0("<i>", coo_occ$SIS_name0[coo_occ$Records==F & is.na(coo_occ$SIS_name1)], "</i>")
+    coo_occ$SIS_name1[coo_occ$Records==F & is.na(coo_occ$SIS_name1)==F] <- paste0("<i>", coo_occ$SIS_name1[coo_occ$Records==F & is.na(coo_occ$SIS_name1)==F], "</i>")
+  }
+  
+  # Extract list of COO for info.box
+  RES<-NULL
+  for(C in levels(droplevels(as.factor(coo_occ$SIS_name0)))){
+    Country<-subset(coo_occ, coo_occ$SIS_name0==C) # For each Country (level 0)
+    if(nrow(Country)==1 & is.na(Country$SIS_name1[1])){ # I take the name of the country if there is a single entity + that entity is not named in Level1
+      RES[length(RES)+1]<-C
+    }else { # Otherwise, I take the name of the country and all subnational entities in brackets, and write name0 in italics if all name1 are in italics
+      Co_name<-ifelse((sum(grepl("<i>", Country$SIS_name1))==nrow(Country)), paste0("<i>", C, "</i>"), C)
+      CO1s<-Country$SIS_name1[order(gsub("<i>", "", Country$SIS_name1))] %>% .[is.na(.)==F] # I remove the NAs only here (should not be done before in case countries have subnational in terrestrial but not in marine, so the species can be present in the country but not in any of the subnational entities)
+      RES[length(RES)+1]<-paste0(Co_name, " [", paste(CO1s, collapse=", "), "]")
+    }
+  }
+  
+  # Create info box
+  info.box <- HTML(paste0(
+    HTML('<div class="modal fade" id="infobox" role="dialog"><div class="modal-dialog"><!-- Modal content--><div class="modal-content"><div class="modal-header"><button type="button" class="close" data-dismiss="modal">&times;</button>'),
+    
+    HTML(paste0('<h4>List of countries of occurrence</h4> <p>',
+                RES %>% .[order(gsub("<i>", "", .))] %>% paste(., collapse="; "),
+                '</p>',
+                ifelse(grepl("</i>", paste0(RES, collapse=".")), "<br><i> Entities in italics overlap with the polygon distribution but not with occurrence records (they will be included in the SIS output) </i>", ''),
+                '<hr>'))
+  ))
+  
+  # Return
+  return(info.box)
+  
+}
+
+
+
+#  sRL_cooInfoBox(coo, Storage_SP)
 
