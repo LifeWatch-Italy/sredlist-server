@@ -28,6 +28,14 @@ Storage_SP$Leaflet_Filter
 After applying these filters, your point range map included `r nrow(Storage_SP$dat_proj_saved)` occurrence records.
 
 
+`r if(outlog$Value[outlog$Parameter=="Gbif_Extract_Elevation"]=="Yes"){"The elevation of occurrence records were extracted: "}`
+
+```{r extract_elevation, out.width='100%'}
+if(outlog$Value[outlog$Parameter=="Gbif_Extract_Elevation"]=="Yes"){
+  readPNG(paste0("resources/AOH_stored/", sub(" ", "_", scientific_name), "/Plots/gbifElevExtract.png")) %>% rasterGrob() %>% grid.arrange()
+}
+```
+
 
 ### Create range map
 ```{r create_range_prepare}

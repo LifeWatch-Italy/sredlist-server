@@ -299,17 +299,6 @@ Prom<-future({
                                  tests = Tests_to_run)
   if(Skip_country==T){flags_raw$.sea<-FALSE}
 
-  # # Extract elevation (need to transform the CRS for it)
-  # sRL_loginfo("START - Extracting elevation values")
-  # flags_foralt<-st_geometry(st_as_sf(flags_raw,coords = c("decimalLongitude", "decimalLatitude"), crs="+proj=longlat +datum=WGS84")) %>%
-  #   st_transform(., st_crs(CRSMOLL)) %>%
-  #   st_as_sf(.)
-  #
-  # flags_raw$Alt_points=terra::extract(alt_raw, st_coordinates(flags_foralt), method="simple")$Elevation_reprojMollweide3
-  # flags_raw$Alt_points<-replace(flags_raw$Alt_points, is.nan(flags_raw$Alt_points)==T, NA)
-  # sRL_loginfo("END - Extracting elevation values")
-
-
   # Assign + count use of step 1
   output_to_save<-sRL_InitLog(scientific_name, DisSource = "Created") ; output_to_save$Value[output_to_save$Parameter=="Gbif_Source"]<-c(ifelse(Gbif_Source[1]==1, "GBIF", ""), ifelse(Gbif_Source[2]==1, "OBIS", ""), ifelse(Gbif_Source[3]==1, "Red_List", ""), ifelse(is.null(nrow(Uploaded_Records)), "", "Uploaded")) %>% .[.!=""] %>% paste(., collapse=" + ")
   output_to_save$Count[output_to_save$Parameter=="Gbif_Source"]<-ifelse(file.exists(paste0("resources/AOH_stored/", gsub(" ", "_", sRL_decode(scientific_name)), "/Storage_SP.rds")), (sRL_StoreRead(scientific_name, 1)$Output$Count[2]+1), 1)
@@ -421,6 +410,55 @@ return(Prom)
 }
 
 
+
+#* Extract occurrence records elevation
+#* @get species/<scientific_name>/extract-elevation
+#* @param scientific_name:string Scientific Name
+#* @serializer unboxedJSON
+#* @tag sRedList
+function(scientific_name) {
+  
+  Prom<-future({
+    
+    scientific_name <- sRL_decode(scientific_name)
+    
+    Storage_SP=sRL_StoreRead(scientific_name, MANDAT=1)
+    flags<-Storage_SP$flags %>% subset(., is.na(Reason)==T)
+    alt_raw<-sRL_ChargeAltRaster()
+    
+    # Extract elevation (need to transform the CRS for it)
+    sRL_loginfo("START - Extracting elevation values", scientific_name)
+    flags_foralt<-st_geometry(st_as_sf(flags, coords = c("decimalLongitude", "decimalLatitude"), crs="+proj=longlat +datum=WGS84")) %>%
+     st_transform(., st_crs(CRSMOLL)) %>%
+     st_as_sf(.)
+    
+    flags$Alt_points=terra::extract(alt_raw, st_coordinates(flags_foralt), method="simple")$Elevation_reprojMollweide3
+    flags$Alt_points<-replace(flags$Alt_points, is.nan(flags$Alt_points)==T, NA)
+    sRL_loginfo("END - Extracting elevation values", scientific_name)
+    
+    # Plot
+    G_elev<-ggplot(flags)+
+      geom_histogram(aes(x=Alt_points))+
+      ggtitle(paste0("Elevation of valid observations (N=", nrow(flags[is.na(flags$Reason)==T,]), ")"))+
+      xlab("Elevation (m)")+ylab("N")+
+      labs(subtitle=paste0("Elevation ranges from ", trunc(min(flags$Alt_points[is.na(flags$Reason)==T], na.rm=T)), " to ", ceiling(max(flags$Alt_points[is.na(flags$Reason)==T], na.rm=T))))+
+      theme_minimal() + theme(plot.background=element_rect(fill="white"))
+    
+    # Save and return plot
+    ggsave(paste0("resources/AOH_stored/", sub(" ", "_", scientific_name), "/Plots/gbifElevExtract.png"), G_elev, width=9, height=6) # nolint
+    plot <- base64enc::dataURI(file = paste0("resources/AOH_stored/", sub(" ", "_", scientific_name), "/Plots/gbifElevExtract.png"), mime = "image/png") # nolint
+    
+    Storage_SP<-sRL_OutLog(Storage_SP, "Gbif_Extract_Elevation", "Yes")
+    sRL_StoreSave(scientific_name, Storage_SP)
+    
+    return(list(
+      plot_extract_elevation = plot
+    ))
+    
+  }, seed=T)
+  
+  return(Prom)
+}  
 
 
 ## c: Map ----------------------------------------------------------------
