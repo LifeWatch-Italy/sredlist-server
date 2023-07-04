@@ -4,7 +4,6 @@ After the summary step, these are the parameters that are included in the final 
 ```{r table_output}
 all_DF<-data.frame(Variable=as.vector(names(allfields)), Value=as.vector(unlist(allfields[1,])))
 knitr::kable(all_DF, "simple")
-#flextable::flextable(all_DF) %>% flextable::set_table_properties(layout="autofit")
 ```
 
 

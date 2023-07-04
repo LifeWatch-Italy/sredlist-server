@@ -1,6 +1,6 @@
 
 
-As you have drawn distribution maps from occurrence points, we calculate the species known area of occupancy based on these records. Note that this is a very conservative estimate of the area of occupancy as it is only based on known occurrences (or even just a sample if there were more than 2000 records in GBIF). The value of known area of occupancy is `r Storage_SP$aoo_points`km2. 
+As you have drawn distribution maps from occurrence points, we calculate the species known area of occupancy based on these records. Note that this is a very conservative estimate of the area of occupancy as it is only based on known occurrences (or even just a sample if there were more than 2000 records in GBIF). The value of known area of occupancy is `r pretty_num(Storage_SP$aoo_points)`km2. 
 
 
 <br>
