@@ -158,7 +158,7 @@ sRL_createDataGBIF <- function(scientific_name, GBIF_SRC, Uploaded_Records) { # 
   
   # Return error if no data found
   if(is.null(nrow(dat_gbif)) & nrow(dat_obis_sub)==0 & nrow(dat_RL)==0  & nrow(dat_upload)==0) {
-    not_found("No data found! Check whether the scientific name of the species has been typed correctly or select other data sources") # nolint
+    no_records() # nolint
     dat<-NULL
   } else {
     # Merge

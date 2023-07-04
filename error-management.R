@@ -31,6 +31,10 @@ not_found <- function() {
   api_error(message = "Shapefile of the species does not exist!", status = 404)
 }
 
+no_records <- function() {
+  api_error(message = "No data found! Check whether the scientific name of the species has been typed correctly or select other data sources", status=400)
+}
+
 species_not_in_distrib <- function() {
   api_error(message = "The species is not present in the shapefile, there may be a mistake in column 'binomial'", status = 400)
 }
