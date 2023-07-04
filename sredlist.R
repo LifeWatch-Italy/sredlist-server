@@ -441,7 +441,7 @@ function(scientific_name) {
       geom_histogram(aes(x=Alt_points))+
       ggtitle(paste0("Elevation of valid observations (N=", nrow(flags[is.na(flags$Reason)==T,]), ")"))+
       xlab("Elevation (m)")+ylab("N")+
-      labs(subtitle=paste0("Elevation ranges from ", trunc(min(flags$Alt_points[is.na(flags$Reason)==T], na.rm=T)), " to ", ceiling(max(flags$Alt_points[is.na(flags$Reason)==T], na.rm=T))))+
+      labs(subtitle=paste0("Elevation ranges from ", trunc(min(flags$Alt_points[is.na(flags$Reason)==T], na.rm=T)), " to ", ceiling(max(flags$Alt_points[is.na(flags$Reason)==T], na.rm=T)), "m"))+
       theme_minimal() + theme(plot.background=element_rect(fill="white"))
     
     # Save and return plot
@@ -793,7 +793,8 @@ Prom<-future({
     if(is.na(EXT[1]) | is.na(EXT[2]) | is.na(EXT[3]) | is.na(EXT[4])){EXT<-1.2*extent(distSP_WGS)} # In case there is no overlap with countries (e.g., distribution at sea because of simplification)
     
     # Prepare command for results button
-    info.box<-sRL_cooInfoBox(coo, Storage_SP)
+    coo_occ<-sRL_cooInfoBox_prepare(coo, Storage_SP)
+    info.box<-sRL_cooInfoBox_create(coo_occ)
     
     # Create plot (first the one to export without the result - it makes the rmarkdown bug and it's not needed - and second adding the text results)
     Leaflet_COOtoexport<-leaflet() %>%
@@ -833,6 +834,7 @@ Prom<-future({
     
     
     # Save for SIS
+    Storage_SP$coo_occ<-data.frame(SIS_name0=coo_occ$SIS_name0, SIS_name1=coo_occ$SIS_name1)
     Storage_SP$countries_SIS<-sRL_OutputCountries(scientific_name, subset(coo, paste0(coo$Level0_occupied, coo$Level1_occupied) =="TRUETRUE")) # Keep only those occupied
     Storage_SP$Leaflet_COO<-Leaflet_COOtoexport
     sRL_StoreSave(scientific_name, Storage_SP)

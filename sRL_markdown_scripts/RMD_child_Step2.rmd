@@ -6,14 +6,12 @@ Storage_SP$Leaflet_COO
 ```
 
 
-The list of countries of occurrence is:
+The list of countries of occurrence is detailed in the table below. `r if(grepl("<i>", paste(Storage_SP$coo_occ, collapse=""))){"Entities are written in italics if they overlap with the polygon distribution but not with occurrence records (they are included in countries.csv in the ZIP output)."}`
 
 ```{r print_coo, out.width='100%'}
-COO_df<-data.frame(Countries=Storage_SP$countries_SIS$CountryOccurrence.CountryOccurrenceSubfield.CountryOccurrenceName)
-COO_df$Country<-NA
-for(C in 1:nrow(COO_df)){COO_df$Country[C]<-ifelse(COO_df$Countries[C] %in% coo_raw$SIS_name0, COO_df$Countries[C], coo_raw$SIS_name0[match(COO_df$Countries[C], coo_raw$SIS_name1)])}
-COO_df$Subnational<-COO_df$Countries %>% replace(., .== COO_df$Country, "")
-COO_df$Countries<-NULL
+COO_df<-Storage_SP$coo_occ
+names(COO_df)<-c("Country", "Subnational")
+COO_df$Subnational<-replace(COO_df$Subnational, is.na(COO_df$Subnational), "")
 knitr::kable(COO_df, "simple")
 ```
 

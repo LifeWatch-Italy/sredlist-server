@@ -612,8 +612,8 @@ sRL_CropCountry<-function(distSP, domain_pref, Crop_Country){
 
 
 
-### Function to prepare results of COO analysis
-sRL_cooInfoBox<-function(coo, Storage_SP){
+### Functions to prepare results of COO analysis (the first one prepares and I keep coo_occ for final report, the second creates the infobox)
+sRL_cooInfoBox_prepare<-function(coo, Storage_SP){
   
   # Subset coo with presence + if needed I group by (needed when marine + terrestrial since there are 2 polygons, one with occurrence and one without)
   coo_occ<-subset(coo, coo$Level1_occupied==T) 
@@ -626,6 +626,11 @@ sRL_cooInfoBox<-function(coo, Storage_SP){
     coo_occ$SIS_name0[coo_occ$Records==F & is.na(coo_occ$SIS_name1)] <- paste0("<i>", coo_occ$SIS_name0[coo_occ$Records==F & is.na(coo_occ$SIS_name1)], "</i>")
     coo_occ$SIS_name1[coo_occ$Records==F & is.na(coo_occ$SIS_name1)==F] <- paste0("<i>", coo_occ$SIS_name1[coo_occ$Records==F & is.na(coo_occ$SIS_name1)==F], "</i>")
   }
+  
+  return(coo_occ)
+}
+
+sRL_cooInfoBox_create<-function(coo_occ){
   
   # Extract list of COO for info.box
   RES<-NULL
