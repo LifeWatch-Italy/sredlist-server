@@ -3,7 +3,16 @@
 ### Habitat preferences
 `r if("AOH_HabitatORIGINAL" %in% outlog$Parameter){paste0("Habitat preferences were retrieved from a previous assessment with suitable habitats: ", sub(',', ', ', outlog$Value[outlog$Parameter=="AOH_HabitatORIGINAL"]), ifelse(outlog$Value[outlog$Parameter=="AOH_HabitatMarginalORIGINAL"]=="", "", paste0("; and as marginal/unknown suitability: ", sub(',', ', ', outlog$Value[outlog$Parameter=="AOH_HabitatMarginalORIGINAL"]), ".")))}`
 
-After a possibility to manually edit these, the habitat preferences used to map Area of Habitat were:
+`r if("Gbif_Extract_Habitat" %in% outlog$Parameter){"The habitat distribution of occurrence records was extracted: "}`
+
+```{r extract_habitats, out.width='100%'}
+if("Gbif_Extract_Habitat" %in% outlog$Parameter){
+  readPNG(paste0("resources/AOH_stored/", sub(" ", "_", scientific_name), "/Plots/gbifHabExtract.png")) %>% rasterGrob() %>% grid.arrange()
+}
+```
+
+
+The habitat preferences used to map Area of Habitat were:
 ```{r table_hab}
 hab_SIS<-read.csv(paste0(sub(" ", "_", scientific_name), "_sRedList/habitats.csv")) %>% subset(., select=c("GeneralHabitats.GeneralHabitatsSubfield.GeneralHabitatsLookup", "GeneralHabitats.GeneralHabitatsSubfield.GeneralHabitatsName", "GeneralHabitats.GeneralHabitatsSubfield.suitability"))
 names(hab_SIS)<-c("Habitat lookup", "Habitat name", "Suitability")

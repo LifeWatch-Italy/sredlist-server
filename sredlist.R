@@ -1000,6 +1000,85 @@ function(scientific_name) {
 }
 
 
+
+#* Extract occurrence records habitats
+#* @get species/<scientific_name>/extract-habitats
+#* @param scientific_name:string Scientific Name
+#* @serializer unboxedJSON
+#* @tag sRedList
+function(scientific_name) {
+  
+  Prom<-future({
+    
+    sf::sf_use_s2(FALSE)
+    sRL_loginfo("START - Calculate habitat preferences", scientific_name)
+    
+    #Filter param
+    scientific_name <- sRL_decode(scientific_name)
+    Storage_SP=sRL_StoreRead(scientific_name, MANDAT=1) ; print(names(Storage_SP))
+    dat_proj=Storage_SP$dat_proj_saved %>% st_transform(st_crs(4326))
+    
+    # Prepare Jung habitat files
+    Jung_list<-list.files(config$jung_map_path) %>% subset(., grepl(".tif.aux.xml", .)==F)
+    
+    # Extract habitats
+    df_hab<-data.frame(Habitat=NA, Frac=NA)
+    for(i in 1:length(Jung_list)){
+      
+      # Load raster
+      jung_i<-rast(paste0(config$jung_map_path, "/", Jung_list[i]))
+      
+      # Extract name
+      Name_raw<-Jung_list[[i]] %>% substr(43,46) %>% gsub("_", "", .)
+      Name_i<-ifelse(nchar(Name_raw)==3, 
+                     paste(substr(Name_raw, 1, 1), as.numeric(substr(Name_raw, 2, 3)), sep="."), 
+                     paste(substr(Name_raw, 1, 2), as.numeric(substr(Name_raw, 4, 4)), sep="."))
+      
+      # Calculate fraction
+      df_i<-data.frame(
+        Habitat=Name_i,
+        Frac=terra::extract(jung_i, st_coordinates(dat_proj), method="simple")[,1]
+      )
+      
+      # Add in table
+      df_hab<-rbind(df_hab, df_i)
+    }
+    
+    df_hab<-subset(df_hab, is.na(Habitat)==F)
+    df_hab$Frac<-replace(df_hab$Frac, is.na(df_hab$Frac), 0)
+    
+    # Group stats
+    hab_stats<-ddply(df_hab, .(Habitat), function(x){data.frame(Mean=mean(x$Frac, na.rm=T))})
+    
+    # Prepare data frame
+    hab_stats<-subset(hab_stats, Mean>0) %>% .[order(.$Mean, decreasing=T),]
+    hab_stats$Habitat<-factor(hab_stats$Habitat, levels=hab_stats$Habitat)
+    hab_stats$Mean<-hab_stats$Mean/sum(hab_stats$Mean, na.rm=T)*100
+    
+    # Barplot
+    G_habs<-ggplot(hab_stats)+
+      geom_bar(aes(x=Habitat, y=Mean), stat="identity")+
+      ylab("Percent presence")+
+      theme_minimal() + theme(plot.background=element_rect(fill="white"))
+    
+    # Save and return plot
+    ggsave(paste0("resources/AOH_stored/", sub(" ", "_", scientific_name), "/Plots/gbifHabExtract.png"), G_habs, width=9, height=6) # nolint
+    plot <- base64enc::dataURI(file = paste0("resources/AOH_stored/", sub(" ", "_", scientific_name), "/Plots/gbifHabExtract.png"), mime = "image/png") # nolint
+    
+    Storage_SP<-sRL_OutLog(Storage_SP, "Gbif_Extract_Habitat", "Yes")
+    sRL_StoreSave(scientific_name, Storage_SP)
+    
+    return(list(
+      plot_extract_elevation = plot
+    ))
+    
+  }, seed=T)
+  
+  return(Prom)
+}  
+
+
+
 ## b: Current AOH ----------------------------------------------------------------
 
 ### Calculation ---- 
@@ -2032,12 +2111,14 @@ return(Prom)
 #* @serializer unboxedJSON
 #* @tag sRedList
 function(scientific_name){
+  
   scientific_name<-sRL_decode(scientific_name)
   Storage_SP<-sRL_StoreRead(scientific_name, MANDAT=1) ; print(names(Storage_SP))
   
   ### MANAGE TAXONOMY ###
   sRL_loginfo("START - Extract taxonomy", scientific_name)
   kingdom<-phylum<-classname<-ordername<-family<-taxonomicAuthority<-NA
+  
   ### Extract existing taxonomy
   if(scientific_name %in% speciesRL$scientific_name){
     # If species already in the Red List, we use its information
@@ -2054,6 +2135,7 @@ function(scientific_name){
     if(exists("Official")==F){
       sRL_loginfo("Using taxize", scientific_name)
       classif<-classification(scientific_name, db="gbif", rows=1)[[1]]
+      AuthorityExtract<-gnr_resolve(scientific_name, data_source_ids=11, canonical=FALSE, best_match_only = T)$matched_name %>% strsplit(., " ") %>% unlist(.) %>% .[c(3:length(.))] %>% gsub("[(),]", "", .) %>% paste0(., collapse=", ")
     }
     
     ### Assign to that species
@@ -2062,7 +2144,7 @@ function(scientific_name){
     classname <-  ifelse(exists("Official"), Official$class[1], toupper(classif$name[classif$rank=="class"]))
     ordername <-  ifelse(exists("Official"), Official$order[1], toupper(classif$name[classif$rank=="order"]))
     family    <-  ifelse(exists("Official"), Official$family[1], toupper(classif$name[classif$rank=="family"]))
-    taxonomicAuthority <- ifelse(exists("Official"), Official$authority[1], NA)
+    taxonomicAuthority <- ifelse(exists("Official"), Official$authority[1], AuthorityExtract)
   }, error=function(e){"Taxonomic extract with taxize was not complete"})
   sRL_loginfo("END - Extract taxonomy", scientific_name)
   

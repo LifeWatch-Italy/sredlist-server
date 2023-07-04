@@ -40,3 +40,5 @@ default:
   Human_density_path: "resources/Human_Density/gpw_v4_population_density_rev11_XXXX_2pt5_min.tif"
   Human_modification_path: "resources/HumanModification/HumanModifTheobald_Aggreg_XXXX.tif"
   ForestAgg_path: "resources/Forest_Agg/Merged_Forest_XXXX.tif"
+  jung_map_path: "resources/Jung_maps/lvl2_frac_1km_ver003"
+
