@@ -2120,6 +2120,59 @@ return(Prom)
 
 
 
+#### Leaflet ----
+#* Trends RS Leaflet
+#* @get species/<scientific_name>/analysis/RS_leaflet
+#* @param scientific_name:string Scientific Name
+#* @serializer htmlwidget
+#* @tag sRedList
+function(scientific_name, RSproduct = "") { # nolint
+  
+  Prom<-future({
+    sf::sf_use_s2(FALSE)
+    
+    #Filter param
+    scientific_name <- sRL_decode(scientific_name)
+    Storage_SP=sRL_StoreRead(scientific_name, MANDAT=1) ; print(names(Storage_SP))
+    RSPROJ_current<-raster(paste0("resources/AOH_stored/", gsub(" ", "_", scientific_name), "/", RSproduct, "_Current.tif"))
+    RSPROJ_trends<-raster(paste0("resources/AOH_stored/", gsub(" ", "_", scientific_name), "/", RSproduct, "_Change.tif"))
+    distSP<-Storage_SP$distSP_saved
+    distPROJ<-st_transform(distSP, st_crs(4326))
+    
+    ### Plot
+    RS_leaflet<-leaflet() %>%
+      addTiles() %>%
+      addProviderTiles("Esri.WorldImagery", group = "Satellite") %>%
+      addPolygons(data=distPROJ, color="#D69F32", fillOpacity=0) %>% 
+      addMouseCoordinates()
+    
+    
+    ### Color palette
+    ColPal1<-colorNumeric("viridis", c(summary(RSPROJ_current)[1],summary(RSPROJ_current)[5]), na.color = NA)
+    LIM<-max(abs(summary(RSPROJ_trends)[1]), abs(summary(RSPROJ_trends)[5]))
+    ColPal2<-colorNumeric(c("#8c510a", "azure2", "#018571"), domain=c(-LIM, 0, LIM), na.color = NA)
+    
+    RS_leaflet<-RS_leaflet %>%
+        addRasterImage(RSPROJ_current, method="ngb", group="Current", opacity=0.8, colors=ColPal1) %>%
+        addRasterImage(RSPROJ_trends, method="ngb", group="Change", opacity=0.8, colors=ColPal2) %>%
+        addLayersControl(baseGroups=c("Current", "Change", "Satellite"), position="topleft", options=layersControlOptions(collapsed = FALSE))
+    
+    
+    ### Store usage
+    Storage_SP<-sRL_OutLog(Storage_SP, "RS_leaflet", "Used")
+    Storage_SP[paste0("RS_leaflet_", RSproduct)]<-RS_leaflet
+    sRL_StoreSave(scientific_name, Storage_SP)
+    
+    
+    return(RS_leaflet)
+    
+  }, seed=T)
+  
+  return(Prom)
+}
+
+
+
 
 
 

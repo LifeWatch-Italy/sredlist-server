@@ -12,10 +12,12 @@ if(grepl("Forest_cover", outlog$Value[outlog$Parameter=="Usage_RS"])){
   readPNG(paste0("resources/AOH_stored/", sub(" ", "_", scientific_name), "/Plots/RS_plot_forest.png")) %>% rasterGrob() %>% grid.arrange()
   DF_forest<-data.frame(Calc=c("Current value", "Absolute trends", "Relative trends", "Time-window"), Value=unlist(strsplit(outlog$Value[outlog$Parameter=="RS_result_Forest_cover"], " & ")))
   knitr::kable(DF_forest, "simple", col.names = c("", "Value"))
-  #flextable::flextable(DF_forest) %>% flextable::set_table_properties(layout="autofit")
 }
 ```
 
+```{r leaflet_forest, fig.align = "center", out.width = '100%'}
+if("RS_leaflet_Forest_cover" %in% names(Storage_SP)){Storage_SP$RS_leaflet_Forest_cover}
+```
 
 
 <br>
@@ -27,10 +29,12 @@ if(grepl("Human_modification", outlog$Value[outlog$Parameter=="Usage_RS"])){
   readPNG(paste0("resources/AOH_stored/", sub(" ", "_", scientific_name), "/Plots/RS_plot_modif.png")) %>% rasterGrob() %>% grid.arrange()
   DF_modif<-data.frame(Calc=c("Current value", "Absolute trends", "Relative trends", "Time-window"), Value=unlist(strsplit(outlog$Value[outlog$Parameter=="RS_result_Human_modification"], " & ")))
   knitr::kable(DF_modif, "simple", col.names = c("", "Value"))
-  #flextable::flextable(DF_modif) %>% flextable::set_table_properties(layout="autofit")
 }
 ```
 
+```{r leaflet_modif, fig.align = "center", out.width = '100%'}
+if("RS_leaflet_Human_modification" %in% names(Storage_SP)){Storage_SP$RS_leaflet_Human_modification}
+```
 
 
 <br>
@@ -42,10 +46,11 @@ if(grepl("Human_density", outlog$Value[outlog$Parameter=="Usage_RS"])){
   readPNG(paste0("resources/AOH_stored/", sub(" ", "_", scientific_name), "/Plots/RS_plot_humandensity.png")) %>% rasterGrob() %>% grid.arrange()
   DF_density<-data.frame(Calc=c("Current value", "Absolute trends", "Relative trends", "Time-window"), Value=unlist(strsplit(outlog$Value[outlog$Parameter=="RS_result_Human_density"], " & ")))
   knitr::kable(DF_density, "simple", col.names = c("", "Value"))
-  #flextable::flextable(DF_density) %>% flextable::set_table_properties(layout="autofit")
 }
 ```
 
-
+```{r leaflet_density, fig.align = "center", out.width = '100%'}
+if("RS_leaflet_Human_density" %in% names(Storage_SP)){Storage_SP$RS_leaflet_Human_density}
+```
 
 

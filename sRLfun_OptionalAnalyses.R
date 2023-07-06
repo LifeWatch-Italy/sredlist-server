@@ -58,6 +58,10 @@ sRL_CalcHumandensity<-function(scientific_name, distSP, GL){
   human2_crop<-crop(human2, distSP) %>% mask(., distSP)
   human_change<-human2_crop-human1_crop
   
+  ### Save rasters
+  terra::writeRaster(human2_crop, paste0("resources/AOH_stored/", gsub(" ", "_", scientific_name), "/Human_density_Current.tif"))
+  terra::writeRaster(human_change, paste0("resources/AOH_stored/", gsub(" ", "_", scientific_name), "/Human_density_Change.tif"))
+  
   ### Plots
   RS_name="Human population density"
   
@@ -119,6 +123,10 @@ sRL_CalcForestchange<-function(scientific_name, distSP){
   forest2_crop<-crop(forest2, distSP) %>% mask(., distSP)
   forest_change<-forest2_crop-forest1_crop
   
+  ### Save rasters
+  terra::writeRaster(forest2_crop, paste0("resources/AOH_stored/", gsub(" ", "_", scientific_name), "/Forest_cover_Current.tif"))
+  terra::writeRaster(forest_change, paste0("resources/AOH_stored/", gsub(" ", "_", scientific_name), "/Forest_cover_Change.tif"))
+  
   ### Plots
   RS_name="Forest cover"
   
@@ -178,6 +186,10 @@ sRL_CalcModification<-function(scientific_name, distSP){
   human1_crop<-crop(human1, distSP) %>% mask(., distSP)
   human2_crop<-crop(human2, distSP) %>% mask(., distSP)
   human_change<-human2_crop-human1_crop
+  
+  ### Save rasters
+  terra::writeRaster(human2_crop, paste0("resources/AOH_stored/", gsub(" ", "_", scientific_name), "/Human_modification_Current.tif"))
+  terra::writeRaster(human_change, paste0("resources/AOH_stored/", gsub(" ", "_", scientific_name), "/Human_modification_Change.tif"))
   
   ### Plots
   RS_name="Human modification index"
