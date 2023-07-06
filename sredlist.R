@@ -972,16 +972,38 @@ function(scientific_name) { # nolint
 #* @serializer json
 #* @tag sRedList
 function(scientific_name) {
+  
   #Filter param
   scientific_name <- sRL_decode(scientific_name)
   
   density = density$Density[density$Species == scientific_name] %>% round(., 2)
   if(length(density)>1){density<-mean(density, na.rm=T)}
-
+  
   return(list(
-    density=density
+    raw_density=as.character(density),
+    perc_mature=as.character(100),
+    perc_suitable=as.character(100)
   ));
 }
+
+
+#* Species density calculation
+#* @get species/<scientific_name>/density-calculation
+#* @param CALCdensity:string Scientific Name
+#* @serializer json
+#* @tag sRedList
+function(CALCdensity, CALCperc_mature, CALCperc_suitable) {
+  
+  if(CALCdensity=="" | CALCperc_mature=="" | CALCperc_suitable==""){density_cannot_calculate()}
+  
+  final_density <- as.numeric(CALCdensity) * 0.01*as.numeric(CALCperc_mature) * 0.01*as.numeric(CALCperc_suitable)
+  final_density <- as.character(final_density)
+
+  return(list(
+    final_density=final_density
+  ))
+}
+
 
 
 #* Species generation length
@@ -2284,9 +2306,10 @@ function(scientific_name){
 #* Plot Red List category
 #* @post species/<scientific_name>/assessment/red-list-criteria
 #* @param scientific_name:string Scientific Name
-#* @serializer png list(width = 800, height = 600)
+#* @serializer unboxedJSON
 #* @tag sRedList
-function(scientific_name,  
+function(scientific_name,
+         username,
          Estimates, 
          pastTrends_dir, pastTrends_qual, pastTrends_basis, pastTrends_reversible, pastTrends_understood, pastTrends_ceased, fragment, Fragment_justif,
          Extreme_EOO, Extreme_AOO, Extreme_Pop, Extreme_NLoc, Extreme_NSub, Extreme_EOO_justif, Extreme_AOO_justif, Extreme_Pop_justif, Extreme_NLoc_justif, Extreme_NSub_justif,
@@ -2306,7 +2329,7 @@ function(scientific_name,
   Storage_SP$Output$Count[Storage_SP$Output$Parameter=="Col_allfields"]<-as.numeric(Storage_SP$Output$Count[Storage_SP$Output$Parameter=="Col_allfields"])+1 # Count number of times Assign categories is run
   sRL_StoreSave(scientific_name, Storage_SP)
   print(names(Storage_SP))
-
+  print(username)
   
   sRL_loginfo("Start Allfields", scientific_name)
   
@@ -2530,7 +2553,7 @@ function(scientific_name,
   }
   
   # Prepare plot
-  plot_assign<-ggplot(criteria, aes(y = criterion)) +
+  GG_assign<-ggplot(criteria, aes(y = criterion)) +
     geom_linerange(aes(xmin=Cat_ThresholdMIN, xmax=Cat_ThresholdMAX), linewidth=10, colour="gray75")+
     geom_point(aes(x = Cat_ThresholdMIN, col = ColMin), size = 20, stroke=6, show.legend=F) +
     geom_text(aes(x=Cat_ThresholdMIN, label=Cat_ThresholdMIN), col="white", size=5)+
@@ -2542,8 +2565,9 @@ function(scientific_name,
     labs(title=TITLE, subtitle=SUBTITLE, tag=Tag)+
     theme_bw()  %+replace% theme(text=element_text(size=18), plot.title=element_text(hjust=0.5), plot.subtitle=element_text(hjust=0.5, size=15), plot.tag=element_text(hjust=0.5, size=14, colour="darkred"), plot.tag.position = "bottom")
   
-  # Save for RMarkDown
-  ggsave(paste0("resources/AOH_stored/", sub(" ", "_", scientific_name), "/Plots/Plot_assign.png"), plot_assign, width=10, height=8)
+  # Save
+  ggsave(paste0("resources/AOH_stored/", sub(" ", "_", scientific_name), "/Plots/Plot_assign.png"), GG_assign, width=10, height=8)
+  plot_assign <- base64enc::dataURI(file = paste0("resources/AOH_stored/", sub(" ", "_", scientific_name), "/Plots/Plot_assign.png"), mime = "image/png") # nolint
   
   
   # Call RMarkDown
@@ -2564,9 +2588,11 @@ function(scientific_name,
   
   # Return
   return(
-    plot(plot_assign)
+    list(
+      plot=plot_assign,
+      warning_taxo=Tag
+    )
   )
-
 
 }
 

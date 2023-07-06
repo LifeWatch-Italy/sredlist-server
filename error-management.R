@@ -88,6 +88,10 @@ wrong_density <- function() {
   api_error(message = "Density estimate is not valid. Should be a number or two numbers separated by a hyphen", status = 400)
 }
 
+density_cannot_calculate <- function() {
+  api_error(message = "One of the three parameters to calculate density is missing", status = 400)
+}
+
 incorrect_GL <- function() {
   api_error(message = "The Generation Length value entered is not valid", status = 400)
 }
