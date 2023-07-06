@@ -160,7 +160,7 @@ sRL_OutputTaxo<-function(scientific_name, Estimates){
 
 
 ### Prepare distribution output shapefile
-sRL_OutputDistribution<-function(scientific_name, Storage_SP){
+sRL_OutputDistribution<-function(scientific_name, Storage_SP, username){
   
   distSP<-Storage_SP$distSP_saved
   
@@ -178,6 +178,7 @@ sRL_OutputDistribution<-function(scientific_name, Storage_SP){
   distSIS$citation<-"sRedList Working Group 2023" # To fill
   distSIS$source<-"sRedList platform"
   distSIS$id_no<-sRL_CalcIdno(scientific_name)
+  distSIS$compiler<-username
   
   # Send geometry column at the end of the table
   distSIS<-distSIS[, c(names(distSIS)[names(distSIS) != "geometry"], "geometry")]
@@ -207,7 +208,7 @@ sRL_OutputHydrobasins<-function(distSIS, Storage_SP){
 }
 
 ### Save occurrences shapefile from the GBIF procedure
-sRL_OutputOccurrences <- function(scientific_name, Storage_SP) {
+sRL_OutputOccurrences <- function(scientific_name, Storage_SP, username) {
   
   # Transform in lat/lon
   dat<-Storage_SP$dat_proj_saved %>% st_transform(., "+init=epsg:4326")
@@ -229,6 +230,7 @@ sRL_OutputOccurrences <- function(scientific_name, Storage_SP) {
   dat_SIS$citation<-"IUCN (International Union for Conservation of Nature)"
   dat_SIS$source<-dat$source
   dat_SIS$id_no<-sRL_CalcIdno(scientific_name)
+  distSIS$compiler<-username
 
   # If data from the Red List, copy the information previously saved
   if("RL" %in% dat$Source){

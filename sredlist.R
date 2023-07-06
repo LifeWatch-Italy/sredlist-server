@@ -2498,13 +2498,13 @@ function(scientific_name,
   
   # Save distribution and occurrences if from GBIF
   if(is.null(Storage_SP$gbif_number_saved)==F){
-    distSIS<-sRL_OutputDistribution(scientific_name, Storage_SP)
+    distSIS<-sRL_OutputDistribution(scientific_name, Storage_SP, username)
     if("hybas_concat" %in% names(Storage_SP$distSP_saved)){
       hydroSIS<-sRL_OutputHydrobasins(distSIS, Storage_SP)
       write.csv(hydroSIS, paste0(output_dir, "/sRedList_", gsub(" ", ".", scientific_name), "_Hydrobasins.csv"), row.names=F)
     }
    st_write(distSIS, paste0(output_dir, "/sRedList_", gsub(" ", ".", scientific_name), "_Distribution.shp"), append=F)
-   write.csv(sRL_OutputOccurrences(scientific_name, Storage_SP), paste0(output_dir, "/sRedList_", gsub(" ", ".", scientific_name), "_Occurrences.csv"), row.names=F)
+   write.csv(sRL_OutputOccurrences(scientific_name, Storage_SP, username), paste0(output_dir, "/sRedList_", gsub(" ", ".", scientific_name), "_Occurrences.csv"), row.names=F)
   }
 
 
