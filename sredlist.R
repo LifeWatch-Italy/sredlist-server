@@ -1148,7 +1148,7 @@ Prom<-future({
   #Filter param
   scientific_name <- sRL_decode(scientific_name)
   Storage_SP=sRL_StoreRead(scientific_name, MANDAT=1) ; print(names(Storage_SP))
-  distSP=Storage_SP$distSP_saved
+  distSP=Storage_SP$distSP_saved; nrow(distSP) ; st_area(distSP)
 
   # Habitat table (for aoh analysis and for SIS Connect)
   print(habitats_pref_MARGINAL)
@@ -1180,7 +1180,8 @@ Prom<-future({
   distSP$seasonal=1
   names(distSP)<-replace(names(distSP), tolower(names(distSP)) %in% c("terrestrial", "terrestial", "terr"), "terrestrial")
   distSP$terrestrial<-"true" # I have to make it manually so that it does not exclude pure freshwater species (it will be users choice in any case)
-  
+
+  nrow(distSP) ; st_area(distSP)
   rangeSP_clean<-create_spp_info_data(distSP,
                                       keep_iucn_rl_presence = 1:6, # The selection has already been made, so I give fake numbers here
                                       keep_iucn_rl_seasonal = 1:5,
@@ -1189,9 +1190,10 @@ Prom<-future({
                                       spp_habitat_data = habitats_pref_DF[habitats_pref_DF$suitability=="Suitable",], # Will only keep suitable habitat
                                       key=config$red_list_token,
                                       crs=st_crs(CRSMOLL))
-
+  nrow(rangeSP_clean) ; st_area(rangeSP_clean)
   Storage_SP$RangeClean_saved=rangeSP_clean
-
+  saveRDS(Storage_SP, paste0("Storage_diagnosis", scientific_name, ".rds"))
+  
   # Remove old stored AOH
   output_dir<-paste0("resources/AOH_stored/", sub(" ", "_", scientific_name))
   dir.create(paste0(output_dir, "/Current"), recursive=T)
