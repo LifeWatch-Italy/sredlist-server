@@ -341,7 +341,7 @@ sRL_cleaningMemory<-function(Time_limit){
   ### Clean distributions (should be called once per month)
   tryCatch({
     if(RMDIST==1){
-      sRL_RemoveDistrib(15)
+      #sRL_RemoveDistrib(15)
     }
   }, error=function(e){cat("Problem cleaning distributions")})
 
