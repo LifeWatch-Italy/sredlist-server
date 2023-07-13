@@ -264,6 +264,8 @@ sRL_OutLog=function(STOR, Par, Val){
 ### sRedList cleaning function
 sRL_cleaningMemory<-function(Time_limit){
   
+  gc()
+  
   # Current time
   Time_now<-Sys.time()
 

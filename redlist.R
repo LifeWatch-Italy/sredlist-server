@@ -66,7 +66,7 @@ function(scientific_name) {
     if(exists("HistoPlot")==F){HistoPlot<-ggplot()+labs(title="The Red List API is not working, sorry!", subtitle="We cannot provide the usual information on this page, but you can click Next")}
     
     HistoPlot
-   }, seed=T) %>% then(onRejected=function(err) {return(ggplot()+ggtitle("ERROR: we are not able to create this plot, please report that error")+labs(subtitle=err))})
+   }, gc=T, seed=T) %>% then(onRejected=function(err) {return(ggplot()+ggtitle("ERROR: we are not able to create this plot, please report that error")+labs(subtitle=err))})
 
   return(Prom %...>% plot())
 }
@@ -75,19 +75,19 @@ function(scientific_name) {
 #* Plot the distributions plot from RedList API
 #* @get species/<scientific_name>/distribution
 #* @param scientific_name:string Scientific Name
-#* @param path:string Distribution Folder default RedList
+#* @param Dist_path:string Distribution Folder default RedList
 #* @serializer png list(width = 800, height = 600)
 #* @tag RedList
-function(scientific_name, path = "") {
+function(scientific_name, Dist_path = "") {
 
   Prom<-future({
 
     ### Filter param
     scientific_name <- sRL_decode(scientific_name)
-    path <- ifelse(path == "", paste0(R.utils::capitalize(trim(gsub(" ", "_", scientific_name))), '_RL'), path ) # nolint
+    Dist_path <- ifelse(Dist_path == "", paste0(R.utils::capitalize(trim(gsub(" ", "_", scientific_name))), '_RL'), Dist_path ) # nolint
   
     ### Load Distribution Species
-    distributions <- sRL_ReadDistribution(scientific_name, path)
+    distributions <- sRL_ReadDistribution(scientific_name, Dist_path)
 
     ### Plot (first if no distribution, then if there is one)
     if(class(distributions)[1]=="character"){
@@ -114,7 +114,7 @@ function(scientific_name, path = "") {
       }
   
     Plot_Dist
-    }, seed=T) %>% then(onRejected=function(err) {return(ggplot()+ggtitle("ERROR: we are not able to create this plot, please report that error")+labs(subtitle=err))})
+    }, gc=T, seed=T) %>% then(onRejected=function(err) {return(ggplot()+ggtitle("ERROR: we are not able to create this plot, please report that error")+labs(subtitle=err))})
   
     ### Plot the distribution
     return(Prom %...>% plot())
@@ -153,7 +153,7 @@ Prom<-future({
   
   return(hab_pref)
 
-}, seed=T)
+}, gc=T, seed=T)
 return(Prom)
 }
 
@@ -225,7 +225,7 @@ Prom<-future({
   print(alt_pref)
   return(alt_pref)
   
-}, seed=T)
+}, gc=T, seed=T)
 
 return(Prom)
 }

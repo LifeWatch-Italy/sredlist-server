@@ -2,12 +2,11 @@
 setwd("C:/Users/Victor/Documents/sRedList/Platform/InProgress/sredlist-server-develop")
 
 
-
-
 ### Set the asynchronous coding
 options(future.globals.maxSize= 2000*1024^2) # Max 2 GB of RAM per session
-library(promises) ; library(future)
-future::plan("multisession") # Cluster does not work better
+library(promises) ; library(future) ; library(future.callr)
+future::plan(future.callr::callr) # This plan uses transient parallel workers (better to have spread tasks among workers and release memory)
+#future::plan("multisession") # This plan uses persistent parallel workers (quicker but some RAM accumulation)
 
 
 ######################

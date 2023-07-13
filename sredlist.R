@@ -71,14 +71,14 @@ function(scientific_name, req) {
 #* Info distribution species from sRedList platform
 #* @get species/<scientific_name>/distribution/info
 #* @param scientific_name:string Scientific Name
-#* @param path:string Distribution Folder default RedList
+#* @param Dist_path:string Distribution Folder default RedList
 #* @tag sRedList1
-function(scientific_name, path = "") {
+function(scientific_name, Dist_path = "") {
   
   scientific_name <- sRL_decode(scientific_name)
-  path <- ifelse(path == "", paste0(R.utils::capitalize(trim(gsub(" ", "_", scientific_name))), '_RL'), path ) # nolint
+  Dist_path <- ifelse(Dist_path == "", paste0(R.utils::capitalize(trim(gsub(" ", "_", scientific_name))), '_RL'), Dist_path) # nolint
   
-  speciesPath <- paste0(config$distribution_path, scientific_name, "/", path) # nolint
+  speciesPath <- paste0(config$distribution_path, scientific_name, "/", Dist_path) # nolint
   files <- base::list.files(path = speciesPath, pattern = "\\.shp$")
   
   if (length(files) == 0) {
@@ -112,10 +112,10 @@ function(scientific_name, path = "") {
 #* @param presences:[int] presences (1, 2)
 #* @param seasons:[int] seasons (1, 2)
 #* @param origins:[int] origins (1, 2)
-#* @param path:string Distribution Folder default RedList
+#* @param Dist_path:string Distribution Folder default RedList
 #* @serializer png list(width = 800, height = 600)
 #* @tag sRedList1
-function(scientific_name, presences = list(), seasons = list() , origins = list(), path = "") { # nolint
+function(scientific_name, presences = list(), seasons = list() , origins = list(), Dist_path = "") { # nolint
 
 Prom<-future({
   sf::sf_use_s2(FALSE)
@@ -127,8 +127,8 @@ Prom<-future({
   # If outlog not present (I don't think this should happen but just in case)
   if(! "Output" %in% names(Storage_SP)){Storage_SP$Output<-sRL_InitLog(scientific_name, DisSource = "Unknown")}
   
-  print(path)
-  path <- ifelse(path == "", paste0(R.utils::capitalize(trim(gsub(" ", "_", scientific_name))), '_RL'), path ) # nolint
+  print(Dist_path)
+  Dist_path <- ifelse(Dist_path == "", paste0(R.utils::capitalize(trim(gsub(" ", "_", scientific_name))), '_RL'), Dist_path ) # nolint
   if (length(presences) != 0) presences <- as.character(presences);
   if (length(seasons) != 0) seasons <- as.character(seasons);
   if (length(origins) != 0) origins <- as.character(origins);
@@ -136,7 +136,7 @@ Prom<-future({
 
   ### Load Distribution Species
   sRL_loginfo("START - Prepare distribution", scientific_name)
-  distributions <- sRL_ReadDistribution(scientific_name, path) %>% sRL_PrepareDistrib(., scientific_name)
+  distributions <- sRL_ReadDistribution(scientific_name, Dist_path) %>% sRL_PrepareDistrib(., scientific_name)
   distSP_full <- subset(distributions, distributions$binomial == scientific_name) # nolint 
   choice_presence <- c(presences)
   choice_season <- c(seasons)
@@ -165,8 +165,8 @@ Prom<-future({
   if("CountrySP_saved" %not in% names(Storage_SP)){Storage_SP$CountrySP_saved<-sRL_PrepareCountries(extent(distSP_full))} 
   CountrySP<-st_crop(Storage_SP$CountrySP_saved, extent(distSP))
   Storage_SP<-sRL_OutLog(Storage_SP, c("Distribution_Presence", "Distribution_Seasonal", "Distribution_Origin"), c(paste0(presences, collapse=","), paste0(seasons, collapse=","), paste0(origins, collapse=",")))
-  DisSource<-ifelse(substr(path, nchar(path)-2, nchar(path))=="_RL", "Red List", ifelse(is.na(as.numeric(substr(path, nchar(path)-2, nchar(path))))==F, "StoredOnPlatform", "Uploaded"))
-  Storage_SP<-sRL_OutLog(Storage_SP, "Distribution_Source", DisSource) # If path ends by _RL it comes from the RL, uploaded otherwise
+  DisSource<-ifelse(substr(Dist_path, nchar(Dist_path)-2, nchar(Dist_path))=="_RL", "Red List", ifelse(is.na(as.numeric(substr(Dist_path, nchar(Dist_path)-2, nchar(Dist_path))))==F, "StoredOnPlatform", "Uploaded"))
+  Storage_SP<-sRL_OutLog(Storage_SP, "Distribution_Source", DisSource) # If Dist_path ends by _RL it comes from the RL, uploaded otherwise
   sRL_StoreSave(scientific_name, Storage_SP)
   sRL_loginfo("Plot distribution", scientific_name)
   
@@ -192,7 +192,7 @@ Prom<-future({
   # Return
   return(plot_dist)
 
-}, seed=T) %>% then(onRejected=function(err) {return(ggplot()+ggtitle("ERROR: we are not able to create this plot, please report that error")+labs(subtitle=err))})
+}, gc=T, seed=T) %>% then(onRejected=function(err) {return(ggplot()+ggtitle("ERROR: we are not able to create this plot, please report that error")+labs(subtitle=err))})
 
 return(Prom %...>% plot())
 }
@@ -308,9 +308,9 @@ Prom<-future({
   
   return(list(plot_data=plot1))
   
-}, seed=T)
+}, gc=T, seed=T)
   
-  return(Prom)
+return(Prom)
   
 }
 
@@ -403,7 +403,7 @@ Prom<-future({
     Leaflet_Filter
   )
   
-}, seed=T)
+}, gc=T, seed=T)
 
 return(Prom)
   
@@ -455,7 +455,7 @@ function(scientific_name) {
       plot_extract_elevation = plot
     ))
     
-  }, seed=T)
+  }, gc=T, seed=T)
   
   return(Prom)
 }  
@@ -589,10 +589,12 @@ Prom<-future({
     gbif_data_number  = as.numeric(Storage_SP$gbif_number_saved)
   ))
   
-}, seed=T)
+}, gc=T, seed=T)
 
 return(Prom)
 }
+
+
 
 
 
@@ -691,7 +693,7 @@ Prom<-future({
     gbif_path = gbif_path
   ))
 
-}, seed=T)
+}, gc=T, seed=T)
 
 return(Prom) 
 }
@@ -846,7 +848,7 @@ Prom<-future({
     )
   }
   
-}, seed=T)
+}, gc=T, seed=T)
 
 return(Prom)
 
@@ -869,10 +871,10 @@ return(Prom)
 #* @param presences:[int] presences (1, 2)
 #* @param seasons:[int] seasons (1, 2)
 #* @param origins:[int] origins (1, 2)
-#* @param path:string Distribution Folder default RedList
+#* @param Dist_path:string Distribution Folder default RedList
 #* @serializer unboxedJSON
 #* @tag sRedList
-function(scientific_name, presences = list(), seasons = list() , origins = list(), path = "") { # nolint
+function(scientific_name, presences = list(), seasons = list() , origins = list(), Dist_path = "") { # nolint
 
 Prom<-future({
   sf::sf_use_s2(FALSE)
@@ -907,14 +909,13 @@ Prom<-future({
   ### Save EOO area
   Storage_SP$eoo_km2<-EOO_km2
   sRL_StoreSave(scientific_name, Storage_SP)
-  
 
   return(list(
     eoo_km2 = EOO_km2,
     plot_eoo = plot3
   ))
   
-}, seed=T)
+}, gc=T, seed=T)
 
 return(Prom)
 }
@@ -951,10 +952,9 @@ function(scientific_name) { # nolint
     Storage_SP$EOO_leaflet<-EOO_leaflet
     sRL_StoreSave(scientific_name, Storage_SP)
     
-    
     return(EOO_leaflet)
     
-  }, seed=T)
+  }, gc=T, seed=T)
   
   return(Prom)
 }
@@ -998,7 +998,7 @@ function(CALCdensity, CALCperc_mature, CALCperc_suitable) {
   
   final_density <- as.numeric(CALCdensity) * 0.01*as.numeric(CALCperc_mature) * 0.01*as.numeric(CALCperc_suitable)
   final_density <- as.character(final_density)
-
+  
   return(list(
     final_density=final_density
   ))
@@ -1094,7 +1094,7 @@ function(scientific_name) {
       plot_extract_elevation = plot
     ))
     
-  }, seed=T)
+  }, gc=T, seed=T)
   
   return(Prom)
 }  
@@ -1112,10 +1112,10 @@ function(scientific_name) {
 #* @param altitudes_pref:[int] altitudes_pref
 #* @param density_pref:string density_pref
 #* @param isGbifDistribution:boolean isGbifDistribution
-#* @param path:string Distribution Folder default RedList
+#* @param Dist_path:string Distribution Folder default RedList
 #* @serializer unboxedJSON
 #* @tag sRedList
-function(scientific_name, habitats_pref= list(), habitats_pref_MARGINAL=list(), altitudes_pref= c("0","9000"), density_pref= '-1', isGbifDistribution = FALSE, path = "") { # nolint    
+function(scientific_name, habitats_pref= list(), habitats_pref_MARGINAL=list(), altitudes_pref= c("0","9000"), density_pref= '-1', isGbifDistribution = FALSE, Dist_path = "") { # nolint    
 
 # If no habitat preference or habitats not in crosswalk, return error
 if(length(habitats_pref)==0){no_habitat_pref()}
@@ -1136,7 +1136,7 @@ Prom_clean<-future({
   sRL_loginfo("START - Cleaning memory", scientific_name)
   sRL_cleaningMemory(Time_limit=180)
   sRL_loginfo("END - Cleaning memory", scientific_name)
-}, seed=T)  
+}, gc=T, seed=T)  
 Prom_clean %...>% print(.)
 
 
@@ -1189,7 +1189,7 @@ Prom<-future({
                                       spp_habitat_data = habitats_pref_DF[habitats_pref_DF$suitability=="Suitable",], # Will only keep suitable habitat
                                       key=config$red_list_token,
                                       crs=st_crs(CRSMOLL))
-
+  
   Storage_SP$RangeClean_saved=rangeSP_clean
 
   # Remove old stored AOH
@@ -1481,9 +1481,8 @@ Prom<-future({
     LIST$pop_size <- pop_size
   }
   
-
   return(LIST)
-}, seed=T)
+}, gc=T, seed=T)
 
 return(Prom)
 }
@@ -1548,7 +1547,7 @@ function(scientific_name) { # nolint
     
     return(AOH_leaflet)
     
-  }, seed=T)
+  }, gc=T, seed=T)
   
   return(Prom)
 }
@@ -1596,10 +1595,9 @@ function(scientific_name) { # nolint
     Storage_SP$AOO_leaflet<-AOO_leaflet
     sRL_StoreSave(scientific_name, Storage_SP)
     
-    
     return(AOO_leaflet)
     
-  }, seed=T)
+  }, gc=T, seed=T)
   
   return(Prom)
 }
@@ -1611,14 +1609,7 @@ function(scientific_name) { # nolint
 #* Estimate trends in AOH as a proxy of population trends (Criterion A2)
 #* @get species/<scientific_name>/analysis/trends-aoh
 #* @param scientific_name:string Scientific Name
-#* @param presences:[int] presences (1, 2)
-#* @param seasons:[int] seasons (1, 2)
-#* @param origins:[int] origins (1, 2)
-#* @param habitats_pref:[str] habitats_pref
-#* @param altitudes_pref:[int] altitudes_pref
 #* @param GL_species:string GL_species
-#* @param isGbifDistribution:boolean isGbifDistribution
-#* @param path:string Distribution Folder default RedList
 #* @serializer unboxedJSON
 #* @tag sRedList
 function(scientific_name, GL_species="1") { # nolint
@@ -1819,8 +1810,8 @@ Prom<-future({
   
   return(LIST)
   
-}, seed=T)
- 
+}, gc=T, seed=T)
+
 return(Prom)
 }
 
@@ -1906,10 +1897,9 @@ function(scientific_name) { # nolint
     Storage_SP$Trends_leaflet<-Trends_leaflet
     sRL_StoreSave(scientific_name, Storage_SP)
     
-    
     return(Trends_leaflet)
     
-  }, seed=T)
+  }, gc=T, seed=T)
   
   return(Prom)
 }
@@ -2067,7 +2057,7 @@ Prom<-future({
     
     return(LIST)
     
-  }, seed=T)
+  }, gc=T, seed=T)
   
   ### Return list
   return(Prom)
@@ -2113,7 +2103,7 @@ Prom<-future({
   # Return
   return(List_trendsRS)
 
-}, seed=T)
+}, gc=T, seed=T)
 
 return(Prom)
 }
@@ -2163,10 +2153,9 @@ function(scientific_name, RSproduct = "") { # nolint
     Storage_SP[paste0("RS_leaflet_", RSproduct)]<-RS_leaflet
     sRL_StoreSave(scientific_name, Storage_SP)
     
-    
     return(RS_leaflet)
     
-  }, seed=T)
+  }, gc=T, seed=T)
   
   return(Prom)
 }
@@ -2560,7 +2549,6 @@ function(scientific_name,
    write.csv(sRL_OutputOccurrences(scientific_name, Storage_SP, username), paste0(output_dir, "/sRedList_", gsub(" ", ".", scientific_name), "_Occurrences.csv"), row.names=F)
   }
 
-
   ### Calculate criteria
   sRL_loginfo("Start Criteria calculation", scientific_name)
   criteria<-sRL_CriteriaCalculator(allfields[1,])
@@ -2852,25 +2840,25 @@ function(scientific_name) {
 #* @delete species/<scientific_name>/distribution
 #* @param scientific_name:string Scientific Name
 #* @param file_name:string file_name
-#* @param path:string path
+#* @param Dist_path:string path
 #* @param type:string type
 #* @serializer unboxedJSON
 #* @tag sRedList
-function(scientific_name, file_name, path, type) {
+function(scientific_name, file_name, Dist_path, type) {
   scientific_name <- sRL_decode(scientific_name)
   file_name <- url_decode(file_name)
-  path <- url_decode(path)
+  Dist_path <- url_decode(Dist_path)
   type <- url_decode(type)
-  if ((scientific_name %in% list.files(config$distribution_path)) && !grepl("_RL", file_name) && !grepl("_RL", path)) { # nolint
+  if ((scientific_name %in% list.files(config$distribution_path)) && !grepl("_RL", file_name) && !grepl("_RL", Dist_path)) { # nolint
     if (type == "folder") {
-      if (file_name %in% list.files(paste0(config$distribution_path, path))) {
-        sRL_loginfo(paste0("Delete distribution:", config$distribution_path, path, '/', file_name), scientific_name) # nolint
-        return(list(response = unlink(paste0(config$distribution_path, path, '/', file_name), recursive = TRUE))) # nolint
+      if (file_name %in% list.files(paste0(config$distribution_path, Dist_path))) {
+        sRL_loginfo(paste0("Delete distribution:", config$distribution_path, Dist_path, '/', file_name), scientific_name) # nolint
+        return(list(response = unlink(paste0(config$distribution_path, Dist_path, '/', file_name), recursive = TRUE))) # nolint
       }
     }else {
-      if(file_name %in% list.files(paste0(config$distribution_path, scientific_name, '/', path))){ # nolint
-        sRL_loginfo(paste0("Delete distribution:", config$distribution_path, scientific_name, '/', path, "/", file_name), scientific_name) # nolint
-        return(list(response = unlink(paste0(config$distribution_path, scientific_name, "/", path, "/", file_name)))) # nolint
+      if(file_name %in% list.files(paste0(config$distribution_path, scientific_name, '/', Dist_path))){ # nolint
+        sRL_loginfo(paste0("Delete distribution:", config$distribution_path, scientific_name, '/', Dist_path, "/", file_name), scientific_name) # nolint
+        return(list(response = unlink(paste0(config$distribution_path, scientific_name, "/", Dist_path, "/", file_name)))) # nolint
       }
     }
     not_found("Species distribution not exist!") # nolint

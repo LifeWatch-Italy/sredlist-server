@@ -230,7 +230,7 @@ sRL_OutputOccurrences <- function(scientific_name, Storage_SP, username) {
   dat_SIS$citation<-"IUCN (International Union for Conservation of Nature)"
   dat_SIS$source<-dat$source
   dat_SIS$id_no<-sRL_CalcIdno(scientific_name)
-  distSIS$compiler<-username
+  dat_SIS$compiler<-username
 
   # If data from the Red List, copy the information previously saved
   if("RL" %in% dat$Source){
