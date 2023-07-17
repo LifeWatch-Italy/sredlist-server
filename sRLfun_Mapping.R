@@ -372,7 +372,7 @@ sRL_MapDistributionGBIF<-function(dat, scientific_name, First_step, AltMIN, AltM
       Par_alpha<-Gbif_Param[1]
       EX<-extent(dat_subsample)
       tryCatch({
-        Alpha_scaled <- Par_alpha * sqrt((EX@xmin-EX@xmax)^2 + (EX@ymin-EX@ymax)^2)
+        Alpha_scaled <- (0.5*Par_alpha)^2 * sqrt((EX@xmin-EX@xmax)^2 + (EX@ymin-EX@ymax)^2)
         distGBIF<-convexHull(dat_subsample, alpha = Alpha_scaled)
       } ,error=function(e){bug_alpha()})
       
