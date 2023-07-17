@@ -59,8 +59,8 @@ sRL_CalcHumandensity<-function(scientific_name, distSP, GL){
   human_change<-human2_crop-human1_crop
   
   ### Save rasters
-  terra::writeRaster(human2_crop, paste0("resources/AOH_stored/", gsub(" ", "_", scientific_name), "/Human_density_Current.tif"))
-  terra::writeRaster(human_change, paste0("resources/AOH_stored/", gsub(" ", "_", scientific_name), "/Human_density_Change.tif"))
+  terra::writeRaster(human2_crop, paste0("resources/AOH_stored/", gsub(" ", "_", scientific_name), "/Human_density_Current.tif"), overwrite=T)
+  terra::writeRaster(human_change, paste0("resources/AOH_stored/", gsub(" ", "_", scientific_name), "/Human_density_Change.tif"), overwrite=T)
   
   ### Plots
   RS_name="Human population density"
@@ -111,11 +111,15 @@ sRL_CalcHumandensity<-function(scientific_name, distSP, GL){
 
 
 # sRL_CalcForestchange
-sRL_CalcForestchange<-function(scientific_name, distSP){
+sRL_CalcForestchange<-function(scientific_name, distSP, GL){
+
+  ### Calculate year for forest 1
+  Year2=2022
+  Year1<-min(round(Year2 - 3*GL), Year2-10) %>% max(., 2000) # Takes the year that is 3 GL or 10 years before, not before 2000
 
   ### Charge forest layers
-  forest1<-rast(sub("XXXX", 2000, config$ForestAgg_path))
-  forest2<-rast(sub("XXXX", 2022, config$ForestAgg_path))
+  forest1<-rast(sub("XXXX", Year1, config$ForestAgg_path))
+  forest2<-rast(sub("XXXX", Year2, config$ForestAgg_path))
   
   ### Mask
   distSP<-st_transform(distSP, st_crs(forest1))
@@ -124,8 +128,8 @@ sRL_CalcForestchange<-function(scientific_name, distSP){
   forest_change<-forest2_crop-forest1_crop
   
   ### Save rasters
-  terra::writeRaster(forest2_crop, paste0("resources/AOH_stored/", gsub(" ", "_", scientific_name), "/Forest_cover_Current.tif"))
-  terra::writeRaster(forest_change, paste0("resources/AOH_stored/", gsub(" ", "_", scientific_name), "/Forest_cover_Change.tif"))
+  terra::writeRaster(forest2_crop, paste0("resources/AOH_stored/", gsub(" ", "_", scientific_name), "/Forest_cover_Current.tif"), overwrite=T)
+  terra::writeRaster(forest_change, paste0("resources/AOH_stored/", gsub(" ", "_", scientific_name), "/Forest_cover_Change.tif"), overwrite=T)
   
   ### Plots
   RS_name="Forest cover"
@@ -136,14 +140,14 @@ sRL_CalcForestchange<-function(scientific_name, distSP){
       coord_fixed()+
       geom_tile(aes(fill = value)) +
       scale_fill_viridis_c(option="viridis", na.value = "white", name="%", limits=c(0,100))+
-      ggtitle(paste0("In 2022")) +
+      ggtitle(paste0("In ", Year2)) +
       sRLTheme_maps,
     
     gplot(forest_change)+
       coord_fixed()+
       geom_tile(aes(fill = value)) +
       scale_fill_gradient2(low="#8c510a", mid="azure2", midpoint=0, high="#018571", name="%", na.value="white")+
-      ggtitle(paste0("Change 2000-2022")) +
+      ggtitle(paste0("Change ", Year1, "-", Year2)) +
       sRLTheme_maps,
     
     ncol=2
@@ -158,7 +162,7 @@ sRL_CalcForestchange<-function(scientific_name, distSP){
   RS_old<-exact_extract(forest1_crop, distSP, "mean")
   RS_trendsABS<-(RS_current-RS_old)
   RS_trendsREL<-(RS_current-RS_old)/RS_old
-  RS_timewindow<-"2000-2022"
+  RS_timewindow<-paste0(Year1, "-", Year2)
   
   
   ### Return
@@ -188,8 +192,8 @@ sRL_CalcModification<-function(scientific_name, distSP){
   human_change<-human2_crop-human1_crop
   
   ### Save rasters
-  terra::writeRaster(human2_crop, paste0("resources/AOH_stored/", gsub(" ", "_", scientific_name), "/Human_modification_Current.tif"))
-  terra::writeRaster(human_change, paste0("resources/AOH_stored/", gsub(" ", "_", scientific_name), "/Human_modification_Change.tif"))
+  terra::writeRaster(human2_crop, paste0("resources/AOH_stored/", gsub(" ", "_", scientific_name), "/Human_modification_Current.tif"), overwrite=T)
+  terra::writeRaster(human_change, paste0("resources/AOH_stored/", gsub(" ", "_", scientific_name), "/Human_modification_Change.tif"), overwrite=T)
   
   ### Plots
   RS_name="Human modification index"

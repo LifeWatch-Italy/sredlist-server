@@ -976,11 +976,11 @@ function(scientific_name) {
   #Filter param
   scientific_name <- sRL_decode(scientific_name)
   
-  density = density$Density[density$Species == scientific_name] %>% round(., 2)
-  if(length(density)>1){density<-mean(density, na.rm=T)}
+  density_estimate = density_data$Density[density_data$Species == scientific_name] %>% round(., 2)
+  if(length(density_estimate)>1){density_estimate<-mean(density_estimate, na.rm=T)}
   
   return(list(
-    raw_density=as.character(density),
+    raw_density=as.character(density_estimate),
     perc_mature=as.character(100),
     perc_suitable=as.character(100)
   ));
@@ -1339,17 +1339,18 @@ Prom<-future({
 
   ggsave(filename = paste0("resources/AOH_stored/", sub(" ", "_", scientific_name), "/Plots/aoh.png"), plot = plot1, width=9, height=ifelse(Uncertain=="Uncertain_no" | AOH_type=="Small", 9, 15))
   plot1 <- base64enc::dataURI(file = paste0("resources/AOH_stored/", sub(" ", "_", scientific_name), "/Plots/aoh.png"), mime = "image/png", encoding = "base64") # nolint
-  print("END - Plot AOH")
+  sRL_loginfo("END - Plot AOH", scientific_name)
 
   AOH_km2 <-  sRL_areaAOH(AOH2[[1]], "cci") # Same scale in small or large AOH because the unit is always 1 cell of the fine raster
   if(Uncertain=="Uncertain_yes"){AOH_km2_opt <-  sRL_areaAOH(AOH2_opt[[1]], "cci") ;  Storage_SP$AOHkm2OPT_saved<-AOH_km2_opt}
   Storage_SP$AOHkm2_saved<-AOH_km2
 
   ### Upper AOO ----
+  sRL_loginfo("START - Calculate Upper AOO", scientific_name)
   grid22<-sRL_ChargeGrid22Raster()
   grid22_crop<-crop(grid22, AOH2[[1]])
   aoh_22<-terra::resample(AOH2[[1]], grid22_crop, method="max")>0
-
+  sRL_loginfo("END - Calculate Upper AOO", scientific_name)
 
   if(Uncertain=="Uncertain_no"){
     plot2 <- cowplot::plot_grid(gplot(aoh_22[[1]]>0) +
@@ -1392,7 +1393,8 @@ Prom<-future({
       ncol=1)
   }
   }
-
+  
+  sRL_loginfo("START - Saving plot AOO", scientific_name)
   ggsave(filename = paste0("resources/AOH_stored/", sub(" ", "_", scientific_name), "/Plots/aoo.png"), plot = plot2, width=9, height=ifelse(Uncertain=="Uncertain_no" | AOH_type=="Small", 9, 15))
 
   plot2 <- base64enc::dataURI(file = paste0("resources/AOH_stored/", sub(" ", "_", scientific_name), "/Plots/aoo.png"), mime = "image/png", encoding = "base64") # nolint
@@ -1401,10 +1403,13 @@ Prom<-future({
   if(Uncertain=="Uncertain_yes"){AOO_km2_opt<- sRL_areaAOH(aoh_22_opt[[1]], SCALE="2x2") ; if(AOH_km2_opt==0){AOO_km2_opt<-0} ; Storage_SP$aoo_km2_opt<-AOO_km2_opt}
   if (density_pref[1] != '-1') {Storage_SP$density_saved<-density_pref}
   Storage_SP$aoo_km2<-AOO_km2
+  sRL_loginfo("END - Saving plot AOO", scientific_name)
+  
   
 
   ### Save parameters and results
-  Storage_SP<-sRL_OutLog(Storage_SP, c("AOH_HabitatPreference", "AOH_MarginalHabitatPreference", "AOH_ElevationPreference", "AOH_Density", "Original_density", "AOH_RangeType", "Estimated_AOH22"), c(paste0(habitats_pref, collapse=","), paste0(habitats_pref_MARGINAL, collapse=","), paste0(altitudes_pref, collapse=", "), ifelse(density_pref=='-1', NA, density_pref), mean(round(density$Density[density$Species == scientific_name], 2), na.rm=T), AOH_type, AOO_km2))
+  density_default<-ifelse(scientific_name %in% density_data$Species, base::mean(round(as.numeric(density_data$Density[density_data$Species == scientific_name]), 2), na.rm=T), NA) ; print(density_default)
+  Storage_SP<-sRL_OutLog(Storage_SP, c("AOH_HabitatPreference", "AOH_MarginalHabitatPreference", "AOH_ElevationPreference", "AOH_Density", "Original_density", "AOH_RangeType", "Estimated_AOH22"), c(paste0(habitats_pref, collapse=","), paste0(habitats_pref_MARGINAL, collapse=","), paste0(altitudes_pref, collapse=", "), ifelse(density_pref[1]=='-1', NA, density_pref[1]), density_default, AOH_type, AOO_km2))
   
   terraOptions(tempdir=tempdir())
   rasterOptions(tmpdir=tempdir())
@@ -2086,12 +2091,12 @@ Prom<-future({
   scientific_name<-sRL_decode(scientific_name)
   Storage_SP<-sRL_StoreRead(scientific_name, MANDAT=1)
   distSP<-Storage_SP$RangeClean_saved
-  GL<-Storage_SP$GL_saved
+  GL<-ifelse("GL_saved" %in% names(Storage_SP), Storage_SP$GL_saved, 1)
   print(RSproduct)
   
   # Run functions to calculate trends
   if(RSproduct=="Human_density"){List_trendsRS<-sRL_CalcHumandensity(scientific_name, distSP, GL)}
-  if(RSproduct=="Forest_cover"){List_trendsRS<-sRL_CalcForestchange(scientific_name, distSP)}
+  if(RSproduct=="Forest_cover"){List_trendsRS<-sRL_CalcForestchange(scientific_name, distSP, GL)}
   if(RSproduct=="Human_modification"){List_trendsRS<-sRL_CalcModification(scientific_name, distSP)}
   if(RSproduct=="NDVI"){List_trendsRS<-sRL_CalcNDVIchange(scientific_name, distSP, GL)}
   

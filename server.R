@@ -102,7 +102,7 @@ eez_raw<-read_sf("Species/Map countries/Red_List_EEZ_Simplif_coo_0.001.shp") # U
 
 
 # Load Crosswalk CSV and Density CSV
-density<-read.csv("Species/Density.table.csv", sep=",") %>% subset(., .$Density>0)
+density_data<-read.csv("Species/Density.table.csv", sep=",") %>% subset(., .$Density>0)
 crosswalk <- read.table("Species/Crosswalk_CCI_IUCN.txt", header=T)
 crosswalkLARGE<-read.csv("Species/Lumbierres_large_crosswalk.csv")
 GL_file<-read.csv("Species/Generation_length_sRedList.csv", sep=",")
