@@ -1119,7 +1119,7 @@ function(scientific_name, habitats_pref= list(), habitats_pref_MARGINAL=list(), 
 
 # If no habitat preference or habitats not in crosswalk, return error
 if(length(habitats_pref)==0){no_habitat_pref()}
-if(!"TRUE" %in% (c(habitats_pref, habitats_pref_MARGINAL) %in% crosswalk_to_use$code)){no_habitats_crosswalk()}
+if(!"TRUE" %in% (habitats_pref %in% crosswalk_to_use$code)){no_habitats_crosswalk()}
 
 # Check elevation
 if(length(altitudes_pref)==0){altitudes_pref<-c(0,9000)}
@@ -1467,8 +1467,8 @@ Prom<-future({
   
   ### Return list of arguments + calculate population size
   LIST=list(
-    aoh_km2 = ifelse(Uncertain=="Uncertain_no", ceiling(AOH_km2), paste(ceiling(AOH_km2), ceiling(AOH_km2_opt), sep="-")), # I use ceiling to avoid having a 0 which is problematic
-    aoo_km2 = ifelse(Uncertain=="Uncertain_no", round(AOO_km2), paste(round(AOO_km2), round(AOO_km2_opt), sep="-")),
+    aoh_km2 = ifelse(Uncertain=="Uncertain_no", AOH_km2, paste(AOH_km2, AOH_km2_opt, sep="-")), 
+    aoo_km2 = ifelse(Uncertain=="Uncertain_no", AOO_km2, paste(AOO_km2, AOO_km2_opt, sep="-")),
     plot_aoh = plot1,
     plot_aoh_2x2 = plot2
   )
@@ -1775,8 +1775,8 @@ Prom<-future({
 
   # Output to return
   Out_area<-ifelse(Storage_SP$Uncertain=="Uncertain_no", 
-                   ceiling(AOH_old_km2),
-                   paste(ceiling(AOH_old_km2), ceiling(AOH_old_km2OPT), sep="-"))
+                   AOH_old_km2,
+                   paste(AOH_old_km2, AOH_old_km2OPT, sep="-"))
   
   Out_loss<-ifelse(Storage_SP$Uncertain=="Uncertain_no", 
                    paste0(Year1, "-", config$YearAOH2, ": ", revalue(as.factor(sign(AOH_lost)), c("-1"="AOH gain of ", "1"="AOH loss of ", "0"="AOH loss of ")), abs(AOH_lost), "%"), # Give trend in AOH rather than loss,

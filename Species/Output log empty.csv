@@ -37,8 +37,8 @@ NA,NA,Estimated_PopTrendsDir_raw,0,This is the original direction of Population 
 NA,NA,RS_result_Forest_cover,0,Result of trends in Remote-sensing products (step 6b) for Forest Cover. It includes the current coverage / the absolute trends / the relative trends / the time-window.,NA
 NA,NA,RS_result_Human_modification,0,Result of trends in Remote-sensing products (step 6b) for Human modification index. It includes the current value / the absolute trends / the relative trends / the time-window.,NA
 NA,NA,RS_result_Human_density,0,Result of trends in Remote-sensing products (step 6b) for Human population density. It includes the current value / the absolute trends / the relative trends / the time-window.,NA
-NA,NA,Original_density,0,Only used to track usage,NA
-NA,NA,Original_GL,0,Only used to track usage,NA
+NA,NA,Original_density,0,Original density estimate suggested by the platform,NA
+NA,NA,Original_GL,0,Original generation length estimate suggested by the platform,NA
 NA,NA,Original_altpref,0,Only used to track usage,NA
 NA,NA,Col_allfields,0,Only used to track usage,NA
 NA,NA,Usage_RS,0,Only used to track usage,NA

@@ -112,6 +112,8 @@ sRL_areaAOH<-function(ras, SCALE){
   if(SCALE=="cci"){area<-cell_presence*0.09487}
   if(SCALE=="2x2"){area<-cell_presence*4}
   
+  area<-ifelse(area<1, ceiling(area), round(area)) # I use ceiling to avoid having an AOH of 0 if some habitat is suitable
+  
   return(area)
 }
 
