@@ -41,7 +41,7 @@ After a possibility to manually edit these values and add uncertainty in the est
 
 ### AOH calculation
 
-The calculated Area of Habitat has a value of `r pretty_num(round(Storage_SP$AOHkm2_saved))` km2. 
+The calculated Area of Habitat has a value of `r pretty_num(ceiling(Storage_SP$AOHkm2_saved))` km2. 
 
 <br>
 <center>

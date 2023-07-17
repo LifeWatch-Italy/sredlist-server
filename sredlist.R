@@ -1404,7 +1404,8 @@ Prom<-future({
   
 
   ### Save parameters and results
-  Storage_SP<-sRL_OutLog(Storage_SP, c("AOH_HabitatPreference", "AOH_MarginalHabitatPreference", "AOH_ElevationPreference", "AOH_Density", "AOH_RangeType", "Estimated_AOH22"), c(paste0(habitats_pref, collapse=","), paste0(habitats_pref_MARGINAL, collapse=","), paste0(altitudes_pref, collapse=", "), ifelse(density_pref=='-1', NA, density_pref), AOH_type, AOO_km2))
+  Storage_SP<-sRL_OutLog(Storage_SP, c("AOH_HabitatPreference", "AOH_MarginalHabitatPreference", "AOH_ElevationPreference", "AOH_Density", "Original_density", "AOH_RangeType", "Estimated_AOH22"), c(paste0(habitats_pref, collapse=","), paste0(habitats_pref_MARGINAL, collapse=","), paste0(altitudes_pref, collapse=", "), ifelse(density_pref=='-1', NA, density_pref), mean(round(density$Density[density$Species == scientific_name], 2), na.rm=T), AOH_type, AOO_km2))
+  
   terraOptions(tempdir=tempdir())
   rasterOptions(tmpdir=tempdir())
   gc()
@@ -1769,8 +1770,9 @@ Prom<-future({
   Storage_SP$aoh_lost_saved=AOH_lost
   if(Storage_SP$Uncertain=="Uncertain_yes"){Storage_SP$aoh_lostOPT_saved=AOH_lostOPT}
   Storage_SP$Year1_saved<-Year1 ; Storage_SP$Year1theo_saved<-Year1_theo
-  Storage_SP<-sRL_OutLog(Storage_SP, "AOH_GenerationLength", GL_species)
+  Storage_SP<-sRL_OutLog(Storage_SP, c("AOH_GenerationLength", "Original_GL"), c(GL_species, ifelse(scientific_name %in% GL_file$internal_taxon_name, GL_file$GL_estimate[GL_file$internal_taxon_name==scientific_name][1], NA)))
   
+
   # Output to return
   Out_area<-ifelse(Storage_SP$Uncertain=="Uncertain_no", 
                    ceiling(AOH_old_km2),
@@ -2351,7 +2353,7 @@ function(scientific_name){
 #* @serializer unboxedJSON
 #* @tag sRedList
 function(scientific_name,
-         username,
+         username="victor.cazalis",
          Estimates, 
          pastTrends_dir, pastTrends_qual, pastTrends_basis, pastTrends_reversible, pastTrends_understood, pastTrends_ceased, fragment, Fragment_justif,
          Extreme_EOO, Extreme_AOO, Extreme_Pop, Extreme_NLoc, Extreme_NSub, Extreme_EOO_justif, Extreme_AOO_justif, Extreme_Pop_justif, Extreme_NLoc_justif, Extreme_NSub_justif,
@@ -2658,8 +2660,6 @@ function(scientific_name) {
   output_species<-sRL_StoreRead(scientific_name, MANDAT=1)$Output
   output_species$Definition<-NULL
   output_species$Value<-replace(output_species$Value, is.na(output_species$Value), "") # I replace NA to make the next line work and then remove all empty fields
-  output_species$Value[output_species$Parameter=="Original_GL"] <- ifelse(scientific_name %in% GL_file$internal_taxon_name, GL_file$GL_estimate[GL_file$internal_taxon_name==scientific_name][1], NA)
-  output_species$Value[output_species$Parameter=="Original_density"] <- density$Density[density$Species == scientific_name] %>% round(., 2) %>% mean(., na.rm=T)
   if(output_species$Value[output_species$Parameter=="Gbif_Extent"]=="-180,180,-90,90"){output_species<-output_species[-which(output_species$Parameter=="Gbif_Extent"),]}
   if(output_species$Value[output_species$Parameter=="Gbif_yearBin"]=="FALSE"){output_species<-output_species[-which(output_species$Parameter=="Gbif_yearBin"),]}
   if(output_species$Value[output_species$Parameter=="Gbif_uncertainBin"]=="FALSE"){output_species<-output_species[-which(output_species$Parameter=="Gbif_uncertainBin"),]}
@@ -2929,6 +2929,8 @@ function(scientific_name) {
 #* @serializer  contentType list(type="application/octet-stream")
 #* @tag sRedList
 function(Uploaded_Zips=list()) {
+
+Prom<-future({
   print(names(Uploaded_Zips))
 
   # Error if not all zips
@@ -3006,20 +3008,24 @@ function(Uploaded_Zips=list()) {
   }
   
   # Merge Occurrences
-  if(TRUE %in% grepl('_Occurrences.shp', list.files(Zip_Path, recursive = T))){
+  if(TRUE %in% grepl('_Occurrences.csv', list.files(Zip_Path, recursive = T))){
     
-    Occ_files<-list.files(Zip_Path, recursive = T)[grepl('_Occurrences.shp', list.files(Zip_Path, recursive = T))] %>% paste0(Zip_Path, "/", .)
+    Occ_files<-list.files(Zip_Path, recursive = T)[grepl('_Occurrences.csv', list.files(Zip_Path, recursive = T))] %>% paste0(Zip_Path, "/", .)
     
     eval(parse(text=
                  paste0("OccM<-rbind.fill(",
-                        paste0("st_read(Occ_files[", 1:length(Occ_files), "])", collapse=','),")"
+                        paste0("read.csv(Occ_files[", 1:length(Occ_files), "])", collapse=','),")"
                  )))
   }
   
+  # Copy reports
+  Reports<-list.files(Zip_Path, recursive = T)[grepl('sRedList_report_', list.files(Zip_Path, recursive = T))] %>% paste0(Zip_Path, "/", .) %>% subset(., .!= paste0(Zip_Path, "/"))
+  file.copy(from=Reports, to=sapply(strsplit(Reports, "/"), function(x){paste(x[1], x[3], sep="/")}))
   
   
   ### Save in a merged ZIP file
-  unlink(paste0(Zip_Path, "/", list.files(Zip_Path)), recursive=T)
+  # Remove initial files
+  unlink(paste0(Zip_Path, "/", list.files(Zip_Path)[!grepl("sRedList_report", list.files(Zip_Path))]), recursive=T)
   write.csv(replace(allfieldsM, is.na(allfieldsM), ""), paste0(Zip_Path, "/allfields.csv"), row.names = F)
   if(exists("countriesM")){write.csv(replace(countriesM, is.na(countriesM), ""), paste0(Zip_Path, "/countries.csv"), row.names = F)}
   write.csv(replace(referencesM, is.na(referencesM), ""), paste0(Zip_Path, "/references.csv"), row.names = F)
@@ -3029,8 +3035,9 @@ function(Uploaded_Zips=list()) {
   # Save distribution and occurrences if from GBIF
   if("DistM" %in% ls()){
     st_write(DistM, paste0(Zip_Path, "/sRedList_Distribution.shp"), append=F)
-    st_write(OccM, paste0(Zip_Path, "/sRedList_Occurrences.shp"), append=F)
+    write.csv(OccM, paste0(Zip_Path, "/sRedList_Occurrences.csv"), row.names=F)
   }
+  
   
   # Zip that folder and delete it
   Zip_name<-Sys.time() %>% gsub("-", "_", .) %>% gsub(" ", "_", .) %>% gsub (":", "_", .) %>% paste0(Zip_Path, "/sRedList_mergedZIP_", ., ".zip")
@@ -3040,6 +3047,10 @@ function(Uploaded_Zips=list()) {
   print(Zip_name)
   
   return(zip_to_extract)
+
+}, gc=T, seed=T) %>% then(onRejected=function(err){return(readBin("Species/error_to_return.zip", "raw", n=file.info("Species/error_to_return.zip")$size))})
+
+return(Prom) 
 }
 
 
