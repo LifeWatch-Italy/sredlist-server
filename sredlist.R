@@ -2310,7 +2310,9 @@ function(scientific_name){
     
     Trends_justif<-paste0("This trend has been measured from the sRedList platform as the trend in Area of Habitat between ", 
                           paste0(Storage_SP$Year1theo_saved, " and ",config$YearAOH2), # Give years if no extrapolation
-                          ifelse(Storage_SP$Year1theo_saved==Storage_SP$Year1_saved, "", " (using exponential extrapolation for the period before 1992)")) # Specify extrapolation if needed
+                          ifelse(Storage_SP$Year1theo_saved==Storage_SP$Year1_saved, "", " (using exponential extrapolation for the period before 1992)."),
+                          " Trends in Area of Habitat are often very conservative and should be used only if no better data on population trends are available."
+                          ) # Specify extrapolation if needed
     
     Storage_SP<-sRL_OutLog(Storage_SP, "Estimated_PopTrends_raw", Trends_val)
     Storage_SP<-sRL_OutLog(Storage_SP, "Estimated_PopTrendsDir_raw", Trends_dir)
