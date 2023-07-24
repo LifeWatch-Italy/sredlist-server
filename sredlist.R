@@ -2358,7 +2358,7 @@ function(scientific_name){
 #* @serializer unboxedJSON
 #* @tag sRedList
 function(scientific_name,
-         username="victor.cazalis",
+         username,
          Estimates, 
          pastTrends_dir, pastTrends_qual, pastTrends_basis, pastTrends_reversible, pastTrends_understood, pastTrends_ceased, fragment, Fragment_justif,
          Extreme_EOO, Extreme_AOO, Extreme_Pop, Extreme_NLoc, Extreme_NSub, Extreme_EOO_justif, Extreme_AOO_justif, Extreme_Pop_justif, Extreme_NLoc_justif, Extreme_NSub_justif,
@@ -2370,6 +2370,7 @@ function(scientific_name,
 
   Estimates<-replace(Estimates, Estimates %in% c("undefined", " "), NA)
   print(Estimates)
+  username<-gsub("[.]", " ", username) %>% tools::toTitleCase(.)
 
   #Filter param
   sRL_loginfo("Start Criteria calculation", scientific_name)
@@ -2378,8 +2379,7 @@ function(scientific_name,
   Storage_SP$Output$Count[Storage_SP$Output$Parameter=="Col_allfields"]<-as.numeric(Storage_SP$Output$Count[Storage_SP$Output$Parameter=="Col_allfields"])+1 # Count number of times Assign categories is run
   sRL_StoreSave(scientific_name, Storage_SP)
   print(names(Storage_SP))
-  print(username)
-  
+
   sRL_loginfo("Start Allfields", scientific_name)
   
   # Charge empty allfields
