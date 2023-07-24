@@ -468,8 +468,8 @@ sRL_MapDistributionGBIF<-function(dat, scientific_name, First_step, AltMIN, AltM
 ### Save distribution mapped from the GBIF procedure
 sRL_saveMapDistribution <- function(scientific_name, Storage_SP) {
   
-  ### Create a file path E.g: Distributions/Nile tilapia/Nile_tilapia_GBIF_20211207/ # nolint
-  upload_folder_scientific_name <- R.utils::capitalize(paste0(stringr::str_replace(scientific_name, " ", "_"), format(Sys.time(), "_GBIF_%Y%m%d"))) # nolint
+  ### Create a file path
+  upload_folder_scientific_name <- R.utils::capitalize(paste0(stringr::str_replace(scientific_name, " ", "_"), format(Sys.time(), "_Created_%Y%m%d"))) # nolint
   filePath <- paste0(config$distribution_path, scientific_name, "/", upload_folder_scientific_name, "/") # nolint
   if (dir.exists(filePath)) {
     print("The directory exists")
@@ -488,7 +488,7 @@ sRL_saveMapDistribution <- function(scientific_name, Storage_SP) {
     scientific_name,
     ".\nIt was created with the mapping procedure from the sRedList platform. It is based on ", # nolint
     paste(names(table(Storage_SP$dat_proj_saved$Source_type)), table(Storage_SP$dat_proj_saved$Source_type), sep=" (") %>% paste(., collapse="), ") %>% paste0(nrow(Storage_SP$dat_proj_saved), " raw geo-referenced observations from: ", ., ")"),
-    " occurrence data downloaded from GBIF on the ",
+    " occurrence records gathered on the ",
     Sys.time(),
     " CET."
   )
