@@ -966,7 +966,7 @@ function(scientific_name) { # nolint
 ## a: Data APIs ----------------------------------------------------------------
 
 
-#* Species density preferences
+#* Load species density preferences
 #* @get species/<scientific_name>/density-preferences
 #* @param scientific_name:string Scientific Name
 #* @serializer json
@@ -993,11 +993,20 @@ function(scientific_name) {
 #* @serializer json
 #* @tag sRedList
 function(CALCdensity, CALCperc_mature, CALCperc_suitable) {
-  
+
   if(CALCdensity=="" | CALCperc_mature=="" | CALCperc_suitable==""){density_cannot_calculate()}
   
+  # Prepare variables
+  CALCdensity <- sRL_UncertToVector(CALCdensity)
+  CALCperc_mature <- sRL_UncertToVector(CALCperc_mature)
+  CALCperc_suitable <- sRL_UncertToVector(CALCperc_suitable)
+
+  # Calculate
   final_density <- as.numeric(CALCdensity) * 0.01*as.numeric(CALCperc_mature) * 0.01*as.numeric(CALCperc_suitable)
   final_density <- as.character(final_density)
+  
+  # Merge if uncerrtainty
+  if(length(final_density)>1){final_density<-paste0(final_density, collapse="-")}
   
   return(list(
     final_density=final_density

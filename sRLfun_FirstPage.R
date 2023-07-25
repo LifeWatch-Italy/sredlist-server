@@ -33,6 +33,20 @@ sRL_firstup <- function(x) {
 }
 
 
+### Function to transform a character value that can have uncertainty (e.g. "2.0-4.5") into a vector of 1 or 2 numeric values
+sRL_UncertToVector <- function(x) {
+  
+  estimate <- x %>%
+    gsub(" ", "", .) %>% # Remove spaces
+    gsub(",", ".", .)%>% # Replace comma by dots (wrong decimals)
+    as.character(.) %>%
+    strsplit(., "-") %>% unlist(.) %>%# Split in vector
+    as.numeric(.) %>%
+    sort(.) # Sort by increasing order
+  
+  estimate
+}
+
 
 ### Function to transform scientific name into a random number to use as id_no (so that it remains different between species and easy to calculate from just scientific name)
 sRL_CalcIdno <- function(scientific_name){
