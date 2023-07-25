@@ -12,6 +12,8 @@
 #* @parser multi
 #* @tag sRedList1
 function(scientific_name, req) {
+  
+  sRL_loginfo("START - Upload Distribution", scientific_name)
   scientific_name <- sRL_decode(scientific_name)
   scientific_name <- R.utils::capitalize(trim(gsub("[[:punct:]]", " ", scientific_name))) # nolint
   
@@ -60,6 +62,7 @@ function(scientific_name, req) {
   )
   tryCatch({jsonlite::write_json(list(info = text), paste0(filePath, upload_folder_scientific_name, ".json"), auto_unbox= TRUE)}, error=function(e){cat("TryCatch JSON upload failed")})
   
+  sRL_loginfo("END - Upload Distribution", scientific_name)
   
 
   print(paste0("Your file is now stored in ", fn))
@@ -75,10 +78,13 @@ function(scientific_name, req) {
 #* @tag sRedList1
 function(scientific_name, Dist_path = "") {
   
+  sRL_loginfo("START - Distribution info", scientific_name)
+
   scientific_name <- sRL_decode(scientific_name)
   Dist_path <- ifelse(Dist_path == "", paste0(R.utils::capitalize(trim(gsub(" ", "_", scientific_name))), '_RL'), Dist_path) # nolint
-  
+
   speciesPath <- paste0(config$distribution_path, scientific_name, "/", Dist_path) # nolint
+  print(speciesPath)
   files <- base::list.files(path = speciesPath, pattern = "\\.shp$")
   
   if (length(files) == 0) {
@@ -97,6 +103,8 @@ function(scientific_name, Dist_path = "") {
   ### Clean the distribution
   distSP <-sRL_PrepareDistrib(distributions, scientific_name) # nolint
 
+  sRL_loginfo("END - Distribution info", scientific_name)
+  
   return(list(
     presences = union(c(1, 2, 3), unique(distSP$presence)),
     seasons = union(c(1, 2), unique(distSP$seasonal)),
@@ -161,9 +169,9 @@ Prom<-future({
   Storage_SP$distSP_saved<-distSP
   Storage_SP$distSP_savedORIGINAL <- distSP # I need to save it twice for country croping for National RL
   
-  ### Prepare countries if they were not charged + crop depending on the current selection of range
-  if("CountrySP_saved" %not in% names(Storage_SP)){Storage_SP$CountrySP_saved<-sRL_PrepareCountries(extent(distSP_full))} 
-  CountrySP<-st_crop(Storage_SP$CountrySP_saved, extent(distSP))
+  ### Prepare countries if they were not charged or if we are not using the RL distribution + crop depending on the current selection of range
+  if("CountrySP_saved" %not in% names(Storage_SP) | (! grepl("_RL", Dist_path))){Storage_SP$CountrySP_saved<-sRL_PrepareCountries(1.2*extent(distSP_full))} 
+  CountrySP<-st_crop(Storage_SP$CountrySP_saved, 1.2*extent(distSP))
   Storage_SP<-sRL_OutLog(Storage_SP, c("Distribution_Presence", "Distribution_Seasonal", "Distribution_Origin"), c(paste0(presences, collapse=","), paste0(seasons, collapse=","), paste0(origins, collapse=",")))
   DisSource<-ifelse(substr(Dist_path, nchar(Dist_path)-2, nchar(Dist_path))=="_RL", "Red List", ifelse(is.na(as.numeric(substr(Dist_path, nchar(Dist_path)-2, nchar(Dist_path))))==F, "StoredOnPlatform", "Uploaded"))
   Storage_SP<-sRL_OutLog(Storage_SP, "Distribution_Source", DisSource) # If Dist_path ends by _RL it comes from the RL, uploaded otherwise

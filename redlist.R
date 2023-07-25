@@ -101,7 +101,7 @@ function(scientific_name, Dist_path = "") {
       distSP<-sRL_ColourDistrib(distSP)
   
       # Format the countries shapefile and save it in the global memory (to avoid recalculating at every step)
-      CountrySP<-sRL_PrepareCountries(extent(distSP))
+      CountrySP<-sRL_PrepareCountries(1.2*extent(distSP))
       Storage_SP<-list(CountrySP_saved=CountrySP, Creation=Sys.time(), Output=sRL_InitLog(scientific_name, DisSource = "Red List"))
       sRL_StoreSave(scientific_name, Storage_SP)
 
