@@ -989,25 +989,35 @@ function(scientific_name) {
 
 #* Species density calculation
 #* @get species/<scientific_name>/density-calculation
-#* @param CALCdensity:string Scientific Name
+#* @param scientific_name:string Scientific Name
+#* @param CALCdensity:string CALCdensity
+#* @param CALCperc_mature:string CALCperc_mature
+#* @param CALCperc_suitable:string CALCperc_suitable
 #* @serializer json
 #* @tag sRedList
-function(CALCdensity, CALCperc_mature, CALCperc_suitable) {
+function(scientific_name, CALCdensity, CALCperc_mature, CALCperc_suitable) {
 
-  if(CALCdensity=="" | CALCperc_mature=="" | CALCperc_suitable==""){density_cannot_calculate()}
-  
   # Prepare variables
   CALCdensity <- sRL_UncertToVector(CALCdensity)
   CALCperc_mature <- sRL_UncertToVector(CALCperc_mature)
   CALCperc_suitable <- sRL_UncertToVector(CALCperc_suitable)
-
+  
+  # Error if invalid percentage (not betweeen 0 and 100)
+  if(max(CALCperc_mature)>100 | min(CALCperc_mature)<0 | max(CALCperc_suitable)>100 | min(CALCperc_suitable)<0){wrong_percentages()}
+  
   # Calculate
   final_density <- as.numeric(CALCdensity) * 0.01*as.numeric(CALCperc_mature) * 0.01*as.numeric(CALCperc_suitable)
   final_density <- as.character(final_density)
   
-  # Merge if uncerrtainty
+  # Merge if uncertainty
   if(length(final_density)>1){final_density<-paste0(final_density, collapse="-")}
   
+  # Record usage
+  Storage_SP <- sRL_StoreRead(sRL_decode(scientific_name), MANDAT=1)
+  Storage_SP <- sRL_OutLog(Storage_SP, "Density_Calculator", paste(paste(CALCdensity, collapse="-"), paste0(CALCperc_mature, collapse="-"), paste0(CALCperc_suitable, collapse="-"), final_density, sep=" / "))
+  sRL_StoreSave(scientific_name, Storage_SP)
+  
+  # Return
   return(list(
     final_density=final_density
   ))

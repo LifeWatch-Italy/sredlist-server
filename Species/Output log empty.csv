@@ -27,6 +27,7 @@ NA,NA,AOH_MarginalHabitatPreference,0,Marginal habitat preference used to calcul
 NA,NA,AOH_ElevationPreference,0,Elevation preference used to calculate Area of Habitat,NA
 NA,NA,AOH_GenerationLength,0,Generation Length used to calculate trends in Area of Habitat,NA
 NA,NA,AOH_Density,0,Density (mature ind per km2) used to calculate population size,NA
+NA,NA,Density_Calculator,0,Values entered in the density calculator (either in the AOH or fragmentation step): Density in individuals within occupied habitat / % of mature individuals / % of occupied habitat within suitable habitat / resulting density,NA
 NA,NA,Fragmentation_Density,0,Density (mature ind per km2) used to calculate fragmentation,NA
 NA,NA,Fragmentation_Isolation,0,Distance (in km) above which subpopulations are considered isolated,NA
 NA,NA,Estimated_EOO_raw,0,This is the original EOO value calculated by the platform (it might differ from the value in allfields.csv if you manually edited this value),NA

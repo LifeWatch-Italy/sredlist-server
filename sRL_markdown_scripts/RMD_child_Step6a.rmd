@@ -1,5 +1,12 @@
 
+```{r prep_fragdensity}
+if("Density_Calculator" %in% outlog$Parameter){Dens_calc<-outlog$Value[outlog$Parameter=="Density_Calculator"] %>% strsplit(., " / ") %>% unlist(.)}
+```
+
 Two parameters have to be provided to calculate fragmentation: the isolation distance (you provided the value `r outlog$Value[outlog$Parameter=="Fragmentation_Isolation"]` km) and the average density in mature individuals (you provided the value `r outlog$Value[outlog$Parameter=="Fragmentation_Density"]` inds/km2).
+`r if(exists("Dens_calc")){paste0(" You used the density calculator, inputting a value of ", Dens_calc[1], " for the density in total individuals within occupied habitat", ifelse("Original_density" %in% outlog$Parameter, paste0(" (a default value of ", outlog$Value[outlog$Parameter=="Original_density"], " mature indificuals / km2 was suggested by the platform; check the sRedList documentation for more information)"), ""), "; a value of ", Dens_calc[2], " for the percentage of mature individuals; and a value of ", Dens_calc[3], " for the percentage of suitable habitat that is occupied by the species. This resulted in a density in mature individuals within suitable habitat of ", Dens_calc[4], " mature individuals / km2.")}`
+
+
 
 The fragmentation resulting map was:
 

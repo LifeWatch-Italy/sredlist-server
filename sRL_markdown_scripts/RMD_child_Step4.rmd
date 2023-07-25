@@ -27,6 +27,7 @@ Note that the major importance and seasonality fields are left empty from the ha
 ### Elevation preferences
 ```{r prep_elevation}
 Original_elev<-outlog$Value[outlog$Parameter=="Original_altpref"] %>% strsplit(., ",") %>% unlist(.) %>% revalue(., c("fromRL"=" (extracted from the last Red List assessment)", "Calculated"=" (calculated as the minimum and maximum elevation within the species range)", "Half_Calculated"=" (one of min/max was extracted from the last Red List assessment and the other one was calculated within species range)"))
+if("AOH_Density" %in% outlog$Parameter & "Density_Calculator" %in% outlog$Parameter){Dens_calc<-outlog$Value[outlog$Parameter=="Density_Calculator"] %>% strsplit(., " / ") %>% unlist(.)}
 ```
 
 Elevation preferences were suggested by the platform with a lower elevation limit of `r Original_elev[1]`m and an upper elevation limit of `r Original_elev[2]`m `r Original_elev[3]`. 
@@ -35,8 +36,9 @@ After a possibility to manually edit these values and add uncertainty in the est
 
 
 ### Density
-`r if("Original_density" %in% outlog$Parameter){paste0("A density estimate was suggested by the platform with a value of ", outlog$Value[outlog$Parameter=="Original_density"], " mature individuals / km2 (check the sRedList documentation for more information).")}`
-`r ifelse("AOH_Density" %in% outlog$Parameter, paste0("The density value you used to estimate population size is ", outlog$Value[outlog$Parameter=="AOH_Density"], " mature individuals / km2."), "You did not provide a density value and thus did not estimate population size.")`
+`r if(exists("Dens_calc")){paste0(" You used the density calculator, inputting a value of ", Dens_calc[1], " for the density in total individuals within occupied habitat", ifelse("Original_density" %in% outlog$Parameter, paste0(" (a default value of ", outlog$Value[outlog$Parameter=="Original_density"], " mature indificuals / km2 was suggested by the platform; check the sRedList documentation for more information)"), ""), "; a value of ", Dens_calc[2], " for the percentage of mature individuals; and a value of ", Dens_calc[3], " for the percentage of suitable habitat that is occupied by the species. This resulted in a density in mature individuals within suitable habitat of ", Dens_calc[4], " mature individuals / km2.")}`
+`r ifelse("AOH_Density" %in% outlog$Parameter, paste0("The final density value you used to estimate population size was ", outlog$Value[outlog$Parameter=="AOH_Density"], " mature individuals / km2 of suitable habitat."), "You did not provide a density value and thus did not estimate population size.")`
+
 
 
 ### AOH calculation
