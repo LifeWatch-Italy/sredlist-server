@@ -445,11 +445,14 @@ function(scientific_name) {
     sRL_loginfo("END - Extracting elevation values", scientific_name)
     
     # Plot
+    SUBTT<-ifelse(length(which(!is.na(flags$Alt_points)))>0,
+                  paste0("Elevation ranges from ", trunc(min(flags$Alt_points[is.na(flags$Reason)==T], na.rm=T)), " to ", ceiling(max(flags$Alt_points[is.na(flags$Reason)==T], na.rm=T)), "m"),
+                  "We were not able to calculate elevation for any of the occurrence records (maybe they are all at sea)")
     G_elev<-ggplot(flags)+
       geom_histogram(aes(x=Alt_points))+
       ggtitle(paste0("Elevation of valid observations (N=", nrow(flags[is.na(flags$Reason)==T,]), ")"))+
       xlab("Elevation (m)")+ylab("N")+
-      labs(subtitle=paste0("Elevation ranges from ", trunc(min(flags$Alt_points[is.na(flags$Reason)==T], na.rm=T)), " to ", ceiling(max(flags$Alt_points[is.na(flags$Reason)==T], na.rm=T)), "m"))+
+      labs(subtitle=SUBTT)+
       theme_minimal() + theme(plot.background=element_rect(fill="white"))
     
     # Save and return plot
@@ -537,7 +540,7 @@ Prom<-future({
   
   
   # Display some errors
-  if(nrow(dat_proj)<2 & Gbif_Start %in% c("mcp", "kernel", "alpha")){too_few_occurrences()}
+  if(nrow(dat_proj)<=2 & Gbif_Start %in% c("mcp", "kernel", "alpha")){too_few_occurrences()}
   
   # Create distribution
   distSP<-sRL_MapDistributionGBIF(dat_proj, scientific_name,
@@ -566,7 +569,8 @@ Prom<-future({
   
   
   # Map countries (keeping max extent between points and polygons)
-  EXT_max <-  do.call(bind, sapply(c(extent(distSP), extent(dat_proj)), FUN = function(x){as(x, 'SpatialPolygons')}))  %>% bbox(.) %>% extent(.)
+  EXT_max <-  do.call(raster::bind, sapply(c(extent(distSP), extent(dat_proj)), FUN = function(x){as(x, 'SpatialPolygons')}))  %>% sp::bbox(.) %>% extent(.)
+  
   CountrySP<-st_crop(distCountries, 1.15*EXT_max)
   
   # Store and calculate area
@@ -1105,9 +1109,13 @@ function(scientific_name) {
     hab_stats$Mean<-hab_stats$Mean/sum(hab_stats$Mean, na.rm=T)*100
     
     # Barplot
+    SUBTT<-ifelse(nrow(hab_stats)>0,
+                  "",
+                  "We were not able to extract habitat for any of the occurrence records (maybe they are all at sea)")
     G_habs<-ggplot(hab_stats)+
       geom_bar(aes(x=Habitat, y=Mean), stat="identity")+
       ylab("Percent presence")+
+      labs(subtitle=SUBTT)+
       theme_minimal() + theme(plot.background=element_rect(fill="white"))
     
     # Save and return plot
@@ -1118,7 +1126,7 @@ function(scientific_name) {
     sRL_StoreSave(scientific_name, Storage_SP)
     
     return(list(
-      plot_extract_elevation = plot
+      plot_extract_habitat = plot
     ))
     
   }, gc=T, seed=T)
