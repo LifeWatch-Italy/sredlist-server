@@ -27,7 +27,7 @@ library(TAF)
 
 ### GBIF mapping
 library(rgbif) ; library(CoordinateCleaner) ; library(rCAT) ; library(maps) ; library(countrycode); library(rnaturalearthdata); library(robis) # nolint
-library(plotly) ; library(mapview) ; library(leaflet) ; library(leaflet.extras) ; library(htmltools) ; library(leafem)
+library(plotly) ; library(mapview) ; library(leaflet) ; library(leaflet.extras) ; library(htmltools) ; library(leafem) ; library(leaflet.esri)
 library(adehabitatHR) ; library(smoothr) ; library(spatialEco) ; library(alphahull)
 
 ### AOH analyses

@@ -385,15 +385,19 @@ Prom<-future({
 
   ### Create Leaflet
   Leaflet_Filter<-leaflet(flags) %>%
-    addTiles() %>%
+    addTiles(group="OpenStreetMap") %>%
+    addEsriBasemapLayer(esriBasemapLayers$Imagery, group = "Satellite") %>%
+    addEsriBasemapLayer(esriBasemapLayers$Topographic, group = "Topography") %>%
     addCircleMarkers(lng=flags$decimalLongitude,
                      lat=flags$decimalLatitude,
                      color=ifelse(is.na(flags$Reason)==T, "#fde725ff", "#440154ff"),
                      fillOpacity=0.5,
                      stroke=F,
                      popup=flags$PopText,
-                     radius=8) %>%
+                     radius=8,
+                     group="Occurrence records") %>%
     addLegend(position="bottomleft", colors=c('#fde725ff', '#440154ff'), labels=c("Valid", "Not valid")) %>%
+    addLayersControl(baseGroups=c("OpenStreetMap", "Satellite", "Topography"), overlayGroups="Occurrence records", position="topleft") %>%
     addMouseCoordinates() %>%
     addScaleBar(position = "bottomright")
   
@@ -1551,32 +1555,33 @@ function(scientific_name) { # nolint
     
     ### Plot
     AOH_leaflet<-leaflet() %>%
-      addTiles() %>%
-      addProviderTiles("Esri.WorldImagery", group = "Satellite") %>%
-      addPolygons(data=distPROJ, color="#D69F32", fillOpacity=0) %>% 
-      addMouseCoordinates()
-    
-    
+     addTiles(group="OpenStreetMap") %>%
+     addEsriBasemapLayer(esriBasemapLayers$Imagery, group = "Satellite") %>%
+     addEsriBasemapLayer(esriBasemapLayers$Topographic, group = "Topography") %>%
+     addPolygons(data=distPROJ, color="#D69F32", fillOpacity=0, group="Distribution") %>% 
+     addMouseCoordinates()
+
+
     ### Color palette
     ColPal<-colorNumeric(colorRamp(c("#FBCB3C", "#25BC5A"), interpolate = "spline"), c(0,1), na.color = NA)
-  
+
     ### Divide by factor (1 if small-range, 900 if large-range) so that the range is always 0-1
     FACT<-ifelse(Storage_SP$AOH_type=="Large", 900, 1)
-    
+
     ### Add uncertainty if available
     opt_path<-paste0("resources/AOH_stored/", gsub(" ", "_", scientific_name), "/Current_optimistic/") %>% paste0(., list.files(.)[1])
     if(file.exists(opt_path)){
       AOH_opt<-raster(opt_path) ; crs(AOH_opt)<-CRSMOLL
-      
+
       AOH_leaflet<-AOH_leaflet %>%
         addRasterImage(aohPROJ/FACT, method="ngb", group="Minimum AOH", opacity=0.5, colors=ColPal) %>%
         addRasterImage(AOH_opt/FACT, method="ngb", group="Maximum AOH", opacity=0.5, colors=ColPal) %>%
-        addLayersControl(baseGroups=c("Minimum AOH", "Maximum AOH", "Satellite"), position="topleft", options=layersControlOptions(collapsed = FALSE))
-        
+        addLayersControl(baseGroups=c("OpenStreetMap", "Satellite", "Topography"), overlayGroups=c("Distribution", "Minimum AOH", "Maximum AOH"), position="topleft", options=layersControlOptions(collapsed = FALSE))
+
     } else {
       AOH_leaflet<-AOH_leaflet %>%
         addRasterImage(aohPROJ/FACT, method="ngb", group="AOH", opacity=0.5, colors=ColPal) %>%
-        addLayersControl(baseGroups=c("AOH", "Satellite"), position="topleft", options=layersControlOptions(collapsed = FALSE))
+        addLayersControl(baseGroups=c("OpenStreetMap", "Satellite", "Topography"), overlayGroups=c("Distribution", "AOH"), position="topleft", options=layersControlOptions(collapsed = FALSE))
     }
 
 
@@ -1617,11 +1622,12 @@ function(scientific_name) { # nolint
     
     ### Plot AOO
     AOO_leaflet<-leaflet() %>%
-      addTiles() %>%
-      addProviderTiles("Esri.WorldImagery", group = "Satellite") %>%
+      addTiles(group="OpenStreetMap") %>%
+      addEsriBasemapLayer(esriBasemapLayers$Imagery, group = "Satellite") %>%
+      addEsriBasemapLayer(esriBasemapLayers$Topographic, group = "Topography") %>%
       addRasterImage(aoo, method="ngb", group="AOO", opacity=0.5, colors=c("#FBCB3C", "#25BC5A")) %>%
-      addPolygons(data=distPROJ, color="#D69F32", fillOpacity=0) %>% 
-      addLayersControl(baseGroups=c("AOO", "Satellite"), position="topleft") %>% 
+      addPolygons(data=distPROJ, color="#D69F32", fillOpacity=0, group="Distribution") %>% 
+      addLayersControl(baseGroups=c("OpenStreetMap", "Satellite", "Topography"), overlayGroups=c("Distribution", "AOO"), position="topleft") %>% 
       addCircleMarkers(lng=dat_proj$lon,
                        lat=dat_proj$lat,
                        color="black",
@@ -1888,9 +1894,10 @@ function(scientific_name) { # nolint
     
     ### Basic plot
     Trends_leaflet<-leaflet() %>%
-      addTiles() %>%
-      addProviderTiles("Esri.WorldImagery", group = "Satellite") %>%
-      addPolygons(data=distPROJ, color="#D69F32", fillOpacity=0) %>% 
+      addTiles(group="OpenStreetMap") %>%
+      addEsriBasemapLayer(esriBasemapLayers$Imagery, group = "Satellite") %>%
+      addEsriBasemapLayer(esriBasemapLayers$Topographic, group = "Topography") %>%
+      addPolygons(data=distPROJ, color="#D69F32", fillOpacity=0, group="Distribution") %>% 
       addMouseCoordinates()
     
     
@@ -1923,14 +1930,15 @@ function(scientific_name) { # nolint
     if(Uncert=="Uncertain_no"){
       Trends_leaflet<-Trends_leaflet %>%
         addRasterImage(Trends, method="ngb", group="Trends in AOH", opacity=0.7, colors=ColPal) %>%
-        addLayersControl(baseGroups=c("Trends in AOH", "Satellite"), position="topleft", options=layersControlOptions(collapsed = FALSE))
+        addLayersControl(baseGroups=c("OpenStreetMap", "Satellite", "Topography"), overlayGroups=c("Trends in AOH"), position="topleft", options=layersControlOptions(collapsed = FALSE))
       
       # With uncertainty
     } else {
       Trends_leaflet<-Trends_leaflet %>%
         addRasterImage(Trends, method="ngb", group="Trends in AOH (min AOH)", opacity=0.7, colors=ColPal) %>%
         addRasterImage(Trends_opt, method="ngb", group="Trends in AOH (max AOH)", opacity=0.7, colors=ColPal) %>% 
-        addLayersControl(baseGroups=c("Trends in AOH (min AOH)", "Trends in AOH (max AOH)", "Satellite"), position="topleft", options=layersControlOptions(collapsed = FALSE))
+        addLayersControl(baseGroups=c("OpenStreetMap", "Satellite", "Topography"), overlayGroups=c("Distribution", "Trends in AOH (min AOH)", "Trends in AOH (max AOH)"), position="topleft", options=layersControlOptions(collapsed = FALSE)) %>%
+        hideGroup("Trends in AOH (max AOH)") # Trends max is hidden by default
     }
     
     
@@ -2161,7 +2169,7 @@ return(Prom)
 #* @tag sRedList
 function(scientific_name, RSproduct) { # nolint
   
-  #Prom<-future({
+  Prom<-future({
     sf::sf_use_s2(FALSE)
     
     print(RSproduct)
@@ -2176,9 +2184,10 @@ function(scientific_name, RSproduct) { # nolint
 
     ### Plot
     RS_leaflet<-leaflet() %>%
-      addTiles() %>%
-      addProviderTiles("Esri.WorldImagery", group = "Satellite") %>%
-      addPolygons(data=distPROJ, color="#D69F32", fillOpacity=0) %>% 
+      addTiles(group="OpenStreetMap") %>%
+      addEsriBasemapLayer(esriBasemapLayers$Imagery, group = "Satellite") %>%
+      addEsriBasemapLayer(esriBasemapLayers$Topographic, group = "Topography") %>%
+      addPolygons(data=distPROJ, color="#D69F32", fillOpacity=0, group="Distribution") %>% 
       addMouseCoordinates()
 
     
@@ -2189,12 +2198,13 @@ function(scientific_name, RSproduct) { # nolint
       ColPal1<-colorNumeric("viridis", c(summary(RSPROJ_current)[1],summary(RSPROJ_current)[5]), na.color = NA)
     }
     LIM<-max(abs(summary(RSPROJ_trends)[1]), abs(summary(RSPROJ_trends)[5]))
-    ColPal2<-colorNumeric(c("#8c510a", "azure2", "#018571"), domain=c(-LIM, 0, LIM), na.color = NA)
+    ColPal2<-colorNumeric(c("#018571", "azure2", "#8c510a"), domain=c(-LIM, 0, LIM), na.color = NA)
 
     RS_leaflet<-RS_leaflet %>%
-        addRasterImage(RSPROJ_current, method="ngb", group="Current", opacity=0.8, colors=ColPal1) %>%
-        addRasterImage(RSPROJ_trends, method="ngb", group="Change", opacity=0.8, colors=ColPal2) %>%
-        addLayersControl(baseGroups=c("Current", "Change", "Satellite"), position="topleft", options=layersControlOptions(collapsed = FALSE))
+        addRasterImage(RSPROJ_current, method="ngb", group="Current", opacity=1, colors=ColPal1) %>%
+        addRasterImage(RSPROJ_trends, method="ngb", group="Change", opacity=1, colors=ColPal2) %>%
+        addLayersControl(baseGroups=c("OpenStreetMap", "Satellite", "Topography"), overlayGroups=c("Distribution", "Current", "Change"), position="topleft", options=layersControlOptions(collapsed = FALSE)) %>%
+        hideGroup("Change") # Change is hidden by default
 
     ### Store usage
     Storage_SP<-sRL_OutLog(Storage_SP, "RS_leaflet", "Used")
@@ -2205,9 +2215,9 @@ function(scientific_name, RSproduct) { # nolint
     
     return(RS_leaflet)
     
-  #}, gc=T, seed=T)
+  }, gc=T, seed=T)
   
-  #return(Prom)
+  return(Prom)
 }
 
 
