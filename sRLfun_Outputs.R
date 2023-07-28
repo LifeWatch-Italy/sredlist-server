@@ -15,14 +15,17 @@ sRL_OutputCountries<-function(scientific_name, countries){
     
   CO_SIS$CountryOccurrence.CountryOccurrenceSubfield.formerlyBred=NA
   CO_SIS$CountryOccurrence.CountryOccurrenceSubfield.origin="Native"
-  CO_SIS$CountryOccurrence.CountryOccurrenceSubfield.presence="Extant"
+  CO_SIS$CountryOccurrence.CountryOccurrenceSubfield.presence <- ifelse(grepl("<i>", CO_SIS$CountryOccurrence.CountryOccurrenceSubfield.CountryOccurrenceName), "Possibly Extant", "Extant") # Possibly extant if no occurrence records within country, extant otherwise
+  CO_SIS$CountryOccurrence.CountryOccurrenceSubfield.CountryOccurrenceName <- CO_SIS$CountryOccurrence.CountryOccurrenceSubfield.CountryOccurrenceName %>% gsub("<i>", "", .) %>% gsub("</i>", "", .)
   CO_SIS$CountryOccurrence.CountryOccurrenceSubfield.seasonality="Resident"
-  #CO_SIS$assessment_id=NA
+
   CO_SIS$internal_taxon_name=scientific_name
   CO_SIS$id_no<-sRL_CalcIdno(scientific_name)
   
-  # Remove countries that appear twice (in EEZ and COO)
-  CO_SIS<-CO_SIS %>% distinct(., CountryOccurrence.CountryOccurrenceSubfield.CountryOccurrenceLookup, .keep_all=T)
+  # Remove countries that appear twice (in EEZ and COO), and keep "Extant" if both present
+  CO_SIS<-CO_SIS %>% 
+    arrange(CountryOccurrence.CountryOccurrenceSubfield.CountryOccurrenceLookup, desc(factor(CountryOccurrence.CountryOccurrenceSubfield.presence, c("Possibly Extant", "Extant")))) %>% # First arrange to get lines with Extant before so that it keeps Extant if both Extant and Possibly Extant
+    distinct(., CountryOccurrence.CountryOccurrenceSubfield.CountryOccurrenceLookup, .keep_all=T)
   
   }
   

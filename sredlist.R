@@ -853,7 +853,8 @@ Prom<-future({
     
     # Save for SIS
     Storage_SP$coo_occ<-data.frame(SIS_name0=coo_occ$SIS_name0, SIS_name1=coo_occ$SIS_name1)
-    Storage_SP$countries_SIS<-sRL_OutputCountries(scientific_name, subset(coo, paste0(coo$Level0_occupied, coo$Level1_occupied) =="TRUETRUE")) # Keep only those occupied
+    Storage_SP$countries_SIS<-sRL_OutputCountries(scientific_name, coo_occ) # Keep only those occupied
+    
     Storage_SP$Leaflet_COO<-Leaflet_COOtoexport
     sRL_StoreSave(scientific_name, Storage_SP)
     

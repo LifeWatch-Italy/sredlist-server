@@ -617,7 +617,7 @@ sRL_cooInfoBox_prepare<-function(coo, Storage_SP){
   
   # Subset coo with presence + if needed I group by (needed when marine + terrestrial since there are 2 polygons, one with occurrence and one without)
   coo_occ<-subset(coo, coo$Level1_occupied==T) 
-  if(nlevels(as.factor(paste0(coo_occ$SIS_name0, coo_occ$SIS_name1))) < nrow(coo_occ)){coo_occ <- coo_occ %>% dplyr::group_by(SIS_name0, SIS_name1) %>% dplyr::summarise(N= n())}
+  if(nlevels(as.factor(paste0(coo_occ$SIS_name0, coo_occ$SIS_name1))) < nrow(coo_occ)){coo_occ <- coo_occ %>% dplyr::group_by(SIS_name0, SIS_name1, lookup) %>% dplyr::summarise(N= n())}
   
   # If occurrences, check which entities have occurrence records
   if("dat_proj_saved" %in% names(Storage_SP)){
@@ -652,7 +652,7 @@ sRL_cooInfoBox_create<-function(coo_occ){
     HTML(paste0('<h4>List of countries of occurrence</h4> <p>',
                 RES %>% .[order(gsub("<i>", "", .))] %>% paste(., collapse="; "),
                 '</p>',
-                ifelse(grepl("</i>", paste0(RES, collapse=".")), "<br><i> Entities in italics overlap with the polygon distribution but not with occurrence records (they will be included in the SIS output) </i>", ''),
+                ifelse(grepl("</i>", paste0(RES, collapse=".")), "<br><i> Entities in italics overlap with the polygon distribution but not with occurrence records (they will be included in the SIS output as 'Possibly Extant') </i>", ''),
                 '<hr>'))
   ))
   
