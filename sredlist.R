@@ -2936,11 +2936,18 @@ function(scientific_name, file_name, Dist_path, type) {
 #* @serializer unboxedJSON
 #* @tag sRedList
 function(scientific_name) {
+  
   #Filter param
   scientific_name <- sRL_decode(scientific_name)
+  
   if (scientific_name %in% list.files(config$distribution_path)) { # nolint
+    
+    # Create empty list and order distributions with RL first
     distributions <- list()
-    for(distributionFolder in list.files(paste0(config$distribution_path, scientific_name))) { # nolint
+    DistList<-list.files(paste0(config$distribution_path, scientific_name)) %>% .[order(grepl("_RL", .), decreasing=T)]
+    
+    # Fill in for each distribution
+    for(distributionFolder in DistList) { # nolint
       # GBIF distributions cannot be selected
       #if (!grepl("_GBIF", distributionFolder)){
         files <- list();
@@ -2978,9 +2985,11 @@ function(scientific_name) {
           )));
       #}
     }
+    
+    # Return
     return(distributions)
     
-  }else { not_found("Species distribution not exist!") } # nolint
+  }else { not_found("Species distribution does not exist!") } # nolint
 }
 
 
