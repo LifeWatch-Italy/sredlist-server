@@ -26,7 +26,7 @@ library(Rook) ; library(ggplot2) ; library(gridExtra) ; library(raster) ; librar
 library(TAF)
 
 ### GBIF mapping
-library(rgbif) ; library(maps) ; library(countrycode); library(rnaturalearthdata); library(robis) # nolint
+library(rgbif) ; library(CoordinateCleaner) ; library(maps) ; library(countrycode); library(rnaturalearthdata); library(robis) # nolint
 library(plotly) ; library(mapview) ; library(leaflet) ; library(leaflet.extras) ; library(htmltools) ; library(leafem) ; library(leaflet.esri)
 library(adehabitatHR) ; library(smoothr) ; library(spatialEco) ; library(alphahull)
 
