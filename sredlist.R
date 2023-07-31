@@ -1,7 +1,7 @@
 
 
 
-# M1: Charge distributions ----------------------------------------------------------------
+# Step 1a: Charge distributions ----------------------------------------------------------------
 
 
 #* Upload Distribution species
@@ -213,8 +213,8 @@ return(Prom %...>% plot())
 
 
 
-# M2: Mapping ----------------------------------------------------------------
-## a: Download ----------------------------------------------------------------
+# Step 1b: Mapping ----------------------------------------------------------------
+## 1: Download ----------------------------------------------------------------
 
 #* Global Biodiversity Information Facility Step 1
 #* @post species/<scientific_name>/gbif
@@ -323,7 +323,7 @@ return(Prom)
 }
 
 
-## b: Filter ----------------------------------------------------------------
+## 2: Filter ----------------------------------------------------------------
 #* GBIF year
 #* @get species/<scientific_name>/gbif-year
 #* @param scientific_name:string Scientific Name
@@ -476,7 +476,7 @@ function(scientific_name) {
 }  
 
 
-## c: Map ----------------------------------------------------------------
+## 3: Map ----------------------------------------------------------------
 #* GBIF start
 #* @get species/<scientific_name>/gbif-start
 #* @param scientific_name:string Scientific Name
@@ -614,7 +614,7 @@ return(Prom)
 
 
 
-## d: Smooth ----------------------------------------------------------------
+## 4: Smooth ----------------------------------------------------------------
 #* GBIF smooth
 #* @get species/<scientific_name>/gbif-smooth
 #* @param scientific_name:string Scientific Name
@@ -723,7 +723,7 @@ return(Prom)
 
 
 
-# M3: Countries of Occurrence ----------------------------------------------------------------
+# Step 2: Countries of Occurrence ----------------------------------------------------------------
 
 #* Countries of occurrence
 #* @get species/<scientific_name>/analysis/coo
@@ -879,7 +879,7 @@ return(Prom)
 
 
 
-# M4: EOO ----------------------------------------------------------------
+# Step 3: EOO ----------------------------------------------------------------
 
 ## Calculation -----
 #* Estimate the Extent of Occurrence (EOO) from range
@@ -979,7 +979,7 @@ function(scientific_name) { # nolint
 
 
 
-# M5: AOH ----------------------------------------------------------------
+# Step 4: AOH ----------------------------------------------------------------
 ## a: Data APIs ----------------------------------------------------------------
 
 
@@ -1651,7 +1651,7 @@ function(scientific_name) { # nolint
 }
 
 
-## c: Trends in AOH ----------------------------------------------------------------
+# Step 5: Trends in AOH ----------------------------------------------------------------
 
 ### Calculation -----
 #* Estimate trends in AOH as a proxy of population trends (Criterion A2)
@@ -1956,7 +1956,7 @@ function(scientific_name) { # nolint
 }
 
 
-# M6: Optional analyses ----------------------------------------------------------------
+# Step 6: Optional analyses ----------------------------------------------------------------
 
 
 ## a: Fragmentation -------------------------------
@@ -2229,7 +2229,7 @@ function(scientific_name, RSproduct) { # nolint
 
 
 
-# M7: Outputs ----------------------------------------------------------------
+# Step 7: Summary ----------------------------------------------------------------
 
 ## Final estimates -------
 #* Upload all parameters
