@@ -369,16 +369,23 @@ sRL_cleaningMemory<-function(Time_limit){
 sRL_LastStep <- function(St_SP){
   Out<-St_SP$Output
   Out<-subset(Out, is.na(Out$Value)==F)
-  Step<-ifelse("Estimates_saved" %in% names(St_SP), "7",
-            ifelse(("Usage_RS" %in% Out$Parameter | "Fragmentation_Isolation" %in% Out$Parameter), "6",
-               ifelse("AOH_GenerationLength" %in% Out$Parameter, "5", 
-                      ifelse("AOH_HabitatPreference" %in% Out$Parameter, "4", 
-                             ifelse("eoo_km2" %in% names(St_SP), "3",
-                                    ifelse("System_pref" %in% Out$Parameter, "2", 
-                                           ifelse(! "Distribution_Source" %in% Out$Parameter, "0",
-                                                  ifelse(Out$Value[Out$Parameter=="Distribution_Source"]=="Created", "1b", "1a"))))))))
   
-  return(as.character(Step))
+  # At least step 1 or not
+  if(! "Distribution_Source" %in% Out$Parameter){Steps<-"0"} else {
+    Steps<-c(
+      ifelse(Out$Value[Out$Parameter=="Distribution_Source"]=="Created", "1b", "1a"),
+      ifelse("System_pref" %in% Out$Parameter, "2", NA),
+      ifelse("eoo_km2" %in% names(St_SP), "3", NA),
+      ifelse("AOH_HabitatPreference" %in% Out$Parameter, "4", NA),
+      ifelse("AOH_GenerationLength" %in% Out$Parameter, "5", NA),
+      ifelse("Fragmentation_Isolation" %in% Out$Parameter, "6a", NA),
+      ifelse("Usage_RS" %in% Out$Parameter, "6b", NA),
+      ifelse("Estimates_saved" %in% names(St_SP), "7", NA)
+    )
+    Steps<-Steps[is.na(Steps)==F] %>% paste0(., collapse="+")
+  }
+  
+  return(as.character(Steps))
 }
 
 

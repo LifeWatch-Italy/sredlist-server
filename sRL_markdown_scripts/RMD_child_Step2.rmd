@@ -16,6 +16,6 @@ knitr::kable(COO_df, "simple")
 ```
 
 <br>
-By default, we assumed for all countries the codes "Extant" for presence, "Native" for origin, "Resident" for seasonality. If you want to edit those, or the list of countries, you will have to do that manually in SIS. If you do not want to use this list at all, you can delete the 'countries.csv' file from the ZIP output.
+`r ifelse(grepl("<i>", paste(Storage_SP$coo_occ, collapse="")), "By default, we assumed for all countries the codes 'Native' for origin, 'Resident' for seasonality. For presence, we assumemd 'Extant' for all countries with occurrence records and 'Possibly Extant' for countries overlapping with the distribution but without occurrence records (i.e., those written in italics)", "By default, we assumed for all countries the codes 'Extant' for presence, 'Native' for origin, 'Resident' for seasonality")`. If you want to edit those, or the list of countries, you will have to do that manually in SIS. If you do not want to use this list at all, you can delete the 'countries.csv' file from the ZIP output.
 
 
