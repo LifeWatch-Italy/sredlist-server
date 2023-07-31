@@ -384,10 +384,43 @@ sRL_MapDistributionGBIF<-function(dat, scientific_name, First_step, AltMIN, AltM
     distGBIF<-st_buffer(dat, 1) # The default is one meter, then they can add a buffer
   }
   
-  if(First_step=="hydro"){
-    hydro_sub<-st_crop(hydro_raw, extent(dat))
-    interHyd<-st_join(dat, hydro_sub, join=st_intersects) %>% subset(., is.na(.$hybas_id)==F) # Identify hydrobasins with data 
+  if(First_step %in% c("hydro8", "hydro10", "hydro12")){
+    
+    # Extract level 8 in any case
+    hydro8_sub<-st_crop(hydro_raw, extent(dat))
+    interHyd<-st_join(dat, hydro8_sub, join=st_intersects) %>% subset(., is.na(.$hybas_id)==F) # Identify hydrobasins with data 
     distGBIF<-subset(hydro_raw, hydro_raw$hybas_id %in% interHyd$hybas_id) # Isolate these hydrobasins
+    if(nrow(distGBIF)==0){no_hydrobasins()}
+    
+    # Extract level 10 or 12 if requested and possible (i.e., small distribution)
+    if(First_step %in% c("hydro10", "hydro12")){
+      
+      # Return an error if too large distribution
+      if(nrow(distGBIF)>10){hydro_too_large()}
+      
+      LEV<-ifelse(First_step=="hydro10", 10, 12)
+      
+      # List files to load
+      Cells<-distGBIF$Grid_cells %>% paste0(., collapse="") %>% strsplit(., ",") %>% unlist(.) %>% unique(.) %>% subset(., . !="") %>% as.numeric(.)
+      
+      # Load shapefile of LEVEL
+      Path_cells<-paste0("Hydro_cut_", LEV, "/Hydrobasins_level", LEV, "_cut_cell", Cells, ".shp") %>% paste0(sub("Hydrobasins_level8_ready.shp", "", config$hydrobasins_path), .)
+      hydroLEV_raw<-st_read(Path_cells[1])
+      if(length(Path_cells)>1){
+        for(PATH in Path_cells[2:length(Path_cells)]){
+          hydroLEV_toadd<- st_read(PATH)
+          hydroLEV_raw<-rbind(hydroLEV_raw, hydroLEV_toadd)
+        }
+      }
+      st_crs(hydroLEV_raw)<-CRSMOLL
+      
+      # Create distribution
+      hydroLEV_sub<-st_crop(hydroLEV_raw, extent(dat))
+      interHydLEV<-st_join(dat, hydroLEV_sub, join=st_intersects) %>% subset(., is.na(.$hybas_id)==F) # Identify hydrobasins with data 
+      distGBIF<-subset(hydroLEV_raw, hydroLEV_raw$hybas_id %in% interHydLEV$hybas_id) # Isolate these hydrobasins
+        
+    }
+    
   }
   
   if(First_step=="hydroMCP"){
@@ -396,6 +429,7 @@ sRL_MapDistributionGBIF<-function(dat, scientific_name, First_step, AltMIN, AltM
     hydro_sub<-st_crop(hydro_raw, extent(mcp))
     interHyd<-st_join(mcp, hydro_sub, join=st_intersects) %>% subset(., is.na(.$hybas_id)==F) # Identify hydrobasins with data 
     distGBIF<-subset(hydro_raw, hydro_raw$hybas_id %in% interHyd$hybas_id) # Isolate these hydrobasins
+    if(nrow(distGBIF)==0){no_hydrobasins()}
   }
   
   ### Apply buffer
@@ -445,12 +479,6 @@ sRL_MapDistributionGBIF<-function(dat, scientific_name, First_step, AltMIN, AltM
   distGBIF <- as.polygons(sp.range) %>% st_as_sf(.)
   }
   
-  # ### Restrict CountrySP in case the altitude reduced it a lot, and store in Storage_SP
-  # Storage_SP=sRL_reuse(scientific_name)
-  # Storage_SP$CountrySP_saved<-CountrySP
-  # assign(paste0("Storage_SP_", sub(" ", "_", scientific_name)), Storage_SP, .GlobalEnv)
-  
-  
   ### Prepare to export
   distGBIF$binomial<-scientific_name
   distGBIF$id_no<-sRL_CalcIdno(scientific_name)
@@ -458,7 +486,7 @@ sRL_MapDistributionGBIF<-function(dat, scientific_name, First_step, AltMIN, AltM
   distGBIF$origin<-1
   distGBIF$seasonal<-1
   if(exists("Alpha_scaled")){distGBIF$alphaTEMPO<-Alpha_scaled} # Save alpha scaled if I use alpha hull
-  if(First_step=="hydro" | First_step=="hydroMCP"){distGBIF$hybas_concat<-paste0(unique(interHyd$hybas_id), collapse=",")}
+  if(substr(First_step, 1,5)=="hydro"){distGBIF$hybas_concat<-paste0(unique(interHyd$hybas_id), collapse=",")}
   
   return(distGBIF)
   

@@ -113,7 +113,7 @@ if(config$crosswalk == "Lumbierres"){crosswalk_to_use<- read.table("Species/Cros
 output<-read.csv("Species/Output log empty.csv")
 
 # Load Hydrobasins map
-hydro_raw<-st_read(config$hydrobasins_path) %>% st_transform(., crs=CRSMOLL)
+hydro_raw<-st_read(config$hydrobasins_path) ; st_crs(hydro_raw)<-CRSMOLL
 
 
 

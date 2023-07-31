@@ -36,7 +36,7 @@ default:
   cci1_raster_path: "resources/ESA-CCI/CCIXXXX_reprojMollweide.tif"
   cci2_raster_path: "resources/ESA-CCI/CCI2020_reprojMollweide.tif"
   cciStack2_path: "resources/RasterAggregated"
-  hydrobasins_path: "resources/HydroBASINS_level08_w_attributes_2021_05/HydroBASINS_level08_w_attributes_2021_05.shp"
+  hydrobasins_path: "resources/Hydrobasins_ready/Hydrobasins_level8_ready.shp"
   Human_density_path: "resources/Human_Density/gpw_v4_population_density_rev11_XXXX_2pt5_min.tif"
   Human_modification_path: "resources/HumanModification/HumanModifTheobald_Aggreg_XXXX.tif"
   ForestAgg_path: "resources/Forest_Agg/Merged_Forest_XXXX.tif"

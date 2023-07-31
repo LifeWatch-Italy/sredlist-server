@@ -9,7 +9,7 @@ NA,NA,Gbif_Extent,0,"Filtering for a geographic extent. Removes observations out
 NA,NA,Gbif_automatedBin,0,"Whether automated filtering (for capitals, zero coordinates, institutions, etc) was run or not",NA
 NA,NA,Gbif_yearBin,0,Exclude records with no year information (if equals “TRUE” this means that records with missing information were removed),NA
 NA,NA,Gbif_uncertainBin,0,Exclude records with no coordinate uncertainty information (if equals “TRUE” this means that records with missing information were removed),NA
-NA,NA,Mapping_Start,0,First step of the mapping procedure to create a range map. 'mcp'= Minimum Convex Polygon around occurence records - 'alpha'= Alphahull around occurrence records - 'kernel'= Kernel distribution – ‘indivsites’= Individual sites - 'hydro'=Hydrobasins with occurrence records - 'hydroMCP= Hydrobasins overlapping with the Minimum Convex Polygon around occurrence records,NA
+NA,NA,Mapping_Start,0,First step of the mapping procedure to create a range map. 'mcp'= Minimum Convex Polygon around occurence records - 'alpha'= Alphahull around occurrence records - 'kernel'= Kernel distribution – ‘indivsites’= Individual sites - 'hydroX'=Hydrobasins of level X with occurrence records - 'hydroMCP= Hydrobasins overlapping with the Minimum Convex Polygon around occurrence records,NA
 NA,NA,Mapping_Buffer,0,A buffer of X km has been made around the first range,NA
 NA,NA,Mapping_Crop,0,Has the range been cropped to keep only land or sea. cropland= Only land was kept (sea areas excluded) - cropsea= only sea was kept (land areas excluded),NA
 NA,NA,Mapping_Altitude,0,Minimum and maximum elevation allowed in the range,NA

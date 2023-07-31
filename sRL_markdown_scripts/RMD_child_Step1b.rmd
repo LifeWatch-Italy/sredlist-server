@@ -44,7 +44,9 @@ PRINT_starting<-outlog$Value[outlog$Parameter=="Mapping_Start"] %>% revalue(., c
   "kernel"=paste0("draw a kernel around occurrence records, fixing the kernel probability parameter to ", outlog$Value[outlog$Parameter=="Kernel_parameter"]),
   "alpha"=paste0("draw an alpha hull around occurrence records, fixing the alpha hull parameter to ", outlog$Value[outlog$Parameter=="Alpha_parameter"], " (note that the parameter provided here differs from the alpha parameter per se as we scale it by the length of the diagonal of the geographic extent of the points (in meters) in order to have a reasonable range of values that work for species with different range sizes; the true unscaled alpha parameter is then displayed as a caption at the bottom of the plot)."),
   "indivsites"="draw polygons around each individual occurrence records",
-  "hydro"="map all hydrobasins (level 8) that include occurrence records",
+  "hydro8"="map all hydrobasins (level 8) with occurrence records",
+  "hydro10"="map all hydrobasins (level 10) with occurrence records",
+  "hydro12"="map all hydrobasins (level 12) with occurrence records",
   "hydroMCP"="map all hydrobasins (level 8) that overlap with the minimum convex polygon around occurrence records"
 ))
 

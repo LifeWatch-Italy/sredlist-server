@@ -108,6 +108,14 @@ bug_alpha <- function() {
   api_error(message = "Alpha hull could not be calculated, try with a higher alpha parameter value or use another Starting point", status = 400)
 }
 
+hydro_too_large <- function() {
+  api_error(message = "The distribution of that species is too large to use hydrobasins level 10 or 12, please use level 8 instead", status = 400)
+}
+
+no_hydrobasins <-  function() {
+  api_error(message = "The distribution of that species does not overlap with hydrobasins map", status = 400)
+}
+
 too_few_occurrences <- function() {
   api_error(message = "There are not enough occurrence records to create the distribution with mcp, alpha hull, or kernel. Please add some occurrence records or choose another starting point", status = 400)
 }
