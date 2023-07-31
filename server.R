@@ -18,7 +18,7 @@ library(plumber)
 ### logging
 library(logger)
 
-### Ensure glue is a specific dependency so it's avaible for logger
+### Ensure glue is a specific dependency so it's available for logger
 library(glue)
 library(urltools)
 library(R.utils)
@@ -26,7 +26,7 @@ library(Rook) ; library(ggplot2) ; library(gridExtra) ; library(raster) ; librar
 library(TAF)
 
 ### GBIF mapping
-library(rgbif) ; library(CoordinateCleaner) ; library(rCAT) ; library(maps) ; library(countrycode); library(rnaturalearthdata); library(robis) # nolint
+library(rgbif) ; library(maps) ; library(countrycode); library(rnaturalearthdata); library(robis) # nolint
 library(plotly) ; library(mapview) ; library(leaflet) ; library(leaflet.extras) ; library(htmltools) ; library(leafem) ; library(leaflet.esri)
 library(adehabitatHR) ; library(smoothr) ; library(spatialEco) ; library(alphahull)
 
