@@ -3,7 +3,7 @@
 
 # Step 1a: Charge distributions ----------------------------------------------------------------
 
-
+## Upload distribution ----
 #* Upload Distribution species
 #* @post species/<scientific_name>/distribution
 #* @param req:file Distribution file (shp,.shx,.prj,.dbf,.cpg)
@@ -70,7 +70,7 @@ function(scientific_name, req) {
 }
 
 
-
+##  Distribution info ----
 #* Info distribution species from sRedList platform
 #* @get species/<scientific_name>/distribution/info
 #* @param scientific_name:string Scientific Name
@@ -114,6 +114,7 @@ function(scientific_name, Dist_path = "") {
 
 
 
+## Plot edited distribution (1a) ----
 #* Plot the distributions plot from sRedList platform
 #* @get species/<scientific_name>/distribution
 #* @param scientific_name:string Scientific Name
@@ -2689,7 +2690,7 @@ function(scientific_name,
   
   # ZIP folder
   #zip(zipfile = paste0(sub(" ", "_", scientific_name), "_sRedList"), files = paste0(sub(" ", "_", scientific_name), "_sRedList"),  zip = "C:/Program Files/7-Zip/7z", flags="a -tzip")
-  zip(zipfile = paste0(sub(" ", "_", scientific_name), "_sRedList"), files = paste0(sub(" ", "_", scientific_name), "_sRedList"))
+  zip(zipfile = paste0(sub(" ", "_", scientific_name), "_sRedList"), files = paste0(sub(" ", "_", scientific_name), "_sRedList"), extras = '-j')
   
   
   # Return
@@ -3113,7 +3114,7 @@ Prom<-future({
   
   # Zip that folder and delete it
   Zip_name<-Sys.time() %>% gsub("-", "_", .) %>% gsub(" ", "_", .) %>% gsub (":", "_", .) %>% paste0(Zip_Path, "/sRedList_mergedZIP_", ., ".zip")
-  zip(zipfile = Zip_name, files = paste0(Zip_Path, "/", list.files(Zip_Path)))
+  zip(zipfile = Zip_name, files = paste0(Zip_Path, "/", list.files(Zip_Path)), extras='-j')
   zip_to_extract<-readBin(Zip_name, "raw", n = file.info(Zip_name)$size)
   unlink(Zip_Path, recursive=T)
   print(Zip_name)
