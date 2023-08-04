@@ -54,31 +54,28 @@ sRL_CalcIdno <- function(scientific_name){
   
   # If species already in RL I can use that number
   if(scientific_name %in% speciesRL$scientific_name){
-    
+
     ID<-speciesRL$taxonid[speciesRL$scientific_name==scientific_name]
-    
+
   } else {
     
+    # Using the example of speciesRL names, there is a 10-5 probability of picking two species that have the same id_no
     # Number of characters
-    N1<-nchar(scientific_name)
+    SP <- scientific_name %>% strsplit(., " ") %>% unlist(.)
+    N1 <- SP %>% nchar(.) %>% paste0(., collapse="")
     
-    # First three letters of genus as numbers
-    N2<-paste0(
-      which(letters == tolower(substr(scientific_name,1,1))),
-      which(letters == tolower(substr(scientific_name,2,2))),
-      which(letters == tolower(substr(scientific_name,3,3)))
-    )
+    # First letter of genus as numbers
+    N2<-which(letters == tolower(substr(scientific_name,1,1)))
     
-    # First three letters of species as numbers
-    SP<-scientific_name %>% strsplit(., " ") %>% unlist(.) %>% .[2]
+    # First and last letters of species as numbers
     N3<-paste0(
-      which(letters == tolower(substr(SP,1,1))),
-      which(letters == tolower(substr(SP,2,2))),
-      which(letters == tolower(substr(SP,3,3)))
+      which(letters == tolower(substr(SP[2],1,1))),
+      which(letters == tolower(substr(SP[2],nchar(SP[2]),nchar(SP[2]))))
     )
     
-    # Paste to get id_no
+    # Paste and limit to 8 characters to get id_no 
     ID=paste0(N1, N2, N3) %>% as.numeric(.)
+    if(nchar(ID)>8){ID<-substr(ID, 1, 8)}
     
   }
   

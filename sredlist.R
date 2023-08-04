@@ -3062,7 +3062,6 @@ Prom<-future({
   if("TRUE" %in% duplicated(allfieldsM$internal_taxon_name)){duplicate_species()}
   
   
-  
   # Merge log
   Log_files<-list.files(Zip_Path, recursive = T)[grepl('00.Output_log.csv', list.files(Zip_Path, recursive = T))] %>% paste0(Zip_Path, "/", .)
   
@@ -3094,6 +3093,37 @@ Prom<-future({
                  )))
   }
   
+  # Merge Hydrobasins
+  if(TRUE %in% grepl('_Hydrobasins.csv', list.files(Zip_Path, recursive = T))){
+    
+    Hydro_files<-list.files(Zip_Path, recursive = T)[grepl('_Hydrobasins.csv', list.files(Zip_Path, recursive = T))] %>% paste0(Zip_Path, "/", .)
+    
+    eval(parse(text=
+                 paste0("HydroM<-rbind.fill(",
+                        paste0("read.csv(Hydro_files[", 1:length(Hydro_files), "])", collapse=','),")"
+                 )))
+  }
+  
+  # If duplicate internal_taxon_id, I replace the second by 1
+  while("TRUE" %in% duplicated(allfieldsM$internal_taxon_id)){
+    
+    N_it<-ifelse(exists("N_it"), N_it+1, 1)
+    Species_to_fix<-allfieldsM$internal_taxon_name[duplicated(allfieldsM$internal_taxon_id)][1]
+    sRL_loginfo("START - Fixing duplicated internal taxon id ", Species_to_fix)
+    
+    allfieldsM$internal_taxon_id[allfieldsM$internal_taxon_name==Species_to_fix]<-N_it
+    referencesM$internal_taxon_id[referencesM$internal_taxon_name==Species_to_fix]<-N_it
+    if(exists("habitatsM")){habitatsM$internal_taxon_id[habitatsM$internal_taxon_name==Species_to_fix]<-N_it}
+    if(exists("countriesM")){countriesM$internal_taxon_id[countriesM$internal_taxon_name==Species_to_fix]<-N_it}
+    if(exists("assessmentsM")){assessmentsM$internal_taxon_id[assessmentsM$internal_taxon_name==Species_to_fix]<-N_it}
+    if(exists("DistM")){DistM$internal_taxon_id[DistM$sci_name==Species_to_fix]<-N_it}
+    if(exists("OccM")){OccM$internal_taxon_id[OccM$sci_name==Species_to_fix]<-N_it}
+    if(exists("HydroM")){HydroM$internal_taxon_id[HydroM$sci_name==Species_to_fix]<-N_it}
+    
+    sRL_loginfo("END - Fixing duplicated internal taxon id ", Species_to_fix)
+    
+  }
+  
   # Copy reports
   Reports<-list.files(Zip_Path, recursive = T)[grepl('sRedList_report_', list.files(Zip_Path, recursive = T))] %>% paste0(Zip_Path, "/", .) %>% subset(., .!= paste0(Zip_Path, "/"))
   file.copy(from=Reports, to=sapply(strsplit(Reports, "/"), function(x){paste(x[1], x[3], sep="/")}))
@@ -3112,6 +3142,7 @@ Prom<-future({
   if("DistM" %in% ls()){
     st_write(DistM, paste0(Zip_Path, "/sRedList_Distribution.shp"), append=F)
     write.csv(OccM, paste0(Zip_Path, "/sRedList_Occurrences.csv"), row.names=F)
+    if(exists("HydroM")){write.csv(HydroM, paste0(Zip_Path, "/sRedList_Hydrobasins.csv"), row.names=F)}
   }
   
   
@@ -3123,11 +3154,13 @@ Prom<-future({
   print(Zip_name)
   
   # Track Merge ZIP usage
-  File_track<-"Species/Stored_outputs/Stored_ZIP.csv"
-  if(! file.exists(File_track)){write.csv(data.frame(Date=NA, Nspc=NA), File_track, row.names=F)}
-  track<-read.csv(File_track)
-  track[(nrow(track)+1),]<-c(as.character(Sys.Date()), length(All_files))
-  write.csv(track, File_track, row.names=F)
+  tryCatch({
+    File_track<-"Species/Stored_outputs/Stored_ZIP.csv"
+    if(! file.exists(File_track)){write.csv(data.frame(Date=NA, Nspc=NA), File_track, row.names=F)}
+    track<-read.csv(File_track)
+    track[(nrow(track)+1),]<-c(as.character(Sys.Date()), length(All_files))
+    write.csv(track, File_track, row.names=F)
+  }, error=function(e){cat("TryCatch track mergeZIP failed")})
   
   return(zip_to_extract)
 
