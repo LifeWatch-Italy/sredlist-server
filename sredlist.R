@@ -3018,7 +3018,7 @@ Prom<-future({
   # Unzip loop
   for(i in 1:length(Uploaded_Zips)){
     writeBin(object=Uploaded_Zips[[i]], con=paste0(Zip_Path, "/Zip", i, ".zip"))
-    unzip(paste0(Zip_Path, "/Zip", i, ".zip"), exdir=Zip_Path)
+    unzip(paste0(Zip_Path, "/Zip", i, ".zip"), exdir=paste0(Zip_Path, "/ZIP", i))
     unlink(paste0(Zip_Path, "/Zip", i, ".zip"))
   }
   
@@ -3053,11 +3053,14 @@ Prom<-future({
   
   # Merge allfields
   All_files<-list.files(Zip_Path, recursive = T)[grepl('allfields.csv', list.files(Zip_Path, recursive = T))] %>% paste0(Zip_Path, "/", .)
+  if(length(All_files)<length(list.files(Zip_Path, recursive=F))){missing_allfields()}
   
   eval(parse(text=
                paste0("allfieldsM<-rbind.fill(",
                       paste0("read.csv(All_files[", 1:length(All_files), "])", collapse=','),")"
                )))
+  if("TRUE" %in% duplicated(allfieldsM$internal_taxon_name)){duplicate_species()}
+  
   
   
   # Merge log
@@ -3118,6 +3121,13 @@ Prom<-future({
   zip_to_extract<-readBin(Zip_name, "raw", n = file.info(Zip_name)$size)
   unlink(Zip_Path, recursive=T)
   print(Zip_name)
+  
+  # Track Merge ZIP usage
+  File_track<-"Species/Stored_outputs/Stored_ZIP.csv"
+  if(! file.exists(File_track)){write.csv(data.frame(Date=NA, Nspc=NA), File_track, row.names=F)}
+  track<-read.csv(File_track)
+  track[(nrow(track)+1),]<-c(as.character(Sys.Date()), length(All_files))
+  write.csv(track, File_track, row.names=F)
   
   return(zip_to_extract)
 

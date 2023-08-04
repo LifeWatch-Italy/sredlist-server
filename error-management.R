@@ -76,10 +76,6 @@ wrong_csv_upload <- function() {
   api_error(message = "The csv uploaded is invalid. Check the separator you used.", status=400)
 }
 
-wrong_zip_extension<-function() {
-  api_error(message = "Only provide files with extension .zip", status=400)
-}
-
 no_coords_update <- function() {
   api_error(message = "Longitude (dec_long) and latitude (dec_lat) columns were not found in uploaded data", status = 400)
 }
@@ -150,3 +146,14 @@ run_Step2 <- function(){
 
 
 
+wrong_zip_extension<-function() {
+  api_error(message = "Only provide files with extension .zip", status=400)
+}
+
+missing_allfields <- function() {
+  api_error(message = "The mandatory file allfields.csv is missing from at least one ZIP file", status=400)
+}
+
+duplicate_species <- function() {
+  api_error(message = "Your upload includes at least two ZIP files for the same species", status=400)
+}
