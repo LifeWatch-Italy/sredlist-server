@@ -3116,9 +3116,9 @@ Prom<-future({
     if(exists("habitatsM")){habitatsM$internal_taxon_id[habitatsM$internal_taxon_name==Species_to_fix]<-N_it}
     if(exists("countriesM")){countriesM$internal_taxon_id[countriesM$internal_taxon_name==Species_to_fix]<-N_it}
     if(exists("assessmentsM")){assessmentsM$internal_taxon_id[assessmentsM$internal_taxon_name==Species_to_fix]<-N_it}
-    if(exists("DistM")){DistM$internal_taxon_id[DistM$sci_name==Species_to_fix]<-N_it}
-    if(exists("OccM")){OccM$internal_taxon_id[OccM$sci_name==Species_to_fix]<-N_it}
-    if(exists("HydroM")){HydroM$internal_taxon_id[HydroM$sci_name==Species_to_fix]<-N_it}
+    if(exists("DistM")){DistM$id_no[DistM$sci_name==Species_to_fix]<-N_it}
+    if(exists("OccM")){OccM$id_no[OccM$sci_name==Species_to_fix]<-N_it}
+    if(exists("HydroM")){HydroM$id_no[HydroM$sci_name==Species_to_fix]<-N_it}
     
     sRL_loginfo("END - Fixing duplicated internal taxon id ", Species_to_fix)
     

@@ -20,7 +20,7 @@ sRL_OutputCountries<-function(scientific_name, countries){
   CO_SIS$CountryOccurrence.CountryOccurrenceSubfield.seasonality="Resident"
 
   CO_SIS$internal_taxon_name=scientific_name
-  CO_SIS$id_no<-sRL_CalcIdno(scientific_name)
+  CO_SIS$internal_taxon_id<-sRL_CalcIdno(scientific_name)
   
   # Remove countries that appear twice (in EEZ and COO), and keep "Extant" if both present
   CO_SIS<-CO_SIS %>% 
