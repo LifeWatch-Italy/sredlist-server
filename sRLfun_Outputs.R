@@ -121,7 +121,7 @@ sRL_OutputRef<-function(scientific_name, Storage_SP){
   })
   
   # Transform NA in "" to match SIS
-  ref_SIS<-replace(ref_SIS, is.na(ref_SIS), "")
+  ref_SIS<-replace(ref_SIS, is.na(ref_SIS), "") %>% subset(., (is.empty(.$title)==F | is.empty(.$Original_reference)==F))
   
   return(ref_SIS)
 }
