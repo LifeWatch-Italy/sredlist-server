@@ -2455,8 +2455,8 @@ function(scientific_name,
     AltPref_saved=Storage_SP$AltPref_saved
     
     # Add elevation limits
-    allfields$ElevationLower.limit<-paste0(c(AltPref_saved$elevation_lowerEXTREME[1], AltPref_saved$elevation_lower[1]), collapse="-")
-    allfields$ElevationUpper.limit<-paste0(c(AltPref_saved$elevation_upper[1], AltPref_saved$elevation_upperEXTREME[1]), collapse="-")
+    allfields$ElevationLower.limit<-min(c(AltPref_saved$elevation_lowerEXTREME[1], AltPref_saved$elevation_lower[1]), na.rm=T) # SIS Connect does not allow uncertainty, so I keep the most extreme (ie min lower limit and max upper limit)
+    allfields$ElevationUpper.limit<-max(c(AltPref_saved$elevation_upper[1], AltPref_saved$elevation_upperEXTREME[1]), na.rm=T)
         
   }
   
