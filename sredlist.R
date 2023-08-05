@@ -1619,7 +1619,7 @@ function(scientific_name) { # nolint
     dat_proj<-Storage_SP$dat_proj_saved %>% st_transform(., st_crs(4326))
     COORDS<-st_coordinates(dat_proj)
     dat_proj$lon<-COORDS[,1] ; dat_proj$lat<-COORDS[,2]
-    aoo<-raster(paste0("resources/AOH_stored/", gsub(" ", "_", scientific_name), "/AOO_known.tif")) %>% projectRaster(., crs=("+init=epsg:4326")) %>% round(.)
+    aoo<-rast(paste0("resources/AOH_stored/", gsub(" ", "_", scientific_name), "/AOO_known.tif")) %>% as.polygons(.) %>% st_as_sf(.) %>% st_transform(., st_crs(4326))
     distPROJ<-st_transform(Storage_SP$distSP_saved, st_crs(4326))
     
     ### Plot AOO
@@ -1627,7 +1627,7 @@ function(scientific_name) { # nolint
       addTiles(group="OpenStreetMap") %>%
       addEsriBasemapLayer(esriBasemapLayers$Imagery, group = "Satellite") %>%
       addEsriBasemapLayer(esriBasemapLayers$Topographic, group = "Topography") %>%
-      addRasterImage(aoo, method="ngb", group="AOO", opacity=0.5, colors=c("#FBCB3C", "#25BC5A")) %>%
+      addPolygons(data=aoo, group="AOO", opacity=0.7, color="#25BC5A", stroke=F) %>%
       addPolygons(data=distPROJ, color="#D69F32", fillOpacity=0, group="Distribution") %>% 
       addLayersControl(baseGroups=c("OpenStreetMap", "Satellite", "Topography"), overlayGroups=c("Distribution", "AOO"), position="topleft") %>% 
       addCircleMarkers(lng=dat_proj$lon,
