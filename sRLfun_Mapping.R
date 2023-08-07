@@ -156,30 +156,29 @@ sRL_createDataGBIF <- function(scientific_name, GBIF_SRC, Uploaded_Records) { # 
   } else {dat_upload<-data.frame()}
 
   
-  # Return error if no data found
+  # Return empty df if no records
   if(is.null(nrow(dat_gbif)) & nrow(dat_obis_sub)==0 & nrow(dat_RL)==0  & nrow(dat_upload)==0) {
-    no_records() # nolint
-    dat<-NULL
+    dat<-data.frame()
   } else {
-    # Merge
+    # Merge otherwise
     dat<-rbind.fill(dat_gbif, dat_obis_sub, dat_RL, dat_upload)
     print(paste0("Number of data: ", nrow(dat)))
+    
+    # Select columns of interest
+    dat <- dat %>%
+      dplyr::select(any_of(c("species", "species_download", "decimalLongitude", "decimalLatitude", "countryCode", "individualCount", # nolint
+                             "gbifID", "id", "objectid", "family", "taxonRank", "coordinateUncertaintyInMeters", "year",
+                             "basisOfRecord", "institutionCode", "datasetName", "genericName", "specificEpithet", "Source_type", "source", "citation", "Link", "presence")))
+    
+    # Remove records with no spatial coordinates
+    dat <- dat %>% filter(!is.na(decimalLongitude)) %>% filter(!is.na(decimalLatitude)) # nolint
+    
+    # Convert country code from ISO2c to ISO3c
+    if(!"countryCode" %in% names(dat)){dat$countryCode<-NA} else{
+      dat$countryCode <-  countrycode::countrycode(dat$countryCode, origin =  'iso2c', destination = 'iso3c')} # nolint
+    dat <- data.frame(dat)
   }
   
-  # Select columns of interest
-  dat <- dat %>%
-    dplyr::select(any_of(c("species", "species_download", "decimalLongitude", "decimalLatitude", "countryCode", "individualCount", # nolint
-                           "gbifID", "id", "objectid", "family", "taxonRank", "coordinateUncertaintyInMeters", "year",
-                           "basisOfRecord", "institutionCode", "datasetName", "genericName", "specificEpithet", "Source_type", "source", "citation", "Link", "presence")))
-  
-  # Remove records with no spatial coordinates
-  dat <- dat %>% filter(!is.na(decimalLongitude)) %>% filter(!is.na(decimalLatitude)) # nolint
-  
-  # Convert country code from ISO2c to ISO3c
-  if(!"countryCode" %in% names(dat)){dat$countryCode<-NA} else{
-    dat$countryCode <-  countrycode::countrycode(dat$countryCode, origin =  'iso2c', destination = 'iso3c')} # nolint
-  dat <- data.frame(dat)
-
   return(dat)
 }
 

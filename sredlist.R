@@ -270,6 +270,9 @@ Prom<-future({
     
   }
   
+  # If data is empty: error
+  if(nrow(dat)==0){no_records()}
+  
   ### Create storage folder if it does not exist
   dir.create(paste0("resources/AOH_stored/", sub(" ", "_", scientific_name), "/Plots"), recursive=T)
   
