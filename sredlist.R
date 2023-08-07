@@ -1250,10 +1250,10 @@ Prom<-future({
 
     sRL_loginfo("START - Small: Cropping rasters", scientific_name)
     alt_raw<-sRL_ChargeAltRaster()
-    alt_crop=crop(alt_raw, extent(distSP))
+    alt_crop=crop(alt_raw, extent(distSP), snap="out")
     writeRaster(alt_crop, paste0(output_dir, "/alt_crop.tif"))
     cci2<-sRL_ChargeCci2Raster()
-    cci2_crop<-crop(cci2, extent(distSP))
+    cci2_crop<-crop(cci2, extent(distSP), snap="out")
     writeRaster(cci2_crop, paste0(output_dir, "/cci2_crop.tif"), overwrite=T)
 
     # Calculate AOH with "Suitable" habitats only (ie pessimistic)
@@ -1262,6 +1262,7 @@ Prom<-future({
                            alt_fun=alt_crop,
                            FOLDER=paste0(output_dir, "/Current"),
                            elevation_data_fun=altitudes_pref_DF)
+    if(is.nan(minmax(AOH2[[1]])[1])){api_error(message="We cannot map AOH when the distribution is so small; we are working on it!", status = 400)}
 
     # Calculate AOH with "Suitable" and "Marginal" habitats (ie optimistic)
     if(Uncertain == "Uncertain_yes"){
@@ -1318,7 +1319,7 @@ Prom<-future({
     # Prepare altitude raster
     sRL_loginfo("START - Large altitude crop", scientific_name)
     alt_large<-raster(paste0(config$cciStack2_path, "/ElevationAgg30.tif"))
-    alt_crop<-crop(alt_large, extent(rangeSP_clean))
+    alt_crop<-crop(alt_large, extent(rangeSP_clean), snap="out")
     writeRaster(alt_crop, paste0(output_dir, "/alt_crop.tif"), overwrite=T)
     sRL_loginfo("END - Large altitude crop", scientific_name)
 
@@ -1390,7 +1391,7 @@ Prom<-future({
   ### Upper AOO ----
   sRL_loginfo("START - Calculate Upper AOO", scientific_name)
   grid22<-sRL_ChargeGrid22Raster()
-  grid22_crop<-crop(grid22, AOH2[[1]])
+  grid22_crop<-crop(grid22, AOH2[[1]], snap="out")
   aoh_22<-terra::resample(AOH2[[1]], grid22_crop, method="max")>0
   sRL_loginfo("END - Calculate Upper AOO", scientific_name)
 
@@ -1477,7 +1478,7 @@ Prom<-future({
     # Prepare grid 22
     dat_proj=Storage_SP$dat_proj_saved
     grid22<-raster("resources/EmptyGrid2x2/Empty.grid.2x2.Mollweide.tif") # Keep as raster (not terra)
-    grid_crop<-crop(grid22, extent(dat_proj), snap="out")
+    grid_crop<-crop(grid22, (extent(dat_proj)+c(-1,1,-1,1)), snap="out") # I expand a little bit the extent, otherwise it bugs with single points
     
     # Map AOO
     pts<-dat_proj %>% as_Spatial() %>% as(., 'SpatialPoints')
@@ -1704,7 +1705,7 @@ Prom<-future({
     # Charge and crop CCI1
     sRL_loginfo("START - Cropping rasters", scientific_name)
     cci1<-rast(sub("XXXX", Year1, config$cci1_raster_path)) ; crs(cci1)<-CRSMOLL # I ensure the CRS is correctly assigned
-    cci1_crop<-crop(cci1, extent(distSP))
+    cci1_crop<-crop(cci1, extent(distSP), snap="out")
     sRL_loginfo("END - Cropping rasters", scientific_name)
   
     # Calculate AOH

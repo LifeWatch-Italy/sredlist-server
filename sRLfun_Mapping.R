@@ -462,7 +462,7 @@ sRL_MapDistributionGBIF<-function(dat, scientific_name, First_step, AltMIN, AltM
   sp.mcp.terra <- terra::vect(distGBIF)
   
   alt_raw<-sRL_ChargeAltRaster()
-  dem.crop <- terra::crop(alt_raw, ext(mcp.spatial))
+  dem.crop <- terra::crop(alt_raw, ext(mcp.spatial), snap="out")
   
   sp.mcp.ras <- terra::rasterize(sp.mcp.terra, dem.crop)
   dem.sp <- terra::mask(dem.crop, mask = sp.mcp.terra)

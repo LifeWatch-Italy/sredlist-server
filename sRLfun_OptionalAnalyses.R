@@ -54,8 +54,8 @@ sRL_CalcHumandensity<-function(scientific_name, distSP, GL){
   
   ### Mask
   distSP<-st_transform(distSP, st_crs(human1))
-  human1_crop<-crop(human1, distSP) %>% mask(., distSP)
-  human2_crop<-crop(human2, distSP) %>% mask(., distSP)
+  human1_crop<-crop(human1, distSP, snap="out") %>% mask(., distSP)
+  human2_crop<-crop(human2, distSP, snap="out") %>% mask(., distSP)
   human_change<-human2_crop-human1_crop
   
   ### Save rasters
@@ -123,8 +123,8 @@ sRL_CalcForestchange<-function(scientific_name, distSP, GL){
   
   ### Mask
   distSP<-st_transform(distSP, st_crs(forest1))
-  forest1_crop<-crop(forest1, distSP) %>% mask(., distSP)
-  forest2_crop<-crop(forest2, distSP) %>% mask(., distSP)
+  forest1_crop<-crop(forest1, distSP, snap="out") %>% mask(., distSP)
+  forest2_crop<-crop(forest2, distSP, snap="out") %>% mask(., distSP)
   forest_change<-forest2_crop-forest1_crop
   
   ### Save rasters
@@ -187,8 +187,8 @@ sRL_CalcModification<-function(scientific_name, distSP){
   
   ### Mask
   distSP<-st_transform(distSP, st_crs(human1))
-  human1_crop<-crop(human1, distSP) %>% mask(., distSP)
-  human2_crop<-crop(human2, distSP) %>% mask(., distSP)
+  human1_crop<-crop(human1, distSP, snap="out") %>% mask(., distSP)
+  human2_crop<-crop(human2, distSP, snap="out") %>% mask(., distSP)
   human_change<-human2_crop-human1_crop
   
   ### Save rasters
