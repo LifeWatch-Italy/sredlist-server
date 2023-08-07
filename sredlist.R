@@ -1490,11 +1490,20 @@ Prom<-future({
     print(paste0("AOO from points: ", aoo_pts_km2))
     Storage_SP$aoo_points<-aoo_pts_km2
     
-    # Plot
+    # Plot (if a single cell, I transform to vector, otherwise the cell appears empty)
     aooDF<-as.data.frame(AOO_pts, xy = TRUE); names(aooDF)[3]<-"lyr1"
-    Plot_AOOpoints<-ggplot() + 
-      geom_tile(data = aooDF, aes(x = x, y = y, fill = as.character(lyr1)), col=NA)+
-      scale_fill_manual(values=c("#25BC5A"), labels="Occupied cell", name="", na.translate=F)+
+    
+    if(nrow(aooDF)==1){
+      Plot_AOOpoints<-ggplot() + 
+        geom_sf(data = st_as_sf(as.polygons(rast(AOO_pts))), aes(fill = as.character(layer)), col=NA)+
+        scale_fill_manual(values=c("#25BC5A"), labels="Occupied cell", name="", na.translate=F)
+    } else {
+      Plot_AOOpoints<-ggplot() + 
+        geom_tile(data = aooDF, aes(x = x, y = y, fill = as.character(lyr1)), col=NA)+
+        scale_fill_manual(values=c("#25BC5A"), labels="Occupied cell", name="", na.translate=F)
+    }
+    
+    Plot_AOOpoints<-Plot_AOOpoints+
       geom_sf(data=distSP, aes(col=as.character("Distribution")), fill=NA, lwd=2, show.legend = "line")+
       geom_sf(data=dat_proj, aes(size="1"), fill=NA, col="black", shape=1)+
       scale_colour_manual(values=c("#EF9884"), name="")+
