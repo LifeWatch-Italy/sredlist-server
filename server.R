@@ -96,8 +96,8 @@ distCountries_mapping <- st_read("Species/Map countries/Red_List_countries_msSim
 distCountries_WGS <- st_read("Species/Map countries/Red_List_countries_msSimplif0.05_WGS_combined.shp") # Used to filter GBIF data in GBIF step 2
 distCountries<-st_read("Species/Map countries/Red_List_countries_msSimplif0.005_MOLL.shp") ; st_crs(distCountries)<-CRSMOLL # Used to map countries in the background
 distCountries_light <- distCountries %>% st_simplify(., dTolerance=0.01) %>% st_transform(., crs=st_crs(distCountries_WGS))
-coo_raw<-read_sf("Species/Map countries/Red_List_countries_msSimplif_coo_0.001.shp") # Used to map COO
-eez_raw<-read_sf("Species/Map countries/Red_List_EEZ_Simplif_coo_0.001.shp") # Used to map COO
+coo_raw<-read_sf("Species/Map countries/Red_List_countries_msSimplif_coo_0.001.shp") ; names(coo_raw)<-c("SIS_name0", "SIS_name1", "lookup", "lookup_SIS0", "geometry") ; coo_raw$lookup_SIS0[coo_raw$SIS_name0=="Namibia"]<-"NA" # Used to map COO; Namibia should be "NA" and not NA
+eez_raw<-read_sf("Species/Map countries/Red_List_EEZ_Simplif_coo_0.001.shp") ; names(eez_raw)<-c("SIS_name0", "SIS_name1", "lookup", "lookup_SIS0", "geometry") ; eez_raw$lookup_SIS0[eez_raw$SIS_name0=="Namibia"]<-"NA"  ; eez_raw$lookup[eez_raw$SIS_name0=="Namibia"]<-"NA" # Used to map COO
 
 
 # Load Crosswalk CSV and Density CSV

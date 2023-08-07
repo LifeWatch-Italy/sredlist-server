@@ -645,40 +645,49 @@ sRL_cooInfoBox_prepare<-function(coo, Storage_SP){
   
   # Subset coo with presence + if needed I group by (needed when marine + terrestrial since there are 2 polygons, one with occurrence and one without)
   coo_occ<-subset(coo, coo$Level1_occupied==T) 
-  if(nlevels(as.factor(paste0(coo_occ$SIS_name0, coo_occ$SIS_name1))) < nrow(coo_occ)){coo_occ <- coo_occ %>% dplyr::group_by(SIS_name0, SIS_name1, lookup) %>% dplyr::summarise(N= n())}
+  if(nlevels(as.factor(paste0(coo_occ$SIS_name0, coo_occ$SIS_name1))) < nrow(coo_occ)){coo_occ <- coo_occ %>% dplyr::group_by(SIS_name0, SIS_name1, lookup, lookup_SIS0) %>% dplyr::summarise(N= n())}
   
   # If occurrences, check which entities have occurrence records
   if("dat_proj_saved" %in% names(Storage_SP)){
     dat_proj<-Storage_SP$dat_proj_saved %>% st_transform(., st_crs(coo_occ))
     coo_occ$Records<-st_intersects(coo_occ, dat_proj) %>% lengths(.)>0
-    coo_occ$SIS_name0[coo_occ$Records==F & is.na(coo_occ$SIS_name1)] <- paste0("<i>", coo_occ$SIS_name0[coo_occ$Records==F & is.na(coo_occ$SIS_name1)], "</i>")
-    coo_occ$SIS_name1[coo_occ$Records==F & is.na(coo_occ$SIS_name1)==F] <- paste0("<i>", coo_occ$SIS_name1[coo_occ$Records==F & is.na(coo_occ$SIS_name1)==F], "</i>")
+    coo_occ$SIS_name0[coo_occ$Records==F & is.na(coo_occ$SIS_name1)] <- paste0("<i>", coo_occ$SIS_name0[coo_occ$Records==F & is.na(coo_occ$SIS_name1)], "</i>") # Italicise countries with no occurrence records and that are not split in subnational entities
+    coo_occ$SIS_name1[coo_occ$Records==F & is.na(coo_occ$SIS_name1)==F] <- paste0("<i>", coo_occ$SIS_name1[coo_occ$Records==F & is.na(coo_occ$SIS_name1)==F], "</i>") # Italicise subnational entities with no occurrence records
+    coo_occ$SIS_name0[coo_occ$Records==F & is.na(coo_occ$SIS_name1)==F] <- paste0("<i>", coo_occ$SIS_name0[coo_occ$Records==F & is.na(coo_occ$SIS_name1)==F], "</i>") # Italicise country if subnational entity has no occurrence records (I later keep the non-italics name if some entities are not in italics)
   }
   
   return(coo_occ)
 }
 
-sRL_cooInfoBox_create<-function(coo_occ){
-  
+sRL_cooInfoBox_format<-function(coo_occ){
   # Extract list of COO for info.box
   RES<-NULL
-  for(C in levels(droplevels(as.factor(coo_occ$SIS_name0)))){
-    Country<-subset(coo_occ, coo_occ$SIS_name0==C) # For each Country (level 0)
+  for(C in levels(droplevels(as.factor(coo_occ$lookup_SIS0)))){
+    NAM<-coo_raw$SIS_name0[coo_raw$lookup_SIS0==C][1]
+    Country<-subset(coo_occ, coo_occ$lookup_SIS0==C) # For each Country (level 0)
     if(nrow(Country)==1 & is.na(Country$SIS_name1[1])){ # I take the name of the country if there is a single entity + that entity is not named in Level1
-      RES[length(RES)+1]<-C
+      RES[length(RES)+1]<-Country$SIS_name0
     }else { # Otherwise, I take the name of the country and all subnational entities in brackets, and write name0 in italics if all name1 are in italics
-      Co_name<-ifelse((sum(grepl("<i>", Country$SIS_name1))==nrow(Country)), paste0("<i>", C, "</i>"), C)
+      Co_name<-ifelse((sum(grepl("<i>", Country$SIS_name0))==nrow(Country)), paste0("<i>", NAM, "</i>"), NAM)
       CO1s<-Country$SIS_name1[order(gsub("<i>", "", Country$SIS_name1))] %>% .[is.na(.)==F] # I remove the NAs only here (should not be done before in case countries have subnational in terrestrial but not in marine, so the species can be present in the country but not in any of the subnational entities)
       RES[length(RES)+1]<-paste0(Co_name, " [", paste(CO1s, collapse=", "), "]")
     }
   }
+  
+  RES_format<-RES %>% .[order(gsub("<i>", "", .))] %>% paste(., collapse="; ")
+  
+  return(RES_format)
+}
+
+
+sRL_cooInfoBox_create<-function(RES){
   
   # Create info box
   info.box <- HTML(paste0(
     HTML('<div class="modal fade" id="infobox" role="dialog"><div class="modal-dialog"><!-- Modal content--><div class="modal-content"><div class="modal-header"><button type="button" class="close" data-dismiss="modal">&times;</button>'),
     
     HTML(paste0('<h4>List of countries of occurrence</h4> <p>',
-                RES %>% .[order(gsub("<i>", "", .))] %>% paste(., collapse="; "),
+                RES,
                 '</p>',
                 ifelse(grepl("</i>", paste0(RES, collapse=".")), "<br><i> Entities in italics overlap with the polygon distribution but not with occurrence records (they will be included in the SIS output as 'Possibly Extant') </i>", ''),
                 '<hr>'))
@@ -691,5 +700,4 @@ sRL_cooInfoBox_create<-function(coo_occ){
 
 
 
-#  sRL_cooInfoBox(coo, Storage_SP)
 

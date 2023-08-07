@@ -9,9 +9,11 @@ sRL_OutputCountries<-function(scientific_name, countries){
   # Assign the name to provide (SIS_name1 if available, SIS_name2 otherwise)
   countries$Name<-ifelse(is.na(countries$SIS_name1), countries$SIS_name0, countries$SIS_name1)
   
-  # Prepare file
-  CO_SIS<-data.frame(CountryOccurrence.CountryOccurrenceSubfield.CountryOccurrenceName=countries$Name,
-                     CountryOccurrence.CountryOccurrenceSubfield.CountryOccurrenceLookup=countries$lookup)
+  # Prepare file (including level 0 when level 1 is subnational)
+  CO_SIS<-data.frame(CountryOccurrence.CountryOccurrenceSubfield.CountryOccurrenceName=c(countries$Name, countries$SIS_name0),
+                     CountryOccurrence.CountryOccurrenceSubfield.CountryOccurrenceLookup=c(countries$lookup, countries$lookup_SIS0)) %>%
+    .[order(grepl("<i>", .[,1])),] %>%
+    distinct(., CountryOccurrence.CountryOccurrenceSubfield.CountryOccurrenceLookup, .keep_all = T)
     
   CO_SIS$CountryOccurrence.CountryOccurrenceSubfield.formerlyBred=NA
   CO_SIS$CountryOccurrence.CountryOccurrenceSubfield.origin="Native"
