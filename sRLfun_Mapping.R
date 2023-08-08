@@ -347,7 +347,7 @@ sRL_SubsetGbif<-function(flags, scientific_name){
 
 
 # Step 3 --------------------------------
-sRL_MapDistributionGBIF<-function(dat, scientific_name, First_step, AltMIN, AltMAX, Buffer_km2, GBIF_crop, Gbif_Param){
+sRL_MapDistributionGBIF<-function(dat, scientific_name, First_step, AltMIN, AltMAX, Buffer_km, GBIF_crop, Gbif_Param){
 
   ### The first step can be mcp, kernel, alpha, hydro, hydroMCP
   if(First_step=="mcp" | First_step==""){
@@ -372,7 +372,7 @@ sRL_MapDistributionGBIF<-function(dat, scientific_name, First_step, AltMIN, AltM
       EX<-extent(dat_subsample)
       tryCatch({
         Alpha_scaled <- (0.5*Par_alpha)^2 * sqrt((EX@xmin-EX@xmax)^2 + (EX@ymin-EX@ymax)^2)
-        distGBIF<-convexHull(dat_subsample, alpha = Alpha_scaled)
+        distGBIF<-spatialEco:::convexHull(dat_subsample, alpha = Alpha_scaled) # concaveman::concaveman function could work as well with something similar, but not proper alpha-hull
       } ,error=function(e){bug_alpha()})
       
       st_crs(distGBIF)<-st_crs(dat_subsample)
@@ -432,7 +432,7 @@ sRL_MapDistributionGBIF<-function(dat, scientific_name, First_step, AltMIN, AltM
   }
   
   ### Apply buffer
-  distGBIF<-st_buffer(distGBIF, Buffer_km2*1000) %>% st_as_sf()
+  distGBIF<-st_buffer(distGBIF, Buffer_km*1000) %>% st_as_sf()
   
   
   ### Apply crop by land/sea
@@ -679,13 +679,16 @@ sRL_cooInfoBox_format<-function(coo_occ){
 }
 
 
-sRL_cooInfoBox_create<-function(RES){
+sRL_cooInfoBox_create<-function(RES, Realms){
   
   # Create info box
   info.box <- HTML(paste0(
     HTML('<div class="modal fade" id="infobox" role="dialog"><div class="modal-dialog"><!-- Modal content--><div class="modal-content"><div class="modal-header"><button type="button" class="close" data-dismiss="modal">&times;</button>'),
     
-    HTML(paste0('<h4>List of countries of occurrence</h4> <p>',
+    HTML(paste0('<h4>Realms: </h4>',
+                paste0(unlist(strsplit(Realms, "[|]")), collapse=", "),
+                '<br><br>',
+                '<h4>List of countries of occurrence:</h4> <p>',
                 RES,
                 '</p>',
                 ifelse(grepl("</i>", paste0(RES, collapse=".")), "<br><i> Entities in italics overlap with the polygon distribution but not with occurrence records (they will be included in the SIS output as 'Possibly Extant') </i>", ''),
@@ -696,7 +699,3 @@ sRL_cooInfoBox_create<-function(RES){
   return(info.box)
   
 }
-
-
-
-

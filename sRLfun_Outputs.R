@@ -162,6 +162,20 @@ sRL_OutputTaxo<-function(scientific_name, Estimates){
 }
 
 
+### Prepare assessments output csv
+sRL_OutputAssessments<-function(scientific_name, Realms, Systems, Trends){
+  
+  assessments<-data.frame(
+    BiogeographicRealm.realm=Realms,
+    PopulationTrend.value=Trends,
+    RedListCriteria.critVersion="3.1",
+    System.value=Systems %>% sub("Freshwater", "Freshwater (=Inland waters)", .),
+    internal_taxon_id=sRL_CalcIdno(scientific_name)
+  )
+  
+  return(assessments)
+}
+
 
 
 

@@ -5,6 +5,7 @@ Countries of occurrence were extracted by overlapping the distribution saved in 
 Storage_SP$Leaflet_COO
 ```
 
+The list of realms is: `r paste0(unlist(strsplit(Storage_SP$Realms_saved, "[|]")), collapse=", ")`
 
 The list of countries of occurrence is:
 

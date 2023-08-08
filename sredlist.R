@@ -554,7 +554,7 @@ Prom<-future({
   distSP<-sRL_MapDistributionGBIF(dat_proj, scientific_name,
                                   First_step=Gbif_Start,
                                   AltMIN=as.numeric(Gbif_Altitude[1]), AltMAX=as.numeric(Gbif_Altitude[2]),
-                                  Buffer_km2=as.numeric(Gbif_Buffer),
+                                  Buffer_km=as.numeric(Gbif_Buffer),
                                   GBIF_crop=Gbif_Crop,
                                   Gbif_Param=Gbif_Param)
   sRL_loginfo("Map Distribution halfway", scientific_name)
@@ -654,7 +654,7 @@ Prom<-future({
                                         First_step=Storage_SP$Output$Value[Storage_SP$Output$Parameter=="Mapping_Start"],
                                         AltMIN=Storage_SP$Output$Value[Storage_SP$Output$Parameter=="Mapping_Altitude"] %>% strsplit(., ",") %>% unlist(.) %>% as.numeric(.) %>% .[1], 
                                         AltMAX=Storage_SP$Output$Value[Storage_SP$Output$Parameter=="Mapping_Altitude"] %>% strsplit(., ",") %>% unlist(.) %>% as.numeric(.) %>% .[2],
-                                        Buffer_km2=as.numeric(Storage_SP$Output$Value[Storage_SP$Output$Parameter=="Mapping_Buffer"]),
+                                        Buffer_km=as.numeric(Storage_SP$Output$Value[Storage_SP$Output$Parameter=="Mapping_Buffer"]),
                                         GBIF_crop="",
                                         Gbif_Param=c(as.numeric(Storage_SP$Output$Value[Storage_SP$Output$Parameter=="Kernel_parameter"]), as.numeric(Storage_SP$Output$Value[Storage_SP$Output$Parameter=="Alpha_parameter"])))
       } else {distSP<-Storage_SP$distSP3_saved}
@@ -814,14 +814,20 @@ Prom<-future({
     EXT<-1.2*extent(coo[coo$Level0_occupied==T,])
     if(is.na(EXT[1]) | is.na(EXT[2]) | is.na(EXT[3]) | is.na(EXT[4])){EXT<-1.2*extent(distSP_WGS)} # In case there is no overlap with countries (e.g., distribution at sea because of simplification)
     
+    # Extract realms
+    realms_raw<-st_read("Species/Map countries/RL_Realms.shp")
+    Realms<-st_join(distSP_WGS, realms_raw, join=st_intersects)$realm %>% unique(.) %>% paste0(., collapse="|")
+    print(Realms)
+    
     # Prepare command for results button
     coo_occ<-sRL_cooInfoBox_prepare(coo, Storage_SP)
     coo_res<-sRL_cooInfoBox_format(coo_occ)
-    info.box<-sRL_cooInfoBox_create(coo_res)
+    info.box<-sRL_cooInfoBox_create(coo_res, Realms)
     
     # Create plot (first the one to export without the result - it makes the rmarkdown bug and it's not needed - and second adding the text results)
     Leaflet_COOtoexport<-leaflet() %>%
       fitBounds(lng1=EXT[1], lng2=EXT[2], lat1=EXT[3], lat2=EXT[4]) %>%
+      addPolygons(data=realms_raw, group="Realms", fillOpacity=0.5) %>%
       addPolygons(data=coo,
                   color=ifelse(coo$Level0_occupied==T, "black", "grey"),
                   fillColor=coo$colour,
@@ -836,10 +842,11 @@ Prom<-future({
       Coords<-Storage_SP$dat_proj_saved %>% st_transform(., st_crs(4326)) %>% st_coordinates(.) %>% as.data.frame()
       Leaflet_COOtoexport<-Leaflet_COOtoexport %>%
         addCircleMarkers(lng=Coords[,1], lat=Coords[,2], color="black", fillOpacity=0.3, stroke=F, radius=2, group="Occurrence records") %>%
-        addLayersControl(overlayGroups=c("Range map", "Occurrence records"), position="topleft", options=layersControlOptions(collapsed = FALSE))
+        addLayersControl(overlayGroups=c("Range map", "Occurrence records", "Realms"), position="topleft", options=layersControlOptions(collapsed = FALSE)) %>% 
+        hideGroup("Realms")
       
     } else {
-      Leaflet_COOtoexport<-Leaflet_COOtoexport %>% addLayersControl(overlayGroups=c("Range map"), position="topleft", options=layersControlOptions(collapsed = FALSE))
+      Leaflet_COOtoexport<-Leaflet_COOtoexport %>% addLayersControl(overlayGroups=c("Range map", "Realms"), position="topleft", options=layersControlOptions(collapsed = FALSE)) %>% hideGroup("Realms")
     }
     
 
@@ -855,8 +862,10 @@ Prom<-future({
       htmlwidgets::appendContent(info.box)  
     
     
+
     
     # Save for SIS
+    Storage_SP$Realms_saved<-Realms
     Storage_SP$coo_res<-coo_res
     Storage_SP$countries_SIS<-sRL_OutputCountries(scientific_name, coo_occ) # Keep only those occupied
     
@@ -2520,7 +2529,6 @@ function(scientific_name,
   allfields$SubpopulationSingle.value<-OneSubpop
 
   # Population trends
-  allfields$TrendInWildOfftake.value<-populationTrend
   allfields$CurrentTrendDataDerivation.value<-currentTrends_basis
 
   allfields$PopulationReductionFuture.direction<-futureTrends_dir
@@ -2603,13 +2611,15 @@ function(scientific_name,
   
   ref_SIS<-sRL_OutputRef(scientific_name, Storage_SP) 
   taxo_SIS<-sRL_OutputTaxo(scientific_name, Estimates)
+  out_save<-Storage_SP$Output[Storage_SP$Output$Definition !="Only used to track usage",] %>% subset(., select=names(.)[names(.) != "Count"])
+  assessments_SIS<-sRL_OutputAssessments(scientific_name, Storage_SP$Realms_saved, out_save$Value[out_save$Parameter=="System_pref"][1], populationTrend)
   
   # Save csv files in a folder
   write.csv(replace(allfields_to_save, is.na(allfields_to_save), ""), paste0(output_dir, "/allfields.csv"), row.names = F)
   write.csv(taxo_SIS, paste0(output_dir, "/taxonomy.csv"), row.names = F)
   write.csv(ref_SIS, paste0(output_dir, "/references.csv"), row.names = F)
-  out_save<-Storage_SP$Output[Storage_SP$Output$Definition !="Only used to track usage",] %>% subset(., select=names(.)[names(.) != "Count"])
   write.csv(out_save, paste0(output_dir, "/00.Output_log.csv"), row.names = F)
+  write.csv(assessments_SIS, paste0(output_dir, "/assessments.csv"), row.names = F)
   
   # Download tracking files
   if(scientific_name=="Download tracker"){
@@ -3075,6 +3085,13 @@ Prom<-future({
                )))
   if("TRUE" %in% duplicated(allfieldsM$internal_taxon_name)){duplicate_species()}
   
+  # Merge assessments
+  Ass_files<-list.files(Zip_Path, recursive = T)[grepl('assessments.csv', list.files(Zip_Path, recursive = T))] %>% paste0(Zip_Path, "/", .)
+  
+  eval(parse(text=
+               paste0("assessmentsM<-rbind.fill(",
+                      paste0("read.csv(Ass_files[", 1:length(Ass_files), "])", collapse=','),")"
+               )))
   
   # Merge log
   Log_files<-list.files(Zip_Path, recursive = T)[grepl('00.Output_log.csv', list.files(Zip_Path, recursive = T))] %>% paste0(Zip_Path, "/", .)
