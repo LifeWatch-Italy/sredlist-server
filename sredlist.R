@@ -2442,7 +2442,7 @@ function(scientific_name){
 function(scientific_name,
          username,
          Estimates, 
-         pastTrends_dir, pastTrends_qual, pastTrends_basis, pastTrends_reversible, pastTrends_understood, pastTrends_ceased, fragment, Fragment_justif,
+         pastTrends_dir, pastTrends_qual, pastTrends_basis, pastTrends_reversible, pastTrends_understood, pastTrends_ceased, fragmentBin, Fragment_justif,
          Extreme_EOO, Extreme_AOO, Extreme_Pop, Extreme_NLoc, Extreme_NSub, Extreme_EOO_justif, Extreme_AOO_justif, Extreme_Pop_justif, Extreme_NLoc_justif, Extreme_NSub_justif,
          Continuing_EOO, Continuing_AOO, Continuing_Hab, Continuing_Pop, Continuing_NLoc, Continuing_NSub, Continuing_EOO_justif, Continuing_AOO_justif, Continuing_Hab_justif, Continuing_Pop_justif, Continuing_NLoc_justif, Continuing_NSub_justif,
          locationNumber,	locationNumber_justif, SubNumber,	SubNumber_justif, OneSubpop,	VeryRestricted,	VeryRestricted_justif,
@@ -2450,6 +2450,8 @@ function(scientific_name,
          C_igen_value, C_igen_qual, C_igen_justif, C_iigen_value, C_iigen_qual, C_iigen_justif, C_iiigen_value, C_iiigen_qual, C_iiigen_justif
          ) {
 
+Prom<-future({
+  
   Estimates<-replace(Estimates, Estimates %in% c("undefined", " "), NA)
   print(Estimates)
   username<-gsub("[.]", " ", username) %>% tools::toTitleCase(.)
@@ -2467,7 +2469,7 @@ function(scientific_name,
   # Charge empty allfields
   allfields<-read.csv("Species/SIS_allfields_empty.csv")[1,]
   allfields$X<-NULL
-
+  
   # # Take data from saved prepared dataset
   allfields$internal_taxon_name<-scientific_name
   #allfields$assessment_id<-NA
@@ -2504,18 +2506,17 @@ function(scientific_name,
   allfields$PopulationReductionPast.range<-Estimates[13]
   allfields$PopulationReductionPast.justification<-Estimates[14]
 
-  
   # Population trends details
   allfields$PopulationReductionPast.qualifier<-pastTrends_qual
   allfields$PopulationReductionPastBasis.value<-pastTrends_basis %>% subset(., nchar(.)>1 & . != "Unknown") %>% paste(., collapse="|") %>% ifelse(.=="", "Unknown", .) # Remove single letters, remove Unknown if with something else, paste with | as in SIS Connect Sample set
   allfields$PopulationReductionPastReversible.value<-pastTrends_reversible
   allfields$PopulationReductionPastUnderstood.value<-pastTrends_understood
   allfields$PopulationReductionPastCeased.value<-pastTrends_ceased
-
+  
   # Fragmentation
-  allfields$SevereFragmentation.isFragmented<-ifelse(fragment %in% c("true", "TRUE", "T"), "Yes", "No")
+  allfields$SevereFragmentation.isFragmented<-ifelse(fragmentBin %in% c("true", "TRUE", "T"), "Yes", "No")
   allfields$SevereFragmentation.justification<-Fragment_justif
-
+  
   # Population details
   allfields$LocationsNumber.range<-locationNumber
   allfields$LocationsNumber.justification<-locationNumber_justif
@@ -2527,7 +2528,7 @@ function(scientific_name,
   allfields$MaxSubpopulationSize.range<-Estimates[15]
   allfields$MatureIndividualsSubpopulation.value<-Estimates[16]
   allfields$SubpopulationSingle.value<-OneSubpop
-
+  
   # Population trends
   allfields$CurrentTrendDataDerivation.value<-currentTrends_basis
 
@@ -2591,7 +2592,6 @@ function(scientific_name,
 
   
   
-  
   sRL_loginfo("Start Countries and refs", scientific_name)
   output_dir<-paste0(sub(" ", "_", scientific_name), "_sRedList")
   dir.create(output_dir)
@@ -2600,7 +2600,7 @@ function(scientific_name,
   if("countries_SIS" %in% names(Storage_SP)){
     countries_SIS<-Storage_SP$countries_SIS
     write.csv(countries_SIS, paste0(output_dir, "/countries.csv"), row.names = F)
-    assessments_SIS<-sRL_OutputAssessments(scientific_name, Storage_SP$Realms_saved, out_save$Value[out_save$Parameter=="System_pref"][1], populationTrend)
+    assessments_SIS<-sRL_OutputAssessments(scientific_name, Storage_SP$Realms_saved, Storage_SP$Output$Value[Storage_SP$Output$Parameter=="System_pref"][1], populationTrend)
   } else {assessments_SIS<-sRL_OutputAssessments(scientific_name, NA, NA, populationTrend)}
   
   # Habitats (if AOH not skipped)
@@ -2724,6 +2724,10 @@ function(scientific_name,
       warning_taxo=Tag
     )
   )
+  
+}, gc=T, seed=T)
+
+return(Prom)
 
 }
 
