@@ -2596,11 +2596,12 @@ function(scientific_name,
   output_dir<-paste0(sub(" ", "_", scientific_name), "_sRedList")
   dir.create(output_dir)
   
-  # Countries (but enabling skipping step)
+  # Countries (but enabling skipping step) + prepare assessments.csv
   if("countries_SIS" %in% names(Storage_SP)){
     countries_SIS<-Storage_SP$countries_SIS
     write.csv(countries_SIS, paste0(output_dir, "/countries.csv"), row.names = F)
-  }
+    assessments_SIS<-sRL_OutputAssessments(scientific_name, Storage_SP$Realms_saved, out_save$Value[out_save$Parameter=="System_pref"][1], populationTrend)
+  } else {assessments_SIS<-sRL_OutputAssessments(scientific_name, NA, NA, populationTrend)}
   
   # Habitats (if AOH not skipped)
   if("habitats_SIS" %in% names(Storage_SP)){
@@ -2612,7 +2613,6 @@ function(scientific_name,
   ref_SIS<-sRL_OutputRef(scientific_name, Storage_SP) 
   taxo_SIS<-sRL_OutputTaxo(scientific_name, Estimates)
   out_save<-Storage_SP$Output[Storage_SP$Output$Definition !="Only used to track usage",] %>% subset(., select=names(.)[names(.) != "Count"])
-  assessments_SIS<-sRL_OutputAssessments(scientific_name, Storage_SP$Realms_saved, out_save$Value[out_save$Parameter=="System_pref"][1], populationTrend)
   
   # Save csv files in a folder
   write.csv(replace(allfields_to_save, is.na(allfields_to_save), ""), paste0(output_dir, "/allfields.csv"), row.names = F)
@@ -3035,6 +3035,7 @@ Prom<-future({
   if(length(extensions)>1 | !".zip" %in% extensions){wrong_zip_extension()}
   
   # Create a folder to store results
+  sRL_loginfo("Unzip files", "Merge ZIP API")
   Zip_Path<-paste0("Unzipped", sample(1:1000,1))
   unlink(Zip_Path, recursive=T)
   dir.create(Zip_Path)
@@ -3048,6 +3049,7 @@ Prom<-future({
   
   ### MERGE
   # Merge habitats
+  sRL_loginfo("Merge habitats", "Merge ZIP API")
   Hab_files<-list.files(Zip_Path, recursive = T)[grepl('habitats.csv', list.files(Zip_Path, recursive = T))] %>% paste0(Zip_Path, "/", .) %>% subset(., .!= paste0(Zip_Path, "/"))
   
   if(length(Hab_files)>0){
@@ -3058,6 +3060,7 @@ Prom<-future({
   }
   
   # Merge countries
+  sRL_loginfo("Merge countries", "Merge ZIP API")
   Coun_files<-list.files(Zip_Path, recursive = T)[grepl('countries.csv', list.files(Zip_Path, recursive = T))] %>% paste0(Zip_Path, "/", .) %>% subset(., .!= paste0(Zip_Path, "/"))
   
   if(length(Coun_files)>0){
@@ -3068,6 +3071,7 @@ Prom<-future({
   }
   
   # Merge references
+  sRL_loginfo("Merge references", "Merge ZIP API")
   Ref_files<-list.files(Zip_Path, recursive = T)[grepl('references.csv', list.files(Zip_Path, recursive = T))] %>% paste0(Zip_Path, "/", .)
   
   eval(parse(text=
@@ -3076,6 +3080,7 @@ Prom<-future({
                )))
   
   # Merge allfields
+  sRL_loginfo("Merge allfields", "Merge ZIP API")
   All_files<-list.files(Zip_Path, recursive = T)[grepl('allfields.csv', list.files(Zip_Path, recursive = T))] %>% paste0(Zip_Path, "/", .)
   if(length(All_files)<length(list.files(Zip_Path, recursive=F))){missing_allfields()}
   
@@ -3086,6 +3091,7 @@ Prom<-future({
   if("TRUE" %in% duplicated(allfieldsM$internal_taxon_name)){duplicate_species()}
   
   # Merge assessments
+  sRL_loginfo("Merge assessments", "Merge ZIP API")
   Ass_files<-list.files(Zip_Path, recursive = T)[grepl('assessments.csv', list.files(Zip_Path, recursive = T))] %>% paste0(Zip_Path, "/", .)
   
   eval(parse(text=
@@ -3094,6 +3100,7 @@ Prom<-future({
                )))
   
   # Merge log
+  sRL_loginfo("Merge logs", "Merge ZIP API")
   Log_files<-list.files(Zip_Path, recursive = T)[grepl('00.Output_log.csv', list.files(Zip_Path, recursive = T))] %>% paste0(Zip_Path, "/", .)
   
   eval(parse(text=
@@ -3103,17 +3110,19 @@ Prom<-future({
   
   
   # Merge Distributions
+  sRL_loginfo("Merge distributions", "Merge ZIP API")
   if(TRUE %in% grepl('_Distribution.shp', list.files(Zip_Path, recursive = T))){
     
     Dist_files<-list.files(Zip_Path, recursive = T)[grepl('_Distribution.shp', list.files(Zip_Path, recursive = T))] %>% paste0(Zip_Path, "/", .)
     
     eval(parse(text=
-                 paste0("DistM<-rbind.fill(",
+                 paste0("DistM<-dplyr::bind_rows(",
                         paste0("st_read(Dist_files[", 1:length(Dist_files), "])", collapse=','),")"
                  )))
   }
   
   # Merge Occurrences
+  sRL_loginfo("Merge occurrences", "Merge ZIP API")
   if(TRUE %in% grepl('_Occurrences.csv', list.files(Zip_Path, recursive = T))){
     
     Occ_files<-list.files(Zip_Path, recursive = T)[grepl('_Occurrences.csv', list.files(Zip_Path, recursive = T))] %>% paste0(Zip_Path, "/", .)
@@ -3125,6 +3134,7 @@ Prom<-future({
   }
   
   # Merge Hydrobasins
+  sRL_loginfo("Merge hydrobasins", "Merge ZIP API")
   if(TRUE %in% grepl('_Hydrobasins.csv', list.files(Zip_Path, recursive = T))){
     
     Hydro_files<-list.files(Zip_Path, recursive = T)[grepl('_Hydrobasins.csv', list.files(Zip_Path, recursive = T))] %>% paste0(Zip_Path, "/", .)
@@ -3136,6 +3146,7 @@ Prom<-future({
   }
   
   # If duplicate internal_taxon_id, I replace the second by 1
+  sRL_loginfo("Deal with duplicates in taxon_id", "Merge ZIP API")
   while("TRUE" %in% duplicated(allfieldsM$internal_taxon_id)){
     
     N_it<-ifelse(exists("N_it"), N_it+1, 1)
@@ -3156,14 +3167,17 @@ Prom<-future({
   }
   
   # Copy reports
+  sRL_loginfo("Copy reports", "Merge ZIP API")
   Reports<-list.files(Zip_Path, recursive = T)[grepl('sRedList_report_', list.files(Zip_Path, recursive = T))] %>% paste0(Zip_Path, "/", .) %>% subset(., .!= paste0(Zip_Path, "/"))
-  file.copy(from=Reports, to=sapply(strsplit(Reports, "/"), function(x){paste(x[1], x[3], sep="/")}))
+  file.copy(from=Reports, to=sapply(strsplit(Reports, "/"), function(x){paste(x[1], x[length(x)], sep="/")}))
   
   
   ### Save in a merged ZIP file
+  sRL_loginfo("Save ZIP", "Merge ZIP API")
   # Remove initial files
   unlink(paste0(Zip_Path, "/", list.files(Zip_Path)[!grepl("sRedList_report", list.files(Zip_Path))]), recursive=T)
   write.csv(replace(allfieldsM, is.na(allfieldsM), ""), paste0(Zip_Path, "/allfields.csv"), row.names = F)
+  write.csv(replace(assessmentsM, is.na(assessmentsM), ""), paste0(Zip_Path, "/assessments.csv"), row.names = F)
   if(exists("countriesM")){write.csv(replace(countriesM, is.na(countriesM), ""), paste0(Zip_Path, "/countries.csv"), row.names = F)}
   write.csv(replace(referencesM, is.na(referencesM), ""), paste0(Zip_Path, "/references.csv"), row.names = F)
   if(exists("habitatsM")){write.csv(replace(habitatsM, is.na(habitatsM), ""), paste0(Zip_Path, "/habitats.csv"), row.names = F)}
@@ -3185,6 +3199,7 @@ Prom<-future({
   print(Zip_name)
   
   # Track Merge ZIP usage
+  sRL_loginfo("Track usage", "Merge ZIP API")
   tryCatch({
     File_track<-"Species/Stored_outputs/Stored_ZIP.csv"
     if(! file.exists(File_track)){write.csv(data.frame(Date=NA, Nspc=NA), File_track, row.names=F)}

@@ -170,7 +170,8 @@ sRL_OutputAssessments<-function(scientific_name, Realms, Systems, Trends){
     PopulationTrend.value=Trends,
     RedListCriteria.critVersion="3.1",
     System.value=Systems %>% sub("Freshwater", "Freshwater (=Inland waters)", .),
-    internal_taxon_id=sRL_CalcIdno(scientific_name)
+    internal_taxon_id=sRL_CalcIdno(scientific_name),
+    internal_taxon_name=scientific_name
   )
   
   return(assessments)
