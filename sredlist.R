@@ -2490,20 +2490,20 @@ Prom<-future({
   allfields$GenerationLength.range<-Storage_SP$GL_saved
   
   # EOO
-  allfields$EOO.range<-Estimates[7]
+  allfields$EOO.range<-sRL_CheckNumeric(Estimates[7], "[EOO value]", "NotPerc")
   allfields$EOO.justification<-Estimates[8]
   
   # AOO
-  allfields$AOO.range<-Estimates[9]
+  allfields$AOO.range<-sRL_CheckNumeric(Estimates[9], "[AOO value]", "NotPerc")
   allfields$AOO.justification<-Estimates[10]
   
   # Population size
-  allfields$PopulationSize.range<-Estimates[11]
+  allfields$PopulationSize.range<-sRL_CheckNumeric(Estimates[11], "[Population size value]", "NotPerc")
   
   # Decline for A2
+  if(!(Estimates[12] %in% c("+", "-")) & is.na(Estimates[13])==F){questionnaire_sign()}
   if(Estimates[12] %in% c("+", "-")){allfields$PopulationReductionPast.direction<-revalue(Estimates[12], c("-"="Reduction", "+"="Increase"))} # Replace by Increase or Reduction (if users wrote something else, we don't report it in allfields)
-  if(is.na(Estimates[12])==T & is.na(Estimates[13])==F){allfields$PopulationReductionPast.direction<-"Increase"}
-  allfields$PopulationReductionPast.range<-Estimates[13]
+  allfields$PopulationReductionPast.range<-sRL_CheckNumeric(Estimates[13], "[Past trends value]", "Percentage_yes")
   allfields$PopulationReductionPast.justification<-Estimates[14]
 
   # Population trends details
@@ -2518,46 +2518,46 @@ Prom<-future({
   allfields$SevereFragmentation.justification<-Fragment_justif
   
   # Population details
-  allfields$LocationsNumber.range<-locationNumber
+  allfields$LocationsNumber.range<-sRL_CheckNumeric(locationNumber, "[Number of locations]", "NotPerc")
   allfields$LocationsNumber.justification<-locationNumber_justif
-  allfields$YearOfPopulationEstimate.value<-currentPop_years
+  allfields$YearOfPopulationEstimate.value<-sRL_CheckNumeric(currentPop_years, "[Year of population estimate]", "NotPerc")
   allfields$AreaRestricted.isRestricted<-VeryRestricted
   allfields$AreaRestricted.justification<-VeryRestricted_justif
-  allfields$SubpopulationNumber.range<-SubNumber
+  allfields$SubpopulationNumber.range<-sRL_CheckNumeric(SubNumber, "[Number of subpopulations]", "NotPerc")
   allfields$SubpopulationNumber.justification<-SubNumber_justif
-  allfields$MaxSubpopulationSize.range<-Estimates[15]
-  allfields$MatureIndividualsSubpopulation.value<-Estimates[16]
+  allfields$MaxSubpopulationSize.range<-sRL_CheckNumeric(Estimates[15], "[Maximum number of mature individuals in a subpopulation]", "NotPerc")
+  allfields$MatureIndividualsSubpopulation.value<-sRL_CheckNumeric(Estimates[16], "[% of mature individuals in one subpopulation]", "Percentage_yes")
   allfields$SubpopulationSingle.value<-OneSubpop
   
   # Population trends
   allfields$CurrentTrendDataDerivation.value<-currentTrends_basis
 
   allfields$PopulationReductionFuture.direction<-futureTrends_dir
-  allfields$PopulationReductionFuture.range<-futureTrends
+  allfields$PopulationReductionFuture.range<-sRL_CheckNumeric(futureTrends, "[Future trends value]", "Percentage_yes")
   allfields$PopulationReductionFuture.justification<-futureTrends_justif
   allfields$PopulationReductionFuture.qualifier<-futureTrends_quality
   allfields$PopulationReductionFutureBasis.value<-futureTrends_basis %>% subset(., nchar(.)>1 & . != "Unknown") %>% paste(., collapse="|") %>% ifelse(.=="", "Unknown", .) # Remove single letters, remove Unknown if with something else, paste with | as in SIS Connect Sample set
 
   allfields$PopulationReductionPastandFuture.direction<-ongoingTrends_dir
-  allfields$PopulationReductionPastandFuture.range<-ongoingTrends
+  allfields$PopulationReductionPastandFuture.range<-sRL_CheckNumeric(ongoingTrends, "[Ongoing trends value]", "Percentage_yes")
   allfields$PopulationReductionPastandFuture.justification<-ongoingTrends_justif
   allfields$PopulationReductionPastandFuture.qualifier<-ongoingTrends_quality
   allfields$PopulationReductionPastandFutureBasis.value<-ongoingTrends_basis %>% subset(., nchar(.)>1 & . != "Unknown") %>% paste(., collapse="|") %>% ifelse(.=="", "Unknown", .) # Remove single letters, remove Unknown if with something else, paste with | as in SIS Connect Sample set
-  allfields$PopulationReductionPastandFuture.numYears<-ongoingTrends_NY
+  allfields$PopulationReductionPastandFuture.numYears<-sRL_CheckNumeric(ongoingTrends_NY, "[Number of years]", "NotPerc")
   allfields$PopulationReductionPastandFutureCeased.value<-ongoingTrends_ceased
   allfields$PopulationReductionPastandFutureReversible.value<-ongoingTrends_reversible
   allfields$PopulationReductionPastandFutureUnderstood.value<-ongoingTrends_understood
 
   # Population C1
-  allfields$PopulationDeclineGenerations1.range<-C_igen_value
+  allfields$PopulationDeclineGenerations1.range<-sRL_CheckNumeric(C_igen_value, "[Decline in 1 generation]", "Percentage_yes")
   allfields$PopulationDeclineGenerations1.qualifier<-C_igen_qual
   allfields$PopulationDeclineGenerations1.justification<-C_igen_justif
 
-  allfields$PopulationDeclineGenerations2.range<-C_iigen_value
+  allfields$PopulationDeclineGenerations2.range<-sRL_CheckNumeric(C_iigen_value, "[Decline in 2 generations]", "Percentage_yes")
   allfields$PopulationDeclineGenerations2.qualifier<-C_iigen_qual
   allfields$PopulationDeclineGenerations2.justification<-C_iigen_justif
 
-  allfields$PopulationDeclineGenerations3.range<-C_iiigen_value
+  allfields$PopulationDeclineGenerations3.range<-sRL_CheckNumeric(C_iiigen_value, "[Decline in 3 generations]", "Percentage_yes")
   allfields$PopulationDeclineGenerations3.qualifier<-C_iiigen_qual
   allfields$PopulationDeclineGenerations3.justification<-C_iiigen_justif
 

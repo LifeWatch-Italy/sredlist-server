@@ -275,12 +275,27 @@ sRL_OutputOccurrences <- function(scientific_name, Storage_SP, username) {
 }
 
 
-
-
-
-
-
-
+### Check numeric values in questionnaire
+sRL_CheckNumeric<-function(PAR, PAR_NAM, PERC){
+  
+  ### Replace commas and remove spaces in PAR to ensure it can be read as numeric
+  PAR<-PAR %>% gsub(",", ".", .) %>% gsub(" ", "", .)
+  
+  ### Only if the parameter has a value (ie not NA)
+  if(is.na(PAR)==F & PAR!="NA" & PAR !=""){
+    
+    # Check if the parameter is positive (if the first parameter is "-" it means it's not)
+    if(substr(PAR, 1, 1)=="-"){questionnaire_negative(PAR_NAM)}
+    # If uncertainty, I transform to a vector
+    PAR_check<-PAR %>% strsplit(., "-") %>% unlist(.)
+    # Check if the parameter is numeric
+    if("TRUE" %in% is.na(as.numeric(PAR_check))){questionnaire_numeric(PAR_NAM)}
+    # Check if the parameter is a percentage
+    if(PERC=="Percentage_yes" & "TRUE" %in% (as.numeric(PAR_check)>100)){questionnaire_percentage(PAR_NAM)}
+    
+  }
+  return(PAR)
+}
 
 
 
@@ -300,7 +315,6 @@ crit_apply<-function(crit, CRIT, Val){
   }
   return(crit)
 }
-
 
 
 

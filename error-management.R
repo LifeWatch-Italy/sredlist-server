@@ -144,6 +144,22 @@ run_Step2 <- function(){
   api_error(message = "You need to run Step 2 (filtering records) once again before creating range map since you updated Step 1", status=400)
 }
 
+questionnaire_numeric <- function(PAR){
+  api_error(message = paste0("Parameter ", PAR, " is incorrect; it should be numeric"), status=400)
+}
+
+questionnaire_negative <- function(PAR){
+  api_error(message = paste0("Parameter ", PAR, " is incorrect; it should not be negative"), status=400)
+}
+
+questionnaire_percentage <- function(PAR){
+  api_error(message = paste0("Parameter ", PAR, " is incorrect; it should be between 0 and 100"), status=400)
+}
+
+questionnaire_sign <- function(){
+  api_error(message = paste0("Sign of past trends is incorrect; it should be + or -"), status=400)
+}
+
 
 
 wrong_zip_extension<-function() {
