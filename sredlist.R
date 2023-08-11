@@ -3206,9 +3206,9 @@ Prom<-future({
   sRL_loginfo("Track usage", "Merge ZIP API")
   tryCatch({
     File_track<-"Species/Stored_outputs/Stored_ZIP.csv"
-    if(! file.exists(File_track)){write.csv(data.frame(Date=NA, Nspc=NA), File_track, row.names=F)}
+    if(! file.exists(File_track)){write.csv(data.frame(Date=NA, Nspc=NA, DupliID=NA), File_track, row.names=F)}
     track<-read.csv(File_track)
-    track[(nrow(track)+1),]<-c(as.character(Sys.Date()), length(All_files))
+    track[(nrow(track)+1),]<-c(as.character(Sys.Date()), length(All_files), exists("N_it"))
     write.csv(track, File_track, row.names=F)
   }, error=function(e){cat("TryCatch track mergeZIP failed")})
   
