@@ -13,57 +13,58 @@ knitr::opts_chunk$set(echo = FALSE, warning = FALSE, message = FALSE)
 outDir<-paste0(getwd(), "/resources/AOH_stored/", sub(" ", "_", sRL_decode(scientific_name)))
 Storage_SP<-sRL_StoreRead(scientific_name, MANDAT=1)
 outlog<-Storage_SP$Output %>% subset(., is.na(.$Value)==F)
-allfields<-read.csv(paste0(sub(" ", "_", scientific_name), "_sRedList/allfields.csv"))
+allfields<-read.csv(paste0(getwd(), "/", sub(" ", "_", scientific_name), "_sRedList/allfields.csv"))
 my_comma<-scales::label_comma(accuracy = 1, big.mark = ",", decimal.mark = ".") # Function to add comma separator
 pretty_num <- function(x){x %>% as.character(.) %>% strsplit(., "-") %>% unlist(.) %>% as.numeric(.) %>% subset(., is.na(.)==F) %>% my_comma(.) %>% paste(., collapse="-")} # Function to format numbers
 NO_STEP<-"This step was not performed on the platform."
 ```
 <br><br>
 
-An assessment has been completed on the sRedList platform for the species `r sRL_decode(scientific_name)` on the `r format(Sys.Date(), '%d/%m/%Y')`. All outputs from this assessment are reported in the .csv and .shp files that were downloaded at the end of the assessment and they can be pushed on SIS through SIS Connect. This report is here to detail how these results were obtained (e.g., which parameters were used on the sRedList platform), to provide context around results (e.g., saving the different maps created on the platform), and help communication among assessors and with reviewers.
+
+An assessment has been completed on the sRedList platform for the species *`r sRL_decode(scientific_name)`* on the `r format(Sys.Date(), '%d/%m/%Y')`. All outputs from this assessment are reported in the .csv and .shp files that were downloaded at the end of the assessment and they can be pushed on SIS through SIS Connect. This report is here to detail how these results were obtained (e.g., which parameters were used on the sRedList platform), to provide context around results (e.g., saving the different maps created on the platform), and help communication among assessors and with reviewers.
 
 <br><br><br><br>
 
 
 
 ## Step 1: Distribution
-`r if(outlog$Value[outlog$Parameter == "Distribution_Source"]=="Created"){tryCatch({knit_child("sRL_markdown_scripts/RMD_child_Step1b.rmd")}, error=function(e){"!! Error in reporting step 1 !!"})} else {knit_child("sRL_markdown_scripts/RMD_child_Step1a.rmd")}`
+`r if(outlog$Value[outlog$Parameter == "Distribution_Source"]=="Created"){tryCatch({knitr::knit_child("sRL_markdown_scripts/RMD_child_Step1b.rmd")}, error=function(e){"!! Error in reporting step 1 !!"})} else {tryCatch({knitr::knit_child("sRL_markdown_scripts/RMD_child_Step1a.rmd")}, error=function(e){"!! Error in reporting step 1 !!"})}`
 <br><br><br>
 
 
 ## Step 2: Countries of occurrence
-`r if("System_pref" %in% outlog$Parameter){tryCatch({knit_child("sRL_markdown_scripts/RMD_child_Step2.rmd")}, error=function(e){"!! Error in reporting step 2 !!"})} else {NO_STEP}`
+`r if("System_pref" %in% outlog$Parameter){tryCatch({knitr::knit_child("sRL_markdown_scripts/RMD_child_Step2.rmd")}, error=function(e){"!! Error in reporting step 2 !!"})} else {NO_STEP}`
 <br><br><br>
 
 
 ## Step 3: Extent of occurrence
-`r if("Estimated_EOO_raw" %in% outlog$Parameter){tryCatch({knit_child("sRL_markdown_scripts/RMD_child_Step3.rmd")}, error=function(e){"!! Error in reporting step 3 !!"})} else {NO_STEP}`
+`r if("Estimated_EOO_raw" %in% outlog$Parameter){tryCatch({knitr::knit_child("sRL_markdown_scripts/RMD_child_Step3.rmd")}, error=function(e){"!! Error in reporting step 3 !!"})} else {NO_STEP}`
 <br><br><br>
 
 
 ## Step 4: Area of Habitat
-`r if("AOH_HabitatPreference" %in% outlog$Parameter & "Gbif_Source" %in% outlog$Parameter){tryCatch({knit_child("sRL_markdown_scripts/RMD_child_Step4occ.rmd")}, error=function(e){"!! Error in reporting step 4 !!"})}`
-`r if("AOH_HabitatPreference" %in% outlog$Parameter){tryCatch({knit_child("sRL_markdown_scripts/RMD_child_Step4.rmd")}, error=function(e){"!! Error in reporting step 4 !!"})} else {NO_STEP}`
+`r if("AOH_HabitatPreference" %in% outlog$Parameter & "Gbif_Source" %in% outlog$Parameter){tryCatch({knitr::knit_child("sRL_markdown_scripts/RMD_child_Step4occ.rmd")}, error=function(e){"!! Error in reporting step 4 !!"})}`
+`r if("AOH_HabitatPreference" %in% outlog$Parameter){tryCatch({knitr::knit_child("sRL_markdown_scripts/RMD_child_Step4.rmd")}, error=function(e){"!! Error in reporting step 4 !!"})} else {NO_STEP}`
 <br><br><br>
 
 
 ## Step 5: Trends in Area of Habitat
-`r if("AOH_GenerationLength" %in% outlog$Parameter){tryCatch({knit_child("sRL_markdown_scripts/RMD_child_Step5.rmd")}, error=function(e){"!! Error in reporting step 5 !!"})} else {NO_STEP}`
+`r if("AOH_GenerationLength" %in% outlog$Parameter){tryCatch({knitr::knit_child("sRL_markdown_scripts/RMD_child_Step5.rmd")}, error=function(e){"!! Error in reporting step 5 !!"})} else {NO_STEP}`
 <br><br><br>
 
 
 ## Step 6a: Fragmentation
-`r if("Fragmentation_Isolation" %in% outlog$Parameter){tryCatch({knit_child("sRL_markdown_scripts/RMD_child_Step6a.rmd")}, error=function(e){"!! Error in reporting step 6a !!"})} else {NO_STEP}`
+`r if("Fragmentation_Isolation" %in% outlog$Parameter){tryCatch({knitr::knit_child("sRL_markdown_scripts/RMD_child_Step6a.rmd")}, error=function(e){"!! Error in reporting step 6a !!"})} else {NO_STEP}`
 <br><br><br>
 
 
 ## Step 6b: Trends in remote-sensing products
-`r if("Usage_RS" %in% outlog$Parameter){tryCatch({knit_child("sRL_markdown_scripts/RMD_child_Step6b.rmd")}, error=function(e){"!! Error in reporting step 6b !!"})} else {NO_STEP}`
+`r if("Usage_RS" %in% outlog$Parameter){tryCatch({knitr::knit_child("sRL_markdown_scripts/RMD_child_Step6b.rmd")}, error=function(e){"!! Error in reporting step 6b !!"})} else {NO_STEP}`
 <br><br><br>
 
 
 ## Step 7: Summary and assign categories
-`r tryCatch({knit_child("sRL_markdown_scripts/RMD_child_Step7.rmd")}, error=function(e){"!! Error in reporting step 7 !!"})`
+`r tryCatch({knitr::knit_child("sRL_markdown_scripts/RMD_child_Step7.rmd")}, error=function(e){"!! Error in reporting step 7 !!"})`
 
 
 <br><br><br>

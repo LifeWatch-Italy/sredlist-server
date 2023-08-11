@@ -15,7 +15,7 @@ The list of countries of occurrence is:
 # COO_df$Subnational<-replace(COO_df$Subnational, is.na(COO_df$Subnational), "")
 # for(i in which(grepl("<i>", COO_df$Country))){Name<-COO_df$Country[i] %>% sub("<i>", "", .) %>% sub("</i>", "", .) ; if(Name %in% COO_df$Country){COO_df$Country[i]<-Name}} # For each country in italics, I check if it also exists not italics and, if so, write it in regular plain text
 # knitr::kable(COO_df, "simple")
-HTML(Storage_SP$coo_res)
+htmltools::HTML(Storage_SP$coo_res)
 ```
 
 <br>
