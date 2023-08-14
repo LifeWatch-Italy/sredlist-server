@@ -1,5 +1,5 @@
 
-For the whole process on the platform you used as polygon distribution `r revalue(outlog$Value[outlog$Parameter=="Distribution_Source"], c("Red List"="the distribution that was published with the last Red List assessment", "Uploaded"="a distribution map that you uploaded on the platform", "StoredOnPlatform"="a distribution map that was previously compiled or uploaded on the platform"))`.
+For the whole process on the platform you used as polygon distribution `r revalue(outlog$Value[outlog$Parameter=="Distribution_Source"], c("Red List"="the distribution that was published with the last Red List assessment", "Uploaded"="a distribution map that was uploaded on the platform", "StoredOnPlatform"="a distribution map that was previously created on the platform from occurrence records"))`.
 You then filtered the distribution, keeping only presence codes `r outlog$Value[outlog$Parameter == "Distribution_Presence"]`, origin codes `r outlog$Value[outlog$Parameter == "Distribution_Origin"]`, and seasonal codes `r outlog$Value[outlog$Parameter == "Distribution_Seasonal"]`.
 
 The distribution map used along the assessment was the following:

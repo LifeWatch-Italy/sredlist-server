@@ -174,7 +174,7 @@ Prom<-future({
   if("CountrySP_saved" %not in% names(Storage_SP) | (! grepl("_RL", Dist_path))){Storage_SP$CountrySP_saved<-sRL_PrepareCountries(1.2*extent(distSP_full))} 
   CountrySP<-st_crop(Storage_SP$CountrySP_saved, 1.2*extent(distSP))
   Storage_SP<-sRL_OutLog(Storage_SP, c("Distribution_Presence", "Distribution_Seasonal", "Distribution_Origin"), c(paste0(presences, collapse=","), paste0(seasons, collapse=","), paste0(origins, collapse=",")))
-  DisSource<-ifelse(substr(Dist_path, nchar(Dist_path)-2, nchar(Dist_path))=="_RL", "Red List", ifelse(is.na(as.numeric(substr(Dist_path, nchar(Dist_path)-2, nchar(Dist_path))))==F, "StoredOnPlatform", "Uploaded"))
+  DisSource<-ifelse(substr(Dist_path, nchar(Dist_path)-2, nchar(Dist_path))=="_RL", "Red List", ifelse(grepl("Created", Dist_path), "StoredOnPlatform", "Uploaded"))
   Storage_SP<-sRL_OutLog(Storage_SP, "Distribution_Source", DisSource) # If Dist_path ends by _RL it comes from the RL, uploaded otherwise
   sRL_StoreSave(scientific_name, Storage_SP)
   sRL_loginfo("Plot distribution", scientific_name)
