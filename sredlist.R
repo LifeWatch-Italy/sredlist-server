@@ -132,6 +132,7 @@ Prom<-future({
   #Filter param
   scientific_name <- sRL_decode(scientific_name)
   Storage_SP=sRL_StoreRead(scientific_name, MANDAT=0) ; print(names(Storage_SP))
+  Storage_SP<-subset(Storage_SP, names(Storage_SP) %in% c("CountrySP_saved", "Creation", "Output")) # Remove other elements from Storage_SP which could come from a previous process on the platform
   
   # If outlog not present (I don't think this should happen but just in case)
   if(! "Output" %in% names(Storage_SP)){Storage_SP$Output<-sRL_InitLog(scientific_name, DisSource = "Unknown")}
