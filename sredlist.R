@@ -1274,7 +1274,6 @@ Prom<-future({
                            alt_fun=alt_crop,
                            FOLDER=paste0(output_dir, "/Current"),
                            elevation_data_fun=altitudes_pref_DF)
-    if(is.nan(minmax(AOH2[[1]])[1])){api_error(message="We cannot map AOH when the distribution is so small; we are working on it!", status = 400)}
 
     # Calculate AOH with "Suitable" and "Marginal" habitats (ie optimistic)
     if(Uncertain == "Uncertain_yes"){

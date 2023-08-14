@@ -88,13 +88,35 @@ sRL_calculateAOH<-function(rangeSP_fun, cci_fun, alt_fun, FOLDER, elevation_data
 
   #terra::compareGeom(cci_fun, alt_fun)
   
+  # Try calculate AOH with cells that have their center within the distribution
   AOH=create_spp_aoh_data(
     rangeSP_fun, 
     elevation_data = alt_fun,
     habitat_data = cci_fun,
     crosswalk_data = crosswalk_to_use,
     output_dir=FOLDER,
+    rasterize_touches=F,
     engine=config$engine_AOH)
+  
+  AOH2<-lapply(AOH$path, terra::rast)
+  
+  # If the AOH is empty (ie if no raster cell overlapped had their center within the distribution), I recalculate with all cells overlapping somehow with the distribution
+  if(is.nan(minmax(AOH2[[1]])[1])){
+    
+    sRL_loginfo("AOH will be calculated with raterize_touces", "")
+    
+    unlink(paste0(FOLDER, "/", list.files(FOLDER)))
+    
+    AOH=create_spp_aoh_data(
+      rangeSP_fun, 
+      elevation_data = alt_fun,
+      habitat_data = cci_fun,
+      crosswalk_data = crosswalk_to_use,
+      output_dir=FOLDER,
+      rasterize_touches=T,
+      engine=config$engine_AOH)
+  }
+  
   
   return(lapply(AOH$path, terra::rast))
 }
