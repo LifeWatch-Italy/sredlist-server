@@ -2069,7 +2069,7 @@ Prom<-future({
       geom_vline(xintercept=min(res$prop.fragm$pop[res$prop.fragm$CumSum>0.5], na.rm=T), linetype="dashed")+
       geom_hline(yintercept=0.5, linetype="dashed")+
       xlab("How many individuals constitute a 'small' population?")+ylab("Proportion of the population that is fragmented")+
-      ylim(c(0,1))+
+      ylim(c(0,1.01))+
       labs(subtitle=SubTitle)+
       theme_minimal() %+replace%   theme(text=element_text(size=15), plot.subtitle=element_text(hjust=0.5), legend.position="bottom", plot.background=element_rect(fill="white", colour="white"))
     
