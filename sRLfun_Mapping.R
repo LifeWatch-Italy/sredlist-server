@@ -407,6 +407,7 @@ sRL_MapDistributionGBIF<-function(dat, scientific_name, First_step, AltMIN, AltM
       
       # Load shapefile of LEVEL
       Path_cells<-paste0("Hydro_cut_", LEV, "/Hydrobasins_level", LEV, "_cut_cell", Cells, ".shp") %>% paste0(sub("Hydrobasins_level8_ready.shp", "", config$hydrobasins_path), .)
+      if(file.exists(Path_cells[1])==F){api_error(message = "Hydrobasins levels 10 and 12 are not working yet but we are working on it; please use level 8 for now", status=400)} # TO BE REMOVED WHEN FILES ARE READY
       hydroLEV_raw<-st_read(Path_cells[1])
       if(length(Path_cells)>1){
         for(PATH in Path_cells[2:length(Path_cells)]){
