@@ -1912,9 +1912,8 @@ function(scientific_name) { # nolint
     ### Charge optimistic if exists
     Uncert<-Storage_SP$Uncertain
     if(Uncert=="Uncertain_yes"){
-      opt_path<-paste0("resources/AOH_stored/", gsub(" ", "_", scientific_name), "/Current_optimistic/") %>% paste0(., list.files(.)[1])
-      AOH2_opt<-raster(opt_path) ; crs(AOH2_opt)<-CRSMOLL
-      AOH1_opt<-raster(gsub("Current", "Initial", opt_path)) ; crs(AOH1_opt)<-CRSMOLL
+      AOH2_opt<-paste0("resources/AOH_stored/", gsub(" ", "_", scientific_name), "/Current_optimistic/") %>% paste0(., list.files(.)[1]) %>% raster(.) ; crs(AOH2_opt)<-CRSMOLL
+      AOH1_opt<-paste0("resources/AOH_stored/", gsub(" ", "_", scientific_name), "/Initial_optimistic/") %>% paste0(., list.files(.)[1]) %>% raster(.) ; crs(AOH1_opt)<-CRSMOLL
     }
     
     ### Basic plot
@@ -3214,7 +3213,7 @@ Prom<-future({
   
   return(zip_to_extract)
 
-}, gc=T, seed=T) %>% then(onRejected=function(err){return(readBin("Species/error_to_return.zip", "raw", n=file.info("Species/error_to_return.zip")$size))})
+}, gc=T, seed=T)
 
 return(Prom) 
 }
