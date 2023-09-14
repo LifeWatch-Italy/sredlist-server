@@ -265,6 +265,7 @@ Prom<-future({
         dat_syn<-sRL_createDataGBIF(Gbif_Synonym[SY], Gbif_Source, "") # Same Source options as it can be useful for GBIF, OBIS but also Red List (eg species name was changed)
         dat_syn$species<-scientific_name
         dat_syn$Source_type=paste0("Synonyms_", dat_syn$Source_type)
+        dat_syn<-subset(dat_syn, ! paste0(dat_syn$decimalLongitude, dat_syn$decimalLatitude) %in% paste0(dat$decimalLongitude, dat$decimalLatitude)) # Remove the synonym observations that are already at location of the focal species (to avoid duplicated observations, see for instance Cheilosia hercyniae and C. means)
         dat<-rbind.fill(dat, dat_syn)
       }, error=function(e){paste0("The synonym ", Gbif_Synonym[SY], " was not downloaded")})
     }

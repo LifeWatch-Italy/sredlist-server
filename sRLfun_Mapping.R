@@ -366,11 +366,11 @@ sRL_MapDistributionGBIF<-function(dat, scientific_name, First_step, AltMIN, AltM
   
   if(First_step=="alpha"){
       # Remove records that are too close in order to avoid convexHull to crash
-      Round_Fact <- ifelse(as.numeric(max(st_distance(dat)))<10000, -1, -2) # Depending on the max distance between records I round to 100, or 10m 
+      Round_Fact <- ifelse(as.numeric(max(st_distance(dat)))<10000, -1, -2) # Depending on the max distance between records I round to 100, or 10m
       Coords_simplif<-st_coordinates(dat) %>% base::round(., digits=Round_Fact)
       dat$Coord_simplif<-paste(Coords_simplif[,1], Coords_simplif[,2], sep=":")
-      dat_subsample<-dplyr::distinct(dat, Coord_simplif, .keep_all=T) 
-    
+      dat_subsample<-dplyr::distinct(dat, Coord_simplif, .keep_all=T)
+      
       Par_alpha<-Gbif_Param[1]
       EX<-extent(dat_subsample)
       tryCatch({
