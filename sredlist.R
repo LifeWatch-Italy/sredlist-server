@@ -3052,6 +3052,17 @@ Prom<-future({
   }
   
   ### MERGE
+  # Merge allfields
+  sRL_loginfo("Merge allfields", "Merge ZIP API")
+  All_files<-list.files(Zip_Path, recursive = T)[grepl('allfields.csv', list.files(Zip_Path, recursive = T))] %>% paste0(Zip_Path, "/", .)
+  if(length(All_files[grepl("allfields", All_files)])<length(list.files(Zip_Path, recursive=F))){missing_allfields()}
+  
+  eval(parse(text=
+               paste0("allfieldsM<-rbind.fill(",
+                      paste0("read.csv(All_files[", 1:length(All_files), "])", collapse=','),")"
+               )))
+  if("TRUE" %in% duplicated(allfieldsM$internal_taxon_name)){duplicate_species()}
+  
   # Merge habitats
   sRL_loginfo("Merge habitats", "Merge ZIP API")
   Hab_files<-list.files(Zip_Path, recursive = T)[grepl('habitats.csv', list.files(Zip_Path, recursive = T))] %>% paste0(Zip_Path, "/", .) %>% subset(., .!= paste0(Zip_Path, "/"))
@@ -3082,17 +3093,6 @@ Prom<-future({
                paste0("referencesM<-rbind.fill(",
                       paste0("read.csv(Ref_files[", 1:length(Ref_files), "])", collapse=','),")"
                )))
-  
-  # Merge allfields
-  sRL_loginfo("Merge allfields", "Merge ZIP API")
-  All_files<-list.files(Zip_Path, recursive = T)[grepl('allfields.csv', list.files(Zip_Path, recursive = T))] %>% paste0(Zip_Path, "/", .)
-  if(length(All_files)<length(list.files(Zip_Path, recursive=F))){missing_allfields()}
-  
-  eval(parse(text=
-               paste0("allfieldsM<-rbind.fill(",
-                      paste0("read.csv(All_files[", 1:length(All_files), "])", collapse=','),")"
-               )))
-  if("TRUE" %in% duplicated(allfieldsM$internal_taxon_name)){duplicate_species()}
   
   # Merge assessments
   sRL_loginfo("Merge assessments", "Merge ZIP API")
@@ -3214,7 +3214,13 @@ Prom<-future({
   
   return(zip_to_extract)
 
-}, gc=T, seed=T)
+}, gc=T, seed=T)  %>% then(onRejected=function(err){
+                              print(paste0("ERROR TO RETURN: ", err))
+                              NAM<-paste0("ERROR", sample(1:50, size=1),".txt")
+                              writeLines(as.character(err), NAM)
+                              ERR_TO_RET<-readBin(NAM, "raw", n=file.info(NAM)$size)
+                              unlink(NAM)
+                              return(ERR_TO_RET)})
 
 return(Prom) 
 }
