@@ -2454,13 +2454,14 @@ Prom<-future({
   
   Estimates<-replace(Estimates, Estimates %in% c("undefined", " "), NA)
   print(Estimates)
-  username<-gsub("[.]", " ", username) %>% tools::toTitleCase(.)
+  username_formatted<-gsub("[.]", " ", username) %>% tools::toTitleCase(.)
 
   #Filter param
   sRL_loginfo("Start Criteria calculation", scientific_name)
   scientific_name <- sRL_decode(scientific_name)
   Storage_SP<-sRL_StoreRead(scientific_name, MANDAT=1)
   Storage_SP$Output$Count[Storage_SP$Output$Parameter=="Col_allfields"]<-as.numeric(Storage_SP$Output$Count[Storage_SP$Output$Parameter=="Col_allfields"])+1 # Count number of times Assign categories is run
+  Storage_SP<-sRL_OutLog(Storage_SP, "Username", username)
   sRL_StoreSave(scientific_name, Storage_SP)
   print(names(Storage_SP))
 
@@ -2630,13 +2631,13 @@ Prom<-future({
   
   # Save distribution and occurrences if from GBIF
   if(is.null(Storage_SP$gbif_number_saved)==F){
-    distSIS<-sRL_OutputDistribution(scientific_name, Storage_SP, username)
+    distSIS<-sRL_OutputDistribution(scientific_name, Storage_SP, username_formatted)
     if("hybas_concat" %in% names(Storage_SP$distSP_saved)){
       hydroSIS<-sRL_OutputHydrobasins(distSIS, Storage_SP)
       write.csv(hydroSIS, paste0(output_dir, "/sRedList_", gsub(" ", ".", scientific_name), "_Hydrobasins.csv"), row.names=F)
     }
    st_write(distSIS, paste0(output_dir, "/sRedList_", gsub(" ", ".", scientific_name), "_Distribution.shp"), append=F)
-   write.csv(sRL_OutputOccurrences(scientific_name, Storage_SP, username), paste0(output_dir, "/sRedList_", gsub(" ", ".", scientific_name), "_Occurrences.csv"), row.names=F)
+   write.csv(sRL_OutputOccurrences(scientific_name, Storage_SP, username_formatted), paste0(output_dir, "/sRedList_", gsub(" ", ".", scientific_name), "_Occurrences.csv"), row.names=F)
   }
 
   ### Calculate criteria
