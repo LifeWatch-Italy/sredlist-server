@@ -2608,6 +2608,7 @@ Prom<-future({
   if("habitats_SIS" %in% names(Storage_SP)){
     habitats_SIS<-Storage_SP$habitats_SIS[,6:13]
     habitats_SIS$internal_taxon_id<-sRL_CalcIdno(scientific_name)
+    habitats_SIS<-replace(habitats_SIS, is.na(habitats_SIS), "")
     write.csv(habitats_SIS, paste0(output_dir, "/habitats.csv"), row.names = F)
   }
   
