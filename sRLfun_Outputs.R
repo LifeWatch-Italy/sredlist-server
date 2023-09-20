@@ -31,6 +31,9 @@ sRL_OutputCountries<-function(scientific_name, countries){
   
   }
   
+  # Remove subnational entities that are missing in SIS to avoid bugs
+  CO_SIS<-subset(CO_SIS, grepl("Absent_SIS", CO_SIS$CountryOccurrence.CountryOccurrenceSubfield.CountryOccurrenceName)==F)
+  
   # Transform NA in "" to match SIS
   CO_SIS<-replace(CO_SIS, is.na(CO_SIS), "")
   
@@ -173,6 +176,8 @@ sRL_OutputAssessments<-function(scientific_name, Realms, Systems, Trends){
     internal_taxon_id=sRL_CalcIdno(scientific_name),
     internal_taxon_name=scientific_name
   )
+  
+  assessments<-replace(assessments, is.na(assessments), "")
   
   return(assessments)
 }
