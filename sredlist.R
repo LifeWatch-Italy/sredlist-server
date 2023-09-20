@@ -3030,7 +3030,7 @@ function(scientific_name) {
 #* @param Uploaded_Zips:[file] A zip files
 #* @serializer  contentType list(type="application/octet-stream")
 #* @tag sRedList
-function(Uploaded_Zips=list()) {
+function(Uploaded_Zips=list(), res) {
 
 Prom<-future({
   print(names(Uploaded_Zips))
@@ -3216,13 +3216,19 @@ Prom<-future({
   return(zip_to_extract)
 
 }, gc=T, seed=T)  %>% then(onRejected=function(err){
+
+                              res$setHeader("Access-Control-Expose-Headers","Content-Disposition")
+                              res$setHeader("Content-Disposition", "attachment; error.txt")
+                              
+
                               print(paste0("ERROR TO RETURN: ", err))
                               NAM<-paste0("ERROR", sample(1:50, size=1),".txt")
                               writeLines(as.character(err), NAM)
                               ERR_TO_RET<-readBin(NAM, "raw", n=file.info(NAM)$size)
                               unlink(NAM)
-                              return(ERR_TO_RET)})
-
+                              return(ERR_TO_RET)
+                              })
+                              
 return(Prom) 
 }
 
