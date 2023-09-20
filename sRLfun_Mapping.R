@@ -419,8 +419,8 @@ sRL_MapDistributionGBIF<-function(dat, scientific_name, First_step, AltMIN, AltM
       
       # Create distribution
       hydroLEV_sub<-st_crop(hydroLEV_raw, extent(dat))
-      interHydLEV<-st_join(dat, hydroLEV_sub, join=st_intersects) %>% subset(., is.na(.$hybas_id)==F) # Identify hydrobasins with data 
-      distGBIF<-subset(hydroLEV_raw, hydroLEV_raw$hybas_id %in% interHydLEV$hybas_id) # Isolate these hydrobasins
+      interHyd<-st_join(dat, hydroLEV_sub, join=st_intersects) %>% subset(., is.na(.$hybas_id)==F) # Identify hydrobasins with data 
+      distGBIF<-subset(hydroLEV_raw, hydroLEV_raw$hybas_id %in% interHyd$hybas_id) # Isolate these hydrobasins
         
     }
     
