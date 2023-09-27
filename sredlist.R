@@ -759,7 +759,7 @@ Prom<-future({
   domain_pref<-revalue(as.character(domain_pref), c("1"="Terrestrial", "2"="Marine", "3"="Freshwater"))
   print(domain_pref)
   print(Crop_Country)
-  Storage_SP<-sRL_OutLog(Storage_SP, "System_pref", paste(domain_pref, collapse=","))
+  Storage_SP<-sRL_OutLog(Storage_SP, "System_pref", paste(domain_pref, collapse="|"))
   
   # Crop for National Red Listing
   if(Crop_Country != ""){

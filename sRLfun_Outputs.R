@@ -34,6 +34,9 @@ sRL_OutputCountries<-function(scientific_name, countries){
   # Remove subnational entities that are missing in SIS to avoid bugs
   CO_SIS<-subset(CO_SIS, grepl("Absent_SIS", CO_SIS$CountryOccurrence.CountryOccurrenceSubfield.CountryOccurrenceName)==F)
   
+  # Remove lines with no countries name if it happens
+  CO_SIS<-subset(CO_SIS, is.na(CO_SIS$CountryOccurrence.CountryOccurrenceSubfield.CountryOccurrenceName)==F)
+  
   # Transform NA in "" to match SIS
   CO_SIS<-replace(CO_SIS, is.na(CO_SIS), "")
   
@@ -56,6 +59,7 @@ sRL_OutputRef<-function(scientific_name, Storage_SP){
     ROW<-(nrow(ref_SIS))
     ref_SIS[(ROW+1):(ROW+length(citations)),]<-NA
     ref_SIS$title[(ROW+1):(ROW+length(citations))]<-citations
+    ref_SIS$type[(ROW+1):(ROW+length(citations))]<-"electronic source"
     
     # Add rgbif if used
     if("GBIF" %in% Storage_SP$dat_proj_saved$Source){
