@@ -1,4 +1,18 @@
-# sRedList-API
+# Repository content
+This repository includes the code used in the server side of the sRedList platform (https://sredlist.eu/#/home). The server side runs analyses in R and works with APIs thanks to R plumber (every time a user clicks on a button on the platform, it calls an API in R that is executed and returns a result). 
+
+server.R is the main script that starts the plumber application and makes the R session ready to receive API requests. It loads libraries used on the platform, loads some files, and prepares the session (with error management, asynchronous calls management…). It calls API.R to set up some parameters for R plumber and error-management.R to load the different errors that can be returned on the platform.
+
+redlist.R and sredlist.R are the scripts containing the code of the APIs. The redlist.R script includes APIs that call the Red List API to retrieve data, the sredlist.R script includes all the other APIs. 
+
+APIs include functions created for the platform that are located in independent scripts to make APIs easier to read. sRLfun_FirstPage.R includes the functions used on the welcome page of the platform. sRLfun_Mapping.R includes the functions used to create distributions and to extract countries of occurrence. sRLfun_AOH.R includes the functions used in Area of Habitat analyses. sRLfun_OptionalAnalyses.R includes the functions used in Optional Analyses (fragmentation and trends in remote-sensed products). sRLfun_Outputs.R includes the functions used to create outputs in SIS Connect format. sRL_markdown_scripts folder includes scripts to create the final sRedList_report in RmarkDown.
+
+Several files needed to run the platform (e.g., map of countries, habitat crosswalks, empty output files…) are present in Species repository. The big files (distributions, global land cover maps…) are stored in the resources repository but are not published on GitHub as they are too big. Get in touch with us if you want to know more.
+
+
+
+# sRedList outdated platform deployment
+## sRedList-API
 Plumber R application:
 To run the server you must:
 1)Install the following libraries in R:
