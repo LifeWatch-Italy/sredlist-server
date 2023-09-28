@@ -54,8 +54,10 @@ sRL_OutputRef<-function(scientific_name, Storage_SP){
   
   if("dat_proj_saved" %in% names(Storage_SP)){
     
-    # Add primary sources from occurrence data
-    citations<-unique(Storage_SP$dat_proj_saved$source)
+    # Add primary sources from occurrence data and number of records used
+    citation_table<-as.data.frame(table(Storage_SP$dat_proj_saved$source))
+    citation_table$Ref_with_N <- citation_table$Var1 %>% sub("[.]$", "", .) %>% paste0(., " (", citation_table$Freq, ifelse(citation_table$Freq==1, " record was used).", " records were used)."))
+    citations<-unique(citation_table$Ref_with_N)
     ROW<-(nrow(ref_SIS))
     ref_SIS[(ROW+1):(ROW+length(citations)),]<-NA
     ref_SIS$title[(ROW+1):(ROW+length(citations))]<-citations
