@@ -64,7 +64,7 @@ sRL_OutputRef<-function(scientific_name, Storage_SP){
     ref_SIS$type[(ROW+1):(ROW+length(citations))]<-"electronic source"
     
     # Add rgbif if used
-    if("GBIF" %in% Storage_SP$dat_proj_saved$Source){
+    if("GBIF" %in% Storage_SP$dat_proj_saved$Source | "Synonyms_GBIF" %in% Storage_SP$dat_proj_saved$Source){
       ROW<-(nrow(ref_SIS)+1)
       ref_SIS[ROW,]<-NA
       ref_SIS$author[ROW]<-"Chamberlain S, Barve V, Mcglinn D, Oldoni D, Desmet P, Geffert L, Ram K"
@@ -74,7 +74,7 @@ sRL_OutputRef<-function(scientific_name, Storage_SP){
     }
 
   # Add robis if used
-    if("OBIS" %in% Storage_SP$dat_proj_saved$Source){
+    if("OBIS" %in% Storage_SP$dat_proj_saved$Source | "Synonyms_OBIS" %in% Storage_SP$dat_proj_saved$Source){
       ROW<-(nrow(ref_SIS)+1)
       ref_SIS[ROW,]<-NA
       ref_SIS$author[ROW]<-"Provoost, P., Bosch, S."
