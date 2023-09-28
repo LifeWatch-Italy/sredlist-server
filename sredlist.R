@@ -1775,7 +1775,7 @@ Prom<-future({
           sRLTheme_maps,
         
         labels=paste0("Trends in Area of Habitat between ", Year1, " and ", config$YearAOH2), 
-        ncol=1)
+        ncol=1, hjust=0)
     }
   
    
@@ -1819,7 +1819,7 @@ Prom<-future({
           sRLTheme_maps,
         
         labels=paste0("Trends in Area of Habitat between ", Year1, " and ", config$YearAOH2), 
-        ncol=1)
+        ncol=1, hjust=0)
     }
 
     
