@@ -817,7 +817,6 @@ Prom<-future({
     if(is.na(EXT[1]) | is.na(EXT[2]) | is.na(EXT[3]) | is.na(EXT[4])){EXT<-1.2*extent(distSP_WGS)} # In case there is no overlap with countries (e.g., distribution at sea because of simplification)
     
     # Extract realms
-    realms_raw<-st_read("Species/Map countries/RL_Realms.shp")
     Realms<-st_join(distSP_WGS, realms_raw, join=st_intersects)$realm %>% unique(.) %>% paste0(., collapse="|")
     print(Realms)
     

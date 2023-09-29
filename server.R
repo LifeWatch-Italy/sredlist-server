@@ -98,7 +98,8 @@ distCountries<-st_read("Species/Map countries/Red_List_countries_msSimplif0.005_
 distCountries_light <- distCountries %>% st_simplify(., dTolerance=0.01) %>% st_transform(., crs=st_crs(distCountries_WGS))
 coo_raw<-read_sf("Species/Map countries/Red_List_countries_msSimplif_coo_0.001.shp") ; names(coo_raw)<-c("SIS_name0", "SIS_name1", "lookup", "lookup_SIS0", "geometry") ; coo_raw$lookup_SIS0[coo_raw$SIS_name0=="Namibia"]<-"NA" # Used to map COO; Namibia should be "NA" and not NA
 eez_raw<-read_sf("Species/Map countries/Red_List_EEZ_Simplif_coo_0.001.shp") ; names(eez_raw)<-c("SIS_name0", "SIS_name1", "lookup", "lookup_SIS0", "geometry") ; eez_raw$lookup_SIS0[eez_raw$SIS_name0=="Namibia"]<-"NA"  ; eez_raw$lookup[eez_raw$SIS_name0=="Namibia"]<-"NA" # Used to map COO
-
+realms_raw<-realms_raw<-st_read("Species/Map countries/RL_Realms.shp")
+realms_mcp<-st_union(realms_raw) %>% st_as_sf(.) %>% st_transform(., CRSMOLL) %>% st_convex_hull(.) %>% st_buffer(., 1000)
 
 # Load Crosswalk CSV and Density CSV
 density_data<-read.csv("Species/Density.table.csv", sep=",") %>% subset(., .$Density>0)

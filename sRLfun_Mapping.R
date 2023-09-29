@@ -435,15 +435,23 @@ sRL_MapDistributionGBIF<-function(dat, scientific_name, First_step, AltMIN, AltM
     if(nrow(distGBIF)==0){no_hydrobasins()}
   }
   
+  ### Merge
+  distGBIF$binomial <- scientific_name
+  distGBIF<-distGBIF %>% dplyr::group_by(binomial) %>% dplyr::summarise(N = n())
+  
   ### Apply buffer
   distGBIF<-st_buffer(distGBIF, Buffer_km*1000) %>% st_as_sf()
   
+  ### If distGBIF is bigger than the Earth limits (mapped from realms; ie., if not fully covered by realms_mcp), I crop restrict to the Earth
+  if(is.empty(st_covered_by(distGBIF, realms_mcp, sparse=T)[[1]])){
+    sRL_loginfo("Polygon outside of Earth bounds - fixed", scientific_name)
+    distGBIF$geometry<-st_intersection(distGBIF, realms_mcp)$geometry
+  }
   
   ### Apply crop by land/sea
-  distGBIF$binomial=scientific_name
-  
-  # Create countries map based on the buffer
   if(GBIF_crop %in% c("cropland", "cropsea")){
+    
+    # Create countries map based on the buffer
     CountrySP<-st_crop(distCountries_mapping, 1.1*extent(distGBIF))
   
     # Remove land or sea if requested
@@ -456,8 +464,6 @@ sRL_MapDistributionGBIF<-function(dat, scientific_name, First_step, AltMIN, AltM
       distGBIF<-st_difference(distGBIF, countr)}
   }
   
-  ### Merge
-  distGBIF<-distGBIF %>% dplyr::group_by(binomial) %>% dplyr::summarise(N = n())
   
   ### Apply crop by altitude
   if(AltMIN>0 | AltMAX<9000){
