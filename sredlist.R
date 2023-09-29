@@ -2035,8 +2035,8 @@ Prom<-future({
     Max_pops<-c(max(res$clusters$pop, na.rm=T), max(res2$clusters$pop, na.rm=T), max(res$clusters$pop2, na.rm=T), max(res2$clusters$pop2, na.rm=T)) %>% subset(., abs(.) != Inf) %>% unique(.) %>% round(.)
     Pop_max<-c(min(Max_pops, na.rm=T), max(Max_pops, na.rm=T)) %>% unique(.)
     Pop_prop<-c((max(res$clusters$pop, na.rm=T)/sum(res$clusters$pop, na.rm=T)), (max(res2$clusters$pop, na.rm=T)/sum(res2$clusters$pop, na.rm=T))) %>% unique(.) %>% as.numeric(.) %>% round(.,2)*100 # Density uncertainty does not make any difference there
+    Pop_prop <- Pop_prop %>% as.character(.) %>% replace(., .=="NaN", "") # Used to transform NaN in empty text to avoid bugs in Final Estimates
     
-
     ### Plots
     ### AOH and clusters
     aohDF<-as.data.frame(aoh, xy = TRUE); names(aohDF)[3]<-"lyr1"
