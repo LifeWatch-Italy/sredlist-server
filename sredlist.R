@@ -974,9 +974,12 @@ function(scientific_name) { # nolint
     
     ### Plot EOO
     EOO_leaflet<-leaflet() %>%
-      addTiles() %>%
-      addPolygons(data=distSP, color="#D69F32", fillOpacity=0.5) %>% 
-      addPolygons(data=EOO, color="#ef3b2c", fillOpacity=0) %>% 
+      addTiles(group="OpenStreetMap") %>%
+      addEsriBasemapLayer(esriBasemapLayers$Imagery, group = "Satellite") %>%
+      addEsriBasemapLayer(esriBasemapLayers$Topographic, group = "Topography") %>%
+      addPolygons(data=distSP, color="#D69F32", fillOpacity=0.5, group="Distribution") %>% 
+      addPolygons(data=EOO, color="#ef3b2c", fillOpacity=0, group="EOO") %>% 
+      addLayersControl(baseGroups=c("OpenStreetMap", "Satellite", "Topography"), overlayGroups=c("Distribution", "EOO"), position="topleft") %>% 
       addMouseCoordinates() 
     
     ### Store usage
