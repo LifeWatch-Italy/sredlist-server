@@ -135,9 +135,9 @@ Prom<-future({
   sRL_loginfo("START - Habitat extract", scientific_name)
   
   # Extract habitats
-  tryCatch({
-    hab_pref <- rl_habitats(scientific_name, key = config$red_list_token)#$result
-  }, error=function(e){cat("TryCatch RL API altitude")})
+  if(scientific_name %in% speciesRL$scientific_name){
+    tryCatch({hab_pref <- rl_habitats(scientific_name, key = config$red_list_token)}, error=function(e){cat("TryCatch RL API habitat")})
+  }
   if(exists("hab_pref")==FALSE){no_hab_API()}
   
   if(is.null(nrow(hab_pref$result))==F){
