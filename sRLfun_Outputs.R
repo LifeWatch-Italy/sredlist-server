@@ -199,18 +199,19 @@ sRL_OutputDistribution<-function(scientific_name, Storage_SP, username){
   # Create template
   distSP$sci_name<-scientific_name
   distSIS<-distSP[, c("sci_name")]
-  distSIS[,c("presence", "origin", "seasonal", "compiler", "yrcomplied", "citation", "spatialref", "subspecies", "subpop", "data_sens", "sens_comm", "source", "dist_comm", "island", "tax_comm", "id_no", "Shape_Leng", "Shape_Area")]<-NA
+  distSIS[,c("presence", "origin", "seasonal", "compiler", "yrcompiled", "citation", "spatialref", "subspecies", "subpop", "data_sens", "sens_comm", "source", "dist_comm", "island", "tax_comm", "id_no", "Shape_Leng", "Shape_Area")]<-NA
   
   # Fill in some information
   distSIS$presence<-1
   distSIS$origin<-1
   distSIS$seasonal<-1
   distSIS$spatialref<-"WGS84"
-  distSIS$yrcomplied<-Sys.time() %>% format(., "%Y")
+  distSIS$yrcompiled<-Sys.time() %>% format(., "%Y")
   distSIS$citation<-"sRedList Working Group 2023" # To fill
   distSIS$source<-"sRedList platform"
   distSIS$id_no<-sRL_CalcIdno(scientific_name)
   distSIS$compiler<-username
+  distSIS$data_sens<-0
   
   # Send geometry column at the end of the table
   distSIS<-distSIS[, c(names(distSIS)[names(distSIS) != "geometry"], "geometry")]
@@ -248,13 +249,13 @@ sRL_OutputOccurrences <- function(scientific_name, Storage_SP, username) {
   # Create template shape
   dat$sci_name<-scientific_name
   dat_SIS<-dat[, c("sci_name")]
-  dat_SIS[,c("presence", "origin", "seasonal", "compiler", "yrcomplied", "citation", "dec_lat", "dec_long", "spatialref", "subspecies", "subpop", "data_sens", "sens_comm", "event_year", "source", "basisofrec", "catalog_no", "dist_comm", "island", "tax_comm", "id_no")]<-NA
+  dat_SIS[,c("presence", "origin", "seasonal", "compiler", "yrcompiled", "citation", "dec_lat", "dec_long", "spatialref", "subspecies", "subpop", "data_sens", "sens_comm", "event_year", "source", "basisofrec", "catalog_no", "dist_comm", "island", "tax_comm", "id_no")]<-NA
 
   # Fill in some information
   dat_SIS$presence<-1
   dat_SIS$origin<-1
   dat_SIS$seasonal<-1
-  dat_SIS$yrcomplied<-Sys.time() %>% format(., "%Y")
+  dat_SIS$yrcompiled<-Sys.time() %>% format(., "%Y")
   dat_SIS$dec_long<-st_coordinates(dat_SIS)[,1]
   dat_SIS$dec_lat<-st_coordinates(dat_SIS)[,2]
   dat_SIS$spatialref<-"WGS84"
@@ -263,12 +264,28 @@ sRL_OutputOccurrences <- function(scientific_name, Storage_SP, username) {
   dat_SIS$source<-dat$source
   dat_SIS$id_no<-sRL_CalcIdno(scientific_name)
   dat_SIS$compiler<-username
-
+  dat_SIS$data_sens<-0
+  
+  if("" %in% names(dat)){
+    dat_SIS$basisofrec<-revalue(dat$basisOfRecord, c(
+      "FOSSIL_SPECIMEN"="FossilSpecimen",
+      "HUMAN_OBSERVATION"="HumanObservation",
+      "MATERIAL_CITATION"="PreservedSpecimen",
+      "MATERIAL_SAMPLE"="PreservedSpecimen",
+      "MaterialSample"="PreservedSpecimen", # This one is in OBIS
+      "LIVING_SPECIMEN"="LivingSpecimen",
+      "MACHINE_OBSERVATION"="MachineObservation",
+      "OBSERVATION"="HumanObservation",
+      "PRESERVED_SPECIMEN"="PreservedSpecimen",
+      "OCCURRENCE"="HumanObservation"
+    ))
+  }
+  
   # If data from the Red List, copy the information previously saved
   if("RL" %in% dat$Source){
     RL<-read.csv(paste0(config$POINTdistribution_path, scientific_name, ".csv"))
   
-    for(COL in names(dat_SIS)[!names(dat_SIS) %in% c("sci_name", "geometry", "yrcomplied", "citation", "dec_lat", "dec_long", "spatialref")]){
+    for(COL in names(dat_SIS)[!names(dat_SIS) %in% c("sci_name", "geometry", "yrcompiled", "citation", "dec_lat", "dec_long", "spatialref")]){
       if(COL %in% names(RL)){
       dat_SIS[,COL]<-RL[,COL][match(dat_SIS$OBJECTID, RL$objectid)]
     }}
