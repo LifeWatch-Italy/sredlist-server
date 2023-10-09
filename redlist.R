@@ -129,32 +129,47 @@ function(scientific_name, Dist_path = "") {
 #* @tag RedList
 function(scientific_name) {
 
-Prom<-future({
-
   scientific_name <- sRL_decode(scientific_name)
-  sRL_loginfo("START - Habitat extract", scientific_name)
-  
-  # Extract habitats
-  if(scientific_name %in% speciesRL$scientific_name){
-    tryCatch({hab_pref <- rl_habitats(scientific_name, key = config$red_list_token)}, error=function(e){cat("TryCatch RL API habitat")})
-  }
-  if(exists("hab_pref")==FALSE){no_hab_API()}
-  
-  if(is.null(nrow(hab_pref$result))==F){
-    hab_pref$result <- hab_pref$result %>% distinct(., code, .keep_all=T) # Remove double (when habitats are used in several seasons)
-  
-    # Save in Storage SP
-    Storage_SP<-sRL_StoreRead(scientific_name, MANDAT=1)
-    Storage_SP<-sRL_OutLog(Storage_SP, c("AOH_HabitatORIGINAL", "AOH_HabitatMarginalORIGINAL"), c(hab_pref$result$code[hab_pref$result$suitability=="Suitable"] %>% paste(., collapse=","), hab_pref$result$code[hab_pref$result$suitability!="Suitable"] %>% paste(., collapse=",")))
-    sRL_StoreSave(scientific_name, Storage_SP)
-  }
-  sRL_loginfo("END - Habitat extract", scientific_name)
-  
-  
-  return(hab_pref)
 
-}, gc=T, seed=T)
-return(Prom)
+  
+  ### Only run a promise with rredlist if species in the Red List (otherwise return empty)
+  if(scientific_name %in% speciesRL$scientific_name){
+    
+    Prom<-future({
+      sRL_loginfo("START - Habitat extract", scientific_name)
+      
+      # Extract habitats
+      tryCatch({hab_pref <- rl_habitats(scientific_name, key = config$red_list_token)}, error=function(e){cat("TryCatch RL API habitat")})
+      
+      if(exists("hab_pref")==FALSE){no_hab_API()}
+      
+      if(is.null(nrow(hab_pref$result))==F){
+        hab_pref$result <- hab_pref$result %>% distinct(., code, .keep_all=T) # Remove double (when habitats are used in several seasons)
+        
+        # Save in Storage SP
+        Storage_SP<-sRL_StoreRead(scientific_name, MANDAT=1)
+        Storage_SP<-sRL_OutLog(Storage_SP, c("AOH_HabitatORIGINAL", "AOH_HabitatMarginalORIGINAL"), c(hab_pref$result$code[hab_pref$result$suitability=="Suitable"] %>% paste(., collapse=","), hab_pref$result$code[hab_pref$result$suitability!="Suitable"] %>% paste(., collapse=",")))
+        sRL_StoreSave(scientific_name, Storage_SP)
+      }
+      sRL_loginfo("END - Habitat extract", scientific_name)
+      
+      
+      return(hab_pref)
+      
+    }, gc=T, seed=T)
+    
+    return(Prom)
+    
+  ### If species not in the RL, I return an empty hab_pref  
+  } else {
+    
+      sRL_loginfo("START - Habitat extract (not in RL)", scientific_name)
+      hab_pref<-list(name=c(scientific_name), result=list())
+      sRL_loginfo("END - Habitat extract (not in RL)", scientific_name)
+      return(hab_pref)
+  }
+  
+
 }
 
 
@@ -191,7 +206,7 @@ Prom<-future({
     ### Small ranges
     Range_size<-as.numeric(sum(st_area(Storage_SP$distSP_saved)))/(10^6)
     
-    if(Range_size < as.numeric(config$Size_LargeRange)){
+    if(Range_size < 10000){
       sRL_loginfo("Run altitude extract (Small range)", scientific_name)
       EXTR<-round(exactextractr::exact_extract(sRL_ChargeAltRaster(), Storage_SP$distSP_saved, c("min", "max")))
       if(is.na(alt_pref$result$elevation_lower)==T){alt_pref$result$elevation_lower<-min(EXTR$min, na.rm=T)}
@@ -199,7 +214,7 @@ Prom<-future({
     }
     
     ### Large range
-    if(Range_size >= as.numeric(config$Size_LargeRange)){
+    if(Range_size >= 10000){
       sRL_loginfo("Run altitude extract (Large range)", scientific_name)
 
       if(is.na(alt_pref$result$elevation_lower)==T){

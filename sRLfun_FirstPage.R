@@ -3,7 +3,6 @@
 ### Print log info inside future promise
 sRL_loginfo<-function(x, scientific_name){
   print(paste0(x, " [", Sys.time(), " - ", scientific_name, "]"))
-#insight::print_colour(paste0(x, " XX[", Sys.time(), "]", "\n"), "green")
 }
 
 

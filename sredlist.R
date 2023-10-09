@@ -298,7 +298,7 @@ Prom<-future({
   LIMS<-c(xmin=min(dat$decimalLongitude), xmax=max(dat$decimalLongitude), ymin=min(dat$decimalLatitude), ymax=max(dat$decimalLatitude))
   LIMS<-c(LIMS["xmin"] - 0.1*abs(LIMS["xmin"]-LIMS["xmax"]),    LIMS["xmax"] + 0.1*abs(LIMS["xmin"]-LIMS["xmax"]),
           LIMS["ymin"] - 0.1*abs(LIMS["ymin"]-LIMS["ymax"]),    LIMS["ymax"] + 0.1*abs(LIMS["ymin"]-LIMS["ymax"]))
-  CountrySP_WGS<-st_crop(distCountries_WGS, LIMS)
+  CountrySP_WGS<-st_crop(distCountries_WGS, LIMS) %>% vect(.)
   if(nrow(CountrySP_WGS)==0){
     Skip_country=T ; Tests_to_run=c("capitals", "centroids", "equal", "gbif", "institutions", "zeros")}else{
       Skip_country=F; Tests_to_run=c("capitals", "centroids", "equal", "gbif", "institutions", "zeros", "seas")}
@@ -309,7 +309,8 @@ Prom<-future({
                                  lat = "decimalLatitude",
                                  countries = "countryCode",
                                  species = "species",
-                                 seas_ref=CountrySP_WGS %>% as_Spatial(.),
+                                 capitals_rad = 1000,
+                                 seas_ref=CountrySP_WGS,
                                  tests = Tests_to_run)
   if(Skip_country==T){flags_raw$.sea<-FALSE}
 
