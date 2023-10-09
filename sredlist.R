@@ -130,6 +130,7 @@ Prom<-future({
   sf::sf_use_s2(FALSE)
 
   #Filter param
+  sRL_loginfo("START - Prepare distribution", scientific_name)
   scientific_name <- sRL_decode(scientific_name)
   Storage_SP=sRL_StoreRead(scientific_name, MANDAT=0) ; print(names(Storage_SP))
   Storage_SP<-subset(Storage_SP, names(Storage_SP) %in% c("CountrySP_saved", "Creation", "Output")) # Remove other elements from Storage_SP which could come from a previous process on the platform
@@ -145,7 +146,6 @@ Prom<-future({
   
 
   ### Load Distribution Species
-  sRL_loginfo("START - Prepare distribution", scientific_name)
   distributions <- sRL_ReadDistribution(scientific_name, Dist_path) %>% sRL_PrepareDistrib(., scientific_name)
   distSP_full <- subset(distributions, distributions$binomial == scientific_name) # nolint 
   choice_presence <- c(presences)
@@ -198,6 +198,8 @@ Prom<-future({
   # Save plot for RMarkDown (and create repository)
   dir.create(paste0("resources/AOH_stored/", sub(" ", "_", scientific_name), "/Plots"), recursive=T)
   ggsave(paste0("resources/AOH_stored/", sub(" ", "_", scientific_name), "/Plots/plot_dist.png"), plot_dist, width=10, height=8)
+  sRL_loginfo("END - Colour distribution", scientific_name)
+  
   
   # Return
   return(plot_dist)
@@ -304,7 +306,12 @@ Prom<-future({
       Skip_country=F; Tests_to_run=c("capitals", "centroids", "equal", "gbif", "institutions", "zeros", "seas")}
 
   # Flag observations to remove
-  flags_raw <- clean_coordinates(x = dat,
+  
+  # TEMPORARY (until CoordinateCleaner bug is fixed)
+  Tests_to_run<-Tests_to_run[!Tests_to_run %in% c("centroids", "institutions")]
+  
+  tryCatch({
+    flags_raw <- clean_coordinates(x = dat,
                                  lon = "decimalLongitude",
                                  lat = "decimalLatitude",
                                  countries = "countryCode",
@@ -312,8 +319,10 @@ Prom<-future({
                                  capitals_rad = 1000,
                                  seas_ref=CountrySP_WGS,
                                  tests = Tests_to_run)
-  if(Skip_country==T){flags_raw$.sea<-FALSE}
-
+    if(Skip_country==T){flags_raw$.sea<-FALSE}
+  }, error=function(e){"Bug in clean coordinates"})
+  if(exists("flags_raw")==F){cat("Bug in clean coordinates"); flags_raw<-dat ; flags_raw$.val<-flags_raw$.equ<-flags_raw$.zer<-flags_raw$.cap<-flags_raw$.sea<-flags_raw$.gbf<-flags_raw$.inst<-flags_raw$.cen<-TRUE}
+  
   # Assign + count use of step 1
   output_to_save<-sRL_InitLog(scientific_name, DisSource = "Created") ; output_to_save$Value[output_to_save$Parameter=="Gbif_Source"]<-c(ifelse(Gbif_Source[1]==1, "GBIF", ""), ifelse(Gbif_Source[2]==1, "OBIS", ""), ifelse(Gbif_Source[3]==1, "Red_List", ""), ifelse(is.null(nrow(Uploaded_Records)), "", "Uploaded")) %>% .[.!=""] %>% paste(., collapse=" + ")
   output_to_save$Count[output_to_save$Parameter=="Gbif_Source"]<-ifelse(file.exists(paste0("resources/AOH_stored/", gsub(" ", "_", sRL_decode(scientific_name)), "/Storage_SP.rds")), (sRL_StoreRead(scientific_name, 1)$Output$Count[2]+1), 1)
