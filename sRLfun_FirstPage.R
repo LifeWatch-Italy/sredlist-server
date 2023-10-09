@@ -408,7 +408,7 @@ sRL_RemoveDistrib<-function(Max_Days){
   list_remove<-list_dist[! grepl("_RL", list_dist)] %>% paste0(config$distribution_path, .) %>% subset(., . != config$distribution_path)
   
   # Restrict to distributions from > 15 days
-  Recent_dates <- (Sys.Date()-c(1:Max_Days)) %>% as.character(.) %>% gsub("-", "", .)
+  Recent_dates <- (Sys.Date()-c(0:Max_Days)) %>% as.character(.) %>% gsub("-", "", .)
   list_remove_filtered<-subset(list_remove, ! grepl(paste(Recent_dates, collapse="|"), list_remove))
   
   # Remove them
