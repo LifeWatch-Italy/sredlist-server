@@ -106,7 +106,7 @@ function(scientific_name, Dist_path = "") {
   sRL_loginfo("END - Distribution info", scientific_name)
   
   return(list(
-    presences = union(c(1, 2, 3), unique(distSP$presence)),
+    presences = union(c(1, 2), unique(distSP$presence)),
     seasons = union(c(1, 2), unique(distSP$seasonal)),
     origins = union(c(1, 2), unique(distSP$origin))
   ))
