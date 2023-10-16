@@ -658,7 +658,7 @@ Prom<-future({
     Crop_par<-Storage_SP$Output$Value[Storage_SP$Output$Parameter=="Mapping_Crop"]
     
     ### Smooth if parameter >0
-    Gbif_Smooth=as.numeric(Gbif_Smooth)/10 ; print(Gbif_Smooth) # I divide by 10 so that we can have a range of 0-100 on the client (decimal don't work correctly with the slider)
+    Gbif_Smooth=as.numeric(Gbif_Smooth) ; print(Gbif_Smooth)
     if(Gbif_Smooth>0){
       
       if(Crop_par %in% c("cropland", "cropsea")){
@@ -668,9 +668,9 @@ Prom<-future({
                                         AltMAX=Storage_SP$Output$Value[Storage_SP$Output$Parameter=="Mapping_Altitude"] %>% strsplit(., ",") %>% unlist(.) %>% as.numeric(.) %>% .[2],
                                         Buffer_km=as.numeric(Storage_SP$Output$Value[Storage_SP$Output$Parameter=="Mapping_Buffer"]),
                                         GBIF_crop="",
-                                        Gbif_Param=c(as.numeric(Storage_SP$Output$Value[Storage_SP$Output$Parameter=="Kernel_parameter"]), as.numeric(Storage_SP$Output$Value[Storage_SP$Output$Parameter=="Alpha_parameter"])))
+                                        Gbif_Param=c(as.numeric(Storage_SP$Output$Value[Storage_SP$Output$Parameter=="Alpha_parameter"]), as.numeric(Storage_SP$Output$Value[Storage_SP$Output$Parameter=="Kernel_parameter"])))
       } else {distSP<-Storage_SP$distSP3_saved}
-      distSP<-smooth(distSP, method = "ksmooth", smoothness=Gbif_Smooth, max_distance=10000)} else{
+      distSP<-smooth(distSP, method = "ksmooth", smoothness=(exp(Gbif_Smooth/20)-1), max_distance=10000)} else{
         distSP<-Storage_SP$distSP3_saved
       }
     distSP<-st_make_valid(distSP)
