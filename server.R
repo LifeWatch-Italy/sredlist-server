@@ -112,6 +112,11 @@ if(config$crosswalk == "Lumbierres"){crosswalk_to_use<- read.table("Species/Cros
 # Load the empty output log
 output<-read.csv("Species/Output log empty.csv")
 
+# If output tracker folder does not exist, I create it
+if(file.exists("Species/Stored_outputs") == FALSE){dir.create("Species/Stored_outputs")}
+
+
+
 # Load Hydrobasins map
 hydro_raw<-st_read(config$hydrobasins_path) ; st_crs(hydro_raw)<-CRSMOLL
 

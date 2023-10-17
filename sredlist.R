@@ -2782,12 +2782,12 @@ function(scientific_name) {
   
   # Save Outputs
   tryCatch({
-    FileStored<-paste0("Species/Stored_outputs/Stored_", substr(Sys.Date(), 1, 7), ".csv")
+    FileStored<-paste0("Species/Stored_outputs/Stored_", substr(Sys.Date(), 1, 7), ".rds")
     if(file.exists(FileStored)){
-      Saved_output<-read.csv(FileStored)
-    } else {Saved_output<-read.csv("Species/Output_save_empty.csv")}
+      Saved_output<-readRDS(FileStored)
+      } else {Saved_output<-read.csv("Species/Output_save_empty.csv")}
     Saved_output<-rbind.fill(Saved_output, output_species)
-    write.csv(Saved_output, FileStored, row.names=F)
+    saveRDS(Saved_output, FileStored)
   }, error=function(e){cat("TryCatch save output while zipping")})
 
   # Remove the local files

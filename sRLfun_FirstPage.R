@@ -319,26 +319,30 @@ sRL_cleaningMemory<-function(Time_limit){
       
       # Keep track in Stored_Output
       tryCatch({
-        FileStored<-paste0("Species/Stored_outputs/Stored_", substr(Sys.Date(), 1, 7), ".csv")
-        
+        FileStored<-paste0("Species/Stored_outputs/Stored_", substr(Sys.Date(), 1, 7), ".rds")
+
+        # Determine if I have to run distributions cleaning function (only once at the start of the month)        
         if(file.exists(FileStored)){
-          Saved_output<-read.csv(FileStored)
+          Saved_output<-readRDS(FileStored)
           RMDIST<-ifelse(("NotCompleted" %in% Saved_output$Parameter | "AOH_HabitatPreference" %in% Saved_output$Parameter), 0, 1) # If AOH has never been called (ie if there is no NotCompleted saved this month, AND no complete assessment with AOH performed)n then I clean distributions
         } else {
           Saved_output<-read.csv("Species/Output_save_empty.csv")
           RMDIST<-1 # If it's the first Output_save run of the month, clean distributions (but later so that it does not delay saving output_save)
         }
         
+        # Extract NotCompleted assessments
         for(SP in 1:length(toremove_temp)){
           tryCatch({
-          SP_name<-toremove_temp[SP] %>% strsplit(., "/") %>% unlist(.) %>% .[length(.)] %>% sub("_", " ", .)
-          St_SP<-sRL_StoreRead(SP_name, 0)
-          Step<-sRL_LastStep(St_SP)
-          Saved_output[nrow(Saved_output)+1,]<-c(SP_name, as.character(St_SP$Creation[1]), "NotCompleted", NA, Step)
+            SP_name<-toremove_temp[SP] %>% strsplit(., "/") %>% unlist(.) %>% .[length(.)] %>% sub("_", " ", .)
+            St_SP<-sRL_StoreRead(SP_name, 0)
+            Step<-sRL_LastStep(St_SP)
+            Saved_output[nrow(Saved_output)+1,]<-c(SP_name, as.character(St_SP$Creation[1]), "NotCompleted", NA, Step)
           }, error=function(e){cat(paste0("Problem tracking SP: ", SP_name))})
         }
         
-        if(length(toremove_temp)>0){write.csv(Saved_output, FileStored, row.names=F)}
+        # Save output_save
+        if(length(toremove_temp)>0){saveRDS(Saved_output, FileStored)}
+        
       }, error=function(e){cat("Problem tracking incomplete assessments")})
       
       # Remove
