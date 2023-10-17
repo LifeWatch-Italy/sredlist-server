@@ -41,7 +41,7 @@ sRL_fragmentation<-function(aoh, aoh_type, dispersion, density_sp){
 
 
 # sRL_CalcHumandensity
-sRL_CalcHumandensity<-function(scientific_name, distSP, GL){
+sRL_CalcHumandensity<-function(scientific_name, username, distSP, GL){
   
   ### Charge recent human layer
   Year2<-2020
@@ -59,8 +59,8 @@ sRL_CalcHumandensity<-function(scientific_name, distSP, GL){
   human_change<-human2_crop-human1_crop
   
   ### Save rasters
-  terra::writeRaster(human2_crop, paste0("resources/AOH_stored/", gsub(" ", "_", scientific_name), "/Human_density_Current.tif"), overwrite=T)
-  terra::writeRaster(human_change, paste0("resources/AOH_stored/", gsub(" ", "_", scientific_name), "/Human_density_Change.tif"), overwrite=T)
+  terra::writeRaster(human2_crop, paste0("resources/AOH_stored/", gsub(" ", "_", scientific_name), "_", sRL_userdecode(username), "/Human_density_Current.tif"), overwrite=T)
+  terra::writeRaster(human_change, paste0("resources/AOH_stored/", gsub(" ", "_", scientific_name), "_", sRL_userdecode(username), "/Human_density_Change.tif"), overwrite=T)
   
   ### Plots
   RS_name="Human population density"
@@ -84,8 +84,8 @@ sRL_CalcHumandensity<-function(scientific_name, distSP, GL){
     ,ncol=2
   )
   
-  ggsave(filename = paste0("resources/AOH_stored/", sub(" ", "_", scientific_name), "/Plots/RS_plot_humandensity.png"), plot = GG_RS, width=10, height=6)
-  RS_plot <- base64enc::dataURI(file = paste0("resources/AOH_stored/", sub(" ", "_", scientific_name), "/Plots/RS_plot_humandensity.png"), mime = "image/png", encoding = "base64") # nolint
+  ggsave(filename = paste0("resources/AOH_stored/", sub(" ", "_", scientific_name), "_", sRL_userdecode(username), "/Plots/RS_plot_humandensity.png"), plot = GG_RS, width=10, height=6)
+  RS_plot <- base64enc::dataURI(file = paste0("resources/AOH_stored/", sub(" ", "_", scientific_name), "_", sRL_userdecode(username), "/Plots/RS_plot_humandensity.png"), mime = "image/png", encoding = "base64") # nolint
   
   
   ### Calculate outputs
@@ -111,7 +111,7 @@ sRL_CalcHumandensity<-function(scientific_name, distSP, GL){
 
 
 # sRL_CalcForestchange
-sRL_CalcForestchange<-function(scientific_name, distSP, GL){
+sRL_CalcForestchange<-function(scientific_name, username, distSP, GL){
 
   ### Calculate year for forest 1
   Year2=2022
@@ -128,8 +128,8 @@ sRL_CalcForestchange<-function(scientific_name, distSP, GL){
   forest_change<-forest2_crop-forest1_crop
   
   ### Save rasters
-  terra::writeRaster(forest2_crop, paste0("resources/AOH_stored/", gsub(" ", "_", scientific_name), "/Forest_cover_Current.tif"), overwrite=T)
-  terra::writeRaster(forest_change, paste0("resources/AOH_stored/", gsub(" ", "_", scientific_name), "/Forest_cover_Change.tif"), overwrite=T)
+  terra::writeRaster(forest2_crop, paste0("resources/AOH_stored/", gsub(" ", "_", scientific_name), "_", sRL_userdecode(username), "/Forest_cover_Current.tif"), overwrite=T)
+  terra::writeRaster(forest_change, paste0("resources/AOH_stored/", gsub(" ", "_", scientific_name), "_", sRL_userdecode(username), "/Forest_cover_Change.tif"), overwrite=T)
   
   ### Plots
   RS_name="Forest cover"
@@ -153,8 +153,8 @@ sRL_CalcForestchange<-function(scientific_name, distSP, GL){
     ncol=2
   )
   
-  ggsave(filename = paste0("resources/AOH_stored/", sub(" ", "_", scientific_name), "/Plots/RS_plot_forest.png"), plot = GG_RS, width=10, height=6)
-  RS_plot <- base64enc::dataURI(file = paste0("resources/AOH_stored/", sub(" ", "_", scientific_name), "/Plots/RS_plot_forest.png"), mime = "image/png", encoding = "base64") # nolint
+  ggsave(filename = paste0("resources/AOH_stored/", sub(" ", "_", scientific_name), "_", sRL_userdecode(username), "/Plots/RS_plot_forest.png"), plot = GG_RS, width=10, height=6)
+  RS_plot <- base64enc::dataURI(file = paste0("resources/AOH_stored/", sub(" ", "_", scientific_name), "_", sRL_userdecode(username), "/Plots/RS_plot_forest.png"), mime = "image/png", encoding = "base64") # nolint
   
   
   ### Calculate outputs
@@ -179,7 +179,7 @@ sRL_CalcForestchange<-function(scientific_name, distSP, GL){
 
 
 # sRL_CalcModification
-sRL_CalcModification<-function(scientific_name, distSP){
+sRL_CalcModification<-function(scientific_name, username, distSP){
   
   ### Charge human modification layers
   human1<-rast(gsub("XXXX", 1990, config$Human_modification_path))
@@ -192,8 +192,8 @@ sRL_CalcModification<-function(scientific_name, distSP){
   human_change<-human2_crop-human1_crop
   
   ### Save rasters
-  terra::writeRaster(human2_crop, paste0("resources/AOH_stored/", gsub(" ", "_", scientific_name), "/Human_modification_Current.tif"), overwrite=T)
-  terra::writeRaster(human_change, paste0("resources/AOH_stored/", gsub(" ", "_", scientific_name), "/Human_modification_Change.tif"), overwrite=T)
+  terra::writeRaster(human2_crop, paste0("resources/AOH_stored/", gsub(" ", "_", scientific_name), "_", sRL_userdecode(username), "/Human_modification_Current.tif"), overwrite=T)
+  terra::writeRaster(human_change, paste0("resources/AOH_stored/", gsub(" ", "_", scientific_name), "_", sRL_userdecode(username), "/Human_modification_Change.tif"), overwrite=T)
   
   ### Plots
   RS_name="Human modification index"
@@ -217,8 +217,8 @@ sRL_CalcModification<-function(scientific_name, distSP){
     ,ncol=2
   )
   
-  ggsave(filename = paste0("resources/AOH_stored/", sub(" ", "_", scientific_name), "/Plots/RS_plot_modif.png"), plot = GG_RS, width=10, height=6)
-  RS_plot <- base64enc::dataURI(file = paste0("resources/AOH_stored/", sub(" ", "_", scientific_name), "/Plots/RS_plot_modif.png"), mime = "image/png", encoding = "base64") # nolint
+  ggsave(filename = paste0("resources/AOH_stored/", sub(" ", "_", scientific_name), "_", sRL_userdecode(username), "/Plots/RS_plot_modif.png"), plot = GG_RS, width=10, height=6)
+  RS_plot <- base64enc::dataURI(file = paste0("resources/AOH_stored/", sub(" ", "_", scientific_name), "_", sRL_userdecode(username), "/Plots/RS_plot_modif.png"), mime = "image/png", encoding = "base64") # nolint
   
   
   ### Calculate outputs
@@ -236,20 +236,6 @@ sRL_CalcModification<-function(scientific_name, distSP){
     RS_trendsABS=round(RS_trendsABS),
     RS_trendsREL=paste0(100*round(RS_trendsREL, 3), " % change"),
     RS_timewindow=RS_timewindow
-  ))
-  
-}
-
-
-# sRL_CalcNDVIchange
-sRL_CalcNDVIchange<-function(scientific_name, distSP, GL){
-  
-  ### Return
-  return(list(
-    RS_plot=NULL,
-    RS_current=NA,
-    RS_trends=NA,
-    RS_timewindow=NA
   ))
   
 }

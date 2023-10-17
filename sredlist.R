@@ -124,7 +124,7 @@ function(scientific_name, Dist_path = "") {
 #* @param Dist_path:string Distribution Folder default RedList
 #* @serializer png list(width = 800, height = 600)
 #* @tag sRedList1
-function(scientific_name, presences = list(), seasons = list() , origins = list(), Dist_path = "") { # nolint
+function(scientific_name, username, presences = list(), seasons = list() , origins = list(), Dist_path = "") { # nolint
 
 Prom<-future({
   sf::sf_use_s2(FALSE)
@@ -132,11 +132,11 @@ Prom<-future({
   #Filter param
   sRL_loginfo("START - Prepare distribution", scientific_name)
   scientific_name <- sRL_decode(scientific_name)
-  Storage_SP=sRL_StoreRead(scientific_name, MANDAT=0) ; print(names(Storage_SP))
+  Storage_SP=sRL_StoreRead(scientific_name,  username, MANDAT=0) ; print(names(Storage_SP))
   Storage_SP<-subset(Storage_SP, names(Storage_SP) %in% c("CountrySP_saved", "Creation", "Output")) # Remove other elements from Storage_SP which could come from a previous process on the platform
   
   # If outlog not present (I don't think this should happen but just in case)
-  if(! "Output" %in% names(Storage_SP)){Storage_SP$Output<-sRL_InitLog(scientific_name, DisSource = "Unknown")}
+  if(! "Output" %in% names(Storage_SP)){Storage_SP$Output<-sRL_InitLog(scientific_name, username, DisSource = "Unknown")}
   
   print(Dist_path)
   Dist_path <- ifelse(Dist_path == "", paste0(R.utils::capitalize(trim(gsub(" ", "_", scientific_name))), '_RL'), Dist_path ) # nolint
@@ -177,7 +177,7 @@ Prom<-future({
   Storage_SP<-sRL_OutLog(Storage_SP, c("Distribution_Presence", "Distribution_Seasonal", "Distribution_Origin"), c(paste0(presences, collapse=","), paste0(seasons, collapse=","), paste0(origins, collapse=",")))
   DisSource<-ifelse(substr(Dist_path, nchar(Dist_path)-2, nchar(Dist_path))=="_RL", "Red List", ifelse(grepl("Created", Dist_path), "StoredOnPlatform", "Uploaded"))
   Storage_SP<-sRL_OutLog(Storage_SP, "Distribution_Source", DisSource) # If Dist_path ends by _RL it comes from the RL, uploaded otherwise
-  sRL_StoreSave(scientific_name, Storage_SP)
+  sRL_StoreSave(scientific_name, username,  Storage_SP)
   sRL_loginfo("Plot distribution", scientific_name)
   
   ### Plot
@@ -196,8 +196,8 @@ Prom<-future({
   }
   
   # Save plot for RMarkDown (and create repository)
-  dir.create(paste0("resources/AOH_stored/", sub(" ", "_", scientific_name), "/Plots"), recursive=T)
-  ggsave(paste0("resources/AOH_stored/", sub(" ", "_", scientific_name), "/Plots/plot_dist.png"), plot_dist, width=10, height=8)
+  dir.create(paste0("resources/AOH_stored/", sub(" ", "_", scientific_name), "_", sRL_userdecode(username), "/Plots"), recursive=T)
+  ggsave(paste0("resources/AOH_stored/", sub(" ", "_", scientific_name), "_", sRL_userdecode(username), "/Plots/plot_dist.png"), plot_dist, width=10, height=8)
   sRL_loginfo("END - Colour distribution", scientific_name)
   
   
@@ -229,7 +229,7 @@ return(Prom %...>% plot())
 #* @param Uploaded_Records:file A file
 #* @serializer unboxedJSON
 #* @tag sRedList
-function(scientific_name, Gbif_Source=list(), Gbif_Synonym="", Uploaded_Records="") {
+function(scientific_name, username, Gbif_Source=list(), Gbif_Synonym="", Uploaded_Records="") {
 
 Prom<-future({
   sf::sf_use_s2(FALSE)
@@ -278,11 +278,11 @@ Prom<-future({
   if(nrow(dat)==0){no_records()}
   
   ### Create storage folder if it does not exist
-  dir.create(paste0("resources/AOH_stored/", sub(" ", "_", scientific_name), "/Plots"), recursive=T)
+  dir.create(paste0("resources/AOH_stored/", sub(" ", "_", scientific_name), "_", sRL_userdecode(username), "/Plots"), recursive=T)
   
   # ### Plot
   sRL_loginfo("START - Plot data", scientific_name)
-  ggsave(paste0("resources/AOH_stored/", sub(" ", "_", scientific_name), "/Plots/plot_data.png"), (
+  ggsave(paste0("resources/AOH_stored/", sub(" ", "_", scientific_name), "_", sRL_userdecode(username), "/Plots/plot_data.png"), (
     ggplot() +
       coord_fixed() +
       geom_sf(data=distCountries_light, colour = "gray86", fill = "gray80")+
@@ -291,7 +291,7 @@ Prom<-future({
       ggtitle(paste(names(table(dat$Source_type)), table(dat$Source_type), sep=" (") %>% paste(., collapse="), ") %>% paste0("Raw geo-referenced observations (N=", nrow(dat), ") from: ", ., ")") )+
       sRLTheme_maps %+replace%   theme(legend.position="top")
     ), width=18, height=5.5) # nolint
-  plot1 <- base64enc::dataURI(file = paste0("resources/AOH_stored/", sub(" ", "_", scientific_name), "/Plots/plot_data.png"), mime = "image/png")
+  plot1 <- base64enc::dataURI(file = paste0("resources/AOH_stored/", sub(" ", "_", scientific_name), "_", sRL_userdecode(username), "/Plots/plot_data.png"), mime = "image/png")
   sRL_loginfo("END - Create data", scientific_name)
   sRL_loginfo("START - Clean coordinates", scientific_name)
 
@@ -324,11 +324,11 @@ Prom<-future({
   if(exists("flags_raw")==F){cat("Bug in clean coordinates"); flags_raw<-dat ; flags_raw$.val<-flags_raw$.equ<-flags_raw$.zer<-flags_raw$.cap<-flags_raw$.sea<-flags_raw$.gbf<-flags_raw$.inst<-flags_raw$.cen<-TRUE}
   
   # Assign + count use of step 1
-  output_to_save<-sRL_InitLog(scientific_name, DisSource = "Created") ; output_to_save$Value[output_to_save$Parameter=="Gbif_Source"]<-c(ifelse(Gbif_Source[1]==1, "GBIF", ""), ifelse(Gbif_Source[2]==1, "OBIS", ""), ifelse(Gbif_Source[3]==1, "Red_List", ""), ifelse(is.null(nrow(Uploaded_Records)), "", "Uploaded")) %>% .[.!=""] %>% paste(., collapse=" + ")
-  output_to_save$Count[output_to_save$Parameter=="Gbif_Source"]<-ifelse(file.exists(paste0("resources/AOH_stored/", gsub(" ", "_", sRL_decode(scientific_name)), "/Storage_SP.rds")), (sRL_StoreRead(scientific_name, 1)$Output$Count[2]+1), 1)
+  output_to_save<-sRL_InitLog(scientific_name, username, DisSource = "Created") ; output_to_save$Value[output_to_save$Parameter=="Gbif_Source"]<-c(ifelse(Gbif_Source[1]==1, "GBIF", ""), ifelse(Gbif_Source[2]==1, "OBIS", ""), ifelse(Gbif_Source[3]==1, "Red_List", ""), ifelse(is.null(nrow(Uploaded_Records)), "", "Uploaded")) %>% .[.!=""] %>% paste(., collapse=" + ")
+  output_to_save$Count[output_to_save$Parameter=="Gbif_Source"]<-ifelse(file.exists(paste0("resources/AOH_stored/", gsub(" ", "_", sRL_decode(scientific_name)), "_", sRL_userdecode(username), "/Storage_SP.rds")), (sRL_StoreRead(scientific_name,  username, 1)$Output$Count[2]+1), 1)
   output_to_save$Value[output_to_save$Parameter=="Gbif_Synonyms"]<-ifelse(Gbif_Synonym=="", NA, paste(Gbif_Synonym, collapse="+"))
   Storage_SP<-list(flags_raw_saved=flags_raw, Creation=Sys.time(), Output=output_to_save)
-  sRL_StoreSave(scientific_name, Storage_SP)
+  sRL_StoreSave(scientific_name, username,  Storage_SP)
   
   return(list(plot_data=plot1))
   
@@ -372,7 +372,7 @@ function(scientific_name) {
 #* @param Gbif_Sea:string Gbif_Sea
 #* @serializer htmlwidget
 #* @tag sRedList
-function(scientific_name, Gbif_Year= -1, Gbif_Uncertainty=-1, Gbif_Extent=list(), Gbif_Sea="", Gbif_automatedBin="", Gbif_yearBin="", Gbif_uncertainBin="") {
+function(scientific_name, username, Gbif_Year= -1, Gbif_Uncertainty=-1, Gbif_Extent=list(), Gbif_Sea="", Gbif_automatedBin="", Gbif_yearBin="", Gbif_uncertainBin="") {
 
 Prom<-future({
   sf::sf_use_s2(FALSE)  
@@ -391,7 +391,7 @@ Prom<-future({
   Gbif_uncertainBin<-Gbif_uncertainBin=="true" ; print(Gbif_uncertainBin)
   
   ### Charge downloaded data
-  Storage_SP<-sRL_StoreRead(scientific_name, MANDAT=1) ; print(names(Storage_SP))
+  Storage_SP<-sRL_StoreRead(scientific_name,  username, MANDAT=1) ; print(names(Storage_SP))
   flags_raw<-Storage_SP$flags_raw_saved
   if(Gbif_automatedBin != "true"){flags_raw$.val<-flags_raw$.equ<-flags_raw$.zer<-flags_raw$.cap<-flags_raw$.cen<-flags_raw$.gbf<-flags_raw$.inst<-TRUE}
   
@@ -423,7 +423,7 @@ Prom<-future({
   Storage_SP$flags<-flags
   Storage_SP$Leaflet_Filter<-Leaflet_Filter
   Storage_SP<-sRL_OutLog(Storage_SP, c("Gbif_Year", "Gbif_Uncertainty", "Gbif_Sea", "Gbif_Extent", "Gbif_automatedBin", "Gbif_yearBin", "Gbif_uncertainBin"), c(Gbif_Year, Gbif_Uncertainty, Gbif_Sea, paste0(Gbif_Extent, collapse=","), Gbif_automatedBin=="true", Gbif_yearBin, Gbif_uncertainBin))
-  sRL_StoreSave(scientific_name, Storage_SP)
+  sRL_StoreSave(scientific_name, username,  Storage_SP)
   
   sRL_loginfo("END - GBIF Step 2", scientific_name)
   
@@ -444,13 +444,13 @@ return(Prom)
 #* @param scientific_name:string Scientific Name
 #* @serializer unboxedJSON
 #* @tag sRedList
-function(scientific_name) {
+function(scientific_name, username) {
   
   Prom<-future({
     
     scientific_name <- sRL_decode(scientific_name)
     
-    Storage_SP=sRL_StoreRead(scientific_name, MANDAT=1)
+    Storage_SP=sRL_StoreRead(scientific_name,  username, MANDAT=1)
     flags<-Storage_SP$flags %>% subset(., is.na(Reason)==T)
     alt_raw<-sRL_ChargeAltRaster()
     
@@ -476,11 +476,11 @@ function(scientific_name) {
       theme_minimal() + theme(plot.background=element_rect(fill="white"))
     
     # Save and return plot
-    ggsave(paste0("resources/AOH_stored/", sub(" ", "_", scientific_name), "/Plots/gbifElevExtract.png"), G_elev, width=9, height=6) # nolint
-    plot <- base64enc::dataURI(file = paste0("resources/AOH_stored/", sub(" ", "_", scientific_name), "/Plots/gbifElevExtract.png"), mime = "image/png") # nolint
+    ggsave(paste0("resources/AOH_stored/", sub(" ", "_", scientific_name), "_", sRL_userdecode(username), "/Plots/gbifElevExtract.png"), G_elev, width=9, height=6) # nolint
+    plot <- base64enc::dataURI(file = paste0("resources/AOH_stored/", sub(" ", "_", scientific_name), "_", sRL_userdecode(username), "/Plots/gbifElevExtract.png"), mime = "image/png") # nolint
     
     Storage_SP<-sRL_OutLog(Storage_SP, "Gbif_Extract_Elevation", "Yes")
-    sRL_StoreSave(scientific_name, Storage_SP)
+    sRL_StoreSave(scientific_name, username,  Storage_SP)
     
     return(list(
       plot_extract_elevation = plot
@@ -527,7 +527,7 @@ function(scientific_name) {
 #* @param Gbif_Crop:string Gbif_Crop
 #* @serializer unboxedJSON
 #* @tag sRedList
-function(scientific_name, Gbif_Start="", Gbif_Param=list(), Gbif_Buffer=-1, Gbif_Altitude=list(), Gbif_Crop="", Gbif_RLDistBin="") {
+function(scientific_name, username, Gbif_Start="", Gbif_Param=list(), Gbif_Buffer=-1, Gbif_Altitude=list(), Gbif_Crop="", Gbif_RLDistBin="") {
 
 # Parameter error
 if(Gbif_Start=="alpha" & Gbif_Param[1] <= 0){neg_alpha()}
@@ -535,7 +535,7 @@ if(Gbif_Start=="kernel" & Gbif_Param[2] <= 0){neg_kernel()}
 
 # Check the Step 2 has been run since Step 1 was last updated  
 scientific_name <- sRL_decode(scientific_name)
-Storage_SP=sRL_StoreRead(scientific_name, MANDAT=1)
+Storage_SP=sRL_StoreRead(scientific_name,  username, MANDAT=1)
 if(! "dat_proj_saved" %in% names(Storage_SP)){run_Step2()}  
   
 Prom<-future({
@@ -607,14 +607,14 @@ Prom<-future({
   
   if(exists("distSPM")){GPlot<-GPlot+geom_sf(data=distRL, fill="gold", alpha=0.5)+labs(caption="Polygons from published map are shown in orange")}
   
-  ggsave(paste0("resources/AOH_stored/", sub(" ", "_", scientific_name), "/Plots/gbifStep3.png"), GPlot, width=18, height=5.5) # nolint
-  plot3 <- base64enc::dataURI(file = paste0("resources/AOH_stored/", sub(" ", "_", scientific_name), "/Plots/gbifStep3.png"), mime = "image/png") # nolint
+  ggsave(paste0("resources/AOH_stored/", sub(" ", "_", scientific_name), "_", sRL_userdecode(username), "/Plots/gbifStep3.png"), GPlot, width=18, height=5.5) # nolint
+  plot3 <- base64enc::dataURI(file = paste0("resources/AOH_stored/", sub(" ", "_", scientific_name), "_", sRL_userdecode(username), "/Plots/gbifStep3.png"), mime = "image/png") # nolint
   sRL_loginfo("END - Maps the distribution", scientific_name)
   
   # Keep distribution in memory
   Storage_SP$distSP3_saved=distSP[, names(distSP) != "alphaTEMPO"]
   Storage_SP<-sRL_OutLog(Storage_SP, c("Mapping_Start", "Mapping_Crop", "Mapping_Buffer", "Mapping_Altitude", "Kernel_parameter", "Alpha_parameter", "Mapping_Merge"), c(Gbif_Start, Gbif_Crop, Gbif_Buffer, paste0(Gbif_Altitude, collapse=","), ifelse(Gbif_Start=="kernel", Gbif_Param[2], NA), ifelse(Gbif_Start=="alpha", Gbif_Param[1], NA), Gbif_RLDistBin))
-  sRL_StoreSave(scientific_name, Storage_SP)
+  sRL_StoreSave(scientific_name, username,  Storage_SP)
   
   return(list(
     plot_eoo = plot3,
@@ -644,7 +644,7 @@ function(scientific_name) {return(list(Gbif_Smooth = 0))}
 #* @param Gbif_Smooth:num Gbif_Smooth
 #* @serializer unboxedJSON
 #* @tag sRedList
-function(scientific_name, Gbif_Smooth=-1) {
+function(scientific_name, username, Gbif_Smooth=-1) {
   
 Prom<-future({
   TRY=0
@@ -654,7 +654,7 @@ Prom<-future({
     ### Transform parameters GBIF filtering
     sRL_loginfo("Start GBIF 4", scientific_name)
     scientific_name <- sRL_decode(scientific_name)
-    Storage_SP=sRL_StoreRead(scientific_name, MANDAT=1)
+    Storage_SP=sRL_StoreRead(scientific_name,  username, MANDAT=1)
     Crop_par<-Storage_SP$Output$Value[Storage_SP$Output$Parameter=="Mapping_Crop"]
     
     ### Smooth if parameter >0
@@ -701,10 +701,10 @@ Prom<-future({
   Storage_SP$distSP_saved <- distSP
   Storage_SP$distSP_savedORIGINAL <- distSP # I need to save it twice for country croping for National RL
   Storage_SP<-sRL_OutLog(Storage_SP, "Mapping_Smooth", Gbif_Smooth*10) # Gbif_Smooth*10 because it is divided by 10 at the beginning of the API but should be reported raw in the RmarkDown and output files
-  sRL_StoreSave(scientific_name, Storage_SP)
+  sRL_StoreSave(scientific_name, username,  Storage_SP)
     
   ### Plot
-  ggsave(paste0("resources/AOH_stored/", sub(" ", "_", scientific_name), "/Plots/plot_final.png"), (
+  ggsave(paste0("resources/AOH_stored/", sub(" ", "_", scientific_name), "_", sRL_userdecode(username), "/Plots/plot_final.png"), (
     ggplot() + 
       geom_sf(data=Storage_SP$CountrySP_saved, fill="gray70")+
       geom_sf(data = distSP, fill="darkred") + 
@@ -712,7 +712,7 @@ Prom<-future({
       ggtitle("")+
       sRLTheme_maps
   ), width=18, height=5.5) # nolint
-  plot_final <- base64enc::dataURI(file = paste0("resources/AOH_stored/", sub(" ", "_", scientific_name), "/Plots/plot_final.png"), mime = "image/png") # nolint
+  plot_final <- base64enc::dataURI(file = paste0("resources/AOH_stored/", sub(" ", "_", scientific_name), "_", sRL_userdecode(username), "/Plots/plot_final.png"), mime = "image/png") # nolint
     
   # Save distribution in the platform
   gbif_path <- sRL_saveMapDistribution(scientific_name, Storage_SP)
@@ -747,7 +747,7 @@ return(Prom)
 #* @param domain_pref:[str] domain_pref
 #* @serializer htmlwidget
 #* @tag sRedList
-function(scientific_name, domain_pref=list(), Crop_Country="") {
+function(scientific_name, username, domain_pref=list(), Crop_Country="") {
 
 ### Manage case in Crop_Country
 if(!Crop_Country %in% c(coo_raw$SIS_name0, "", "Europe", "EU27")){
@@ -763,7 +763,7 @@ Prom<-future({
 
   # Filter parameters
   scientific_name<-sRL_decode(scientific_name)
-  Storage_SP<-sRL_StoreRead(scientific_name, MANDAT=1) ; print(names(Storage_SP))
+  Storage_SP<-sRL_StoreRead(scientific_name,  username, MANDAT=1) ; print(names(Storage_SP))
   rownames(coo_raw)<-1:nrow(coo_raw)
   distSP<-Storage_SP$distSP_savedORIGINAL
   domain_pref<-revalue(as.character(domain_pref), c("1"="Terrestrial", "2"="Marine", "3"="Freshwater"))
@@ -881,7 +881,7 @@ Prom<-future({
     Storage_SP$countries_SIS<-sRL_OutputCountries(scientific_name, coo_occ) # Keep only those occupied
     
     Storage_SP$Leaflet_COO<-Leaflet_COOtoexport
-    sRL_StoreSave(scientific_name, Storage_SP)
+    sRL_StoreSave(scientific_name, username,  Storage_SP)
     
     
     # Plot
@@ -916,25 +916,25 @@ return(Prom)
 #* @param Dist_path:string Distribution Folder default RedList
 #* @serializer unboxedJSON
 #* @tag sRedList
-function(scientific_name, presences = list(), seasons = list() , origins = list(), Dist_path = "") { # nolint
+function(scientific_name, username, presences = list(), seasons = list() , origins = list(), Dist_path = "") { # nolint
 
 Prom<-future({
   sf::sf_use_s2(FALSE)
     
   #Filter param
   scientific_name <- sRL_decode(scientific_name)
-  Storage_SP=sRL_StoreRead(scientific_name, MANDAT=1) ; print(names(Storage_SP))
+  Storage_SP=sRL_StoreRead(scientific_name,  username, MANDAT=1) ; print(names(Storage_SP))
 
   # Load distribution
   distSP<-Storage_SP$distSP_saved
 
   # Create storage directory if it does not exist
-  dir.create(paste0("resources/AOH_stored/", sub(" ", "_", scientific_name), "/Plots"), recursive=T)
+  dir.create(paste0("resources/AOH_stored/", sub(" ", "_", scientific_name), "_", sRL_userdecode(username), "/Plots"), recursive=T)
 
   ### Plot EOO
   sRL_loginfo("START - Plot EOO \n", scientific_name)
   EOO <- st_as_sf(st_convex_hull(st_union(distSP))) ## Needed to avoid having different sub-polygons
-  ggsave(paste0("resources/AOH_stored/", sub(" ", "_", scientific_name), "/Plots/plot_eoo.png"), 
+  ggsave(paste0("resources/AOH_stored/", sub(" ", "_", scientific_name), "_", sRL_userdecode(username), "/Plots/plot_eoo.png"), 
     ggplot() +
       geom_sf(data=distSP, fill="#fcbba1", col=NA) +
       geom_sf(data=EOO, col="#ef3b2c", fill=NA, lwd=2) +
@@ -942,7 +942,7 @@ Prom<-future({
       ggtitle("EOO map") +
       sRLTheme_maps, 
     width=6, height=6) # nolint
-  plot3 <- base64enc::dataURI(file = paste0("resources/AOH_stored/", sub(" ", "_", scientific_name), "/Plots/plot_eoo.png"), mime = "image/png") # nolint
+  plot3 <- base64enc::dataURI(file = paste0("resources/AOH_stored/", sub(" ", "_", scientific_name), "_", sRL_userdecode(username), "/Plots/plot_eoo.png"), mime = "image/png") # nolint
   sRL_loginfo("END - Plot EOO \n", scientific_name)
 
   ### Calculate EOO area (it cannot be lower than 4km2 so I keep the max between both); I transform to WGS84 for a more accurate area calculation (following Rewild comment)
@@ -950,7 +950,7 @@ Prom<-future({
   
   ### Save EOO area
   Storage_SP$eoo_km2<-EOO_km2
-  sRL_StoreSave(scientific_name, Storage_SP)
+  sRL_StoreSave(scientific_name, username,  Storage_SP)
 
   return(list(
     eoo_km2 = EOO_km2,
@@ -969,14 +969,14 @@ return(Prom)
 #* @param scientific_name:string Scientific Name
 #* @serializer htmlwidget
 #* @tag sRedList
-function(scientific_name) { # nolint
+function(scientific_name, username) { # nolint
   
   Prom<-future({
     sf::sf_use_s2(FALSE)
     
     #Filter param
     scientific_name <- sRL_decode(scientific_name)
-    Storage_SP=sRL_StoreRead(scientific_name, MANDAT=1) ; print(names(Storage_SP))
+    Storage_SP=sRL_StoreRead(scientific_name,  username, MANDAT=1) ; print(names(Storage_SP))
     
     # Load distribution and EOO
     distSP<-Storage_SP$distSP_saved %>% st_transform(st_crs(4326))
@@ -995,7 +995,7 @@ function(scientific_name) { # nolint
     ### Store usage
     Storage_SP<-sRL_OutLog(Storage_SP, "EOO_leaflet", "Used")
     Storage_SP$EOO_leaflet<-EOO_leaflet
-    sRL_StoreSave(scientific_name, Storage_SP)
+    sRL_StoreSave(scientific_name, username,  Storage_SP)
     
     return(EOO_leaflet)
     
@@ -1040,7 +1040,7 @@ function(scientific_name) {
 #* @param CALCperc_suitable:string CALCperc_suitable
 #* @serializer json
 #* @tag sRedList
-function(scientific_name, CALCdensity, CALCperc_mature, CALCperc_suitable) {
+function(scientific_name, username, CALCdensity, CALCperc_mature, CALCperc_suitable) {
 
   # Prepare variables
   CALCdensity <- sRL_UncertToVector(CALCdensity)
@@ -1058,9 +1058,9 @@ function(scientific_name, CALCdensity, CALCperc_mature, CALCperc_suitable) {
   if(length(final_density)>1){final_density<-paste0(final_density, collapse="-")}
   
   # Record usage
-  Storage_SP <- sRL_StoreRead(sRL_decode(scientific_name), MANDAT=1)
+  Storage_SP <- sRL_StoreRead(sRL_decode(scientific_name), username, MANDAT=1)
   Storage_SP <- sRL_OutLog(Storage_SP, "Density_Calculator", paste(paste(CALCdensity, collapse="-"), paste0(CALCperc_mature, collapse="-"), paste0(CALCperc_suitable, collapse="-"), final_density, sep=" / "))
-  sRL_StoreSave(scientific_name, Storage_SP)
+  sRL_StoreSave(scientific_name, username,  Storage_SP)
   
   # Return
   return(list(
@@ -1092,7 +1092,7 @@ function(scientific_name) {
 #* @param scientific_name:string Scientific Name
 #* @serializer unboxedJSON
 #* @tag sRedList
-function(scientific_name) {
+function(scientific_name, username) {
   
   Prom<-future({
     
@@ -1101,7 +1101,7 @@ function(scientific_name) {
     
     #Filter param
     scientific_name <- sRL_decode(scientific_name)
-    Storage_SP=sRL_StoreRead(scientific_name, MANDAT=1) ; print(names(Storage_SP))
+    Storage_SP=sRL_StoreRead(scientific_name,  username, MANDAT=1) ; print(names(Storage_SP))
     dat_proj=Storage_SP$dat_proj_saved %>% st_transform(st_crs(4326))
     
     # Prepare Jung habitat files
@@ -1152,11 +1152,11 @@ function(scientific_name) {
       theme_minimal() + theme(plot.background=element_rect(fill="white"))
     
     # Save and return plot
-    ggsave(paste0("resources/AOH_stored/", sub(" ", "_", scientific_name), "/Plots/gbifHabExtract.png"), G_habs, width=9, height=6) # nolint
-    plot <- base64enc::dataURI(file = paste0("resources/AOH_stored/", sub(" ", "_", scientific_name), "/Plots/gbifHabExtract.png"), mime = "image/png") # nolint
+    ggsave(paste0("resources/AOH_stored/", sub(" ", "_", scientific_name), "_", sRL_userdecode(username), "/Plots/gbifHabExtract.png"), G_habs, width=9, height=6) # nolint
+    plot <- base64enc::dataURI(file = paste0("resources/AOH_stored/", sub(" ", "_", scientific_name), "_", sRL_userdecode(username), "/Plots/gbifHabExtract.png"), mime = "image/png") # nolint
     
     Storage_SP<-sRL_OutLog(Storage_SP, "Gbif_Extract_Habitat", "Yes")
-    sRL_StoreSave(scientific_name, Storage_SP)
+    sRL_StoreSave(scientific_name, username,  Storage_SP)
     
     return(list(
       plot_extract_habitat = plot
@@ -1183,7 +1183,7 @@ function(scientific_name) {
 #* @param Dist_path:string Distribution Folder default RedList
 #* @serializer unboxedJSON
 #* @tag sRedList
-function(scientific_name, habitats_pref= list(), habitats_pref_MARGINAL=list(), altitudes_pref= c("0","9000"), density_pref= '-1', isGbifDistribution = FALSE, Dist_path = "") { # nolint    
+function(scientific_name, username, habitats_pref= list(), habitats_pref_MARGINAL=list(), altitudes_pref= c("0","9000"), density_pref= '-1', isGbifDistribution = FALSE, Dist_path = "") { # nolint    
 
 # If no habitat preference or habitats not in crosswalk, return error
 if(length(habitats_pref)==0){no_habitat_pref()}
@@ -1215,7 +1215,7 @@ Prom<-future({
   
   #Filter param
   scientific_name <- sRL_decode(scientific_name)
-  Storage_SP=sRL_StoreRead(scientific_name, MANDAT=1) ; print(names(Storage_SP))
+  Storage_SP=sRL_StoreRead(scientific_name,  username, MANDAT=1) ; print(names(Storage_SP))
   distSP=Storage_SP$distSP_saved
 
   # Habitat table (for aoh analysis and for SIS Connect)
@@ -1261,7 +1261,7 @@ Prom<-future({
   Storage_SP$RangeClean_saved=rangeSP_clean
 
   # Remove old stored AOH
-  output_dir<-paste0("resources/AOH_stored/", sub(" ", "_", scientific_name))
+  output_dir<-paste0("resources/AOH_stored/", sub(" ", "_", scientific_name), "_", sRL_userdecode(username))
   dir.create(paste0(output_dir, "/Current"), recursive=T)
   dir.create(paste0(output_dir, "/Current_optimistic"), recursive=T)
   dir.create(paste0(output_dir, "/Temporary"))
@@ -1303,7 +1303,7 @@ Prom<-future({
       # Calculate optimistic AOH: but if marginal habitats all point at CCI modalities already included with habitats_pref and elevation are not different, I use AOH2 directly as there won't be any difference
       if(length(unique(crosswalk_to_use$value[crosswalk_to_use$code %in% habitats_pref]))==length(unique(crosswalk_to_use$value[crosswalk_to_use$code %in% c(habitats_pref, habitats_pref_MARGINAL)])) & !"elevation_lowerEXTREME" %in% names(altitudes_pref_DF) & !"elevation_upperEXTREME" %in% names(altitudes_pref_DF)){
             AOH2_opt<-AOH2; sRL_loginfo("Identical AOH, no need to calculate", scientific_name)
-            terra::writeRaster(rast(AOH2_opt), paste0("resources/AOH_stored/", gsub(" ", "_", scientific_name), "/Current_optimistic/Optimistic_identical.tif"))
+            terra::writeRaster(rast(AOH2_opt), paste0("resources/AOH_stored/", gsub(" ", "_", scientific_name), "_", sRL_userdecode(username), "/Current_optimistic/Optimistic_identical.tif"))
             } else{
 
             AOH2_opt<-sRL_calculateAOH(rangeSP_fun=rangeSP_cleanOPT,
@@ -1369,7 +1369,7 @@ Prom<-future({
       if(length(unique(crosswalk_to_use$value[crosswalk_to_use$code %in% habitats_pref]))==length(unique(crosswalk_to_use$value[crosswalk_to_use$code %in% c(habitats_pref, habitats_pref_MARGINAL)])) & !"elevation_lowerEXTREME" %in% names(altitudes_pref_DF) & !"elevation_upperEXTREME" %in% names(altitudes_pref_DF)){
           sRL_loginfo("Identical AOH, no need to calculate", scientific_name)
           AOH2_opt<-AOH2
-          terra::writeRaster(AOH2_opt, paste0("resources/AOH_stored/", gsub(" ", "_", scientific_name), "/Current_optimistic/Optimistic_identical.tif"))
+          terra::writeRaster(AOH2_opt, paste0("resources/AOH_stored/", gsub(" ", "_", scientific_name), "_", sRL_userdecode(username), "/Current_optimistic/Optimistic_identical.tif"))
           
         } else{
 
@@ -1405,8 +1405,8 @@ Prom<-future({
   # Plot AOH and calculate area
   sRL_loginfo("START - Plot AOH", scientific_name)
 
-  ggsave(filename = paste0("resources/AOH_stored/", sub(" ", "_", scientific_name), "/Plots/aoh.png"), plot = plot1, width=9, height=ifelse(Uncertain=="Uncertain_no" | AOH_type=="Small", 9, 15))
-  plot1 <- base64enc::dataURI(file = paste0("resources/AOH_stored/", sub(" ", "_", scientific_name), "/Plots/aoh.png"), mime = "image/png", encoding = "base64") # nolint
+  ggsave(filename = paste0("resources/AOH_stored/", sub(" ", "_", scientific_name), "_", sRL_userdecode(username), "/Plots/aoh.png"), plot = plot1, width=9, height=ifelse(Uncertain=="Uncertain_no" | AOH_type=="Small", 9, 15))
+  plot1 <- base64enc::dataURI(file = paste0("resources/AOH_stored/", sub(" ", "_", scientific_name), "_", sRL_userdecode(username), "/Plots/aoh.png"), mime = "image/png", encoding = "base64") # nolint
   sRL_loginfo("END - Plot AOH", scientific_name)
 
   AOH_km2 <-  sRL_areaAOH(AOH2[[1]], "cci") # Same scale in small or large AOH because the unit is always 1 cell of the fine raster
@@ -1463,9 +1463,9 @@ Prom<-future({
   }
   
   sRL_loginfo("START - Saving plot AOO", scientific_name)
-  ggsave(filename = paste0("resources/AOH_stored/", sub(" ", "_", scientific_name), "/Plots/aoo.png"), plot = plot2, width=9, height=ifelse(Uncertain=="Uncertain_no" | AOH_type=="Small", 9, 15))
+  ggsave(filename = paste0("resources/AOH_stored/", sub(" ", "_", scientific_name), "_", sRL_userdecode(username), "/Plots/aoo.png"), plot = plot2, width=9, height=ifelse(Uncertain=="Uncertain_no" | AOH_type=="Small", 9, 15))
 
-  plot2 <- base64enc::dataURI(file = paste0("resources/AOH_stored/", sub(" ", "_", scientific_name), "/Plots/aoo.png"), mime = "image/png", encoding = "base64") # nolint
+  plot2 <- base64enc::dataURI(file = paste0("resources/AOH_stored/", sub(" ", "_", scientific_name), "_", sRL_userdecode(username), "/Plots/aoo.png"), mime = "image/png", encoding = "base64") # nolint
 
   AOO_km2<- sRL_areaAOH(aoh_22[[1]], SCALE="2x2") ; if(AOH_km2==0){AOO_km2<-0}
   if(Uncertain=="Uncertain_yes"){AOO_km2_opt<- sRL_areaAOH(aoh_22_opt[[1]], SCALE="2x2") ; if(AOH_km2_opt==0){AOO_km2_opt<-0} ; Storage_SP$aoo_km2_opt<-AOO_km2_opt}
@@ -1508,7 +1508,7 @@ Prom<-future({
     # Map AOO
     pts<-dat_proj %>% as_Spatial() %>% as(., 'SpatialPoints')
     AOO_pts <- terra::rasterize(pts, grid_crop, fun='count')>=1
-    writeRaster(AOO_pts, paste0("resources/AOH_stored/", gsub(" ", "_", scientific_name), "/AOO_known.tif"), overwrite=T)
+    writeRaster(AOO_pts, paste0("resources/AOH_stored/", gsub(" ", "_", scientific_name), "_", sRL_userdecode(username), "/AOO_known.tif"), overwrite=T)
     
     # Calculate AOO
     aoo_pts_km2<-sum(as.vector(AOO_pts), na.rm=T)*4
@@ -1536,8 +1536,8 @@ Prom<-future({
       labs(caption=ifelse(Range_size<5000, "", "\n You might not see the green cells because they are too small, \n but the calculation worked correctly"))+
       sRLTheme_maps+guides(fill = guide_legend(override.aes = list(col="#25BC5A")), size=guide_legend(override.aes = list(linetype=0, shape=1, size=1.6)))+
       theme(legend.position = "bottom", plot.caption=element_text(size=8.5))
-    ggsave(filename = paste0("resources/AOH_stored/", sub(" ", "_", scientific_name), "/Plots/aoo_from_points.png"), plot = Plot_AOOpoints, width=6, height=6)
-    plot3<-base64enc::dataURI(file = paste0("resources/AOH_stored/", sub(" ", "_", scientific_name), "/Plots/aoo_from_points.png"), mime = "image/png")
+    ggsave(filename = paste0("resources/AOH_stored/", sub(" ", "_", scientific_name), "_", sRL_userdecode(username), "/Plots/aoo_from_points.png"), plot = Plot_AOOpoints, width=6, height=6)
+    plot3<-base64enc::dataURI(file = paste0("resources/AOH_stored/", sub(" ", "_", scientific_name), "_", sRL_userdecode(username), "/Plots/aoo_from_points.png"), mime = "image/png")
 
     sRL_loginfo("END - AOO calculation from points", scientific_name)
   }
@@ -1545,7 +1545,7 @@ Prom<-future({
   
   ### Save Storage_SP ----
   Storage_SP<-sRL_OutLog(Storage_SP, "AOH_time", as.numeric(format(Sys.time(), "%s"))-as.numeric(format(TIC, "%s")))
-  sRL_StoreSave(scientific_name, Storage_SP)
+  sRL_StoreSave(scientific_name, username,  Storage_SP)
   
   ### Return list of arguments + calculate population size
   LIST=list(
@@ -1579,15 +1579,15 @@ return(Prom)
 #* @param scientific_name:string Scientific Name
 #* @serializer htmlwidget
 #* @tag sRedList
-function(scientific_name) { # nolint
+function(scientific_name, username) { # nolint
   
   Prom<-future({
     sf::sf_use_s2(FALSE)
     
     #Filter param
     scientific_name <- sRL_decode(scientific_name)
-    Storage_SP=sRL_StoreRead(scientific_name, MANDAT=1) ; print(names(Storage_SP))
-    aohPROJ<-raster(paste0("resources/AOH_stored/", gsub(" ", "_", scientific_name), "/Current/", list.files(paste0("resources/AOH_stored/", gsub(" ", "_", scientific_name), "/Current"))[1])) ; crs(aohPROJ)<-CRSMOLL
+    Storage_SP=sRL_StoreRead(scientific_name,  username, MANDAT=1) ; print(names(Storage_SP))
+    aohPROJ<-raster(paste0("resources/AOH_stored/", gsub(" ", "_", scientific_name), "_", sRL_userdecode(username), "/Current/", list.files(paste0("resources/AOH_stored/", gsub(" ", "_", scientific_name), "_", sRL_userdecode(username), "/Current"))[1])) ; crs(aohPROJ)<-CRSMOLL
     distSP<-Storage_SP$distSP_saved
     distPROJ<-st_transform(distSP, st_crs(4326))
     
@@ -1607,7 +1607,7 @@ function(scientific_name) { # nolint
     FACT<-ifelse(Storage_SP$AOH_type=="Large", 900, 1)
 
     ### Add uncertainty if available
-    opt_path<-paste0("resources/AOH_stored/", gsub(" ", "_", scientific_name), "/Current_optimistic/") %>% paste0(., list.files(.)[1])
+    opt_path<-paste0("resources/AOH_stored/", gsub(" ", "_", scientific_name), "_", sRL_userdecode(username), "/Current_optimistic/") %>% paste0(., list.files(.)[1])
     if(file.exists(opt_path)){
       AOH_opt<-raster(opt_path) ; crs(AOH_opt)<-CRSMOLL
 
@@ -1626,7 +1626,7 @@ function(scientific_name) { # nolint
     ### Store usage
     Storage_SP<-sRL_OutLog(Storage_SP, "AOH_leaflet", "Used")
     Storage_SP$AOH_leaflet<-AOH_leaflet
-    sRL_StoreSave(scientific_name, Storage_SP)
+    sRL_StoreSave(scientific_name, username,  Storage_SP)
 
     
     return(AOH_leaflet)
@@ -1644,18 +1644,18 @@ function(scientific_name) { # nolint
 #* @param scientific_name:string Scientific Name
 #* @serializer htmlwidget
 #* @tag sRedList
-function(scientific_name) { # nolint
+function(scientific_name, username) { # nolint
   
   Prom<-future({
     sf::sf_use_s2(FALSE)
     
     #Filter param
     scientific_name <- sRL_decode(scientific_name)
-    Storage_SP=sRL_StoreRead(scientific_name, MANDAT=1) ; print(names(Storage_SP))
+    Storage_SP=sRL_StoreRead(scientific_name,  username, MANDAT=1) ; print(names(Storage_SP))
     dat_proj<-Storage_SP$dat_proj_saved %>% st_transform(., st_crs(4326))
     COORDS<-st_coordinates(dat_proj)
     dat_proj$lon<-COORDS[,1] ; dat_proj$lat<-COORDS[,2]
-    aoo<-rast(paste0("resources/AOH_stored/", gsub(" ", "_", scientific_name), "/AOO_known.tif")) %>% as.polygons(.) %>% st_as_sf(.) %>% st_transform(., st_crs(4326))
+    aoo<-rast(paste0("resources/AOH_stored/", gsub(" ", "_", scientific_name), "_", sRL_userdecode(username), "/AOO_known.tif")) %>% as.polygons(.) %>% st_as_sf(.) %>% st_transform(., st_crs(4326))
     distPROJ<-st_transform(Storage_SP$distSP_saved, st_crs(4326))
     
     ### Plot AOO
@@ -1678,7 +1678,7 @@ function(scientific_name) { # nolint
     ### Store usage
     Storage_SP<-sRL_OutLog(Storage_SP, "AOO_leaflet", "Used")
     Storage_SP$AOO_leaflet<-AOO_leaflet
-    sRL_StoreSave(scientific_name, Storage_SP)
+    sRL_StoreSave(scientific_name, username,  Storage_SP)
     
     return(AOO_leaflet)
     
@@ -1697,18 +1697,19 @@ function(scientific_name) { # nolint
 #* @param GL_species:string GL_species
 #* @serializer unboxedJSON
 #* @tag sRedList
-function(scientific_name, GL_species="1") { # nolint
+function(scientific_name, username, GL_species="1") { # nolint
   
 Prom<-future({
   sf::sf_use_s2(FALSE)
   
   #Filter param
   scientific_name <- sRL_decode(scientific_name)
-  Storage_SP=sRL_StoreRead(scientific_name, MANDAT=1)
+  Storage_SP=sRL_StoreRead(scientific_name,  username, MANDAT=1)
   GL_species<-GL_species %>% gsub(" ", "", .) %>% sub(",", ".", .) %>% as.numeric(.) ; print(GL_species) ; if(is.na(GL_species)){incorrect_GL()}
 
   distSP=Storage_SP$distSP_saved
-  alt_crop=rast(paste0("resources/AOH_stored/", gsub(" ", "_", scientific_name), "/alt_crop.tif")) ; crs(alt_crop)<-CRSMOLL
+  output_dir<-paste0("resources/AOH_stored/", sub(" ", "_", scientific_name), "_", sRL_userdecode(username))
+  alt_crop=rast(paste0(output_dir, "/alt_crop.tif")) ; crs(alt_crop)<-CRSMOLL
   rangeSP_clean=Storage_SP$RangeClean_saved
   habitats_pref_DF=Storage_SP$habitats_SIS
   altitude_pref_DF=Storage_SP$AltPref_saved
@@ -1717,14 +1718,13 @@ Prom<-future({
   rangeSP_cleanOPT=Storage_SP$RangeCleanOPT_saved
   
   # AOH charged directly
-  AOH2<-rast(paste0("resources/AOH_stored/", gsub(" ", "_", scientific_name), "/Current/", list.files(paste0("resources/AOH_stored/", gsub(" ", "_", scientific_name), "/Current"))[1])) ; crs(AOH2[[1]])<-CRSMOLL
-  if(Storage_SP$Uncertain=="Uncertain_yes"){AOH2_opt<-rast(paste0("resources/AOH_stored/", gsub(" ", "_", scientific_name), "/Current_optimistic/", list.files(paste0("resources/AOH_stored/", gsub(" ", "_", scientific_name), "/Current_optimistic"))[1])) ; crs(AOH2_opt[[1]])<-CRSMOLL}
+  AOH2<-rast(paste0(output_dir, "/Current/", list.files(paste0(output_dir, "/Current"))[1])) ; crs(AOH2[[1]])<-CRSMOLL
+  if(Storage_SP$Uncertain=="Uncertain_yes"){AOH2_opt<-rast(paste0(output_dir, "/Current_optimistic/", list.files(paste0(output_dir, "/Current_optimistic"))[1])) ; crs(AOH2_opt[[1]])<-CRSMOLL}
   
   # Charge distribution
   distSP$binomial<-as.character(distSP$binomial)
   
   # Output directory + options
-  output_dir<-paste0("resources/AOH_stored/", sub(" ", "_", scientific_name))
   dir.create(paste0(output_dir, "/Initial"));   dir.create(paste0(output_dir, "/Initial_optimistic"))
   terraOptions(tempdir=paste0(output_dir, "/Temporary"), memmax=config$RAMmax_GB)
   rasterOptions(tmpdir=paste0(output_dir, "/Temporary"), maxmemory=config$RAMmax_GB)
@@ -1838,8 +1838,8 @@ Prom<-future({
   }  
   
   # Plot
-  ggsave(filename = paste0("resources/AOH_stored/", sub(" ", "_", scientific_name), "/Plots/trends_aoh.png"), plot = plot1, width=8, height=ifelse(Storage_SP$Uncertain=="Uncertain_no", 8, 13))
-  plot1 <- base64enc::dataURI(file = paste0("resources/AOH_stored/", sub(" ", "_", scientific_name), "/Plots/trends_aoh.png"), mime = "image/png", encoding = "base64") # nolint
+  ggsave(filename = paste0(output_dir, "/Plots/trends_aoh.png"), plot = plot1, width=8, height=ifelse(Storage_SP$Uncertain=="Uncertain_no", 8, 13))
+  plot1 <- base64enc::dataURI(file = paste0(output_dir, "/Plots/trends_aoh.png"), mime = "image/png", encoding = "base64") # nolint
   
   # Calculate area and trends
   AOH_old_km2<-sRL_areaAOH(AOH1[[1]], SCALE="cci")
@@ -1885,7 +1885,7 @@ Prom<-future({
   
   
   ### Return
-  sRL_StoreSave(scientific_name, Storage_SP)
+  sRL_StoreSave(scientific_name, username,  Storage_SP)
   
   LIST<-list(
     aoh_lost_km2 = Out_area,
@@ -1909,24 +1909,25 @@ return(Prom)
 #* @param scientific_name:string Scientific Name
 #* @serializer htmlwidget
 #* @tag sRedList
-function(scientific_name) { # nolint
+function(scientific_name, username) { # nolint
   
   Prom<-future({
     sf::sf_use_s2(FALSE)
     
     #Filter param
     scientific_name <- sRL_decode(scientific_name)
-    Storage_SP=sRL_StoreRead(scientific_name, MANDAT=1) ; print(names(Storage_SP))
-    aoh2PROJ<-raster(paste0("resources/AOH_stored/", gsub(" ", "_", scientific_name), "/Current/", list.files(paste0("resources/AOH_stored/", gsub(" ", "_", scientific_name), "/Current"))[1])) ; crs(aoh2PROJ)<-CRSMOLL
-    aoh1PROJ<-raster(paste0("resources/AOH_stored/", gsub(" ", "_", scientific_name), "/Initial/", list.files(paste0("resources/AOH_stored/", gsub(" ", "_", scientific_name), "/Initial"))[1])) ; crs(aoh1PROJ)<-CRSMOLL
+    Storage_SP=sRL_StoreRead(scientific_name,  username, MANDAT=1) ; print(names(Storage_SP))
+    output_dir<-paste0("resources/AOH_stored/", sub(" ", "_", scientific_name), "_", sRL_userdecode(username))
+    aoh2PROJ<-raster(paste0(output_dir, "/Current/", list.files(paste0(output_dir, "/Current"))[1])) ; crs(aoh2PROJ)<-CRSMOLL
+    aoh1PROJ<-raster(paste0(output_dir, "/Initial/", list.files(paste0(output_dir, "/Initial"))[1])) ; crs(aoh1PROJ)<-CRSMOLL
     distSP<-Storage_SP$distSP_saved
     distPROJ<-st_transform(distSP, st_crs(4326))
     
     ### Charge optimistic if exists
     Uncert<-Storage_SP$Uncertain
     if(Uncert=="Uncertain_yes"){
-      AOH2_opt<-paste0("resources/AOH_stored/", gsub(" ", "_", scientific_name), "/Current_optimistic/") %>% paste0(., list.files(.)[1]) %>% raster(.) ; crs(AOH2_opt)<-CRSMOLL
-      AOH1_opt<-paste0("resources/AOH_stored/", gsub(" ", "_", scientific_name), "/Initial_optimistic/") %>% paste0(., list.files(.)[1]) %>% raster(.) ; crs(AOH1_opt)<-CRSMOLL
+      AOH2_opt<-paste0(output_dir, "/Current_optimistic/") %>% paste0(., list.files(.)[1]) %>% raster(.) ; crs(AOH2_opt)<-CRSMOLL
+      AOH1_opt<-paste0(output_dir, "/Initial_optimistic/") %>% paste0(., list.files(.)[1]) %>% raster(.) ; crs(AOH1_opt)<-CRSMOLL
     }
     
     ### Basic plot
@@ -1982,7 +1983,7 @@ function(scientific_name) { # nolint
     ### Store usage
     Storage_SP<-sRL_OutLog(Storage_SP, "Trends_leaflet", "Used")
     Storage_SP$Trends_leaflet<-Trends_leaflet
-    sRL_StoreSave(scientific_name, Storage_SP)
+    sRL_StoreSave(scientific_name, username,  Storage_SP)
     
     return(Trends_leaflet)
     
@@ -2016,7 +2017,7 @@ function(scientific_name) {
 #* @param density_pref:string density_pref
 #* @serializer unboxedJSON
 #* @tag sRedList
-function(scientific_name, dispersion="-1", density_pref= '-1') {
+function(scientific_name, username, dispersion="-1", density_pref= '-1') {
   
   
   # Prepare dispersion and density
@@ -2030,8 +2031,8 @@ Prom<-future({
   
     ### Filter param
     scientific_name<-sRL_decode(scientific_name)
-    Storage_SP<-sRL_StoreRead(scientific_name, MANDAT=1)
-    aoh<-rast(paste0("resources/AOH_stored/", gsub(" ", "_", scientific_name), "/Current/", list.files(paste0("resources/AOH_stored/", gsub(" ", "_", scientific_name), "/Current"))[1]))[[1]]  ; crs(aoh)<-CRSMOLL
+    Storage_SP<-sRL_StoreRead(scientific_name,  username, MANDAT=1)
+    aoh<-rast(paste0("resources/AOH_stored/", gsub(" ", "_", scientific_name), "_", sRL_userdecode(username), "/Current/", list.files(paste0("resources/AOH_stored/", gsub(" ", "_", scientific_name), "_", sRL_userdecode(username), "/Current"))[1]))[[1]]  ; crs(aoh)<-CRSMOLL
     aoh_type<-Storage_SP$AOH_type
     
     ### If large range, I have to binarize the suitable habitat
@@ -2123,15 +2124,15 @@ Prom<-future({
       guides(col=guide_legend(nrow=2,byrow=TRUE))
     
     ### Final plot
-    ggsave(filename = paste0("resources/AOH_stored/", sub(" ", "_", scientific_name), "/Plots/fragmentation.png"), plot = cowplot::plot_grid(G1, G2, ncol=2), width=15, height=8)
-    Frag_plot <- base64enc::dataURI(file = paste0("resources/AOH_stored/", sub(" ", "_", scientific_name), "/Plots/fragmentation.png"), mime = "image/png", encoding = "base64") # nolint
+    ggsave(filename = paste0("resources/AOH_stored/", sub(" ", "_", scientific_name), "_", sRL_userdecode(username), "/Plots/fragmentation.png"), plot = cowplot::plot_grid(G1, G2, ncol=2), width=15, height=8)
+    Frag_plot <- base64enc::dataURI(file = paste0("resources/AOH_stored/", sub(" ", "_", scientific_name), "_", sRL_userdecode(username), "/Plots/fragmentation.png"), mime = "image/png", encoding = "base64") # nolint
     
     ### Save in output log
     Storage_SP<-sRL_OutLog(Storage_SP, c("Fragmentation_Isolation", "Fragmentation_Density"), c(paste(dispersion/1000, collapse="-"), paste(density_pref, collapse="-")))
     Storage_SP$Pop_max<-Pop_max
     Storage_SP$Pop_prop<-Pop_prop
     Storage_SP$Frag_result<-paste(VTOT, collapse="-")
-    sRL_StoreSave(scientific_name, Storage_SP)
+    sRL_StoreSave(scientific_name, username,  Storage_SP)
     
     
     ### Return
@@ -2162,29 +2163,28 @@ Prom<-future({
 #* @param RSproduct:string RSproduct
 #* @serializer unboxedJSON
 #* @tag sRedList
-function(scientific_name, RSproduct = "") { # nolint    
+function(scientific_name, username, RSproduct = "") { # nolint    
   
 Prom<-future({
   sf::sf_use_s2(FALSE)
   
   # Charge parameters
   scientific_name<-sRL_decode(scientific_name)
-  Storage_SP<-sRL_StoreRead(scientific_name, MANDAT=1)
+  Storage_SP<-sRL_StoreRead(scientific_name,  username, MANDAT=1)
   distSP<-Storage_SP$RangeClean_saved
   GL<-ifelse("GL_saved" %in% names(Storage_SP), Storage_SP$GL_saved, 1)
   print(RSproduct)
   
   # Run functions to calculate trends
-  if(RSproduct=="Human_density"){List_trendsRS<-sRL_CalcHumandensity(scientific_name, distSP, GL)}
-  if(RSproduct=="Forest_cover"){List_trendsRS<-sRL_CalcForestchange(scientific_name, distSP, GL)}
-  if(RSproduct=="Human_modification"){List_trendsRS<-sRL_CalcModification(scientific_name, distSP)}
-  if(RSproduct=="NDVI"){List_trendsRS<-sRL_CalcNDVIchange(scientific_name, distSP, GL)}
-  
+  if(RSproduct=="Human_density"){List_trendsRS<-sRL_CalcHumandensity(scientific_name, username, distSP, GL)}
+  if(RSproduct=="Forest_cover"){List_trendsRS<-sRL_CalcForestchange(scientific_name, username, distSP, GL)}
+  if(RSproduct=="Human_modification"){List_trendsRS<-sRL_CalcModification(scientific_name, username, distSP)}
+
   # Save usage
   RS_stored<-Storage_SP$Output$Value[Storage_SP$Output$Parameter=="Usage_RS"]
   Storage_SP<-sRL_OutLog(Storage_SP, "Usage_RS", paste(RS_stored, RSproduct, sep="."))
   Storage_SP<-sRL_OutLog(Storage_SP, paste0("RS_result_", RSproduct), paste0(List_trendsRS[3:6], collapse=" & "))
-  sRL_StoreSave(scientific_name, Storage_SP)
+  sRL_StoreSave(scientific_name, username,  Storage_SP)
   
   
   # Return
@@ -2204,7 +2204,7 @@ return(Prom)
 #* @param RSproduct:string RSproduct
 #* @serializer htmlwidget
 #* @tag sRedList
-function(scientific_name, RSproduct) { # nolint
+function(scientific_name, username, RSproduct) { # nolint
   
   Prom<-future({
     sf::sf_use_s2(FALSE)
@@ -2213,9 +2213,9 @@ function(scientific_name, RSproduct) { # nolint
     
     #Filter param
     scientific_name <- sRL_decode(scientific_name)
-    Storage_SP=sRL_StoreRead(scientific_name, MANDAT=1) ; print(names(Storage_SP))
-    RSPROJ_current<-raster(paste0("resources/AOH_stored/", gsub(" ", "_", scientific_name), "/", RSproduct, "_Current.tif"))
-    RSPROJ_trends<-raster(paste0("resources/AOH_stored/", gsub(" ", "_", scientific_name), "/", RSproduct, "_Change.tif"))
+    Storage_SP=sRL_StoreRead(scientific_name,  username, MANDAT=1) ; print(names(Storage_SP))
+    RSPROJ_current<-raster(paste0("resources/AOH_stored/", gsub(" ", "_", scientific_name), "_", sRL_userdecode(username), "/", RSproduct, "_Current.tif"))
+    RSPROJ_trends<-raster(paste0("resources/AOH_stored/", gsub(" ", "_", scientific_name), "_", sRL_userdecode(username), "/", RSproduct, "_Change.tif"))
     distSP<-Storage_SP$distSP_saved
     distPROJ<-st_transform(distSP, st_crs(4326))
 
@@ -2250,7 +2250,7 @@ function(scientific_name, RSproduct) { # nolint
     Storage_SP[which(names(Storage_SP)==paste0("RS_leaflet_", RSproduct))]<-NULL # Remove the previous leaflet of the same RSproduct
     Storage_SP$RS_leaflet<-RS_leaflet # Save the new one
     names(Storage_SP)[which(names(Storage_SP)=="RS_leaflet")]<-paste0("RS_leaflet_", RSproduct) # Rename it
-    sRL_StoreSave(scientific_name, Storage_SP)
+    sRL_StoreSave(scientific_name, username,  Storage_SP)
     
     return(RS_leaflet)
     
@@ -2273,10 +2273,10 @@ function(scientific_name, RSproduct) { # nolint
 #* @param scientific_name:string Scientific Name
 #* @serializer unboxedJSON
 #* @tag sRedList
-function(scientific_name){
+function(scientific_name, username){
   
   scientific_name<-sRL_decode(scientific_name)
-  Storage_SP<-sRL_StoreRead(scientific_name, MANDAT=1) ; print(names(Storage_SP))
+  Storage_SP<-sRL_StoreRead(scientific_name,  username, MANDAT=1) ; print(names(Storage_SP))
   
   ### MANAGE TAXONOMY ###
   sRL_loginfo("START - Extract taxonomy", scientific_name)
@@ -2439,7 +2439,7 @@ function(scientific_name){
   
   ### Save Storage_SP
   Storage_SP$Estimates_saved<-Estimates_df
-  sRL_StoreSave(scientific_name, Storage_SP)
+  sRL_StoreSave(scientific_name, username,  Storage_SP)
   
   return(list(Estimates=Estimates_df))
 }
@@ -2471,10 +2471,9 @@ Prom<-future({
   #Filter param
   sRL_loginfo("Start Criteria calculation", scientific_name)
   scientific_name <- sRL_decode(scientific_name)
-  Storage_SP<-sRL_StoreRead(scientific_name, MANDAT=1)
+  Storage_SP<-sRL_StoreRead(scientific_name,  username, MANDAT=1)
   Storage_SP$Output$Count[Storage_SP$Output$Parameter=="Col_allfields"]<-as.numeric(Storage_SP$Output$Count[Storage_SP$Output$Parameter=="Col_allfields"])+1 # Count number of times Assign categories is run
-  Storage_SP<-sRL_OutLog(Storage_SP, "Username", username)
-  sRL_StoreSave(scientific_name, Storage_SP)
+  sRL_StoreSave(scientific_name, username,  Storage_SP)
   print(names(Storage_SP))
 
   sRL_loginfo("Start Allfields", scientific_name)
@@ -2711,8 +2710,8 @@ Prom<-future({
     theme_bw()  %+replace% theme(text=element_text(size=18), plot.title=element_text(hjust=0.5), plot.subtitle=element_text(hjust=0.5, size=15), plot.tag=element_text(hjust=0.5, size=14, colour="darkred"), plot.tag.position = "bottom")
   
   # Save
-  ggsave(paste0("resources/AOH_stored/", sub(" ", "_", scientific_name), "/Plots/Plot_assign.png"), GG_assign, width=10, height=8)
-  plot_assign <- base64enc::dataURI(file = paste0("resources/AOH_stored/", sub(" ", "_", scientific_name), "/Plots/Plot_assign.png"), mime = "image/png") # nolint
+  ggsave(paste0("resources/AOH_stored/", sub(" ", "_", scientific_name), "_", sRL_userdecode(username), "/Plots/Plot_assign.png"), GG_assign, width=10, height=8)
+  plot_assign <- base64enc::dataURI(file = paste0("resources/AOH_stored/", sub(" ", "_", scientific_name), "_", sRL_userdecode(username), "/Plots/Plot_assign.png"), mime = "image/png") # nolint
   
   
   # Call RMarkDown
@@ -2752,7 +2751,7 @@ return(Prom)
 #* @param scientific_name:string Scientific Name
 #* @serializer contentType list(type="application/octet-stream")
 #* @tag sRedList
-function(scientific_name) {
+function(scientific_name, username) {
   scientific_name <- sRL_decode(scientific_name)
   
   sRL_loginfo("Start Zipping", scientific_name)
@@ -2763,7 +2762,7 @@ function(scientific_name) {
   
   
   # Prepare Outputs (remove definitions, empty fields, those at default)
-  output_species<-sRL_StoreRead(scientific_name, MANDAT=1)$Output
+  output_species<-sRL_StoreRead(scientific_name,  username, MANDAT=1)$Output
   output_species$Definition<-NULL
   output_species$Value<-replace(output_species$Value, is.na(output_species$Value), "") # I replace NA to make the next line work and then remove all empty fields
   if(output_species$Value[output_species$Parameter=="Gbif_Extent"]=="-180,180,-90,90"){output_species<-output_species[-which(output_species$Parameter=="Gbif_Extent"),]}
@@ -2792,7 +2791,7 @@ function(scientific_name) {
 
   # Remove the local files
   unlink(paste0(gsub(" ", "_", scientific_name), "_sRedList"), recursive=T)
-  unlink(paste0("resources/AOH_stored/", sub(" ", "_", scientific_name)), recursive=T)
+  unlink(paste0("resources/AOH_stored/", sub(" ", "_", scientific_name), "_", sRL_userdecode(username)), recursive=T)
   unlink(paste0(gsub(" ", "_", scientific_name), "_sRedList.zip"), recursive=T)
 
   # Return
@@ -2800,38 +2799,6 @@ function(scientific_name) {
 }
 
 
-
-
-
-#* Download .json Red List category
-#* @get species/<scientific_name>/assessment/red-list-criteria/json
-#* @param scientific_name:string Scientific Name
-#* @param aoh_lost:int AOH_lost
-#* @param eoo_km2:int EOO_km2
-#* @param aoo_km2:int AOO_km2
-#* @param pop_size:int Pop_size
-#* @serializer unboxedJSON
-#* @tag sRedList
-function(scientific_name, aoh_lost=aoh_lost_saved, eoo_km2, aoo_km2, pop_size) {
-  #Filter param
-  scientific_name <- sRL_decode(scientific_name)
-  
-  # Calculate criteria
-  criteria<-sRL_CalculateCriteria(aoh_lost, eoo_km2, aoo_km2, pop_size)
-  
-  json <- list(
-    Species = scientific_name,
-    Date_processed = Sys.time(),
-    EOO = eoo_km2,
-    AOO = aoo_km2,
-    "Percentage_of_habitat_lost" = aoh_lost,
-    Pop.size = Pop_size,
-    Criterias = paste0(criteria$Value, " (", criteria$Crit, ")") %>% paste(., collapse="; "),
-    Highest_category = criteria$Value[which(as.numeric(criteria$Value)==max(as.numeric(criteria$Value), na.rm=T))] %>% unique()
-  )
-  
-  return(json);
-}
 
 
 

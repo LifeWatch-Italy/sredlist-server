@@ -222,18 +222,19 @@ sRL_PrepareCountries <- function(LIMS){
 
 
 ### Function to reuse past calculated and stored values
-sRL_StoreSave<-function(scientific_name, Storage_SP){
+sRL_StoreSave<-function(scientific_name, username, Storage_SP){
   SCI<-sRL_decode(scientific_name)
-  FILE=paste0("resources/AOH_stored/", gsub(" ", "_", SCI), "/Storage_SP.rds")
-  dir.create(paste0("resources/AOH_stored/", sub(" ", "_", SCI), "/Plots"), recursive=T)
+  FOLDER<-paste0("resources/AOH_stored/", gsub(" ", "_", SCI), "_", sRL_userdecode(username))
+  FILE=paste0(FOLDER, "/Storage_SP.rds")
+  dir.create(paste0(FOLDER, "/Plots"), recursive=T)
   saveRDS(Storage_SP, file=FILE)
 }
 
-sRL_StoreRead<-function(scientific_name, MANDAT){
+sRL_StoreRead<-function(scientific_name, username, MANDAT){
   SCI<-sRL_decode(scientific_name)
   
   # Read if it exists or charge it
-  FILE<-paste0("resources/AOH_stored/", gsub(" ", "_", SCI), "/Storage_SP.rds")
+  FILE<-paste0("resources/AOH_stored/", gsub(" ", "_", SCI), "_", sRL_userdecode(username), "/Storage_SP.rds")
   if(file.exists(FILE)){
     Storage<-readRDS(FILE)
   } else { # Create a folder for the first functions, if it's with MANDAT=1 (ie after COO), then return an error that Storage_SP was removed
@@ -250,11 +251,12 @@ sRL_StoreRead<-function(scientific_name, MANDAT){
 
 
 ### Functions to store parameters in output
-sRL_InitLog<-function(scientific_name, DisSource){
+sRL_InitLog<-function(scientific_name, username, DisSource){
   output_to_save<-output
   output_to_save$Value[output_to_save$Parameter=="Distribution_Source"]<-DisSource
   output_to_save$Date<-Sys.Date()
   output_to_save$Species<-sRL_decode(scientific_name)
+  output_to_save$Username<-sRL_userdecode(username)
   
   return(output_to_save)
 }
@@ -333,10 +335,18 @@ sRL_cleaningMemory<-function(Time_limit){
         # Extract NotCompleted assessments
         for(SP in 1:length(toremove_temp)){
           tryCatch({
-            SP_name<-toremove_temp[SP] %>% strsplit(., "/") %>% unlist(.) %>% .[length(.)] %>% sub("_", " ", .)
-            St_SP<-sRL_StoreRead(SP_name, 0)
-            Step<-sRL_LastStep(St_SP)
-            Saved_output[nrow(Saved_output)+1,]<-c(SP_name, as.character(St_SP$Creation[1]), "NotCompleted", NA, Step)
+            # Create empty line
+            N_line<-nrow(Saved_output)+1
+            Saved_output[N_line,]<-NA
+            # Charge Storage SP
+            St_SP<-readRDS(paste0(toremove_temp[SP], "/Storage_SP.rds"))
+            # Assign values
+            Saved_output$Species[N_line]<-St_SP$Output$Species[1]
+            Saved_output$Date[N_line] <- St_SP$Creation  %>% as.character(.)
+            Saved_output$Username[N_line]<-St_SP$Output$Username[1]
+            Saved_output$Parameter[N_line]<-"NotCompleted"
+            Saved_output$Value[N_line]<-sRL_LastStep(St_SP)
+
           }, error=function(e){cat(paste0("Problem tracking SP: ", SP_name))})
         }
         
@@ -396,6 +406,12 @@ sRL_decode<-function(scientific_name){
   return(scientific_name)
 }
 
+
+### Function sRL_userdecode : it combines url_decode and control of the case of scientific name
+sRL_userdecode<-function(username){
+  username<-url_decode(username) %>% tolower(.) %>% gsub(" ", ".", .)
+  return(username)
+}
 
 
 

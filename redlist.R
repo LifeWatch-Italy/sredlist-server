@@ -78,7 +78,7 @@ function(scientific_name) {
 #* @param Dist_path:string Distribution Folder default RedList
 #* @serializer png list(width = 800, height = 600)
 #* @tag RedList
-function(scientific_name, Dist_path = "") {
+function(scientific_name, username, Dist_path = "") {
 
   Prom<-future({
 
@@ -102,8 +102,8 @@ function(scientific_name, Dist_path = "") {
   
       # Format the countries shapefile and save it in the global memory (to avoid recalculating at every step)
       CountrySP<-sRL_PrepareCountries(1.2*extent(distSP))
-      Storage_SP<-list(CountrySP_saved=CountrySP, Creation=Sys.time(), Output=sRL_InitLog(scientific_name, DisSource = "Red List"))
-      sRL_StoreSave(scientific_name, Storage_SP)
+      Storage_SP<-list(CountrySP_saved=CountrySP, Creation=Sys.time(), Output=sRL_InitLog(scientific_name, username, DisSource = "Red List"))
+      sRL_StoreSave(scientific_name, username, Storage_SP)
 
       # Plot
       Plot_Dist<-ggplot() +
@@ -127,7 +127,7 @@ function(scientific_name, Dist_path = "") {
 #* @param scientific_name:string Scientific Name
 #* @serializer json
 #* @tag RedList
-function(scientific_name) {
+function(scientific_name, username) {
 
   scientific_name <- sRL_decode(scientific_name)
 
@@ -147,9 +147,9 @@ function(scientific_name) {
         hab_pref$result <- hab_pref$result %>% distinct(., code, .keep_all=T) # Remove double (when habitats are used in several seasons)
         
         # Save in Storage SP
-        Storage_SP<-sRL_StoreRead(scientific_name, MANDAT=1)
+        Storage_SP<-sRL_StoreRead(scientific_name, username, MANDAT=1)
         Storage_SP<-sRL_OutLog(Storage_SP, c("AOH_HabitatORIGINAL", "AOH_HabitatMarginalORIGINAL"), c(hab_pref$result$code[hab_pref$result$suitability=="Suitable"] %>% paste(., collapse=","), hab_pref$result$code[hab_pref$result$suitability!="Suitable"] %>% paste(., collapse=",")))
-        sRL_StoreSave(scientific_name, Storage_SP)
+        sRL_StoreSave(scientific_name, username, Storage_SP)
       }
       sRL_loginfo("END - Habitat extract", scientific_name)
       
@@ -179,7 +179,7 @@ function(scientific_name) {
 #* @param scientific_name:string Scientific Name
 #* @serializer unboxedJSON
 #* @tag RedList
-function(scientific_name) {
+function(scientific_name, username) {
   
 Prom<-future({
   sf::sf_use_s2(FALSE)
@@ -187,7 +187,7 @@ Prom<-future({
 
   #Filter param
   scientific_name <- sRL_decode(scientific_name)
-  Storage_SP=sRL_StoreRead(scientific_name, MANDAT=1)
+  Storage_SP=sRL_StoreRead(scientific_name, username, MANDAT=1)
 
   #Extract alt_pref
   if(scientific_name %in% speciesRL$scientific_name){
@@ -236,7 +236,7 @@ Prom<-future({
   if(is.na(alt_pref$result$elevation_upper)==T){alt_pref$result$elevation_upper<-9000}
   
   sRL_loginfo("END - Altitude extract", scientific_name)
-  sRL_StoreSave(scientific_name, Storage_SP)
+  sRL_StoreSave(scientific_name, username, Storage_SP)
   print(alt_pref)
   return(alt_pref)
   
