@@ -409,7 +409,7 @@ sRL_decode<-function(scientific_name){
 
 ### Function sRL_userdecode : it combines url_decode and control of the case of scientific name
 sRL_userdecode<-function(username){
-  username<-url_decode(username) %>% tolower(.) %>% gsub(" ", ".", .)
+  username<-url_decode(username) %>% tolower(.) %>% gsub(" ", ".", .) %>% iconv(., to="ASCII//TRANSLIT")
   return(username)
 }
 
