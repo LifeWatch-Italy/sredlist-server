@@ -7,14 +7,14 @@
 
 ```{r extract_habitats, out.width='100%'}
 if("Gbif_Extract_Habitat" %in% outlog$Parameter){
-  readPNG(paste0("resources/AOH_stored/", sub(" ", "_", scientific_name), "/Plots/gbifHabExtract.png")) %>% rasterGrob() %>% grid.arrange()
+  png::readPNG(paste0(outDir, "/Plots/gbifHabExtract.png")) %>% grid::rasterGrob() %>% gridExtra::grid.arrange()
 }
 ```
 
 
 The habitat preferences used to map Area of Habitat were:
 ```{r table_hab}
-hab_SIS<-read.csv(paste0(sub(" ", "_", scientific_name), "_sRedList/habitats.csv")) %>% subset(., select=c("GeneralHabitats.GeneralHabitatsSubfield.GeneralHabitatsLookup", "GeneralHabitats.GeneralHabitatsSubfield.GeneralHabitatsName", "GeneralHabitats.GeneralHabitatsSubfield.suitability"))
+hab_SIS<-read.csv(paste0(sub(" ", "_", scientific_name), "_", sRL_userdecode(username), "_sRedList/habitats.csv")) %>% subset(., select=c("GeneralHabitats.GeneralHabitatsSubfield.GeneralHabitatsLookup", "GeneralHabitats.GeneralHabitatsSubfield.GeneralHabitatsName", "GeneralHabitats.GeneralHabitatsSubfield.suitability"))
 names(hab_SIS)<-c("Habitat lookup", "Habitat name", "Suitability")
 
 knitr::kable(hab_SIS, "simple")

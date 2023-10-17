@@ -9,7 +9,7 @@ Trends in some remote-sensing products have been calculated. You can check the s
 
 ```{r trends_forest, out.width='100%'}
 if(grepl("Forest_cover", outlog$Value[outlog$Parameter=="Usage_RS"])){
-  png::readPNG(paste0("resources/AOH_stored/", sub(" ", "_", scientific_name), "/Plots/RS_plot_forest.png")) %>% grid::rasterGrob() %>% gridExtra::grid.arrange()
+  png::readPNG(paste0(outDir, "/Plots/RS_plot_forest.png")) %>% grid::rasterGrob() %>% gridExtra::grid.arrange()
   DF_forest<-data.frame(Calc=c("Current value", "Absolute trends", "Relative trends", "Time-window"), Value=unlist(strsplit(outlog$Value[outlog$Parameter=="RS_result_Forest_cover"], " & ")))
   knitr::kable(DF_forest, "simple", col.names = c("", "Value"))
 }
@@ -26,7 +26,7 @@ if("RS_leaflet_Forest_cover" %in% names(Storage_SP)){Storage_SP$RS_leaflet_Fores
 
 ```{r trends_modification, out.width='100%'}
 if(grepl("Human_modification", outlog$Value[outlog$Parameter=="Usage_RS"])){
-  png::readPNG(paste0("resources/AOH_stored/", sub(" ", "_", scientific_name), "/Plots/RS_plot_modif.png")) %>% grid::rasterGrob() %>% gridExtra::grid.arrange()
+  png::readPNG(paste0(outDir, "/Plots/RS_plot_modif.png")) %>% grid::rasterGrob() %>% gridExtra::grid.arrange()
   DF_modif<-data.frame(Calc=c("Current value", "Absolute trends", "Relative trends", "Time-window"), Value=unlist(strsplit(outlog$Value[outlog$Parameter=="RS_result_Human_modification"], " & ")))
   knitr::kable(DF_modif, "simple", col.names = c("", "Value"))
 }
@@ -43,7 +43,7 @@ if("RS_leaflet_Human_modification" %in% names(Storage_SP)){Storage_SP$RS_leaflet
 
 ```{r trends_density, out.width='100%'}
 if(grepl("Human_density", outlog$Value[outlog$Parameter=="Usage_RS"])){
-  png::readPNG(paste0("resources/AOH_stored/", sub(" ", "_", scientific_name), "/Plots/RS_plot_humandensity.png")) %>% grid::rasterGrob() %>% gridExtra::grid.arrange()
+  png::readPNG(paste0(outDir, "/Plots/RS_plot_humandensity.png")) %>% grid::rasterGrob() %>% gridExtra::grid.arrange()
   DF_density<-data.frame(Calc=c("Current value", "Absolute trends", "Relative trends", "Time-window"), Value=unlist(strsplit(outlog$Value[outlog$Parameter=="RS_result_Human_density"], " & ")))
   knitr::kable(DF_density, "simple", col.names = c("", "Value"))
 }

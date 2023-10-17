@@ -32,7 +32,7 @@ After applying these filters, your point range map included `r nrow(Storage_SP$d
 
 ```{r extract_elevation, out.width='100%'}
 if("Gbif_Extract_Elevation" %in% outlog$Parameter){
-  png::readPNG(paste0("resources/AOH_stored/", sub(" ", "_", scientific_name), "/Plots/gbifElevExtract.png")) %>% grid::rasterGrob() %>% gridExtra::grid.arrange()
+  png::readPNG(paste0(outDir, "/Plots/gbifElevExtract.png")) %>% grid::rasterGrob() %>% gridExtra::grid.arrange()
 }
 ```
 

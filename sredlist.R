@@ -2605,7 +2605,7 @@ Prom<-future({
   
   
   sRL_loginfo("Start Countries and refs", scientific_name)
-  output_dir<-paste0(sub(" ", "_", scientific_name), "_sRedList")
+  output_dir<-paste0(sub(" ", "_", scientific_name), "_", sRL_userdecode(username), "_sRedList")
   dir.create(output_dir)
   
   # Countries (but enabling skipping step) + prepare assessments.csv
@@ -2720,14 +2720,14 @@ Prom<-future({
     render("sRL_markdown_scripts/General_RMarkDown_script.Rmd",
            output_format="all",
            output_file=paste0("sRedList_report_", sub(" ", "_", scientific_name), ".html"),
-           output_dir=paste0(sub(" ", "_", scientific_name), "_sRedList"),
+           output_dir=paste0(sub(" ", "_", scientific_name), "_", sRL_userdecode(username), "_sRedList"),
            knit_root_dir=WD
     )
   }, error=function(e){"Error in creating Markdown report"})
   
   # ZIP folder
   #zip(zipfile = paste0(sub(" ", "_", scientific_name), "_sRedList"), files = paste0(sub(" ", "_", scientific_name), "_sRedList"),  zip = "C:/Program Files/7-Zip/7z", flags="a -tzip")
-  zip(zipfile = paste0(sub(" ", "_", scientific_name), "_sRedList"), files = paste0(sub(" ", "_", scientific_name), "_sRedList"), extras = '-j')
+  zip(zipfile = paste0(sub(" ", "_", scientific_name), "_", sRL_userdecode(username), "_sRedList.zip"), files = paste0(sub(" ", "_", scientific_name), "_", sRL_userdecode(username), "_sRedList"), extras = '-j')
   
   
   # Return
@@ -2758,7 +2758,7 @@ function(scientific_name, username) {
 
   
   # Charge ZIP file
-  zip_to_extract<-readBin(paste0(gsub(" ", "_", scientific_name), "_sRedList.zip"), "raw", n = file.info(paste0(gsub(" ", "_", scientific_name), "_sRedList.zip"))$size)
+  zip_to_extract<-readBin(paste0(gsub(" ", "_", scientific_name), "_", sRL_userdecode(username), "_sRedList.zip"), "raw", n = file.info(paste0(gsub(" ", "_", scientific_name), "_", sRL_userdecode(username), "_sRedList.zip"))$size)
   
   
   # Prepare Outputs (remove definitions, empty fields, those at default)
@@ -2775,7 +2775,7 @@ function(scientific_name, username) {
   if(output_species$Value[output_species$Parameter=="Distribution_Presence"]=="1,2"){output_species<-output_species[-which(output_species$Parameter=="Distribution_Presence"),]}
   if(output_species$Value[output_species$Parameter=="Distribution_Origin"]=="1,2"){output_species<-output_species[-which(output_species$Parameter=="Distribution_Origin"),]}
   if(output_species$Value[output_species$Parameter=="Distribution_Seasonal"]=="1,2"){output_species<-output_species[-which(output_species$Parameter=="Distribution_Seasonal"),]}
-  output_species$Value[output_species$Parameter=="Col_allfields"]<-paste(names(read.csv(paste0(sub(" ", "_", scientific_name), "_sRedList/allfields.csv"))), collapse=",")
+  output_species$Value[output_species$Parameter=="Col_allfields"]<-paste(names(read.csv(paste0(sub(" ", "_", scientific_name), "_", sRL_userdecode(username), "_sRedList/allfields.csv"))), collapse=",")
   output_species<-subset(output_species, is.na(output_species$Value)==F & output_species$Value != "" & substr(output_species$Parameter, 1, 9) != "Estimated")
   output_species$Date<-Sys.time() %>% as.character(.)
   
@@ -2790,9 +2790,9 @@ function(scientific_name, username) {
   }, error=function(e){cat("TryCatch save output while zipping")})
 
   # Remove the local files
-  unlink(paste0(gsub(" ", "_", scientific_name), "_sRedList"), recursive=T)
+  unlink(paste0(gsub(" ", "_", scientific_name), "_", sRL_userdecode(username), "_sRedList"), recursive=T)
   unlink(paste0("resources/AOH_stored/", sub(" ", "_", scientific_name), "_", sRL_userdecode(username)), recursive=T)
-  unlink(paste0(gsub(" ", "_", scientific_name), "_sRedList.zip"), recursive=T)
+  unlink(paste0(gsub(" ", "_", scientific_name), "_", sRL_userdecode(username), "_sRedList.zip"), recursive=T)
 
   # Return
   return(zip_to_extract)
