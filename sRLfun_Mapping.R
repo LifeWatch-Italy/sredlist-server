@@ -386,14 +386,15 @@ sRL_MapDistributionGBIF<-function(dat, scientific_name, First_step, AltMIN, AltM
     distGBIF<-st_buffer(dat, 1) # The default is one meter, then they can add a buffer
   }
   
-  if(First_step %in% c("hydro8", "hydro10", "hydro12")){
+  
+  
+  if(substr(First_step, 1,5)=="hydro"){
     
     # Extract level 8 in any case
     hydro8_sub<-st_crop(hydro_raw, extent(dat))
     interHyd<-st_join(dat, hydro8_sub, join=st_intersects) %>% subset(., is.na(.$hybas_id)==F) # Identify hydrobasins with data 
     distGBIF<-subset(hydro_raw, hydro_raw$hybas_id %in% interHyd$hybas_id) # Isolate these hydrobasins
-    if(nrow(distGBIF)==0){no_hydrobasins()}
-    
+
     # Extract level 10 or 12 if requested and possible (i.e., small distribution)
     if(First_step %in% c("hydro10", "hydro12")){
       
@@ -421,19 +422,21 @@ sRL_MapDistributionGBIF<-function(dat, scientific_name, First_step, AltMIN, AltM
       hydroLEV_sub<-st_crop(hydroLEV_raw, extent(dat))
       interHyd<-st_join(dat, hydroLEV_sub, join=st_intersects) %>% subset(., is.na(.$hybas_id)==F) # Identify hydrobasins with data 
       distGBIF<-subset(hydroLEV_raw, hydroLEV_raw$hybas_id %in% interHyd$hybas_id) # Isolate these hydrobasins
-        
+      
     }
+    
+    if(First_step=="hydroMCP"){
+      mcp<-st_as_sf(st_convex_hull(st_union(dat))) ; st_geometry(mcp)<-"geometry"
+      hydro8_withrecord<-paste0(unique(interHyd$hybas_id), collapse=",") # Extract hydrobasins with occurrence records
+      interHyd<-st_join(mcp, hydro8_sub, join=st_intersects) %>% subset(., is.na(.$hybas_id)==F) # Identify hydrobasins with data 
+      distGBIF<-subset(hydro_raw, hydro_raw$hybas_id %in% interHyd$hybas_id) # Isolate these hydrobasins
+    }
+    
+    if(nrow(distGBIF)==0){no_hydrobasins()}
     
   }
   
-  if(First_step=="hydroMCP"){
-    mcp<-st_as_sf(st_convex_hull(st_union(dat)))
-    st_geometry(mcp)<-"geometry"
-    hydro_sub<-st_crop(hydro_raw, extent(mcp))
-    interHyd<-st_join(mcp, hydro_sub, join=st_intersects) %>% subset(., is.na(.$hybas_id)==F) # Identify hydrobasins with data 
-    distGBIF<-subset(hydro_raw, hydro_raw$hybas_id %in% interHyd$hybas_id) # Isolate these hydrobasins
-    if(nrow(distGBIF)==0){no_hydrobasins()}
-  }
+
   
   ### Merge
   distGBIF$binomial <- scientific_name
@@ -496,6 +499,8 @@ sRL_MapDistributionGBIF<-function(dat, scientific_name, First_step, AltMIN, AltM
   distGBIF$seasonal<-1
   if(exists("Alpha_scaled")){distGBIF$alphaTEMPO<-Alpha_scaled} # Save alpha scaled if I use alpha hull
   if(substr(First_step, 1,5)=="hydro"){distGBIF$hybas_concat<-paste0(unique(interHyd$hybas_id), collapse=",")}
+  if(First_step=="hydroMCP"){distGBIF$hybas_withrecords <- hydro8_withrecord}
+  
   
   return(distGBIF)
   

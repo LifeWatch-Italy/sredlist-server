@@ -2466,7 +2466,7 @@ Prom<-future({
   
   Estimates<-replace(Estimates, Estimates %in% c("undefined", " "), NA)
   print(Estimates)
-  username_formatted<-gsub("[.]", " ", username) %>% tools::toTitleCase(.)
+  username_formatted<-gsub("[.]", " ", sRL_userdecode(username)) %>% tools::toTitleCase(.)
 
   #Filter param
   sRL_loginfo("Start Criteria calculation", scientific_name)

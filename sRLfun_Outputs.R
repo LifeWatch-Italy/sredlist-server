@@ -237,6 +237,12 @@ sRL_OutputHydrobasins<-function(distSIS, Storage_SP){
   HydroSIS[1:length(Hydro_list),]<-distSIS[1,]
   HydroSIS$hybas_id<-Hydro_list
   
+  # If hydroMCP, make a difference between hydrobasins with occurrence records and those without
+  if("hybas_withrecords" %in% names(Storage_SP$distSP_saved)){
+    Hydro_withrecords<-Storage_SP$distSP_saved$hybas_withrecords %>% strsplit(., ",") %>% unlist(.)
+    HydroSIS$presence[!HydroSIS$hybas_id %in% Hydro_withrecords]<-3
+  }
+  
   return(HydroSIS)
 }
 
