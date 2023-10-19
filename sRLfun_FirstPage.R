@@ -73,8 +73,9 @@ sRL_CalcIdno <- function(scientific_name){
     )
     
     # Paste and limit to 8 characters to get id_no 
-    ID=paste0(N1, N2, N3) %>% as.numeric(.)
+    ID=paste0(N1, N2, N3)
     if(nchar(ID)>8){ID<-substr(ID, 1, 8)}
+    ID=as.numeric(ID)
     
   }
   

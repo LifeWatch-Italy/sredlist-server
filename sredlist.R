@@ -1190,7 +1190,7 @@ if(length(habitats_pref)==0){no_habitat_pref()}
 if(!"TRUE" %in% (habitats_pref %in% crosswalk_to_use$code)){no_habitats_crosswalk()}
 
 # Check elevation
-if(length(altitudes_pref)==0){altitudes_pref<-c(0,9000)}
+if(length(altitudes_pref)==0){altitudes_pref<-c("0","9000")}
 TestALT1<-altitudes_pref[1] %>% strsplit(., "-") %>% unlist(.) %>% as.numeric(.)
 TestALT2<-altitudes_pref[2] %>% strsplit(., "-") %>% unlist(.) %>% as.numeric(.)
 if(is.na(sum(TestALT1)) | is.na(sum(TestALT2)) | length(TestALT1)>2 | length(TestALT2)>2){elev_not_valid()} # Could be NA if text inside, could be length > 2 if two hyphens
