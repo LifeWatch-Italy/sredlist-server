@@ -56,12 +56,15 @@ sRL_OutputRef<-function(scientific_name, Storage_SP){
     
     # Add primary sources from occurrence data and number of records used
     citation_table<-as.data.frame(table(Storage_SP$dat_proj_saved$source))
-    citation_table$Ref_with_N <- citation_table$Var1 %>% sub("[.]$", "", .) %>% paste0(., " (", citation_table$Freq, ifelse(citation_table$Freq==1, " record was used).", " records were used)."))
-    citations<-unique(citation_table$Ref_with_N)
-    ROW<-(nrow(ref_SIS))
-    ref_SIS[(ROW+1):(ROW+length(citations)),]<-NA
-    ref_SIS$title[(ROW+1):(ROW+length(citations))]<-citations
-    ref_SIS$type[(ROW+1):(ROW+length(citations))]<-"electronic source"
+    if(nrow(citation_table)>0){
+      citation_table$Ref_with_N <- citation_table$Var1 %>% sub("[.]$", "", .) %>% paste0(., " (", citation_table$Freq, ifelse(citation_table$Freq==1, " record was used).", " records were used)."))
+      citations<-unique(citation_table$Ref_with_N)
+      ROW<-(nrow(ref_SIS))
+      ref_SIS[(ROW+1):(ROW+length(citations)),]<-NA
+      ref_SIS$title[(ROW+1):(ROW+length(citations))]<-citations
+      ref_SIS$type[(ROW+1):(ROW+length(citations))]<-"electronic source"
+    }
+    
     
     # Add rgbif if used
     if("GBIF" %in% Storage_SP$dat_proj_saved$Source | "Synonyms_GBIF" %in% Storage_SP$dat_proj_saved$Source){
