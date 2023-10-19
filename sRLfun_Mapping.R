@@ -17,7 +17,7 @@ sRL_FormatUploadedRecords <- function(Uploaded_Records, scientific_name, Gbif_Sy
   Uploaded_Records$species_download<-Uploaded_Records$sci_name
   if(as.logical(table(factor(is.na(replace(Uploaded_Records$sci_name, Uploaded_Records$sci_name=="", NA)), c("TRUE", "FALSE")))["FALSE"]==0)){Uploaded_Records$sci_name<-scientific_name}
   
-  # If another species name than scientific_name, return an error (I could deal with it but this might introduce errors that users won't sea)
+  # If another species name than scientific_name, return an error (I could deal with it but this might introduce errors that users won't see)
   if(as.logical(table(factor(Uploaded_Records$sci_name %in% c(scientific_name, Gbif_Synonym, NA, ""), c("TRUE", "FALSE")))["FALSE"] >0)){wrong_species_upload()}
   
   # Assign Source to Upload (and Synonyms_Upload if synonym)
@@ -283,7 +283,7 @@ sRL_cleanDataGBIF <- function(flags, year_GBIF, uncertainty_GBIF, Gbif_yearBin, 
   if(Gbif_yearBin==T){flags$.year[is.na(flags$.year)]<-F} # If 'remove NA' is clicked, I put False for the year filter
   
   if(!"coordinateUncertaintyInMeters" %in% names(flags)){flags$coordinateUncertaintyInMeters<-NA}
-  flags$.uncertainty <- flags$coordinateUncertaintyInMeters < uncertainty_GBIF*1000 
+  flags$.uncertainty <- as.numeric(flags$coordinateUncertaintyInMeters) < uncertainty_GBIF*1000 
   if(Gbif_uncertainBin==T){flags$.uncertainty[is.na(flags$.uncertainty)]<-F} # If 'remove NA' is clicked, I put False for the uncertainty filter
   
   ### Add flagging for points outside GBIF_xmin...
