@@ -300,26 +300,31 @@ Prom<-future({
   LIMS<-c(xmin=min(dat$decimalLongitude), xmax=max(dat$decimalLongitude), ymin=min(dat$decimalLatitude), ymax=max(dat$decimalLatitude))
   LIMS<-c(LIMS["xmin"] - 0.1*abs(LIMS["xmin"]-LIMS["xmax"]),    LIMS["xmax"] + 0.1*abs(LIMS["xmin"]-LIMS["xmax"]),
           LIMS["ymin"] - 0.1*abs(LIMS["ymin"]-LIMS["ymax"]),    LIMS["ymax"] + 0.1*abs(LIMS["ymin"]-LIMS["ymax"]))
-  CountrySP_WGS<-st_crop(distCountries_WGS, LIMS) %>% vect(.)
-  if(nrow(CountrySP_WGS)==0){
-    Skip_country=T ; Tests_to_run=c("capitals", "centroids", "equal", "gbif", "institutions", "zeros")}else{
-      Skip_country=F; Tests_to_run=c("capitals", "centroids", "equal", "gbif", "institutions", "zeros", "seas")}
-
-  # Flag observations to remove
+  CountrySP_WGS<-st_crop(distCountries_WGS, LIMS)
+  CountrySP_WGS$land<-"TRUE"
   
+  # Flag observations to remove
+  Tests_to_run=c("capitals", "centroids", "equal", "gbif", "institutions", "zeros")
   # TEMPORARY (until CoordinateCleaner bug is fixed)
   Tests_to_run<-Tests_to_run[!Tests_to_run %in% c("centroids", "institutions")]
   
   tryCatch({
+    ## Apply automatic filters
     flags_raw <- clean_coordinates(x = dat,
                                  lon = "decimalLongitude",
                                  lat = "decimalLatitude",
                                  countries = "countryCode",
                                  species = "species",
                                  capitals_rad = 1000,
-                                 seas_ref=CountrySP_WGS,
                                  tests = Tests_to_run)
-    if(Skip_country==T){flags_raw$.sea<-FALSE}
+    
+    ## Apply sea/land filtering (not through CoordinateCleaner, huge delay introduced when they updated to remove rgeos)
+    if(nrow(CountrySP_WGS)==0){
+      flags_raw$.sea<-FALSE
+    }else{
+      dat_proj<-dat %>% st_as_sf(., coords = c("decimalLongitude", "decimalLatitude"), crs="+proj=longlat +datum=WGS84") %>%  st_transform(., st_crs(CountrySP_WGS)) 
+      flags_raw$.sea<-st_join(dat_proj, CountrySP_WGS, join=st_intersects)$land %>% replace(., is.na(.), "FALSE") %>% as.logical(.)
+    }
   }, error=function(e){"Bug in clean coordinates"})
   if(exists("flags_raw")==F){cat("Bug in clean coordinates"); flags_raw<-dat ; flags_raw$.val<-flags_raw$.equ<-flags_raw$.zer<-flags_raw$.cap<-flags_raw$.sea<-flags_raw$.gbf<-flags_raw$.inst<-flags_raw$.cen<-TRUE}
   
