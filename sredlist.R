@@ -793,7 +793,8 @@ Prom<-future({
     } else{
       dat_proj<-Storage_SP$dat_proj_savedORIGINAL
       dat_proj$JOIN<-st_join(dat_proj, distSP, join=st_intersects)$presence
-      Storage_SP$dat_proj_saved<-subset(dat_proj, dat_proj$JOIN==1)
+      dat_proj<-subset(dat_proj, dat_proj$JOIN==1)
+      if(nrow(dat_proj)>0){Storage_SP$dat_proj_saved<-dat_proj} else {Storage_SP$dat_proj_saved<-Storage_SP$dat_proj_savedORIGINAL} # If no occurrence records within the country, we keep all occurrence records
     }
   }
   
