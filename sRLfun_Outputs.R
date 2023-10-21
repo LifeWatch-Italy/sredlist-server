@@ -275,7 +275,7 @@ sRL_OutputOccurrences <- function(scientific_name, Storage_SP, username) {
   dat_SIS$compiler<-username
   dat_SIS$data_sens<-0
   
-  if("" %in% names(dat)){
+  if("basisOfRecord" %in% names(dat)){
     dat_SIS$basisofrec<-revalue(dat$basisOfRecord, c(
       "FOSSIL_SPECIMEN"="FossilSpecimen",
       "HUMAN_OBSERVATION"="HumanObservation",
@@ -294,7 +294,7 @@ sRL_OutputOccurrences <- function(scientific_name, Storage_SP, username) {
   if("RL" %in% dat$Source){
     RL<-read.csv(paste0(config$POINTdistribution_path, scientific_name, ".csv"))
   
-    for(COL in names(dat_SIS)[!names(dat_SIS) %in% c("sci_name", "geometry", "yrcompiled", "citation", "dec_lat", "dec_long", "spatialref")]){
+    for(COL in names(dat_SIS)[!names(dat_SIS) %in% c("sci_name", "geometry", "yrcompiled", "citation", "dec_lat", "dec_long", "spatialref", "basisofrec")]){
       if(COL %in% names(RL)){
       dat_SIS[,COL]<-RL[,COL][match(dat_SIS$OBJECTID, RL$objectid)]
     }}
