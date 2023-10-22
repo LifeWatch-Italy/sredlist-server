@@ -233,7 +233,7 @@ function(scientific_name, username, Gbif_Source=list(), Gbif_Synonym="", Uploade
 
 Prom<-future({
   sf::sf_use_s2(FALSE)
-    
+  
   ### Clean-string from user
   scientific_name <- sRL_decode(scientific_name)
   print(scientific_name)
@@ -380,8 +380,8 @@ function(scientific_name) {
 function(scientific_name, username, Gbif_Year= -1, Gbif_Uncertainty=-1, Gbif_Extent=list(), Gbif_Sea="", Gbif_automatedBin="", Gbif_yearBin="", Gbif_uncertainBin="") {
 
 Prom<-future({
-  sf::sf_use_s2(FALSE)  
-
+  sf::sf_use_s2(FALSE)
+  
   sRL_loginfo("START - GBIF Step 2", scientific_name)
 
 
@@ -1210,7 +1210,7 @@ Prom_clean<-future({
   sRL_loginfo("START - Cleaning memory", scientific_name)
   sRL_cleaningMemory(Time_limit=180)
   sRL_loginfo("END - Cleaning memory", scientific_name)
-}, gc=T, seed=T)  
+}, gc=T, seed=T)
 Prom_clean %...>% print(.)
 
 
@@ -2521,7 +2521,7 @@ Prom<-future({
   # Decline for A2
   if(!(Estimates[12] %in% c("+", "-")) & is.na(Estimates[13])==F){questionnaire_sign()}
   if(Estimates[12] %in% c("+", "-")){allfields$PopulationReductionPast.direction<-revalue(Estimates[12], c("-"="Reduction", "+"="Increase"))} # Replace by Increase or Reduction (if users wrote something else, we don't report it in allfields)
-  allfields$PopulationReductionPast.range<-sRL_CheckNumeric(Estimates[13], "[Past trends value]", "Percentage_yes")
+  allfields$PopulationReductionPast.range<-sRL_CheckNumeric(Estimates[13], "[Past trends value]", ifelse(allfields$PopulationReductionPast.direction == "Reduction", "Percentage_yes", "NotPerc"))
   allfields$PopulationReductionPast.justification<-Estimates[14]
 
   # Population trends details
@@ -2551,13 +2551,13 @@ Prom<-future({
   allfields$CurrentTrendDataDerivation.value<-currentTrends_basis
 
   allfields$PopulationReductionFuture.direction<-futureTrends_dir
-  allfields$PopulationReductionFuture.range<-sRL_CheckNumeric(futureTrends, "[Future trends value]", "Percentage_yes")
+  allfields$PopulationReductionFuture.range<-sRL_CheckNumeric(futureTrends, "[Future trends value]", ifelse(futureTrends_dir == "Reduction", "Percentage_yes", "NotPerc"))
   allfields$PopulationReductionFuture.justification<-futureTrends_justif
   allfields$PopulationReductionFuture.qualifier<-futureTrends_quality
   allfields$PopulationReductionFutureBasis.value<-futureTrends_basis %>% subset(., nchar(.)>1 & . != "Unknown") %>% paste(., collapse="|") %>% ifelse(.=="", "Unknown", .) # Remove single letters, remove Unknown if with something else, paste with | as in SIS Connect Sample set
 
   allfields$PopulationReductionPastandFuture.direction<-ongoingTrends_dir
-  allfields$PopulationReductionPastandFuture.range<-sRL_CheckNumeric(ongoingTrends, "[Ongoing trends value]", "Percentage_yes")
+  allfields$PopulationReductionPastandFuture.range<-sRL_CheckNumeric(ongoingTrends, "[Ongoing trends value]", ifelse(ongoingTrends_dir == "Reduction", "Percentage_yes", "NotPerc"))
   allfields$PopulationReductionPastandFuture.justification<-ongoingTrends_justif
   allfields$PopulationReductionPastandFuture.qualifier<-ongoingTrends_quality
   allfields$PopulationReductionPastandFutureBasis.value<-ongoingTrends_basis %>% subset(., nchar(.)>1 & . != "Unknown") %>% paste(., collapse="|") %>% ifelse(.=="", "Unknown", .) # Remove single letters, remove Unknown if with something else, paste with | as in SIS Connect Sample set
