@@ -1275,9 +1275,10 @@ Prom<-future({
   terraOptions(tempdir=paste0(output_dir, "/Temporary"), memmax=config$RAMmax_GB)
   rasterOptions(tmpdir=paste0(output_dir, "/Temporary"), maxmemory=config$RAMmax_GB)
 
-  ### SMALL-RANGES -----
+  ### SMALL-RANGES ----- (if range is smaller than Size_LargeRange and the box around it is not more than 10 times bigger)
   Range_size<-as.numeric(st_area(rangeSP_clean))/10^6 ; print(Range_size)
-  AOH_type<-ifelse(Range_size < as.numeric(config$Size_LargeRange), "Small", "Large") ; print(AOH_type)
+  Range_bbox<-as.numeric(st_area(st_as_sfc(st_bbox(rangeSP_clean))))/10^6
+  AOH_type<-ifelse(((Range_size < as.numeric(config$Size_LargeRange)) & (Range_bbox < (10*as.numeric(config$Size_LargeRange)))), "Small", "Large") ; print(AOH_type)
   if(AOH_type=="Small"){
 
     sRL_loginfo("START - Small: Cropping rasters", scientific_name)
