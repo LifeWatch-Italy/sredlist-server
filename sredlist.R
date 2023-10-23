@@ -2642,7 +2642,7 @@ Prom<-future({
   write.csv(assessments_SIS, paste0(output_dir, "/assessments.csv"), row.names = F)
   
   # Download tracking files
-  if(scientific_name=="Download tracker"){
+  if(scientific_name==config$Name_tracker){
     filesOut<-list.files("Species/Stored_outputs")
     file.copy(paste0("Species/Stored_outputs/", filesOut), paste0(output_dir, "/Outputs_", filesOut))
   }
