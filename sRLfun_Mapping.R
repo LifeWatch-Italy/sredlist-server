@@ -470,25 +470,39 @@ sRL_MapDistributionGBIF<-function(dat, scientific_name, First_step, AltMIN, AltM
   
   ### Apply crop by altitude
   if(AltMIN>0 | AltMAX<9000){
-  mcp.spatial <- as_Spatial(distGBIF)
-  sp.mcp.terra <- terra::vect(distGBIF)
+    tryCatch({
+      
+      sRL_loginfo("START - Crop by elevation", scientific_name)
+      mcp.spatial <- sf::as_Spatial(distGBIF)
+      sp.mcp.terra <- terra::vect(distGBIF)
+      
+      # Load elevation raster (size depends on range of points)
+      if((as.numeric(st_area(st_as_sfc(st_bbox(dat))))/10^6) > (5*10^6)){
+        alt_raw<-rast(paste0(config$cciStack2_path, "/ElevationAgg30.tif"))
+        print("Using large elevation raster")
+      } else {
+          alt_raw<-sRL_ChargeAltRaster()
+          print("Using small elevation raster")
+          }
+      
+      dem.crop <- terra::crop(alt_raw, ext(mcp.spatial), snap="out")
+      
+      sp.mcp.ras <- terra::rasterize(sp.mcp.terra, dem.crop)
+      dem.sp <- terra::mask(dem.crop, mask = sp.mcp.terra)
   
-  alt_raw<-sRL_ChargeAltRaster()
-  dem.crop <- terra::crop(alt_raw, ext(mcp.spatial), snap="out")
-  
-  sp.mcp.ras <- terra::rasterize(sp.mcp.terra, dem.crop)
-  dem.sp <- terra::mask(dem.crop, mask = sp.mcp.terra)
-  
-  m <- c(-Inf, AltMIN, 0, AltMIN, 
+      m <- c(-Inf, AltMIN, 0, AltMIN, 
          AltMAX, 1, AltMAX, Inf, 0)
-  rclmat <- matrix(m, ncol=3, byrow=TRUE)
-  
-  sp.range <- terra::classify(dem.sp, rclmat) %>% 
-    terra::aggregate(fact = 4, fun = 'max')
-  
-  sp.range[sp.range == 0] <- NA
-  
-  distGBIF <- as.polygons(sp.range) %>% st_as_sf(.)
+      rclmat <- matrix(m, ncol=3, byrow=TRUE)
+      
+      sp.range <- terra::classify(dem.sp, rclmat) %>% 
+        terra::aggregate(fact = 4, fun = 'max')
+      
+      sp.range[sp.range == 0] <- NA
+      
+      distGBIF <- as.polygons(sp.range) %>% st_as_sf(.)
+      sRL_loginfo("END - Crop by elevation", scientific_name)
+      
+    }, error=function(e){"Bug in Crop by elevation"})
   }
   
   ### Prepare to export
