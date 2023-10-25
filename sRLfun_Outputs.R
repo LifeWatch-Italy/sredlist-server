@@ -135,7 +135,7 @@ sRL_OutputRef<-function(scientific_name, Storage_SP){
   })
   
   # Transform NA in "" to match SIS
-  ref_SIS<-replace(ref_SIS, is.na(ref_SIS), "") %>% subset(., (is.empty(.$title)==F | is.empty(.$Original_reference)==F))
+  ref_SIS<-replace(ref_SIS, is.na(ref_SIS), "") %>% subset(., (spatialEco::is.empty(.$title)==F | spatialEco::is.empty(.$Original_reference)==F))
   ref_SIS$author[ref_SIS$author==""]<-"AUTHOR TO ADD MANUALLY"
   
   return(ref_SIS)

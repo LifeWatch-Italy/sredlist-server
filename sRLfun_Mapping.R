@@ -446,7 +446,7 @@ sRL_MapDistributionGBIF<-function(dat, scientific_name, First_step, AltMIN, AltM
   distGBIF<-st_buffer(distGBIF, Buffer_km*1000) %>% st_as_sf()
   
   ### If distGBIF is bigger than the Earth limits (mapped from realms; ie., if not fully covered by realms_mcp), I crop restrict to the Earth
-  if(is.empty(st_covered_by(distGBIF, realms_mcp, sparse=T)[[1]])){
+  if(spatialEco::is.empty(st_covered_by(distGBIF, realms_mcp, sparse=T)[[1]])){
     sRL_loginfo("Polygon outside of Earth bounds - fixed", scientific_name)
     distGBIF$geometry<-st_intersection(distGBIF, realms_mcp)$geometry
   }
