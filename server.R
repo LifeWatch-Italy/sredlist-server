@@ -1,5 +1,5 @@
-### Only for Victor
-setwd("C:/Users/Victor/Documents/sRedList/Platform/InProgress/sredlist-server-develop")
+# Set working directory (Victor path if we are on his laptop, LifeWatch path otherwise)
+setwd(dir=ifelse(file.exists("C:/Users/Victor"),"C:/Users/Victor/Documents/sRedList/Platform/InProgress/sredlist-server-develop", "/media/docker/sRedList/sredlist-server"))
 
 
 ### Set the asynchronous coding
@@ -48,7 +48,7 @@ library(knitr) ; library(rmarkdown) ; library(flextable) ; library(png) ; librar
 #####################################
 
 ### Config (if on Victor's computer, load config_Victor, otherwise load config.yml)
-config <- config::get(file=ifelse(file.exists("C:/Users/Victor"), "C:/Users/Victor/Documents/sRedList/Platform/InProgress/config_Victor.yml", "config.yml"))
+config <- config::get(file="../config.yml")
 
 # The CRS we use in all the platform
 CRSMOLL<-"+proj=moll +lon_0=0 +x_0=0 +y_0=0 +ellps=WGS84 +units=m +no_defs"
