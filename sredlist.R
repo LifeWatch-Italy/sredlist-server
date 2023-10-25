@@ -305,9 +305,7 @@ Prom<-future({
   
   # Flag observations to remove
   Tests_to_run=c("capitals", "centroids", "equal", "gbif", "institutions", "zeros")
-  # TEMPORARY (until CoordinateCleaner bug is fixed)
-  Tests_to_run<-Tests_to_run[!Tests_to_run %in% c("centroids", "institutions")]
-  
+
   tryCatch({
     ## Apply automatic filters
     flags_raw <- clean_coordinates(x = dat,
