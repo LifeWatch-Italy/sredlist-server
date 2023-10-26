@@ -321,6 +321,7 @@ sRL_cleaningMemory<-function(Time_limit){
       toremove_temp<-list_temp[Time_diff_temp>Time_limit | is.na(Time_diff_temp)] # If time higher than Time_limit or if time is NA (which can happen if Storage_SP does not exist) I remove them
       
       # Keep track in Stored_Output
+      if(length(toremove_temp)>0){
       tryCatch({
         FileStored<-paste0("Species/Stored_outputs/Stored_", substr(Sys.Date(), 1, 7), ".rds")
 
@@ -352,7 +353,7 @@ sRL_cleaningMemory<-function(Time_limit){
         }
         
         # Save output_save
-        if(length(toremove_temp)>0){saveRDS(Saved_output, FileStored)}
+        saveRDS(Saved_output, FileStored)
         
       }, error=function(e){cat("Problem tracking incomplete assessments")})
       
@@ -362,6 +363,7 @@ sRL_cleaningMemory<-function(Time_limit){
       # Print
       temp_prop_removed<- (length(list_temp)-length(list.files("resources/AOH_stored")))
       cat(paste0(length(toremove_temp), " / ", length(list_temp), " stored folders should be removed, (", temp_prop_removed, " were correctly removed)", "\n"))
+      }
   }
 }, error=function(e){cat("Problem removing Stored files")})
   
