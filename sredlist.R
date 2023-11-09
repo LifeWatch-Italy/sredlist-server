@@ -752,14 +752,9 @@ return(Prom)
 #* @tag sRedList
 function(scientific_name, username, domain_pref=list(), Crop_Country="") {
 
-### Manage case in Crop_Country
-if(!Crop_Country %in% c(coo_raw$SIS_name0, "", "Europe", "EU27")){
-  if(tolower(Crop_Country) %in% tolower(coo_raw$SIS_name0)){
-    Crop_Country<-coo_raw$SIS_name0[tolower(coo_raw$SIS_name0)==tolower(Crop_Country)][1]
-  }
-  if(tolower(Crop_Country)=="europe"){Crop_Country<-"Europe"}
-  if(tolower(Crop_Country)=="eu27"){Crop_Country<-"EU27"}
-}
+### Manage Crop_Country
+if(Crop_Country == "No_Country"){Crop_Country<-""}
+
   
 Prom<-future({
   sf::sf_use_s2(FALSE)
@@ -776,12 +771,9 @@ Prom<-future({
   
   # Crop for National Red Listing
   if(Crop_Country != ""){
-    if(Crop_Country %in% c(coo_raw$SIS_name0, "", "Europe", "EU27")){
-      distSP<-sRL_CropCountry(distSP, domain_pref, Crop_Country)
-      Storage_SP<-sRL_OutLog(Storage_SP, "Crop_Country", Crop_Country)}
-    else {
-      distSP<-data.frame()
-      }
+    if(Crop_Country %in% coo_raw$lookup_SIS0){Crop_Country<-coo_raw$SIS_name0[coo_raw$lookup_SIS0==Crop_Country] ; print(Crop_Country)}
+    distSP<-sRL_CropCountry(distSP, domain_pref, Crop_Country)
+    Storage_SP<-sRL_OutLog(Storage_SP, "Crop_Country", Crop_Country)
   }
   
   # If distribution from occurrence records and National cropping, I keep only occurrences within distribution
