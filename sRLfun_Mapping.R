@@ -83,8 +83,13 @@ sRL_createDataGBIF <- function(scientific_name, GBIF_SRC, Gbif_Country, Uploaded
     co_mar <- eez_raw %>% subset(., (is.na(eez_raw$SIS_name1) | eez_raw$SIS_name1 != "Clipperton I.")) %>% subset(., SIS_name0 %in% Gbif_CountryList)
     if(Gbif_Country=="Europe"){co_mar <- st_union (co_mar,  subset(eez_raw, eez_raw$SIS_name1 %in% sRL_EuropeList1))}
     
-    # Merge, buffer and calculate extent
+    # If Mediterranean assessment, I use Mediterranean hotspot borders
+    if(Gbif_Country=="Mediterranean"){co_terr<-st_read("Species/Map countries/Mediterranean_hotspot.shp") ; co_terr$SIS_name0<-NA}
+    
+    # Merge and buffer
     co_tot <- rbind(co_mar[,c("SIS_name0", "geometry")], co_terr[,c("SIS_name0", "geometry")]) %>% dplyr::group_by() %>% dplyr::summarise(N= n()) %>% st_buffer(., 0.1)
+    
+    # Calculate extent
     co_EXT <- extent(co_tot) %>% as.vector(.)
     
   } else {co_EXT<-c(-180,180,-90,90)}
@@ -687,7 +692,6 @@ sRL_CropCountry<-function(distSP, domain_pref, Crop_Country){
     Crop_Country<-sRL_EU27List
   }
   
-  
   # Select countries depending on domain preferences
   if("Marine" %in% domain_pref){eez_Sub<-subset(eez_raw, eez_raw$SIS_name0 %in% Crop_Country | eez_raw$SIS_name1 %in% Crop_Country1) %>% st_transform(., CRSMOLL)}
   if("Terrestrial" %in% domain_pref | "Freshwater" %in% domain_pref){cou_Sub<-subset(coo_raw, (coo_raw$SIS_name0 %in% Crop_Country) | (coo_raw$SIS_name1 %in% Crop_Country1)) %>% st_transform(., CRSMOLL)}
@@ -700,7 +704,9 @@ sRL_CropCountry<-function(distSP, domain_pref, Crop_Country){
   }
   country_sub<-country_sub %>% dplyr::group_by() %>% dplyr::summarise(N= n()) 
   
-
+  # Mediterranean assessments
+  if(Crop_Country[1]=="Mediterranean"){country_sub<-st_read("Species/Map countries/Mediterranean_hotspot.shp") ; country_sub$SIS_name0<-NA}
+  
   
   # Crop the distribution
   distSP_crop<-st_intersection(distSP, country_sub)
