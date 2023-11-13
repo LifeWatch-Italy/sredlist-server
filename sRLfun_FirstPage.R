@@ -170,6 +170,11 @@ sRL_PrepareDistrib <- function(distributions, scientific_name){
   if(EXT[1]<=(-180) | EXT[2]>=180 | EXT[3]<=(-90) | EXT[4]>=90){distSP<-st_crop(distSP, xmin=-180, xmax=180, ymin=-90, ymax=90)}
   distSP<-st_transform(distSP, st_crs(CRSMOLL))
   
+  # Repair if needed
+  if("FALSE" %in% st_is_valid(distSP)){
+    distSP<-aoh::st_repair_geometry(distSP)
+  }
+  
   return(distSP)
 }
 
