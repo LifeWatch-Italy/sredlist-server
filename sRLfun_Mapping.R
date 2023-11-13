@@ -56,25 +56,59 @@ sRL_FormatUploadedRecords <- function(Uploaded_Records, scientific_name, Gbif_Sy
 
 
 
+### List of countries for Europe
+sRL_EuropeList<-c("Albania", "Andorra", "Austria", "Belarus", "Belgium", "Bosnia and Herzegovina", "Bulgaria", "Croatia", "Cyprus", "Czechia", "Denmark", "Estonia", "Finland", "France", "Germany", "Greece", "Hungary", "Iceland", "Ireland", "Italy", "Latvia", "Liechtenstein", "Lithuania", "Luxembourg", "Malta", "Moldova, Republic of", "Monaco", "Montenegro", "Netherlands", "North Macedonia", "Norway", "Poland", "Portugal", "Romania", "San Marino", "Serbia", "Slovakia", "Slovenia", "Spain", "Sweden", "Switzerland", "Ukraine", "United Kingdom of Great Britain and Northern Ireland")
+sRL_EuropeList1<-c("European Russia", "Türkiye-in-Europe") # For Europe I need to include Eastern Russia and Eastern Turkey, I list them in Crop_Country1 which is empty for non European National assessments
+sRL_EU27List<-c("Austria", "Belgium", "Bulgaria", "Croatia", "Cyprus", "Czechia", "Denmark", "Estonia", "Finland", "France", "Germany", "Greece", "Hungary", "Ireland", "Italy", "Latvia", "Lithuania", "Luxembourg", "Malta", "Netherlands", "Poland", "Portugal", "Romania", "Slovakia", "Slovenia", "Spain", "Sweden")
 
 
 
-sRL_createDataGBIF <- function(scientific_name, GBIF_SRC, Uploaded_Records) { # nolint
+### Function to create occurrence records 
+sRL_createDataGBIF <- function(scientific_name, GBIF_SRC, Gbif_Country, Uploaded_Records) { # nolint
   
+  ### If Gbif_Country, prepare countries file
+  if(Gbif_Country != ""){
+    
+    # If European RL, change Gbif_Country to a list of countries to include
+    Gbif_CountryList<-Gbif_Country
+    if(Gbif_Country=="EU27"){Gbif_CountryList <- sRL_EU27List}
+    if(Gbif_Country=="Europe"){Gbif_CountryList <- sRL_EuropeList}
+    
+    # Isolate terrestrial countries (and subnationals in Turkey and Russia if European)
+    co_terr <- distCountries_WGS %>% subset(., SIS_name0 %in% Gbif_CountryList)
+    if("France" %in% Gbif_CountryList){co_terr[co_terr$SIS_name0=="France",]<-st_crop(co_terr[co_terr$SIS_name0=="France",], xmin=-40,xmax=180,ymin=-90,ymax=90)}
+    if(Gbif_Country=="Europe"){co_terr <- st_union (co_terr,  subset(coo_raw, coo_raw$SIS_name1 %in% sRL_EuropeList1))}
+    
+    # Isolate marine countries (and subnationals in Turkey and Russia if European)
+    co_mar <- eez_raw %>% subset(., (is.na(eez_raw$SIS_name1) | eez_raw$SIS_name1 != "Clipperton I.")) %>% subset(., SIS_name0 %in% Gbif_CountryList)
+    if(Gbif_Country=="Europe"){co_mar <- st_union (co_mar,  subset(eez_raw, eez_raw$SIS_name1 %in% sRL_EuropeList1))}
+    
+    # Merge, buffer and calculate extent
+    co_tot <- rbind(co_mar[,c("SIS_name0", "geometry")], co_terr[,c("SIS_name0", "geometry")]) %>% dplyr::group_by() %>% dplyr::summarise(N= n()) %>% st_buffer(., 0.1)
+    co_EXT <- extent(co_tot) %>% as.vector(.)
+    
+  } else {co_EXT<-c(-180,180,-90,90)}
+
   ### Download data
   # From GBIF
   Taxon<-name_backbone(name=scientific_name)
   if("SPECIES" %in% Taxon$rank[1]){TaxKey<-Taxon$usageKey} else {TaxKey<-NULL} # Needed to avoid a wrong species from an existing genus to download all occurrences from that genus
   if(GBIF_SRC[1]==1 & is.null(TaxKey)==F){
     
-    #Calculate the total number of data in GBIF
+    # Calculate the total number of data in GBIF
     OCC<-occ_count(taxonKey=TaxKey, hasCoordinate = TRUE)
     
+
     if(OCC < config$LIM_GBIF){ # Download all data or structure download if more than LIM_GBIF
-      dat_gbif <- rgbif::occ_data(scientificName=scientific_name, hasCoordinate = T, limit=config$LIM_GBIF)$data # occ_data is faster than occ_search because it omits some columns
+      dat_gbif <- rgbif::occ_data(scientificName=scientific_name, 
+                                  hasCoordinate = T, 
+                                  decimalLongitude=paste(co_EXT[1], co_EXT[2], sep=","), 
+                                  decimalLatitude=paste(co_EXT[3], co_EXT[4], sep=","),
+                                  limit=config$LIM_GBIF
+                                  )$data # occ_data is faster than occ_search because it omits some columns
       dat_gbif$Source_type<-"GBIF"
     } else{
-      dat_gbif <- sRL_StructureGBIF(scientificName = scientific_name)
+      dat_gbif <- sRL_StructureGBIF(scientificName = scientific_name, co_EXT)
       dat_gbif$Source_type<-"GBIF sample"
     }
     
@@ -105,6 +139,7 @@ sRL_createDataGBIF <- function(scientific_name, GBIF_SRC, Uploaded_Records) { # 
     dat_obis_sub$Link<-paste0("https://obis.org/taxon/", dat_obis_sub$aphiaID[1])
     dat_obis_sub$gbifID<-dat_obis_sub$occurrenceID
     dat_obis_sub$species_download<-scientific_name
+    dat_obis_sub <- subset(dat_obis_sub, decimalLongitude > co_EXT[1] & decimalLongitude < co_EXT[2] & decimalLatitude > co_EXT[3] & decimalLatitude < co_EXT[4]) # Restrict to country of interest before subsampling
     
     # If too many data, keep a sample (most recent)
     if(nrow(dat_obis_sub) > config$LIM_GBIF){
@@ -127,6 +162,7 @@ sRL_createDataGBIF <- function(scientific_name, GBIF_SRC, Uploaded_Records) { # 
     dat_RL$Link<-NA
     dat_RL$species_download<-scientific_name
     names(dat_RL)<-replace(names(dat_RL), names(dat_RL)=="Source", "source")
+    dat_RL <- subset(dat_RL, decimalLongitude > co_EXT[1] & decimalLongitude < co_EXT[2] & decimalLatitude > co_EXT[3] & decimalLatitude < co_EXT[4]) # Restrict to country of interest before subsampling
     
     # If too many data, keep a sample (most recent)
     if(nrow(dat_RL) > config$LIM_GBIF){
@@ -147,6 +183,7 @@ sRL_createDataGBIF <- function(scientific_name, GBIF_SRC, Uploaded_Records) { # 
     dat_upload$gbifID<-paste0("Uploaded_", rownames(dat_upload))
     dat_upload$Link<-NA
     names(dat_upload)<-replace(names(dat_upload), names(dat_upload)=="Source", "source")
+    dat_upload <- subset(dat_upload, decimalLongitude > co_EXT[1] & decimalLongitude < co_EXT[2] & decimalLatitude > co_EXT[3] & decimalLatitude < co_EXT[4]) # Restrict to country of interest before subsampling
     
     # If too many data (with a higher threshold), keep a sample 
     if(nrow(dat_upload) > 3*config$LIM_GBIF){
@@ -177,6 +214,13 @@ sRL_createDataGBIF <- function(scientific_name, GBIF_SRC, Uploaded_Records) { # 
     if(!"countryCode" %in% names(dat)){dat$countryCode<-NA} else{
       dat$countryCode <-  countrycode::countrycode(dat$countryCode, origin =  'iso2c', destination = 'iso3c')} # nolint
     dat <- data.frame(dat)
+    
+    # Remove observations outside country if national Red List
+    if(Gbif_Country != ""){
+      dat_proj<-st_as_sf(dat,coords = c("decimalLongitude", "decimalLatitude"), crs="+proj=longlat +datum=WGS84")
+      dat_proj$InCountry<-st_join(dat_proj, co_tot, join=st_intersects)$N %>% is.na(.)==F
+      dat<-subset(dat, dat$gbifID %in% dat_proj$gbifID[dat_proj$InCountry==T])
+    }
   }
   
   return(dat)
@@ -186,11 +230,12 @@ sRL_createDataGBIF <- function(scientific_name, GBIF_SRC, Uploaded_Records) { # 
 
 
 ### Function to download GBIF in a spatially structured manner (to avoid big sampling biases)
-sRL_StructureGBIF<-function(scientificName){
+sRL_StructureGBIF<-function(scientificName, co_EXT){
   
   ##### DEFINE THE SAMPLING PATTERN
   ### Map density of observations and extract coordinates
   Fetch<-mvt_fetch(taxonKey = name_backbone(name=scientificName)$usageKey, srs = "EPSG:4326", format="@4x.png") 
+  Fetch<-st_crop(Fetch, xmin=max(-180,(co_EXT[1]-1)), xmax=min(180,(co_EXT[2]+1)), ymin=max(-90,(co_EXT[3]-1)), ymax=min(180,(co_EXT[4]+1))) # Crop by co_Ext with 1 degree buffer (max distance between two sampling points) to ensure we don't exclude points close to the border
   coords<-as.data.frame(st_coordinates(Fetch))
   coords$tot<-Fetch$total
   
@@ -240,7 +285,9 @@ sRL_StructureGBIF<-function(scientificName){
   TAB$N_download<-ifelse((TAB$N_download>TAB$N), TAB$N, TAB$N_download)
   i=0
   while(i<config$LIM_GBIF){
-    TAB$N_download[TAB$N_download<TAB$N]<-TAB$N_download[TAB$N_download<TAB$N]+1
+    if(sum(TAB$N_download) < sum(TAB$N)){ # If not all columns are complete I add only to those not full, otherwise to all columns (happens as Fetch only includes data with year)
+      TAB$N_download[TAB$N_download<TAB$N]<-TAB$N_download[TAB$N_download<TAB$N]+1
+    } else {TAB$N_download<-round(TAB$N_download*1.05)}
     i=sum(TAB$N_download)
   }
 
@@ -626,11 +673,7 @@ sRL_cooExtract<-function(distSP, domain_pref, Crop_Country){
 
 
 
-
 ### Function to crop a country for National Red Listing
-sRL_EuropeList<-c("Albania", "Andorra", "Austria", "Belarus", "Belgium", "Bosnia and Herzegovina", "Bulgaria", "Croatia", "Cyprus", "Czechia", "Denmark", "Estonia", "Finland", "France", "Germany", "Greece", "Hungary", "Iceland", "Ireland", "Italy", "Latvia", "Liechtenstein", "Lithuania", "Luxembourg", "Malta", "Moldova, Republic of", "Monaco", "Montenegro", "Netherlands", "North Macedonia", "Norway", "Poland", "Portugal", "Romania", "San Marino", "Serbia", "Slovakia", "Slovenia", "Spain", "Sweden", "Switzerland", "Ukraine", "United Kingdom of Great Britain and Northern Ireland")
-sRL_EuropeList1<-c("European Russia", "Türkiye-in-Europe") # For Europe I need to include Eastern Russia and Eastern Turkey, I list them in Crop_Country1 which is empty for non European National assessments
-sRL_EU27List<-c("Austria", "Belgium", "Bulgaria", "Croatia", "Cyprus", "Czechia", "Denmark", "Estonia", "Finland", "France", "Germany", "Greece", "Hungary", "Ireland", "Italy", "Latvia", "Lithuania", "Luxembourg", "Malta", "Netherlands", "Poland", "Portugal", "Romania", "Slovakia", "Slovenia", "Spain", "Sweden")
 
 sRL_CropCountry<-function(distSP, domain_pref, Crop_Country){
 

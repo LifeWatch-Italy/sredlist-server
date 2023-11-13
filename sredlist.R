@@ -229,7 +229,7 @@ return(Prom %...>% plot())
 #* @param Uploaded_Records:file A file
 #* @serializer unboxedJSON
 #* @tag sRedList
-function(scientific_name, username, Gbif_Source=list(), Gbif_Synonym="", Uploaded_Records="") {
+function(scientific_name, username, Gbif_Source=list(), Gbif_Synonym="", Gbif_Country="", Uploaded_Records="") {
 
 Prom<-future({
   sf::sf_use_s2(FALSE)
@@ -238,6 +238,7 @@ Prom<-future({
   scientific_name <- sRL_decode(scientific_name)
   print(scientific_name)
   print(Gbif_Source)
+  print(Gbif_Country)
   
   # Prepare synonyms
   if(Gbif_Synonym != ""){Gbif_Synonym <- Gbif_Synonym %>% gsub("  ", " ", .) %>% strsplit(., "[,;]+") %>% unlist(.) %>% ifelse(substr(., 1, 1)==" ", substr(., 2, 1000), .) %>% sRL_decode(.) %>% .[. != scientific_name]}
@@ -251,7 +252,7 @@ Prom<-future({
 
   ### GBIF procedure
   sRL_loginfo("START - Create data", scientific_name)
-  dat <- sRL_createDataGBIF(scientific_name, Gbif_Source, Uploaded_Records)
+  dat <- sRL_createDataGBIF(scientific_name, Gbif_Source, Gbif_Country, Uploaded_Records)
   
   
   ## If there are synonyms
@@ -264,7 +265,7 @@ Prom<-future({
     # Run again the data collection (in a tryCatch to avoid errors if the name does not exist)
     for(SY in 1:length(Gbif_Synonym)){
       tryCatch({
-        dat_syn<-sRL_createDataGBIF(Gbif_Synonym[SY], Gbif_Source, "") # Same Source options as it can be useful for GBIF, OBIS but also Red List (eg species name was changed)
+        dat_syn<-sRL_createDataGBIF(Gbif_Synonym[SY], Gbif_Source, Gbif_Country, "") # Same Source options as it can be useful for GBIF, OBIS but also Red List (eg species name was changed)
         dat_syn$species<-scientific_name
         dat_syn$Source_type=paste0("Synonyms_", dat_syn$Source_type)
         dat_syn<-subset(dat_syn, ! paste0(dat_syn$decimalLongitude, dat_syn$decimalLatitude) %in% paste0(dat$decimalLongitude, dat$decimalLatitude)) # Remove the synonym observations that are already at location of the focal species (to avoid duplicated observations, see for instance Cheilosia hercyniae and C. means)
@@ -331,6 +332,7 @@ Prom<-future({
   output_to_save$Count[output_to_save$Parameter=="Gbif_Source"]<-ifelse(file.exists(paste0("resources/AOH_stored/", gsub(" ", "_", sRL_decode(scientific_name)), "_", sRL_userdecode(username), "/Storage_SP.rds")), (sRL_StoreRead(scientific_name,  username, 1)$Output$Count[2]+1), 1)
   output_to_save$Value[output_to_save$Parameter=="Gbif_Synonyms"]<-ifelse(Gbif_Synonym=="", NA, paste(Gbif_Synonym, collapse="+"))
   Storage_SP<-list(flags_raw_saved=flags_raw, Creation=Sys.time(), Output=output_to_save)
+  Storage_SP<-sRL_OutLog(Storage_SP, "Crop_Country", Gbif_Country)
   sRL_StoreSave(scientific_name, username,  Storage_SP)
   
   return(list(plot_data=plot1))
@@ -771,7 +773,6 @@ Prom<-future({
   
   # Crop for National Red Listing
   if(Crop_Country != ""){
-    if(Crop_Country %in% coo_raw$lookup_SIS0){Crop_Country<-coo_raw$SIS_name0[coo_raw$lookup_SIS0==Crop_Country] ; print(Crop_Country)}
     distSP<-sRL_CropCountry(distSP, domain_pref, Crop_Country)
     Storage_SP<-sRL_OutLog(Storage_SP, "Crop_Country", Crop_Country)
   }
