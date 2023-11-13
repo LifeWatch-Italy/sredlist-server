@@ -241,6 +241,7 @@ sRL_StructureGBIF<-function(scientificName, co_EXT){
   ### Map density of observations and extract coordinates
   Fetch<-mvt_fetch(taxonKey = name_backbone(name=scientificName)$usageKey, srs = "EPSG:4326", format="@4x.png") 
   Fetch<-st_crop(Fetch, xmin=max(-180,(co_EXT[1]-1)), xmax=min(180,(co_EXT[2]+1)), ymin=max(-90,(co_EXT[3]-1)), ymax=min(180,(co_EXT[4]+1))) # Crop by co_Ext with 1 degree buffer (max distance between two sampling points) to ensure we don't exclude points close to the border
+  if(nrow(Fetch)==0){no_records()}
   coords<-as.data.frame(st_coordinates(Fetch))
   coords$tot<-Fetch$total
   
@@ -681,7 +682,7 @@ sRL_cooExtract<-function(distSP, domain_pref, Crop_Country){
 ### Function to crop a country for National Red Listing
 
 sRL_CropCountry<-function(distSP, domain_pref, Crop_Country){
-
+  
   # Europe
   Crop_Country1<-c()
   if(Crop_Country[1]=="Europe"){
@@ -692,22 +693,25 @@ sRL_CropCountry<-function(distSP, domain_pref, Crop_Country){
     Crop_Country<-sRL_EU27List
   }
   
-  # Select countries depending on domain preferences
-  if("Marine" %in% domain_pref){eez_Sub<-subset(eez_raw, eez_raw$SIS_name0 %in% Crop_Country | eez_raw$SIS_name1 %in% Crop_Country1) %>% st_transform(., CRSMOLL)}
-  if("Terrestrial" %in% domain_pref | "Freshwater" %in% domain_pref){cou_Sub<-subset(coo_raw, (coo_raw$SIS_name0 %in% Crop_Country) | (coo_raw$SIS_name1 %in% Crop_Country1)) %>% st_transform(., CRSMOLL)}
+  ### Select countries depending on domain preferences
+  # Mediterranean
+  if(Crop_Country[1]=="Mediterranean"){
+    country_sub<-st_read("Species/Map countries/Mediterranean_hotspot.shp") %>% st_transform(., CRSMOLL) ; country_sub$SIS_name0<-NA
+  } else{
   
-  if("Marine" %in% domain_pref & length(domain_pref)==1){country_sub<-eez_Sub}
-  if(!"Marine" %in% domain_pref){country_sub<-cou_Sub}
-  if("Marine" %in% domain_pref & ("Terrestrial" %in% domain_pref | "Freshwater" %in% domain_pref)){
-    cou_Sub$Aire<-cou_Sub$Tol<-NULL
-    country_sub<-rbind(eez_Sub, cou_Sub)
+  # Others
+    if("Marine" %in% domain_pref){eez_Sub<-subset(eez_raw, eez_raw$SIS_name0 %in% Crop_Country | eez_raw$SIS_name1 %in% Crop_Country1) %>% st_transform(., CRSMOLL)}
+    if("Terrestrial" %in% domain_pref | "Freshwater" %in% domain_pref){cou_Sub<-subset(coo_raw, (coo_raw$SIS_name0 %in% Crop_Country) | (coo_raw$SIS_name1 %in% Crop_Country1)) %>% st_transform(., CRSMOLL)}
+    
+    if("Marine" %in% domain_pref & length(domain_pref)==1){country_sub<-eez_Sub}
+    if(!"Marine" %in% domain_pref){country_sub<-cou_Sub}
+    if("Marine" %in% domain_pref & ("Terrestrial" %in% domain_pref | "Freshwater" %in% domain_pref)){
+      cou_Sub$Aire<-cou_Sub$Tol<-NULL
+      country_sub<-rbind(eez_Sub, cou_Sub)
+    }
+    country_sub<-country_sub %>% dplyr::group_by() %>% dplyr::summarise(N= n()) 
   }
-  country_sub<-country_sub %>% dplyr::group_by() %>% dplyr::summarise(N= n()) 
-  
-  # Mediterranean assessments
-  if(Crop_Country[1]=="Mediterranean"){country_sub<-st_read("Species/Map countries/Mediterranean_hotspot.shp") ; country_sub$SIS_name0<-NA}
-  
-  
+
   # Crop the distribution
   distSP_crop<-st_intersection(distSP, country_sub)
 

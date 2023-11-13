@@ -773,8 +773,10 @@ Prom<-future({
   
   # Crop for National Red Listing
   if(Crop_Country != ""){
+    sRL_loginfo("START - Crop country \n", scientific_name)
     distSP<-sRL_CropCountry(distSP, domain_pref, Crop_Country)
     Storage_SP<-sRL_OutLog(Storage_SP, "Crop_Country", Crop_Country)
+    sRL_loginfo("END - Crop country \n", scientific_name)
   }
   
   # If distribution from occurrence records and National cropping, I keep only occurrences within distribution
