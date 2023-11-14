@@ -237,6 +237,8 @@ sRL_createDataGBIF <- function(scientific_name, GBIF_SRC, Gbif_Country, Uploaded
 ### Function to download GBIF in a spatially structured manner (to avoid big sampling biases)
 sRL_StructureGBIF<-function(scientificName, co_EXT){
   
+  print("Use Structured GBIF download")
+  
   ##### DEFINE THE SAMPLING PATTERN
   ### Map density of observations and extract coordinates
   Fetch<-mvt_fetch(taxonKey = name_backbone(name=scientificName)$usageKey, srs = "EPSG:4326", format="@4x.png") 
@@ -297,7 +299,6 @@ sRL_StructureGBIF<-function(scientificName, co_EXT){
     i=sum(TAB$N_download)
   }
 
-  
   ##### STRUCTURE DOWNLOAD
   # Download one data (just for column names)
   dat_structured<-rgbif::occ_data(scientificName=scientificName, hasCoordinate = T, limit=1)$data 
@@ -310,7 +311,7 @@ sRL_StructureGBIF<-function(scientificName, co_EXT){
                               decimalLongitude=paste(TAB$Lon_min[GR], TAB$Lon_max[GR], sep=","), 
                               decimalLatitude=paste(TAB$Lat_min[GR], TAB$Lat_max[GR], sep=",")
     )$data 
-    
+
     if(is.null(nrow(dat_GR))==F){dat_structured<-rbind.fill(dat_structured, dat_GR)}
   }
   
@@ -681,7 +682,7 @@ sRL_cooExtract<-function(distSP, domain_pref, Crop_Country){
 
 ### Function to crop a country for National Red Listing
 
-sRL_CropCountry<-function(distSP, domain_pref, Crop_Country){
+sRL_CropCountry<-function(distSP, Crop_Country){
   
   # Europe
   Crop_Country1<-c()
@@ -700,16 +701,8 @@ sRL_CropCountry<-function(distSP, domain_pref, Crop_Country){
   } else{
   
   # Others
-    if("Marine" %in% domain_pref){eez_Sub<-subset(eez_raw, eez_raw$SIS_name0 %in% Crop_Country | eez_raw$SIS_name1 %in% Crop_Country1) %>% st_transform(., CRSMOLL)}
-    if("Terrestrial" %in% domain_pref | "Freshwater" %in% domain_pref){cou_Sub<-subset(coo_raw, (coo_raw$SIS_name0 %in% Crop_Country) | (coo_raw$SIS_name1 %in% Crop_Country1)) %>% st_transform(., CRSMOLL)}
-    
-    if("Marine" %in% domain_pref & length(domain_pref)==1){country_sub<-eez_Sub}
-    if(!"Marine" %in% domain_pref){country_sub<-cou_Sub}
-    if("Marine" %in% domain_pref & ("Terrestrial" %in% domain_pref | "Freshwater" %in% domain_pref)){
-      cou_Sub$Aire<-cou_Sub$Tol<-NULL
-      country_sub<-rbind(eez_Sub, cou_Sub)
-    }
-    country_sub<-country_sub %>% dplyr::group_by() %>% dplyr::summarise(N= n()) 
+    country_sub <- distCountries_NRL %>% subset(., .$SIS_name0 %in% Crop_Country | .$SIS_name1 %in% Crop_Country1) %>% st_transform(., CRSMOLL)
+    #country_sub<-country_sub# %>% dplyr::group_by() %>% dplyr::summarise(N= n()) 
   }
 
   # Crop the distribution

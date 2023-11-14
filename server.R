@@ -94,8 +94,9 @@ speciesRL <- readRDS("Species/species-all-page.rds") # nolint
 # Load Map countries
 coo_raw<-read_sf("Species/Map countries/Red_List_countries_msSimplif_coo_0.001.shp") ; names(coo_raw)<-c("SIS_name0", "SIS_name1", "lookup", "lookup_SIS0", "geometry") ; coo_raw$lookup_SIS0[coo_raw$SIS_name0=="Namibia"]<-"NA" # Used to map COO; Namibia should be "NA" and not NA
 eez_raw<-read_sf("Species/Map countries/Red_List_EEZ_Simplif_coo_0.001.shp") ; names(eez_raw)<-c("SIS_name0", "SIS_name1", "lookup", "lookup_SIS0", "geometry") ; eez_raw$lookup_SIS0[eez_raw$SIS_name0=="Namibia"]<-"NA"  ; eez_raw$lookup[eez_raw$SIS_name0=="Namibia"]<-"NA" # Used to map COO
+distCountries_NRL <- st_read("Species/Map countries/Countries_NRL_landmarCombined_msSimplif_0.05.shp") ;  names(distCountries_NRL)<-c("SIS_name0", "SIS_name1", "N", "geometry") # Use to crop countries in 1a and 1b for NRL
 distCountries_mapping <- st_read("Species/Map countries/Red_List_countries_msSimplif0.05_MOLL.shp")  ; st_crs(distCountries_mapping)<-CRSMOLL # Use to create maps in GBIF step 3
-distCountries_WGS <- st_read("Species/Map countries/Red_List_countries_msSimplif0.05_WGS.shp") # Used to filter GBIF data in GBIF step 2 and crop countries in GBIF 1b
+distCountries_WGS <- st_read("Species/Map countries/Red_List_countries_msSimplif0.05_WGS.shp") # Used to filter GBIF data in GBIF step 2
 distCountries<-st_read("Species/Map countries/Red_List_countries_msSimplif0.005_MOLL.shp") ; st_crs(distCountries)<-CRSMOLL # Used to map countries in the background
 distCountries_light <- distCountries %>% st_simplify(., dTolerance=0.01) %>% st_transform(., crs=st_crs(distCountries_WGS))
 realms_raw<-realms_raw<-st_read("Species/Map countries/RL_Realms.shp")

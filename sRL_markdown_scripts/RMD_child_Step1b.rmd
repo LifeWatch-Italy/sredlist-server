@@ -3,6 +3,7 @@ You used the sRedList platform to create a distribution map of your species from
 
 ### Download data
 You gathered `r nrow(Storage_SP$flags_raw_saved)` raw occurrence records from `r outlog$Value[outlog$Parameter=="Gbif_Source"] %>% gsub(" + ", ", ", .)`
+`r ifelse(is.na(outlog$Value[outlog$Parameter=="Crop_Country"]), "", paste0("You only kept the occurrence records that are included in ", outlog$Value[outlog$Parameter=="Crop_Country"], " (National Red Listing option)."))` 
 `r if("Gbif_Synonyms" %in% outlog$Parameter){paste0(" (using ", outlog$Value[outlog$Parameter=="Gbif_Synonyms"], " as synonym species)")}`. They are distributed as follows:
 
 <br>

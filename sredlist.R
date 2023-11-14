@@ -124,25 +124,27 @@ function(scientific_name, Dist_path = "") {
 #* @param Dist_path:string Distribution Folder default RedList
 #* @serializer png list(width = 800, height = 600)
 #* @tag sRedList1
-function(scientific_name, username, presences = list(), seasons = list() , origins = list(), Dist_path = "") { # nolint
+function(scientific_name, username, Crop_Country="", presences = list(), seasons = list() , origins = list(), Dist_path = "") { # nolint
 
 Prom<-future({
   sf::sf_use_s2(FALSE)
-
+  
   #Filter param
   sRL_loginfo("START - Prepare distribution", scientific_name)
   scientific_name <- sRL_decode(scientific_name)
   Storage_SP=sRL_StoreRead(scientific_name,  username, MANDAT=0) ; print(names(Storage_SP))
   Storage_SP<-subset(Storage_SP, names(Storage_SP) %in% c("CountrySP_saved", "Creation", "Output")) # Remove other elements from Storage_SP which could come from a previous process on the platform
+  if(Crop_Country=="Keep all countries"){Crop_Country<-""}
+  print(Crop_Country)
   
   # If outlog not present (I don't think this should happen but just in case)
   if(! "Output" %in% names(Storage_SP)){Storage_SP$Output<-sRL_InitLog(scientific_name, username, DisSource = "Unknown")}
   
   print(Dist_path)
   Dist_path <- ifelse(Dist_path == "", paste0(R.utils::capitalize(trim(gsub(" ", "_", scientific_name))), '_RL'), Dist_path ) # nolint
-  if (length(presences) != 0) presences <- as.character(presences);
-  if (length(seasons) != 0) seasons <- as.character(seasons);
-  if (length(origins) != 0) origins <- as.character(origins);
+  if (length(presences) != 0) presences <- as.character(presences)
+  if (length(seasons) != 0) seasons <- as.character(seasons)
+  if (length(origins) != 0) origins <- as.character(origins)
   
 
   ### Load Distribution Species
@@ -152,6 +154,7 @@ Prom<-future({
   choice_season <- c(seasons)
   choice_origin <- c(origins)
   
+  ### Subset distribution
   distSP <- subset(distSP_full, # nolint
                    distSP_full$presence %in% choice_presence &
                      distSP_full$seasonal %in% choice_season &
@@ -162,6 +165,13 @@ Prom<-future({
   distSP$id_no<-sRL_CalcIdno(scientific_name)
   sRL_loginfo("END - Prepare distribution", scientific_name)
   
+  ### Crop_Country for National RL
+  if(Crop_Country != ""){
+    sRL_loginfo("START - Crop country \n", scientific_name)
+    distSP<-sRL_CropCountry(distSP, Crop_Country) %>% dplyr::group_by(presence, seasonal, origin) %>% dplyr::summarise(N= n()) 
+    Storage_SP<-sRL_OutLog(Storage_SP, "Crop_Country", Crop_Country)
+    sRL_loginfo("END - Crop country \n", scientific_name)
+  }
   
   ### Colour the distributions
   sRL_loginfo("START - Colour distribution", scientific_name)
@@ -169,8 +179,7 @@ Prom<-future({
   
   ### Save the distribution in memory
   Storage_SP$distSP_saved<-distSP
-  Storage_SP$distSP_savedORIGINAL <- distSP # I need to save it twice for country croping for National RL
-  
+
   ### Prepare countries if they were not charged or if we are not using the RL distribution + crop depending on the current selection of range
   if("CountrySP_saved" %not in% names(Storage_SP) | (! grepl("_RL", Dist_path))){Storage_SP$CountrySP_saved<-sRL_PrepareCountries(1.2*extent(distSP_full))} 
   CountrySP<-st_crop(Storage_SP$CountrySP_saved, 1.2*extent(distSP))
@@ -424,7 +433,6 @@ Prom<-future({
   
   ### Assign in Storage_SP
   Storage_SP$dat_proj_saved<-dat_proj
-  Storage_SP$dat_proj_savedORIGINAL<-dat_proj # I need the original ones for Crop_Country step
   Storage_SP$flags<-flags
   Storage_SP$Leaflet_Filter<-Leaflet_Filter
   Storage_SP<-sRL_OutLog(Storage_SP, c("Gbif_Year", "Gbif_Uncertainty", "Gbif_Sea", "Gbif_Extent", "Gbif_automatedBin", "Gbif_yearBin", "Gbif_uncertainBin"), c(Gbif_Year, Gbif_Uncertainty, Gbif_Sea, paste0(Gbif_Extent, collapse=","), Gbif_automatedBin=="true", Gbif_yearBin, Gbif_uncertainBin))
@@ -592,6 +600,10 @@ Prom<-future({
     }, error=function(e){"Merging with published range map did not work"})
   }
   
+  # Crop country
+  Crop_Country<-Storage_SP$Output$Value[Storage_SP$Output$Parameter=="Crop_Country"]
+  if(is.na(Crop_Country) == F){distSP <- sRL_CropCountry(distSP, Crop_Country) %>% dplyr::group_by("binomial") %>% dplyr::summarise(N= n())}
+  
   
   # Map countries (keeping max extent between points and polygons)
   EXT_max <-  do.call(raster::bind, sapply(c(extent(distSP), extent(dat_proj)), FUN = function(x){as(x, 'SpatialPolygons')}))  %>% sp::bbox(.) %>% extent(.)
@@ -675,7 +687,12 @@ Prom<-future({
                                         GBIF_crop="",
                                         Gbif_Param=c(as.numeric(Storage_SP$Output$Value[Storage_SP$Output$Parameter=="Alpha_parameter"]), as.numeric(Storage_SP$Output$Value[Storage_SP$Output$Parameter=="Kernel_parameter"])))
       } else {distSP<-Storage_SP$distSP3_saved}
-      distSP<-smooth(distSP, method = "ksmooth", smoothness=(exp(Gbif_Smooth/20)-1), max_distance=10000)} else{
+      distSP<-smooth(distSP, method = "ksmooth", smoothness=(exp(Gbif_Smooth/20)-1), max_distance=10000)
+      # Crop country if National Red Listing
+      Crop_Country<-Storage_SP$Output$Value[Storage_SP$Output$Parameter=="Crop_Country"]
+      if(is.na(Crop_Country) == F){distSP <- sRL_CropCountry(distSP, Crop_Country)}
+      
+      } else{
         distSP<-Storage_SP$distSP3_saved
       }
     distSP<-st_make_valid(distSP)
@@ -704,7 +721,6 @@ Prom<-future({
   
   ### Keep distribution in memory
   Storage_SP$distSP_saved <- distSP
-  Storage_SP$distSP_savedORIGINAL <- distSP # I need to save it twice for country croping for National RL
   Storage_SP<-sRL_OutLog(Storage_SP, "Mapping_Smooth", Gbif_Smooth*10) # Gbif_Smooth*10 because it is divided by 10 at the beginning of the API but should be reported raw in the RmarkDown and output files
   sRL_StoreSave(scientific_name, username,  Storage_SP)
     
@@ -752,12 +768,8 @@ return(Prom)
 #* @param domain_pref:[str] domain_pref
 #* @serializer htmlwidget
 #* @tag sRedList
-function(scientific_name, username, domain_pref=list(), Crop_Country="") {
+function(scientific_name, username, domain_pref=list()) {
 
-### Manage Crop_Country
-if(Crop_Country == "No_Country"){Crop_Country<-""}
-
-  
 Prom<-future({
   sf::sf_use_s2(FALSE)
 
@@ -765,130 +777,91 @@ Prom<-future({
   scientific_name<-sRL_decode(scientific_name)
   Storage_SP<-sRL_StoreRead(scientific_name,  username, MANDAT=1) ; print(names(Storage_SP))
   rownames(coo_raw)<-1:nrow(coo_raw)
-  distSP<-Storage_SP$distSP_savedORIGINAL
+  distSP<-Storage_SP$distSP_saved
   domain_pref<-revalue(as.character(domain_pref), c("1"="Terrestrial", "2"="Marine", "3"="Freshwater"))
   print(domain_pref)
-  print(Crop_Country)
   Storage_SP<-sRL_OutLog(Storage_SP, "System_pref", paste(domain_pref, collapse="|"))
   
-  # Crop for National Red Listing
-  if(Crop_Country != ""){
-    sRL_loginfo("START - Crop country \n", scientific_name)
-    distSP<-sRL_CropCountry(distSP, domain_pref, Crop_Country)
-    Storage_SP<-sRL_OutLog(Storage_SP, "Crop_Country", Crop_Country)
-    sRL_loginfo("END - Crop country \n", scientific_name)
-  }
+  # Prepare distribution and calculate COO
+  distSP_WGS<-distSP %>% st_transform(., st_crs(coo_raw)) %>% dplyr::group_by(origin, presence, seasonal) %>% dplyr::summarise(N= n())
+  coo<-sRL_cooExtract(distSP_WGS, domain_pref, Storage_SP$Output$Value[Storage_SP$Output$Parameter=="Crop_Country"])
   
-  # If distribution from occurrence records and National cropping, I keep only occurrences within distribution
-  if("dat_proj_savedORIGINAL" %in% names(Storage_SP) & nrow(distSP)>0){
-    if(Crop_Country == ""){
-      Storage_SP$dat_proj_saved<-Storage_SP$dat_proj_savedORIGINAL # This is needed in case dat_proj have been previously subsetted to a single country
-    } else{
-      dat_proj<-Storage_SP$dat_proj_savedORIGINAL
-      dat_proj$JOIN<-st_join(dat_proj, distSP, join=st_intersects)$presence
-      dat_proj<-subset(dat_proj, dat_proj$JOIN==1)
-      if(nrow(dat_proj)>0){Storage_SP$dat_proj_saved<-dat_proj} else {Storage_SP$dat_proj_saved<-Storage_SP$dat_proj_savedORIGINAL} # If no occurrence records within the country, we keep all occurrence records
-    }
-  }
+  # Simplify distribution if large distribution
+  if((extent(distSP_WGS)@xmax-extent(distSP_WGS)@xmin)>50){distSP_WGS<-st_simplify(distSP_WGS, dTolerance=0.05)}
   
-  # If empty, return an empty plot
-  if(nrow(distSP)==0){
-    TITLE<-ifelse(Crop_Country %in% c(coo_raw$SIS_name0, "", "Europe", "EU27"),
-                  "<center><font size='6' color='#ad180d'><b>This country does not overlap with species distribution <br><br> Try changing country name or leave the field empty</b></center>",
-                  "<center><font size='6' color='#ad180d'><b>This country is not in the list of Red List countries <br><br> Check countries name and orthograph on SIS or on the interactive map by leaving this field empty</b></center>"
-                  )
-    return(
-      leaflet() %>% addControl(TITLE, position = "topleft", className="map-title")
-    )
+  # Create table of colours / labels and assign colours
+  col.df<-data.frame(
+    Code=c("MarineFALSEFALSE", "MarineTRUEFALSE", "MarineTRUETRUE", "TerrestrialFALSEFALSE", "TerrestrialTRUEFALSE", "TerrestrialTRUETRUE"),
+    Col=c("#D2D2D2", "#9595C3", "#5757A9", "white", "#F17777", "#8C2316"),
+    Label=c("Absent (marine)", "Absent from subnational (marine)", "Present (marine)", "Absent (terrestrial)", "Absent from subnational (terrestrial)", "Present (terrestrial)")
+  )
+  
+  coo$colour<-paste0(coo$Domain, coo$Level0_occupied, coo$Level1_occupied) 
+  coo$colour<-col.df$Col[match(coo$colour, col.df$Code)]
+  
+  # Prepare extent
+  EXT<-1.2*extent(coo[coo$Level0_occupied==T,])
+  if(is.na(EXT[1]) | is.na(EXT[2]) | is.na(EXT[3]) | is.na(EXT[4])){EXT<-1.2*extent(distSP_WGS)} # In case there is no overlap with countries (e.g., distribution at sea because of simplification)
+  
+  # Extract realms
+  Realms<-st_join(distSP_WGS, realms_raw, join=st_intersects)$realm %>% unique(.) %>% paste0(., collapse="|")
+  print(Realms)
+  
+  # Prepare command for results button
+  coo_occ<-sRL_cooInfoBox_prepare(coo, Storage_SP)
+  coo_res<-sRL_cooInfoBox_format(coo_occ)
+  info.box<-sRL_cooInfoBox_create(coo_res, Realms)
+  
+  # Create plot (first the one to export without the result - it makes the rmarkdown bug and it's not needed - and second adding the text results)
+  Leaflet_COOtoexport<-leaflet() %>%
+    fitBounds(lng1=EXT[1], lng2=EXT[2], lat1=EXT[3], lat2=EXT[4]) %>%
+    addPolygons(data=realms_raw, group="Realms", fillOpacity=0.5) %>%
+    addPolygons(data=coo,
+                color=ifelse(coo$Level0_occupied==T, "black", "grey"),
+                fillColor=coo$colour,
+                popup=coo$Popup,
+                stroke=T, weight=2, fillOpacity=1) %>%
+    addPolygons(data=distSP_WGS, color="#D69F32", fillOpacity=0.4, group="Range map") %>%
+    addLegend(position="bottomleft", colors=c(col.df$Col[col.df$Col %in% coo$colour], "#D69F32"), labels=c(col.df$Label[col.df$Col %in% coo$colour], "Distribution"), opacity=1)
+  
+  # Add points if we had occurrences and add layer control
+  if("dat_proj_saved" %in% names(Storage_SP)){
+    
+    Coords<-Storage_SP$dat_proj_saved %>% st_transform(., st_crs(4326)) %>% st_coordinates(.) %>% as.data.frame()
+    Leaflet_COOtoexport<-Leaflet_COOtoexport %>%
+      addCircleMarkers(lng=Coords[,1], lat=Coords[,2], color="black", fillOpacity=0.3, stroke=F, radius=2, group="Occurrence records") %>%
+      addLayersControl(overlayGroups=c("Range map", "Occurrence records", "Realms"), position="topleft", options=layersControlOptions(collapsed = FALSE)) %>% 
+      hideGroup("Realms")
+    
   } else {
-    
-    Storage_SP$distSP_saved<-distSP # I have to save it even if Crop_Country is empty because maybe it was not empty at previous call
-    
-    # Prepare distribution and calculate COO
-    distSP_WGS<-distSP %>% st_transform(., st_crs(coo_raw)) %>% dplyr::group_by(origin, presence, seasonal) %>% dplyr::summarise(N= n())
-    coo<-sRL_cooExtract(distSP_WGS, domain_pref, Crop_Country)
-    
-    # Simplify distribution if large distribution
-    if((extent(distSP_WGS)@xmax-extent(distSP_WGS)@xmin)>50){distSP_WGS<-st_simplify(distSP_WGS, dTolerance=0.05)}
-    
-    # Create table of colours / labels and assign colours
-    col.df<-data.frame(
-      Code=c("MarineFALSEFALSE", "MarineTRUEFALSE", "MarineTRUETRUE", "TerrestrialFALSEFALSE", "TerrestrialTRUEFALSE", "TerrestrialTRUETRUE"),
-      Col=c("#D2D2D2", "#9595C3", "#5757A9", "white", "#F17777", "#8C2316"),
-      Label=c("Absent (marine)", "Absent from subnational (marine)", "Present (marine)", "Absent (terrestrial)", "Absent from subnational (terrestrial)", "Present (terrestrial)")
-    )
-    
-    coo$colour<-paste0(coo$Domain, coo$Level0_occupied, coo$Level1_occupied) 
-    coo$colour<-col.df$Col[match(coo$colour, col.df$Code)]
-    
-    # Prepare extent
-    EXT<-1.2*extent(coo[coo$Level0_occupied==T,])
-    if(is.na(EXT[1]) | is.na(EXT[2]) | is.na(EXT[3]) | is.na(EXT[4])){EXT<-1.2*extent(distSP_WGS)} # In case there is no overlap with countries (e.g., distribution at sea because of simplification)
-    
-    # Extract realms
-    Realms<-st_join(distSP_WGS, realms_raw, join=st_intersects)$realm %>% unique(.) %>% paste0(., collapse="|")
-    print(Realms)
-    
-    # Prepare command for results button
-    coo_occ<-sRL_cooInfoBox_prepare(coo, Storage_SP)
-    coo_res<-sRL_cooInfoBox_format(coo_occ)
-    info.box<-sRL_cooInfoBox_create(coo_res, Realms)
-    
-    # Create plot (first the one to export without the result - it makes the rmarkdown bug and it's not needed - and second adding the text results)
-    Leaflet_COOtoexport<-leaflet() %>%
-      fitBounds(lng1=EXT[1], lng2=EXT[2], lat1=EXT[3], lat2=EXT[4]) %>%
-      addPolygons(data=realms_raw, group="Realms", fillOpacity=0.5) %>%
-      addPolygons(data=coo,
-                  color=ifelse(coo$Level0_occupied==T, "black", "grey"),
-                  fillColor=coo$colour,
-                  popup=coo$Popup,
-                  stroke=T, weight=2, fillOpacity=1) %>%
-      addPolygons(data=distSP_WGS, color="#D69F32", fillOpacity=0.4, group="Range map") %>%
-      addLegend(position="bottomleft", colors=c(col.df$Col[col.df$Col %in% coo$colour], "#D69F32"), labels=c(col.df$Label[col.df$Col %in% coo$colour], "Distribution"), opacity=1)
-    
-    # Add points if we had occurrences and add layer control
-    if("dat_proj_saved" %in% names(Storage_SP)){
-      
-      Coords<-Storage_SP$dat_proj_saved %>% st_transform(., st_crs(4326)) %>% st_coordinates(.) %>% as.data.frame()
-      Leaflet_COOtoexport<-Leaflet_COOtoexport %>%
-        addCircleMarkers(lng=Coords[,1], lat=Coords[,2], color="black", fillOpacity=0.3, stroke=F, radius=2, group="Occurrence records") %>%
-        addLayersControl(overlayGroups=c("Range map", "Occurrence records", "Realms"), position="topleft", options=layersControlOptions(collapsed = FALSE)) %>% 
-        hideGroup("Realms")
-      
-    } else {
-      Leaflet_COOtoexport<-Leaflet_COOtoexport %>% addLayersControl(overlayGroups=c("Range map", "Realms"), position="topleft", options=layersControlOptions(collapsed = FALSE)) %>% hideGroup("Realms")
-    }
-    
-
-    
-    # Create final plot for the platform
-    Leaflet_COO<-Leaflet_COOtoexport %>%
-      leaflet.extras::addBootstrapDependency() %>% # Add Bootstrap to be able to use a modal
-      addEasyButton(easyButton(
-        icon = "fa fa-list-ul", 
-        title = "Check out the list of countries of occurrence",
-        onClick = JS("function(btn, map){ $('#infobox').modal('show'); }")
-      )) %>% # Trigger the infobox
-      htmlwidgets::appendContent(info.box)  
-    
-    
-
-    
-    # Save for SIS
-    Storage_SP$Realms_saved<-Realms
-    Storage_SP$coo_res<-coo_res
-    Storage_SP$countries_SIS<-sRL_OutputCountries(scientific_name, coo_occ) # Keep only those occupied
-    
-    Storage_SP$Leaflet_COO<-Leaflet_COOtoexport
-    sRL_StoreSave(scientific_name, username,  Storage_SP)
-    
-    
-    # Plot
-    return(
-      Leaflet_COO
-    )
+    Leaflet_COOtoexport<-Leaflet_COOtoexport %>% addLayersControl(overlayGroups=c("Range map", "Realms"), position="topleft", options=layersControlOptions(collapsed = FALSE)) %>% hideGroup("Realms")
   }
   
+
+  # Create final plot for the platform
+  Leaflet_COO<-Leaflet_COOtoexport %>%
+    leaflet.extras::addBootstrapDependency() %>% # Add Bootstrap to be able to use a modal
+    addEasyButton(easyButton(
+      icon = "fa fa-list-ul", 
+      title = "Check out the list of countries of occurrence",
+      onClick = JS("function(btn, map){ $('#infobox').modal('show'); }")
+    )) %>% # Trigger the infobox
+    htmlwidgets::appendContent(info.box)  
+  
+  
+
+  # Save for SIS
+  Storage_SP$Realms_saved<-Realms
+  Storage_SP$coo_res<-coo_res
+  Storage_SP$countries_SIS<-sRL_OutputCountries(scientific_name, coo_occ) # Keep only those occupied
+  
+  Storage_SP$Leaflet_COO<-Leaflet_COOtoexport
+  sRL_StoreSave(scientific_name, username,  Storage_SP)
+  
+  
+  # Plot
+  return(Leaflet_COO)
+
 }, gc=T, seed=T)
 
 return(Prom)
