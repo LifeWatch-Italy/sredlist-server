@@ -166,31 +166,25 @@ Prom<-future({
   sRL_loginfo("END - Prepare distribution", scientific_name)
   
   ### Crop_Country for National RL
+  Storage_SP<-sRL_OutLog(Storage_SP, "Crop_Country", Crop_Country)
   if(Crop_Country != ""){
     sRL_loginfo("START - Crop country \n", scientific_name)
     distSP<-sRL_CropCountry(distSP, Crop_Country) %>% dplyr::group_by(presence, seasonal, origin) %>% dplyr::summarise(N= n()) 
-    Storage_SP<-sRL_OutLog(Storage_SP, "Crop_Country", Crop_Country)
     sRL_loginfo("END - Crop country \n", scientific_name)
   }
-  
-  ### Colour the distributions
-  sRL_loginfo("START - Colour distribution", scientific_name)
-  distSP<-sRL_ColourDistrib(distSP)
-  
-  ### Save the distribution in memory
-  Storage_SP$distSP_saved<-distSP
 
-  ### Prepare countries if they were not charged or if we are not using the RL distribution + crop depending on the current selection of range
-  if("CountrySP_saved" %not in% names(Storage_SP) | (! grepl("_RL", Dist_path))){Storage_SP$CountrySP_saved<-sRL_PrepareCountries(1.2*extent(distSP_full))} 
-  CountrySP<-st_crop(Storage_SP$CountrySP_saved, 1.2*extent(distSP))
-  Storage_SP<-sRL_OutLog(Storage_SP, c("Distribution_Presence", "Distribution_Seasonal", "Distribution_Origin"), c(paste0(presences, collapse=","), paste0(seasons, collapse=","), paste0(origins, collapse=",")))
-  DisSource<-ifelse(substr(Dist_path, nchar(Dist_path)-2, nchar(Dist_path))=="_RL", "Red List", ifelse(grepl("Created", Dist_path), "StoredOnPlatform", "Uploaded"))
-  Storage_SP<-sRL_OutLog(Storage_SP, "Distribution_Source", DisSource) # If Dist_path ends by _RL it comes from the RL, uploaded otherwise
-  sRL_StoreSave(scientific_name, username,  Storage_SP)
-  sRL_loginfo("Plot distribution", scientific_name)
+  if (nrow(distSP) > 0) {
+    ### Colour the distributions
+    sRL_loginfo("START - Colour distribution", scientific_name)
+    distSP<-sRL_ColourDistrib(distSP)
+  
+    ### Prepare countries if they were not charged or if we are not using the RL distribution + crop depending on the current selection of range
+    if("CountrySP_saved" %not in% names(Storage_SP) | (! grepl("_RL", Dist_path))){Storage_SP$CountrySP_saved<-sRL_PrepareCountries(1.2*extent(distSP_full))} 
+    CountrySP<-st_crop(Storage_SP$CountrySP_saved, 1.2*extent(distSP))
+    
+    sRL_loginfo("Plot distribution", scientific_name)
   
   ### Plot
-  if (nrow(distSP) > 0) {
     plot_dist<-ggplot() +
                   geom_sf(data = CountrySP, fill="gray96", col="gray50") + # nolint
                   geom_sf(data = distSP, fill = distSP$cols) +
@@ -199,10 +193,17 @@ Prom<-future({
   } else{
     sf::sf_use_s2(FALSE)
     plot_dist<-ggplot() +
-                  geom_sf(data = CountrySP, fill="white96", col="gray50") + # nolint
-                  theme_void() +
+                  geom_sf(data = distCountries, fill="gray96", col="gray50") + # nolint
+                  sRLTheme_maps +
                   ggtitle("The distribution is empty")
   }
+  
+  ### Save the distribution in memory
+  Storage_SP$distSP_saved<-distSP
+  Storage_SP<-sRL_OutLog(Storage_SP, c("Distribution_Presence", "Distribution_Seasonal", "Distribution_Origin"), c(paste0(presences, collapse=","), paste0(seasons, collapse=","), paste0(origins, collapse=",")))
+  DisSource<-ifelse(substr(Dist_path, nchar(Dist_path)-2, nchar(Dist_path))=="_RL", "Red List", ifelse(grepl("Created", Dist_path), "StoredOnPlatform", "Uploaded"))
+  Storage_SP<-sRL_OutLog(Storage_SP, "Distribution_Source", DisSource) # If Dist_path ends by _RL it comes from the RL, uploaded otherwise
+  sRL_StoreSave(scientific_name, username,  Storage_SP)
   
   # Save plot for RMarkDown (and create repository)
   dir.create(paste0("resources/AOH_stored/", sub(" ", "_", scientific_name), "_", sRL_userdecode(username), "/Plots"), recursive=T)
@@ -602,7 +603,7 @@ Prom<-future({
   
   # Crop country
   Crop_Country<-Storage_SP$Output$Value[Storage_SP$Output$Parameter=="Crop_Country"]
-  if(is.na(Crop_Country) == F){distSP <- sRL_CropCountry(distSP, Crop_Country) %>% dplyr::group_by("binomial") %>% dplyr::summarise(N= n())}
+  if(is.na(Crop_Country) == F & Crop_Country != ""){distSP <- sRL_CropCountry(distSP, Crop_Country) %>% dplyr::group_by("binomial") %>% dplyr::summarise(N= n())}
   
   
   # Map countries (keeping max extent between points and polygons)
@@ -673,12 +674,13 @@ Prom<-future({
     scientific_name <- sRL_decode(scientific_name)
     Storage_SP=sRL_StoreRead(scientific_name,  username, MANDAT=1)
     Crop_par<-Storage_SP$Output$Value[Storage_SP$Output$Parameter=="Mapping_Crop"]
+    Crop_Country<-Storage_SP$Output$Value[Storage_SP$Output$Parameter=="Crop_Country"]
     
     ### Smooth if parameter >0
     Gbif_Smooth=as.numeric(Gbif_Smooth) ; print(Gbif_Smooth)
     if(Gbif_Smooth>0){
       
-      if(Crop_par %in% c("cropland", "cropsea")){
+      if(Crop_par %in% c("cropland", "cropsea") | (is.na(Crop_Country) == F & Crop_Country != "") ){
         distSP<-sRL_MapDistributionGBIF(Storage_SP$dat_proj_saved, scientific_name,
                                         First_step=Storage_SP$Output$Value[Storage_SP$Output$Parameter=="Mapping_Start"],
                                         AltMIN=Storage_SP$Output$Value[Storage_SP$Output$Parameter=="Mapping_Altitude"] %>% strsplit(., ",") %>% unlist(.) %>% as.numeric(.) %>% .[1], 
@@ -689,8 +691,7 @@ Prom<-future({
       } else {distSP<-Storage_SP$distSP3_saved}
       distSP<-smooth(distSP, method = "ksmooth", smoothness=(exp(Gbif_Smooth/20)-1), max_distance=10000)
       # Crop country if National Red Listing
-      Crop_Country<-Storage_SP$Output$Value[Storage_SP$Output$Parameter=="Crop_Country"]
-      if(is.na(Crop_Country) == F){distSP <- sRL_CropCountry(distSP, Crop_Country)}
+      if(is.na(Crop_Country) == F & Crop_Country != ""){distSP <- sRL_CropCountry(distSP, Crop_Country)}
       
       } else{
         distSP<-Storage_SP$distSP3_saved
@@ -777,7 +778,7 @@ Prom<-future({
   scientific_name<-sRL_decode(scientific_name)
   Storage_SP<-sRL_StoreRead(scientific_name,  username, MANDAT=1) ; print(names(Storage_SP))
   rownames(coo_raw)<-1:nrow(coo_raw)
-  distSP<-Storage_SP$distSP_saved
+  distSP<-Storage_SP$distSP_saved ; if(nrow(distSP)==0){return(leaflet() %>% addControl("<center><font size='6' color='#ad180d'><b>The distribution is empty, go back to Step 1</b></center>", position = "topleft", className="map-title"))}
   domain_pref<-revalue(as.character(domain_pref), c("1"="Terrestrial", "2"="Marine", "3"="Freshwater"))
   print(domain_pref)
   Storage_SP<-sRL_OutLog(Storage_SP, "System_pref", paste(domain_pref, collapse="|"))
@@ -898,7 +899,7 @@ Prom<-future({
   Storage_SP=sRL_StoreRead(scientific_name,  username, MANDAT=1) ; print(names(Storage_SP))
 
   # Load distribution
-  distSP<-Storage_SP$distSP_saved
+  distSP<-Storage_SP$distSP_saved ; if(nrow(distSP)==0){empty_distrib()}
 
   # Create storage directory if it does not exist
   dir.create(paste0("resources/AOH_stored/", sub(" ", "_", scientific_name), "_", sRL_userdecode(username), "/Plots"), recursive=T)
@@ -1188,7 +1189,7 @@ Prom<-future({
   #Filter param
   scientific_name <- sRL_decode(scientific_name)
   Storage_SP=sRL_StoreRead(scientific_name,  username, MANDAT=1) ; print(names(Storage_SP))
-  distSP=Storage_SP$distSP_saved
+  distSP=Storage_SP$distSP_saved ; if(nrow(distSP)==0){empty_distrib()}
 
   # Habitat table (for aoh analysis and for SIS Connect)
   print(habitats_pref_MARGINAL)
@@ -1680,7 +1681,7 @@ Prom<-future({
   Storage_SP=sRL_StoreRead(scientific_name,  username, MANDAT=1)
   GL_species<-GL_species %>% gsub(" ", "", .) %>% sub(",", ".", .) %>% as.numeric(.) ; print(GL_species) ; if(is.na(GL_species)){incorrect_GL()}
 
-  distSP=Storage_SP$distSP_saved
+  distSP=Storage_SP$distSP_saved ; if(nrow(distSP)==0){empty_distrib()}
   output_dir<-paste0("resources/AOH_stored/", sub(" ", "_", scientific_name), "_", sRL_userdecode(username))
   alt_crop=rast(paste0(output_dir, "/alt_crop.tif")) ; crs(alt_crop)<-CRSMOLL
   rangeSP_clean=Storage_SP$RangeClean_saved

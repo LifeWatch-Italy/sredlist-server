@@ -711,7 +711,7 @@ sRL_cooExtract<-function(distSP, domain_pref, Crop_Country){
   
   
   ### Subset if National / Regional Red Listing
-  if(Crop_Country[1] != ""){
+  if(Crop_Country[1] != "" & Crop_Country != "Mediterranean"){
     Crop_Country1<-c()
     if(Crop_Country[1]=="Europe"){Crop_Country<-sRL_EuropeList; Crop_Country1<-sRL_EuropeList1}
     if(Crop_Country[1]=="EU27"){Crop_Country<-sRL_EU27List}
