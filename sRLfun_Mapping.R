@@ -105,16 +105,10 @@ sRL_createDataGBIF <- function(scientific_name, GBIF_SRC, Gbif_Country, Uploaded
     
 
     if(OCC < config$LIM_GBIF){ # Download all data or structure download if more than LIM_GBIF
-      dat_gbif <- rgbif::occ_data(scientificName=scientific_name, 
-                                  hasCoordinate = T, 
-                                  decimalLongitude=paste(co_EXT[1], co_EXT[2], sep=","), 
-                                  decimalLatitude=paste(co_EXT[3], co_EXT[4], sep=","),
-                                  limit=config$LIM_GBIF
-                                  )$data # occ_data is faster than occ_search because it omits some columns
-      dat_gbif$Source_type<-"GBIF"
+      dat_gbif <- sRL_SimpleGBIF(scientific_name, co_EXT)
     } else{
-      dat_gbif <- sRL_StructureGBIF(scientificName = scientific_name, co_EXT)
-      dat_gbif$Source_type<-"GBIF sample"
+      if(exists("co_tot")==F){co_tot<-c()}
+      dat_gbif <- sRL_StructureGBIF(scientificName = scientific_name, co_EXT, co_tot)
     }
     
     dat_gbif$ID<-paste0(dat_gbif$decimalLongitude, dat_gbif$decimalLatitude, dat_gbif$year)
@@ -233,12 +227,26 @@ sRL_createDataGBIF <- function(scientific_name, GBIF_SRC, Gbif_Country, Uploaded
 
 
 
+### Function to download all GBIF records
+sRL_SimpleGBIF<-function(scientific_name, co_EXT){
+  dat_gbif <- rgbif::occ_data(scientificName=scientific_name, 
+                              hasCoordinate = T, 
+                              decimalLongitude=paste(co_EXT[1], co_EXT[2], sep=","), 
+                              decimalLatitude=paste(co_EXT[3], co_EXT[4], sep=","),
+                              limit=config$LIM_GBIF
+  )$data # occ_data is faster than occ_search because it omits some columns
+  
+  dat_gbif$Source_type<-"GBIF"
+  
+  return(dat_gbif)
+}
+
 
 ### Function to download GBIF in a spatially structured manner (to avoid big sampling biases)
-sRL_StructureGBIF<-function(scientificName, co_EXT){
+sRL_StructureGBIF<-function(scientificName, co_EXT, co_tot){
   
   print("Use Structured GBIF download")
-  
+
   ##### DEFINE THE SAMPLING PATTERN
   ### Map density of observations and extract coordinates
   Fetch<-mvt_fetch(taxonKey = name_backbone(name=scientificName)$usageKey, srs = "EPSG:4326", format="@4x.png") 
@@ -287,12 +295,48 @@ sRL_StructureGBIF<-function(scientificName, co_EXT){
   eval(parse(text=paste("TAB$Lat_min<-revalue(TAB$Lat_group, c(", paste0("'Y", 1:(length(Lat_breaks)-1), "'=Lat_breaks[", 1:(length(Lat_breaks)-1), "]", collapse=","), ")) %>% as.character(.) %>% as.numeric(.) %>% replace(., .<(-90), (-90))")))
   eval(parse(text=paste("TAB$Lat_max<-revalue(TAB$Lat_group, c(", paste0("'Y", 1:(length(Lat_breaks)-1), "'=Lat_breaks[", 2:length(Lat_breaks), "]", collapse=","), ")) %>% as.character(.) %>% as.numeric(.) %>% replace(., .>90, 90)")))
   
-  # Determine number of data to download per group to sum at LIM_GBIF
-  TAB$N_download<-ifelse(TAB$N < (config$LIM_GBIF/nrow(TAB)), TAB$N, NA)
-  TAB$N_download[is.na(TAB$N_download)]<-round((config$LIM_GBIF-sum(TAB$N_download, na.rm=T))/nrow(TAB[is.na(TAB$N_download),]))
+  # Restrict by country
+  if(is.null(co_tot)==F){
+
+    ### Create TAB grid polygon
+    lst <- lapply(1:nrow(TAB), function(x){
+      # create a matrix of coordinates
+      res <- matrix(c(TAB[x, 'Lon_max'], TAB[x, 'Lat_min'],
+                      TAB[x, 'Lon_max'], TAB[x, 'Lat_max'],
+                      TAB[x, 'Lon_min'], TAB[x, 'Lat_max'],
+                      TAB[x, 'Lon_min'], TAB[x, 'Lat_min'],
+                      TAB[x, 'Lon_max'], TAB[x, 'Lat_min'])
+                    , ncol =2, byrow = T
+      )
+
+      st_polygon(list(res))
+    })
+    Grid_TAB <- st_sf(Group = TAB[, 'Group'], lst, crs=st_crs(4326))
+
+    # Remove grid cells that are not in the country of interest
+    Inters<-st_intersection(Grid_TAB, co_tot)
+    TAB <- subset(TAB, TAB$Group %in% Inters$Group)
+    
+    # Restrict grid cells that only partially overlap
+    for(CELL in 1:nrow(TAB)){
+      Coord_cell<-extent(Inters[CELL,])
+      TAB[CELL, c("Lon_min", "Lon_max", "Lat_min", "Lat_max")] <- as.vector(extent(Inters[Inters$Group==TAB$Group[CELL],]))
+    }
+    
+    # Adjust N based on the remaining area of each cell
+    Inters$Area <- as.numeric(st_area(Inters)) ; Areas <- ddply(Inters, .(Group), function(x){data.frame(Area_prop=sum(x$Area, na.rm=T)/max(Inters$Area, na.rm=T))})
+    TAB$N <- round(TAB$N * Areas$Area_prop[match(TAB$Group, Areas$Group)])
+    
+    if(nrow(TAB)==0){no_records()}
+  }
+
+  # Determine number of data to download per group to sum at LIM_GBIF (increased a bit if Crop_Country)
+  LIMgbif<-ifelse(is.null(co_tot), config$LIM_GBIF, 1.25*config$LIM_GBIF)
+  TAB$N_download<-ifelse(TAB$N < (LIMgbif/nrow(TAB)), TAB$N, NA)
+  TAB$N_download[is.na(TAB$N_download)]<-round((LIMgbif-sum(TAB$N_download, na.rm=T))/nrow(TAB[is.na(TAB$N_download),]))
   TAB$N_download<-ifelse((TAB$N_download>TAB$N), TAB$N, TAB$N_download)
   i=0
-  while(i<config$LIM_GBIF){
+  while(i<LIMgbif){
     if(sum(TAB$N_download) < sum(TAB$N)){ # If not all columns are complete I add only to those not full, otherwise to all columns (happens as Fetch only includes data with year)
       TAB$N_download[TAB$N_download<TAB$N]<-TAB$N_download[TAB$N_download<TAB$N]+1
     } else {TAB$N_download<-round(TAB$N_download*1.05)}
@@ -317,6 +361,9 @@ sRL_StructureGBIF<-function(scientificName, co_EXT){
   
   # Merge
   dat_structured<-dat_structured[2:nrow(dat_structured),]
+  print("Finished Structured GBIF download")
+  
+  dat_structured$Source_type<-"GBIF sample"
   
   return(dat_structured)
 }
