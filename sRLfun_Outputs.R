@@ -249,6 +249,8 @@ sRL_OutputHydrobasins<-function(distSIS, Storage_SP){
   return(HydroSIS)
 }
 
+
+
 ### Save occurrences shapefile from the GBIF procedure
 sRL_OutputOccurrences <- function(scientific_name, Storage_SP, username) {
   
@@ -257,7 +259,7 @@ sRL_OutputOccurrences <- function(scientific_name, Storage_SP, username) {
 
   # Create template shape
   dat$sci_name<-scientific_name
-  dat_SIS<-dat[, c("sci_name")]
+  dat_SIS<-dat[, c("sci_name", "gbifID")]
   dat_SIS[,c("presence", "origin", "seasonal", "compiler", "yrcompiled", "citation", "dec_lat", "dec_long", "spatialref", "subspecies", "subpop", "data_sens", "sens_comm", "event_year", "source", "basisofrec", "catalog_no", "dist_comm", "island", "tax_comm", "id_no")]<-NA
 
   # Fill in some information
@@ -275,6 +277,7 @@ sRL_OutputOccurrences <- function(scientific_name, Storage_SP, username) {
   dat_SIS$compiler<-username
   dat_SIS$data_sens<-0
   
+  # Format basis of Record
   if("basisOfRecord" %in% names(dat)){
     dat_SIS$basisofrec<-revalue(dat$basisOfRecord, c(
       "FOSSIL_SPECIMEN"="FossilSpecimen",
@@ -290,19 +293,18 @@ sRL_OutputOccurrences <- function(scientific_name, Storage_SP, username) {
     ))
   }
   
-  # If data from the Red List, copy the information previously saved
-  if("RL" %in% dat$Source){
-    RL<-read.csv(paste0(config$POINTdistribution_path, scientific_name, ".csv"))
-  
-    for(COL in names(dat_SIS)[!names(dat_SIS) %in% c("sci_name", "geometry", "yrcompiled", "citation", "dec_lat", "dec_long", "spatialref", "basisofrec")]){
-      if(COL %in% names(RL)){
-      dat_SIS[,COL]<-RL[,COL][match(dat_SIS$OBJECTID, RL$objectid)]
-    }}
-    
+  # If data from the Red List or Uploaded, copy the information previously saved
+  dat_SIS<-as.data.frame(dat_SIS)
+  if(("Uploaded" %in% dat$Source) | ("Red List" %in% dat$Source) | ("Uploaded sample" %in% dat$Source) | ("Red List sample" %in% dat$Source)){
+    for(COL in names(dat_SIS)[!names(dat_SIS) %in% c("sci_name", "geometry", "yrcompiled", "citation", "dec_lat", "dec_long", "spatialref", "compiler")]){
+      if(COL %in% names(dat)){
+        dat_SIS[is.na(dat_SIS[,COL]),COL]<-as.data.frame(dat)[,COL][match(dat_SIS$gbifID[is.na(dat_SIS[,COL])], dat$gbifID)]
+      }}
   }
-
+  
+  
   # Remove geometry and make a csv file
-  dat_SIS$geometry<-NULL
+  dat_SIS$geometry<-dat_SIS$gbifID<-NULL
   dat_SIS<-as.data.frame(dat_SIS)
   
   # Transform NA in "" to match SIS

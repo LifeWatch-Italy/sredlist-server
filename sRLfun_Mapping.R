@@ -161,6 +161,7 @@ sRL_createDataGBIF <- function(scientific_name, GBIF_SRC, Gbif_Country, Uploaded
     dat_RL$Link<-NA
     dat_RL$species_download<-scientific_name
     names(dat_RL)<-replace(names(dat_RL), names(dat_RL)=="Source", "source")
+    names(dat_RL)<-replace(names(dat_RL), names(dat_RL)=="basisofrec", "basisOfRecord")
     dat_RL <- subset(dat_RL, decimalLongitude > co_EXT[1] & decimalLongitude < co_EXT[2] & decimalLatitude > co_EXT[3] & decimalLatitude < co_EXT[4]) # Restrict to country of interest before subsampling
     
     # If too many data, keep a sample (most recent)
@@ -182,6 +183,7 @@ sRL_createDataGBIF <- function(scientific_name, GBIF_SRC, Gbif_Country, Uploaded
     dat_upload$gbifID<-paste0("Uploaded_", rownames(dat_upload))
     dat_upload$Link<-NA
     names(dat_upload)<-replace(names(dat_upload), names(dat_upload)=="Source", "source")
+    names(dat_upload)<-replace(names(dat_upload), names(dat_upload)=="basisofrec", "basisOfRecord")
     dat_upload <- subset(dat_upload, decimalLongitude > co_EXT[1] & decimalLongitude < co_EXT[2] & decimalLatitude > co_EXT[3] & decimalLatitude < co_EXT[4]) # Restrict to country of interest before subsampling
     
     # If too many data (with a higher threshold), keep a sample 
@@ -202,9 +204,10 @@ sRL_createDataGBIF <- function(scientific_name, GBIF_SRC, Gbif_Country, Uploaded
     
     # Select columns of interest
     dat <- dat %>%
-      dplyr::select(any_of(c("species", "species_download", "decimalLongitude", "decimalLatitude", "countryCode", "individualCount", # nolint
+      dplyr::select(any_of(c(names(dat_upload), names(dat_RL),
+                             c("species", "species_download", "decimalLongitude", "decimalLatitude", "countryCode", "individualCount", # nolint
                              "gbifID", "id", "objectid", "family", "taxonRank", "coordinateUncertaintyInMeters", "year",
-                             "basisOfRecord", "institutionCode", "datasetName", "genericName", "specificEpithet", "Source_type", "source", "citation", "Link", "presence")))
+                             "basisOfRecord", "institutionCode", "datasetName", "genericName", "specificEpithet", "Source_type", "source", "citation", "Link", "presence"))))
     
     # Remove records with no spatial coordinates
     dat <- dat %>% filter(!is.na(decimalLongitude)) %>% filter(!is.na(decimalLatitude)) # nolint
