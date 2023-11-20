@@ -169,7 +169,7 @@ Prom<-future({
   Storage_SP<-sRL_OutLog(Storage_SP, "Crop_Country", Crop_Country)
   if(Crop_Country != ""){
     sRL_loginfo("START - Crop country \n", scientific_name)
-    distSP<-sRL_CropCountry(distSP, Crop_Country) %>% dplyr::group_by(presence, seasonal, origin) %>% dplyr::summarise(N= n()) 
+    distSP<-sRL_CropCountry(distSP, Crop_Country) %>% dplyr::group_by(binomial, id_no, presence, seasonal, origin) %>% dplyr::summarise(N= n()) 
     sRL_loginfo("END - Crop country \n", scientific_name)
   }
 
@@ -911,7 +911,7 @@ Prom<-future({
     ggplot() +
       geom_sf(data=distSP, fill="#fcbba1", col=NA) +
       geom_sf(data=EOO, col="#ef3b2c", fill=NA, lwd=2) +
-      geom_sf(data=st_crop(Storage_SP$CountrySP_saved, extent(EOO)), fill=NA, col="black")+
+      geom_sf(data=st_crop(Storage_SP$CountrySP_saved, 1.2*extent(EOO)), fill=NA, col="black")+
       ggtitle("EOO map") +
       sRLTheme_maps, 
     width=6, height=6) # nolint
@@ -1219,7 +1219,6 @@ Prom<-future({
   ### Prepare distribution, altitude, and preference files (i.e., part of the AOH analysis that has to be run only once)
   # Distribution (assuming seasonal=resident after users decided what they keep)
   distSP$seasonal=1
-  names(distSP)<-replace(names(distSP), tolower(names(distSP)) %in% c("terrestrial", "terrestial", "terr"), "terrestrial")
   distSP$terrestrial<-"true" # I have to make it manually so that it does not exclude pure freshwater species (it will be users choice in any case)
   
   rangeSP_clean<-create_spp_info_data(distSP,
