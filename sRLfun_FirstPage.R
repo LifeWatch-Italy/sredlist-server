@@ -417,6 +417,7 @@ sRL_decode<-function(scientific_name){
 
 ### Function sRL_userdecode : it combines url_decode and control of the case of scientific name
 sRL_userdecode<-function(username){
+  if(grepl("@", username)){username <- username %>% strsplit(., "@") %>% unlist(.) %>% .[1]}
   username<-url_decode(username) %>% tolower(.) %>% gsub(" ", ".", .) %>% iconv(., to="ASCII//TRANSLIT")
   return(username)
 }
