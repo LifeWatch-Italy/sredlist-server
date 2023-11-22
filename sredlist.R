@@ -421,13 +421,13 @@ Prom<-future({
     addEsriBasemapLayer(esriBasemapLayers$Topographic, group = "Topography") %>%
     addCircleMarkers(lng=flags$decimalLongitude,
                      lat=flags$decimalLatitude,
-                     color=ifelse(is.na(flags$Reason)==T, "#fde725ff", "#440154ff"),
+                     color=ifelse(is.na(flags$Reason)==T, "#fdcb25ff", "#440154ff"),
                      fillOpacity=0.5,
                      stroke=F,
                      popup=flags$PopText,
                      radius=8,
                      group="Occurrence records") %>%
-    addLegend(position="bottomleft", colors=c('#fde725ff', '#440154ff'), labels=c("Valid", "Not valid")) %>%
+    addLegend(position="bottomleft", colors=c('#fdcb25ff', '#440154ff'), labels=c("Valid", "Not valid")) %>%
     addLayersControl(baseGroups=c("OpenStreetMap", "Satellite", "Topography"), overlayGroups="Occurrence records", position="topleft") %>%
     addMouseCoordinates() %>%
     addScaleBar(position = "bottomright")
@@ -507,6 +507,7 @@ function(scientific_name, username) {
 
 
 ## 3: Map ----------------------------------------------------------------
+### Data APIs ------ 
 #* GBIF start
 #* @get species/<scientific_name>/gbif-start
 #* @param scientific_name:string Scientific Name
@@ -531,6 +532,7 @@ function(scientific_name) {
   return(Gbif_Altitude)}
 
 
+### Map API ----
 #* Global Biodiversity Information Facility step 3
 #* @get species/<scientific_name>/gbif3
 #* @param scientific_name:string Scientific Name
@@ -644,6 +646,101 @@ Prom<-future({
 return(Prom)
 }
 
+
+### Showcase -------
+#* @get species/<scientific_name>/gbif3-showcase
+#* @param scientific_name:string Scientific Name
+#* @serializer unboxedJSON
+#* @tag sRedList
+function(scientific_name, username) {
+  
+  Prom<-future({
+    
+    sf::sf_use_s2(FALSE)
+    scientific_name <- sRL_decode(scientific_name)
+    Storage_SP=sRL_StoreRead(scientific_name, username, MANDAT=1)
+    if(! "dat_proj_saved" %in% names(Storage_SP)){run_Step2()} 
+    
+    #GBIF STEP 3: Map distribution from GBIF
+    sRL_loginfo("START - Map showcase", scientific_name)
+    
+    # Get back GBIF observations
+    dat_proj=Storage_SP$dat_proj_saved
+    if(nrow(dat_proj)==0){no_gbif_data()}
+    
+    # Map countries (keeping max extent between points and polygons)
+    EXT_max <-  extent(dat_proj)
+    CountrySP<-st_crop(distCountries, 1.2*EXT_max)
+    
+    # Calculate number of sites
+    NSites <- paste(st_coordinates(dat_proj)[,1], st_coordinates(dat_proj)[,2], sep="/") %>% unique(.) %>% length(.) %>% as.numeric(.)
+    
+    ### Create distributions
+    # MCP
+    dist_mcp<-data.frame() ; tryCatch({dist_mcp<-sRL_MapDistributionGBIF(dat_proj, scientific_name, First_step="mcp", AltMIN=0, AltMAX=9000, Buffer_km=0, GBIF_crop="", Gbif_Param=c(0,0))}, error=function(e){"Error in mapping showcase"})
+    
+    G_mcp<-ggplot()+geom_sf(data=CountrySP, fill="gray70")+geom_sf(data=dist_mcp, fill="darkred")+geom_sf(data=dat_proj)+sRLTheme_maps+ggtitle("Minimum Convex Polygon")
+    
+    # Individual sites
+    if(NSites<=50){
+      Buff_raw<- sqrt((EXT_max[2]-EXT_max[1])^2+(EXT_max[4]-EXT_max[3])^2)/20000 # The buffer will be a 20th of the diagonal and in km
+      Buff <- Buff_raw %>% round(.) %>% round(., -1*(nchar(.)-1))
+      dist_indiv<-data.frame() ; tryCatch({dist_indiv<-sRL_MapDistributionGBIF(dat_proj, scientific_name, First_step="indivsites", AltMIN=0, AltMAX=9000, Buffer_km=Buff, GBIF_crop="", Gbif_Param=c(0,0))}, error=function(e){"Error in mapping showcase"})
+      
+      G_indiv<-ggplot()+geom_sf(data=CountrySP, fill="gray70")+geom_sf(data=dist_indiv, fill="darkred")+geom_sf(data=dat_proj)+sRLTheme_maps+ggtitle(paste0("Individual localities (buffer of ", Buff, "km)"))
+    } else {G_indiv<-ggplot()+theme_void()}
+    
+    # Alpha
+    alphaA=0.5
+    alphaB=1
+    alphaC=10
+    
+    dist_alphaA<-data.frame() ; tryCatch({dist_alphaA<-sRL_MapDistributionGBIF(dat_proj, scientific_name, First_step="alpha", AltMIN=0, AltMAX=9000, Buffer_km=0, GBIF_crop="", Gbif_Param=c(alphaA,0))}, error=function(e){"Error in mapping showcase"})
+    dist_alphaB<-data.frame() ; tryCatch({dist_alphaB<-sRL_MapDistributionGBIF(dat_proj, scientific_name, First_step="alpha", AltMIN=0, AltMAX=9000, Buffer_km=0, GBIF_crop="", Gbif_Param=c(alphaB,0))}, error=function(e){"Error in mapping showcase"})
+    dist_alphaC<-data.frame() ; tryCatch({dist_alphaC<-sRL_MapDistributionGBIF(dat_proj, scientific_name, First_step="alpha", AltMIN=0, AltMAX=9000, Buffer_km=0, GBIF_crop="", Gbif_Param=c(alphaC,0))}, error=function(e){"Error in mapping showcase"})
+    
+    G_alphaA<-ggplot()+geom_sf(data=CountrySP, fill="gray70")+geom_sf(data=dist_alphaA, fill="darkred")+geom_sf(data=dat_proj)+sRLTheme_maps+ggtitle(paste0("Alpha hull (parameter = ", alphaA, ")"))
+    G_alphaB<-ggplot()+geom_sf(data=CountrySP, fill="gray70")+geom_sf(data=dist_alphaB, fill="darkred")+geom_sf(data=dat_proj)+sRLTheme_maps+ggtitle(paste0("Alpha hull (parameter = ", alphaB, ")"))
+    G_alphaC<-ggplot()+geom_sf(data=CountrySP, fill="gray70")+geom_sf(data=dist_alphaC, fill="darkred")+geom_sf(data=dat_proj)+sRLTheme_maps+ggtitle(paste0("Alpha hull (parameter = ", alphaC, ")"))
+    
+    
+    # Kernel
+    if(NSites>3){
+      kernelA=0.7
+      kernelB=0.9
+      kernelC=0.99
+      
+      dist_kernelA<-data.frame() ; tryCatch({dist_kernelA<-sRL_MapDistributionGBIF(dat_proj, scientific_name, First_step="kernel", AltMIN=0, AltMAX=9000, Buffer_km=0, GBIF_crop="", Gbif_Param=c(0,kernelA))}, error=function(e){"Error in mapping showcase"})
+      dist_kernelB<-data.frame() ; tryCatch({dist_kernelB<-sRL_MapDistributionGBIF(dat_proj, scientific_name, First_step="kernel", AltMIN=0, AltMAX=9000, Buffer_km=0, GBIF_crop="", Gbif_Param=c(0,kernelB))}, error=function(e){"Error in mapping showcase"})
+      dist_kernelC<-data.frame() ; tryCatch({dist_kernelC<-sRL_MapDistributionGBIF(dat_proj, scientific_name, First_step="kernel", AltMIN=0, AltMAX=9000, Buffer_km=0, GBIF_crop="", Gbif_Param=c(0,kernelC))}, error=function(e){"Error in mapping showcase"})
+      
+      G_kernelA<-ggplot()+geom_sf(data=CountrySP, fill="gray70")+geom_sf(data=dist_kernelA, fill="darkred")+geom_sf(data=dat_proj)+sRLTheme_maps+ggtitle(paste0("Kernel (parameter = ", kernelA, ")"))
+      G_kernelB<-ggplot()+geom_sf(data=CountrySP, fill="gray70")+geom_sf(data=dist_kernelB, fill="darkred")+geom_sf(data=dat_proj)+sRLTheme_maps+ggtitle(paste0("Kernel (parameter = ", kernelB, ")"))
+      G_kernelC<-ggplot()+geom_sf(data=CountrySP, fill="gray70")+geom_sf(data=dist_kernelC, fill="darkred")+geom_sf(data=dat_proj)+sRLTheme_maps+ggtitle(paste0("Kernel (parameter = ", kernelC, ")"))
+    } else {G_kernelA<-G_kernelB<-G_kernelC<-ggplot()+theme_void()}
+    
+    ### Save plot
+    # Calculate ratio (in order to map with the right dimensions)
+    ratio<-(EXT_max[1]-EXT_max[2])/(EXT_max[3]-EXT_max[4])
+    ratio<-ifelse(ratio<0.7, 0.7, ifelse(ratio>1.6, 1.6, ratio))
+    
+    # Save
+    G_total<-cowplot::plot_grid(G_mcp, G_indiv, ggplot()+theme_void(), G_alphaA, G_alphaB, G_alphaC, G_kernelA, G_kernelB, G_kernelC, ncol=3)
+    ggsave(paste0("resources/AOH_stored/", sub(" ", "_", scientific_name), "_", sRL_userdecode(username), "/Plots/gbifStep3showcase.png"), G_total, width=min(15, 15*ratio), height=min(15, 15/ratio)) # nolint
+    plot3showcase <- base64enc::dataURI(file = paste0("resources/AOH_stored/", sub(" ", "_", scientific_name), "_", sRL_userdecode(username), "/Plots/gbifStep3showcase.png"), mime = "image/png") # nolint
+    sRL_loginfo("END - Map showcase", scientific_name)
+    
+    
+    gc()
+    return(list(
+      plot_showcase = plot3showcase
+    ))
+    
+  }, gc=T, seed=T)
+  
+  gc()
+  return(Prom)
+}
 
 
 
