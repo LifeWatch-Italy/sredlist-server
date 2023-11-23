@@ -684,7 +684,7 @@ function(scientific_name, username) {
     # Individual sites
     if(NSites<=50){
       Buff_raw<- sqrt((EXT_max[2]-EXT_max[1])^2+(EXT_max[4]-EXT_max[3])^2)/20000 # The buffer will be a 20th of the diagonal and in km
-      Buff <- Buff_raw %>% round(.) %>% round(., -1*(nchar(.)-1))
+      Buff <- Buff_raw %>% round(.) %>% round(., -1*(nchar(.)-1)) %>% max(., 1)
       dist_indiv<-data.frame() ; tryCatch({dist_indiv<-sRL_MapDistributionGBIF(dat_proj, scientific_name, First_step="indivsites", AltMIN=0, AltMAX=9000, Buffer_km=Buff, GBIF_crop="", Gbif_Param=c(0,0))}, error=function(e){"Error in mapping showcase"})
       
       G_indiv<-ggplot()+geom_sf(data=CountrySP, fill="gray70")+geom_sf(data=dist_indiv, fill="darkred")+geom_sf(data=dat_proj)+sRLTheme_maps+ggtitle(paste0("Individual localities (buffer of ", Buff, "km)"))
@@ -722,8 +722,8 @@ function(scientific_name, username) {
     ### Save plot
     # Calculate ratio (in order to map with the right dimensions)
     ratio<-(EXT_max[1]-EXT_max[2])/(EXT_max[3]-EXT_max[4])
-    ratio<-ifelse(ratio<0.7, 0.7, ifelse(ratio>1.6, 1.6, ratio))
-    
+    ratio<-ifelse(is.na(ratio), 1, ifelse(ratio<0.7, 0.7, ifelse(ratio>1.6, 1.6, ratio)))
+
     # Save
     G_total<-cowplot::plot_grid(G_mcp, G_indiv, ggplot()+theme_void(), G_alphaA, G_alphaB, G_alphaC, G_kernelA, G_kernelB, G_kernelC, ncol=3)
     ggsave(paste0("resources/AOH_stored/", sub(" ", "_", scientific_name), "_", sRL_userdecode(username), "/Plots/gbifStep3showcase.png"), G_total, width=min(15, 15*ratio), height=min(15, 15/ratio)) # nolint
