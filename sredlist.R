@@ -2988,25 +2988,21 @@ function(scientific_name) {
 #* @serializer unboxedJSON
 #* @tag sRedList
 function(scientific_name, file_name, Dist_path, type) {
+
   scientific_name <- sRL_decode(scientific_name)
   file_name <- url_decode(file_name)
-  Dist_path <- url_decode(Dist_path)
-  type <- url_decode(type)
+  Dist_path <- url_decode(Dist_path) %>% paste0(config$distribution_path, .)
+  
   if ((scientific_name %in% list.files(config$distribution_path)) && !grepl("_RL", file_name) && !grepl("_RL", Dist_path)) { # nolint
-    if (type == "folder") {
-      if (file_name %in% list.files(paste0(config$distribution_path, Dist_path))) {
-        sRL_loginfo(paste0("Delete distribution:", config$distribution_path, Dist_path, '/', file_name), scientific_name) # nolint
-        return(list(response = unlink(paste0(config$distribution_path, Dist_path, '/', file_name), recursive = TRUE))) # nolint
-      }
-    }else {
-      if(file_name %in% list.files(paste0(config$distribution_path, scientific_name, '/', Dist_path))){ # nolint
-        sRL_loginfo(paste0("Delete distribution:", config$distribution_path, scientific_name, '/', Dist_path, "/", file_name), scientific_name) # nolint
-        return(list(response = unlink(paste0(config$distribution_path, scientific_name, "/", Dist_path, "/", file_name)))) # nolint
-      }
+    if (file_name %in% list.files(Dist_path)) {
+      sRL_loginfo(paste0("Delete distribution:", Dist_path, '/', file_name), scientific_name) # nolint
+      unlink(paste0(Dist_path, '/', file_name), recursive = TRUE)
+      if(length(list.files(Dist_path, include.dirs=T))==0){unlink(Dist_path, recursive=T)}
+      return(list(response = 0)) # nolint
     }
-    not_found("Species distribution not exist!") # nolint
+    not_found("Species distribution not exist!") # nolint Runs only if the previous return did not work
   }else {
-    not_found("Species distribution not exist!") # nolint
+    not_found("Species distribution does not exist!") # nolint
   }
 }
 
