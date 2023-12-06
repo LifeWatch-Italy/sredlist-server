@@ -2,7 +2,7 @@
 
 # Step 1 --------------------------------
 sRL_FormatUploadedRecords <- function(Uploaded_Records, scientific_name, Gbif_Synonym){
-  
+
   # Charge and deal with tab separator
   Uploaded_Records<-Uploaded_Records[[1]] 
   if(ncol(Uploaded_Records)==1){print("CSV with wrong separator with ; separator"); Uploaded_Records<-Uploaded_Records %>% separate(col=names(Uploaded_Records)[1], into=unlist(strsplit(names(Uploaded_Records), ";")), sep=";")}
@@ -30,19 +30,17 @@ sRL_FormatUploadedRecords <- function(Uploaded_Records, scientific_name, Gbif_Sy
   if(! "dec_lat" %in% names(Uploaded_Records)){names(Uploaded_Records)<-replace(names(Uploaded_Records), tolower(names(Uploaded_Records)) %in% c("y", "dec_lat", "latitude", "lat"), "dec_lat")}
   if(! "dec_long" %in% names(Uploaded_Records)){names(Uploaded_Records)<-replace(names(Uploaded_Records), tolower(names(Uploaded_Records)) %in% c("x", "dec_long", "dec_lon", "longitude", "lon", "long"), "dec_long")}
   if((! "dec_long" %in% names(Uploaded_Records)) | (! "dec_lat" %in% names(Uploaded_Records))){no_coords_update()}
-  Uploaded_Records$dec_long<-as.numeric(Uploaded_Records$dec_long)
-  Uploaded_Records$dec_lat<-as.numeric(Uploaded_Records$dec_lat)
   Uploaded_Records<-subset(Uploaded_Records, is.na(Uploaded_Records$dec_long)==F & is.na(Uploaded_Records$dec_lat)==F)
+
+  # Make longitude and latitude numeric (includes a comma to point transformation for decimals)
+  Uploaded_Records$dec_long<-Uploaded_Records$dec_long %>% sub(",", ".", .) %>% as.numeric()
+  Uploaded_Records$dec_lat<-Uploaded_Records$dec_lat %>% sub(",", ".", .) %>% as.numeric()
   
   # Check they are within -180:180 and -90:90
   if(min(Uploaded_Records$dec_long)<(-180) |
      max(Uploaded_Records$dec_long)>(180) |
      min(Uploaded_Records$dec_lat)<(-90) |
      max(Uploaded_Records$dec_lat)>(90)){coords_outofbound()}
-  
-  # Make longitude and latitude numeric (includes a comma to point transformation for decimals)
-  Uploaded_Records$dec_long<-Uploaded_Records$dec_long %>% sub(",", ".", .) %>% as.numeric()
-  Uploaded_Records$dec_lat<-Uploaded_Records$dec_lat %>% sub(",", ".", .) %>% as.numeric()
   
   # Transform column name of year and make it numeric (if no column, I make it all NA)
   names(Uploaded_Records)<-replace(names(Uploaded_Records), tolower(names(Uploaded_Records)) %in% c("year", "event_year", "year_event"), "year")
