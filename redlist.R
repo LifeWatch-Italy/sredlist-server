@@ -18,6 +18,8 @@ function(scientific_name) {
 #* @tag RedList
 function(scientific_name) {
   
+Prom<-future({
+  
   # Call the RL API to get information. If it does not work, use the default
   tryCatch({
     species <- rl_search(scientific_name, key = config$red_list_token)#$result
@@ -31,6 +33,10 @@ function(scientific_name) {
   }
   
   return(species)
+  
+}, gc=T, seed=T)
+
+return(Prom)
 }
 
 
@@ -40,6 +46,8 @@ function(scientific_name) {
 #* @param scientific_name:str Scientific Name
 #* @tag RedList
 function(scientific_name) {
+
+PromCit<-future({
   
   tryCatch({
     # Get link to current assessment (this link could go where I wrote "link to assessment" in the PNG file) # nolint
@@ -49,6 +57,10 @@ function(scientific_name) {
   if(exists("cite")==F){cite<-"https://www.iucnredlist.org/"}
   
   return(list(link = cite[substr(cite, 1, 4) == "http"]))
+  
+}, gc=T, seed=T)
+
+return(PromCit)
 }
 
 #* Plot the historic plot
