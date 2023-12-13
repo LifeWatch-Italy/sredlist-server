@@ -169,7 +169,7 @@ Prom<-future({
   Storage_SP<-sRL_OutLog(Storage_SP, "Crop_Country", Crop_Country)
   if(Crop_Country != ""){
     sRL_loginfo("START - Crop country \n", scientific_name)
-    distSP<-sRL_CropCountry(distSP, Crop_Country) %>% dplyr::group_by(binomial, id_no, presence, seasonal, origin) %>% dplyr::summarise(N= n()) 
+    distSP<-sRL_CropCountry(distSP, Crop_Country)
     sRL_loginfo("END - Crop country \n", scientific_name)
   }
 
@@ -248,7 +248,7 @@ Prom<-future({
   scientific_name <- sRL_decode(scientific_name)
   print(scientific_name)
   print(Gbif_Source)
-  print(Gbif_Country)
+  if(Gbif_Country=="Keep all countries"){Gbif_Country<-""} ; print(Gbif_Country)
   
   # Prepare synonyms
   if(Gbif_Synonym != ""){Gbif_Synonym <- Gbif_Synonym %>% gsub("  ", " ", .) %>% strsplit(., "[,;]+") %>% unlist(.) %>% ifelse(substr(., 1, 1)==" ", substr(., 2, 1000), .) %>% sRL_decode(.) %>% .[. != scientific_name]}
@@ -307,10 +307,10 @@ Prom<-future({
   sRL_loginfo("START - Clean coordinates", scientific_name)
 
 
-  # Prepare countries
+  # Prepare countries (max between 1 and limits for cases with a single site)
   LIMS<-c(xmin=min(dat$decimalLongitude), xmax=max(dat$decimalLongitude), ymin=min(dat$decimalLatitude), ymax=max(dat$decimalLatitude))
-  LIMS<-c(LIMS["xmin"] - 0.1*abs(LIMS["xmin"]-LIMS["xmax"]),    LIMS["xmax"] + 0.1*abs(LIMS["xmin"]-LIMS["xmax"]),
-          LIMS["ymin"] - 0.1*abs(LIMS["ymin"]-LIMS["ymax"]),    LIMS["ymax"] + 0.1*abs(LIMS["ymin"]-LIMS["ymax"]))
+  LIMS<-c(LIMS["xmin"] - 0.1*max(1,abs(LIMS["xmin"]-LIMS["xmax"])),    LIMS["xmax"] + 0.1*max(1,abs(LIMS["xmin"]-LIMS["xmax"])),
+          LIMS["ymin"] - 0.1*max(1,abs(LIMS["ymin"]-LIMS["ymax"])),    LIMS["ymax"] + 0.1*max(1,abs(LIMS["ymin"]-LIMS["ymax"])))
   CountrySP_WGS<-st_crop(distCountries_WGS, LIMS)
   CountrySP_WGS$land<-"TRUE"
   
@@ -597,7 +597,7 @@ Prom<-future({
       distRL <- subset(distRL, distRL$presence %in% c(1,2) & distRL$origin %in% c(1,2) & distRL$seasonal %in% c(1,2))
       
       # Merge with created range map
-      distSPM<-st_union(distSP, distRL) %>% dplyr::group_by("binomial") %>% dplyr::summarise(N= n()) 
+      distSPM<-st_union(distSP, distRL) %>% dplyr::group_by(binomial) %>% dplyr::summarise(N= n()) 
       distSP$geometry[1]<-distSPM$geometry[1]
     
     }, error=function(e){"Merging with published range map did not work"})
@@ -605,9 +605,8 @@ Prom<-future({
   
   # Crop country
   Crop_Country<-Storage_SP$Output$Value[Storage_SP$Output$Parameter=="Crop_Country"]
-  if(is.na(Crop_Country) == F & Crop_Country != ""){distSP <- sRL_CropCountry(distSP, Crop_Country) %>% dplyr::group_by("binomial") %>% dplyr::summarise(N= n())}
-  
-  
+  if(is.na(Crop_Country) == F & Crop_Country != ""){distSP <- sRL_CropCountry(distSP, Crop_Country)}
+
   # Map countries (keeping max extent between points and polygons)
   EXT_max <-  do.call(raster::bind, sapply(c(extent(distSP), extent(dat_proj)), FUN = function(x){as(x, 'SpatialPolygons')}))  %>% sp::bbox(.) %>% extent(.)
   
@@ -951,7 +950,9 @@ Prom<-future({
   # Save for SIS
   Storage_SP$Realms_saved<-Realms
   Storage_SP$coo_res<-coo_res
-  Storage_SP$countries_SIS<-sRL_OutputCountries(scientific_name, coo_occ) # Keep only those occupied
+  tryCatch({
+    Storage_SP$countries_SIS<-sRL_OutputCountries(scientific_name, coo_occ) # Keep only those occupied
+  }, error=function(e){"Bug in exporting countries of occurrence for SIS"})
   
   Storage_SP$Leaflet_COO<-Leaflet_COOtoexport
   sRL_StoreSave(scientific_name, username,  Storage_SP)

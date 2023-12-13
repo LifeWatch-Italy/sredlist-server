@@ -72,6 +72,10 @@ no_gbif_data <- function() {
   api_error(message = "All records have been excluded in Step 2", status = 400)
 }
 
+no_land_map <- function() {
+  api_error(message = "The distribution does not overlap with land", status = 400)
+}
+
 wrong_csv_upload <- function() {
   api_error(message = "The csv uploaded is invalid. Check the separator you used.", status=400)
 }

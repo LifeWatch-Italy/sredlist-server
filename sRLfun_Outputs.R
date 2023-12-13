@@ -10,32 +10,54 @@ sRL_OutputCountries<-function(scientific_name, countries){
   countries$Name<-ifelse(is.na(countries$SIS_name1), countries$SIS_name0, countries$SIS_name1)
   
   # Prepare file (including level 0 when level 1 is subnational)
-  CO_SIS<-data.frame(CountryOccurrence.CountryOccurrenceSubfield.CountryOccurrenceName=c(countries$Name, countries$SIS_name0),
-                     CountryOccurrence.CountryOccurrenceSubfield.CountryOccurrenceLookup=c(countries$lookup, countries$lookup_SIS0)) %>%
+  CO_SIS<-data.frame(name=c(countries$Name, countries$SIS_name0),
+                     lookup=c(countries$lookup, countries$lookup_SIS0)) %>%
     .[order(grepl("<i>", .[,1])),] %>%
-    distinct(., CountryOccurrence.CountryOccurrenceSubfield.CountryOccurrenceLookup, .keep_all = T)
+    distinct(., lookup, .keep_all = T)
     
   CO_SIS$CountryOccurrence.CountryOccurrenceSubfield.formerlyBred=NA
-  CO_SIS$CountryOccurrence.CountryOccurrenceSubfield.origin="Native"
-  CO_SIS$CountryOccurrence.CountryOccurrenceSubfield.presence <- ifelse(grepl("<i>", CO_SIS$CountryOccurrence.CountryOccurrenceSubfield.CountryOccurrenceName), "Possibly Extant", "Extant") # Possibly extant if no occurrence records within country, extant otherwise
-  CO_SIS$CountryOccurrence.CountryOccurrenceSubfield.CountryOccurrenceName <- CO_SIS$CountryOccurrence.CountryOccurrenceSubfield.CountryOccurrenceName %>% gsub("<i>", "", .) %>% gsub("</i>", "", .)
-  CO_SIS$CountryOccurrence.CountryOccurrenceSubfield.seasonality="Resident"
 
+  # Complete presence, origin, season attributes based on attributes of the distribution used (only useful for Red List or uploaded distributions)
+  CO_SIS$season <- countries$seasonal[match(CO_SIS$lookup, countries$lookup)] %>% sub("1", "Resident", .) %>% sub("2", "Breeding Season", .) %>% sub("3", "Non-Breeding Season", .) %>% sub("4", "Passage", .) %>% sub("5", "Seasonal Occurrence Uncertain", .)
+  CO_SIS$origin <- countries$origin[match(CO_SIS$lookup, countries$lookup)] %>% sub("1", "Native", .) %>% sub("2", "Reintroduced", .) %>% sub("3", "Introduced", .) %>% sub("4", "Prehistorically Introduced", .) %>% sub("5", "Vagrant", .) %>% sub("6", "Origin Uncertain", .)
+  CO_SIS$presence <- countries$presence[match(CO_SIS$lookup, countries$lookup)] %>% sub("1", "Extant", .) %>% sub("2", "Probably Extant", .) %>% sub("3", "Possibly Extant", .) %>% sub("4", "Possibly Extinct", .) %>% sub("5", "Extinct Post-1500", .) %>% sub("6", "Presence Uncertain", .)
+  
+  # Change presence code if occurrence records are used (then it depends on whether we have records within the country or not)
+  if(grepl("<i>", paste(CO_SIS$name, collapse=""))){
+    CO_SIS$presence <- ifelse(grepl("<i>", CO_SIS$name), "Possibly Extant", "Extant") # Possibly extant if no occurrence records within country, extant otherwise
+    CO_SIS$name <- CO_SIS$name %>% gsub("<i>", "", .) %>% gsub("</i>", "", .) 
+  }
+  
   CO_SIS$internal_taxon_name=scientific_name
   CO_SIS$internal_taxon_id<-sRL_CalcIdno(scientific_name)
   
+  # Add attributes when missing at level0
+  for(L in which(is.na(CO_SIS$season))){
+    CO_SIS$season[L] <- CO_SIS$season[CO_SIS$lookup %in% subset(coo_raw, SIS_name0==CO_SIS$name[L])$lookup] %>% strsplit(., "[|]") %>% unlist() %>% unique() %>% subset(., is.na(.)==F) %>% paste(., collapse="|")
+    CO_SIS$presence[L] <- CO_SIS$presence[CO_SIS$lookup %in% subset(coo_raw, SIS_name0==CO_SIS$name[L])$lookup] %>% strsplit(., "[|]") %>% unlist() %>% unique() %>% subset(., is.na(.)==F) %>% paste(., collapse="|")
+    CO_SIS$origin[L] <- CO_SIS$origin[CO_SIS$lookup %in% subset(coo_raw, SIS_name0==CO_SIS$name[L])$lookup] %>% strsplit(., "[|]") %>% unlist() %>% unique() %>% subset(., is.na(.)==F) %>% paste(., collapse="|")
+  }
+  
   # Remove countries that appear twice (in EEZ and COO), and keep "Extant" if both present
   CO_SIS<-CO_SIS %>% 
-    arrange(CountryOccurrence.CountryOccurrenceSubfield.CountryOccurrenceLookup, desc(factor(CountryOccurrence.CountryOccurrenceSubfield.presence, c("Possibly Extant", "Extant")))) %>% # First arrange to get lines with Extant before so that it keeps Extant if both Extant and Possibly Extant
-    distinct(., CountryOccurrence.CountryOccurrenceSubfield.CountryOccurrenceLookup, .keep_all=T)
-  
+    arrange(lookup, desc(factor(presence, c("Presence Uncertain", "Extinct Post-1500", "Possibly Extinct", "Possibly Extant", "Probably Extant", "Extant")))) %>% # First arrange to get lines with Extant before so that it keeps Extant if both Extant and Possibly Extant
+    distinct(., lookup, .keep_all=T)
   }
   
   # Remove subnational entities that are missing in SIS to avoid bugs
-  CO_SIS<-subset(CO_SIS, grepl("Absent_SIS", CO_SIS$CountryOccurrence.CountryOccurrenceSubfield.CountryOccurrenceName)==F)
+  CO_SIS<-subset(CO_SIS, grepl("Absent_SIS", CO_SIS$name)==F)
   
   # Remove lines with no countries name if it happens
-  CO_SIS<-subset(CO_SIS, is.na(CO_SIS$CountryOccurrence.CountryOccurrenceSubfield.CountryOccurrenceName)==F)
+  CO_SIS<-subset(CO_SIS, is.na(CO_SIS$name)==F)
+  
+  # Rename CO_SIS columns (very long so easier to add them here only)
+  names(CO_SIS)<-revalue(names(CO_SIS), c(
+    "season"="CountryOccurrence.CountryOccurrenceSubfield.seasonality",
+    "presence"="CountryOccurrence.CountryOccurrenceSubfield.presence",
+    "origin"="CountryOccurrence.CountryOccurrenceSubfield.origin",
+    "lookup"="CountryOccurrence.CountryOccurrenceSubfield.CountryOccurrenceLookup",
+    "name"="CountryOccurrence.CountryOccurrenceSubfield.CountryOccurrenceName"
+  ))
   
   # Transform NA in "" to match SIS
   CO_SIS<-replace(CO_SIS, is.na(CO_SIS), "")

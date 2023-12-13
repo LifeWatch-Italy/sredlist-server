@@ -85,7 +85,7 @@ sRL_createDataGBIF <- function(scientific_name, GBIF_SRC, Gbif_Country, Uploaded
     if(Gbif_Country=="Mediterranean"){co_terr<-st_read("Species/Map countries/Mediterranean_hotspot.shp") ; co_terr$SIS_name0<-NA}
     
     # Merge and buffer
-    co_tot <- rbind(co_mar[,c("SIS_name0", "geometry")], co_terr[,c("SIS_name0", "geometry")]) %>% dplyr::group_by() %>% dplyr::summarise(N= n()) %>% st_buffer(., 0.1)
+    co_tot <- rbind(co_mar[,c("SIS_name0", "geometry")], co_terr[,c("SIS_name0", "geometry")]) %>% dplyr::group_by() %>% dplyr::summarise(N= n()) %>% st_buffer(., 0.01)
     
     # Calculate extent
     co_EXT <- extent(co_tot) %>% as.vector(.)
@@ -155,7 +155,7 @@ sRL_createDataGBIF <- function(scientific_name, GBIF_SRC, Gbif_Country, Uploaded
     dat_RL$year<-dat_RL$event_year
     dat_RL$species<-dat_RL$binomial
     dat_RL$coordinateUncertaintyInMeters<-NA
-    dat_RL$gbifID<-dat_RL$objectid
+    dat_RL$gbifID<-paste0("RL_", rownames(dat_RL))
     dat_RL$Link<-NA
     dat_RL$species_download<-scientific_name
     names(dat_RL)<-replace(names(dat_RL), names(dat_RL)=="Source", "source")
@@ -561,10 +561,11 @@ sRL_MapDistributionGBIF<-function(dat, scientific_name, First_step, AltMIN, AltM
   
     # Remove land or sea if requested
     if(GBIF_crop=="cropland"){
+      if(nrow(CountrySP)==0){no_land_map()}
       distGBIF<-st_intersection(distGBIF, CountrySP) %>% 
         dplyr::group_by(binomial) %>% dplyr::summarise(N = n())}
 
-    if(GBIF_crop=="cropsea"){
+    if(GBIF_crop=="cropsea" & nrow(CountrySP)>0){ # If nrow==0 it means there is no overlap between countries and the extent of distGBIF, so everything is already at sea
       countr<-CountrySP %>% st_crop(., extent(distGBIF)) %>% dplyr::group_by() %>% dplyr::summarise(N = n())
       distGBIF<-st_difference(distGBIF, countr)}
   }
@@ -662,17 +663,20 @@ sRL_cooExtract<-function(distSP, domain_pref, Crop_Country){
   ### Prepare COO terrestrial and freshwater
   if("Terrestrial" %in% domain_pref | "Freshwater" %in% domain_pref){
     
-    # Extract list of countries
+    ### Extract list of countries
     coo<-coo_raw
-    inter<-st_intersects(distSP, coo) %>% as.data.frame()
-    coo$Dist_row<-inter$row.id[match(rownames(coo), inter$col.id)]
-    coo$presence<-distSP$presence[match(coo$Dist_row, rownames(distSP))]
-    coo$origin<-distSP$origin[match(coo$Dist_row, rownames(distSP))]
-    coo$seasonal<-distSP$seasonal[match(coo$Dist_row, rownames(distSP))]
     
-    # Prepare plot attributed
-    coo$Level0_occupied<-NA ; for(i in 1:nrow(coo)){coo$Level0_occupied[i]<-max(c(0,coo$presence[coo$SIS_name0==coo$SIS_name0[i]]), na.rm=T)>=1}
-    coo$Level1_occupied<-is.na(coo$Dist_row)==F
+    # Map intersection and summarise attributes
+    inter<-st_intersection(distSP, coo) %>% as.data.frame() %>% ddply(., .(SIS_name0, SIS_name1, lookup, lookup_SIS0), function(x){data.frame(presence=paste(unique(x$presence), collapse="|"), origin=paste(unique(x$origin), collapse="|"), seasonal=paste(unique(x$seasonal), collapse="|"))})
+    
+    # Match attributes
+    coo$presence<-inter$presence[match(coo$lookup, inter$lookup)]
+    coo$origin<-inter$origin[match(coo$lookup, inter$lookup)]
+    coo$seasonal<-inter$seasonal[match(coo$lookup, inter$lookup)]
+    
+    ### Prepare plot attributed
+    coo$Level0_occupied<-coo$SIS_name0 %in% inter$SIS_name0
+    coo$Level1_occupied<-is.na(coo$presence)==F
     
     coo$Popup<-paste0("<b> National entity: ","</b>", coo$SIS_name0, ifelse(coo$Level0_occupied==T, " (Present)", " (Absent)"), "<br>", "<br>",
                       "<b> Subnational entity: ","</b>", coo$SIS_name1, ifelse(is.na(coo$SIS_name1)==T, "", ifelse(coo$Level1_occupied==T, " (Present)", " (Absent)")), "<br>")
@@ -684,18 +688,20 @@ sRL_cooExtract<-function(distSP, domain_pref, Crop_Country){
   ### Prepare COO marine
   if("Marine" %in% domain_pref){
     
-    # Extract list of countries
+    ### Extract list of countries
     eez<-eez_raw
-    inter<-st_intersects(distSP, eez) %>% as.data.frame()
-    eez$Dist_row<-inter$row.id[match(rownames(eez), inter$col.id)]
-    eez$presence<-distSP$presence[match(eez$Dist_row, rownames(distSP))]
-    eez$origin<-distSP$origin[match(eez$Dist_row, rownames(distSP))]
-    eez$seasonal<-distSP$seasonal[match(eez$Dist_row, rownames(distSP))]
     
+    # Map intersection and summarise attributes
+    inter<-st_intersection(distSP, eez) %>% as.data.frame() %>% ddply(., .(SIS_name0, SIS_name1, lookup, lookup_SIS0), function(x){data.frame(presence=paste(unique(x$presence), collapse="|"), origin=paste(unique(x$origin), collapse="|"), seasonal=paste(unique(x$seasonal), collapse="|"))})
     
-    # Prepare plot attributes
-    eez$Level0_occupied<-NA ; for(i in 1:nrow(eez)){eez$Level0_occupied[i]<-max(c(0,eez$presence[eez$SIS_name0==eez$SIS_name0[i]]), na.rm=T)>=1}
-    eez$Level1_occupied<-is.na(eez$Dist_row)==F
+    # Match attributes
+    eez$presence<-inter$presence[match(eez$lookup, inter$lookup)]
+    eez$origin<-inter$origin[match(eez$lookup, inter$lookup)]
+    eez$seasonal<-inter$seasonal[match(eez$lookup, inter$lookup)]
+    
+    ### Prepare plot attributes
+    eez$Level0_occupied<-eez$SIS_name0 %in% inter$SIS_name0
+    eez$Level1_occupied<-is.na(eez$presence)==F
     
     eez$Popup<-paste0("<b>", "Marine EEZ","</b>", "<br>", "<br>",
                       "<b> National entity: ","</b>", eez$SIS_name0, ifelse(eez$Level0_occupied==T, " (Present)", " (Absent)"), "<br>", "<br>",
@@ -750,9 +756,11 @@ sRL_CropCountry<-function(distSP, Crop_Country){
   
   # Others
     country_sub <- distCountries_NRL %>% subset(., .$SIS_name0 %in% Crop_Country | .$SIS_name1 %in% Crop_Country1) %>% st_transform(., CRSMOLL)
-    #country_sub<-country_sub# %>% dplyr::group_by() %>% dplyr::summarise(N= n()) 
   }
 
+  # Merge countries (needed to avoid complicate distributions)
+  country_sub<-country_sub %>% dplyr::group_by() %>% dplyr::summarise(N= n()) 
+  
   # Crop the distribution
   distSP_crop<-st_intersection(distSP, country_sub)
 
@@ -767,7 +775,7 @@ sRL_cooInfoBox_prepare<-function(coo, Storage_SP){
   
   # Subset coo with presence + if needed I group by (needed when marine + terrestrial since there are 2 polygons, one with occurrence and one without)
   coo_occ<-subset(coo, coo$Level1_occupied==T) 
-  if(nlevels(as.factor(paste0(coo_occ$SIS_name0, coo_occ$SIS_name1))) < nrow(coo_occ)){coo_occ <- coo_occ %>% dplyr::group_by(SIS_name0, SIS_name1, lookup, lookup_SIS0) %>% dplyr::summarise(N= n())}
+  if(nlevels(as.factor(paste0(coo_occ$SIS_name0, coo_occ$SIS_name1))) < nrow(coo_occ)){coo_occ <- coo_occ %>% dplyr::group_by(SIS_name0, SIS_name1, lookup, lookup_SIS0, presence, origin, seasonal) %>% dplyr::summarise(N= n())}
   
   # If occurrences, check which entities have occurrence records
   if("dat_proj_saved" %in% names(Storage_SP)){
