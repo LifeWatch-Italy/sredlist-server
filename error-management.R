@@ -124,6 +124,10 @@ coords_outofbound <- function() {
   api_error(message = "Coordinates should be in decimal with longitude (dec_long) between -180 and 180 and latitude (dec_lat) between -90 and 90. Make sure you used dots and not commas to write decimals in your csv file, this may cause issues.", status = 400)
 }
 
+no_smooth <- function() {
+  api_error(message = "Smoothing was not possible with the parameter you chose. Try another parameter, or set it to 0 to skip smoothing", status = 400)
+}
+
 wrong_species_upload <- function() {
   api_error(message = "At least one of the uploaded observations has a different species name (sci_name) than the name of the species you are assessing. Please edit your csv file before uploading again", status = 400)
 }

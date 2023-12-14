@@ -301,7 +301,7 @@ sRL_OutputOccurrences <- function(scientific_name, Storage_SP, username) {
   
   # Format basis of Record
   if("basisOfRecord" %in% names(dat)){
-    dat_SIS$basisofrec<-revalue(dat$basisOfRecord, c(
+    dat_SIS$basisofrec<-revalue(as.character(dat$basisOfRecord), c(
       "FOSSIL_SPECIMEN"="FossilSpecimen",
       "HUMAN_OBSERVATION"="HumanObservation",
       "MATERIAL_CITATION"="PreservedSpecimen",

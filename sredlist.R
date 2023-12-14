@@ -793,8 +793,7 @@ Prom<-future({
         distSP<-Storage_SP$distSP3_saved
       }
     distSP<-st_make_valid(distSP)
-    
-    
+
     ### If smooth and the distribution should be cropped by land/sea, we crop again after smoothing
     if(Gbif_Smooth>0 & Crop_par %in% c("cropland", "cropsea")){
       CountrySP<-Storage_SP$CountrySP_saved
@@ -814,7 +813,7 @@ Prom<-future({
   }, error=function(e){cat("Smooth did not work")})
   
   # If problem in the TryCatch (i.e., smoothing not possible), I return the original distribution
-  if(TRY==0){distSP<-Storage_SP$distSP3_saved %>% st_make_valid(.)}
+  if(TRY==0){no_smooth()}
   
   ### Keep distribution in memory
   Storage_SP$distSP_saved <- distSP
