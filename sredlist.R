@@ -1290,9 +1290,7 @@ Prom<-future({
   distSP=Storage_SP$distSP_saved ; if(nrow(distSP)==0){empty_distrib()}
 
   # Habitat table (for aoh analysis and for SIS Connect)
-  print(habitats_pref_MARGINAL)
   if(! exists("habitats_pref_MARGINAL")){habitats_pref_MARGINAL=NA}
-  print(habitats_pref_MARGINAL)
   habitats_pref_DF<-sRL_PrepareHabitatFile(scientific_name, habitats_pref, habitats_pref_MARGINAL)
   print(habitats_pref_DF)
   Storage_SP$habitats_SIS=habitats_pref_DF
@@ -1317,7 +1315,7 @@ Prom<-future({
   ### Prepare distribution, altitude, and preference files (i.e., part of the AOH analysis that has to be run only once)
   # Distribution (assuming seasonal=resident after users decided what they keep)
   distSP$seasonal=1
-  distSP$terrestrial<-"true" # I have to make it manually so that it does not exclude pure freshwater species (it will be users choice in any case)
+  names(distSP)<-replace(names(distSP), names(distSP)=="terrestial", "terrestrial") ; distSP$terrestrial<-"true" # I have to make it manually so that it does not exclude pure freshwater species (it will be users choice in any case)
   
   rangeSP_clean<-create_spp_info_data(distSP,
                                       keep_iucn_rl_presence = 1:6, # The selection has already been made, so I give fake numbers here
