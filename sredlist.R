@@ -785,7 +785,7 @@ Prom<-future({
                                         GBIF_crop="",
                                         Gbif_Param=c(as.numeric(Storage_SP$Output$Value[Storage_SP$Output$Parameter=="Alpha_parameter"]), as.numeric(Storage_SP$Output$Value[Storage_SP$Output$Parameter=="Kernel_parameter"])))
       } else {distSP<-Storage_SP$distSP3_saved}
-      distSP<-smooth(distSP, method = "ksmooth", smoothness=(exp(Gbif_Smooth/20)-1), max_distance=10000)
+      distSP<-smoothr::smooth(distSP, method = "ksmooth", smoothness=(exp(Gbif_Smooth/20)-1), max_distance=10000)
       # Crop country if National Red Listing
       if(is.na(Crop_Country) == F & Crop_Country != ""){distSP <- sRL_CropCountry(distSP, Crop_Country)}
       
@@ -2830,7 +2830,7 @@ function(scientific_name, username) {
   
   
   # Prepare Outputs (remove definitions, empty fields, those at default)
-  output_species<-sRL_StoreRead(scientific_name,  username, MANDAT=1)$Output
+  output_species<-sRL_StoreRead(scientific_name, username, MANDAT=1)$Output
   output_species$Definition<-NULL
   output_species$Value<-replace(output_species$Value, is.na(output_species$Value), "") # I replace NA to make the next line work and then remove all empty fields
   if(output_species$Value[output_species$Parameter=="Gbif_Extent"]=="-180,180,-90,90"){output_species<-output_species[-which(output_species$Parameter=="Gbif_Extent"),]}
@@ -2844,7 +2844,7 @@ function(scientific_name, username) {
   if(output_species$Value[output_species$Parameter=="Distribution_Origin"]=="1,2"){output_species<-output_species[-which(output_species$Parameter=="Distribution_Origin"),]}
   if(output_species$Value[output_species$Parameter=="Distribution_Seasonal"]=="1,2"){output_species<-output_species[-which(output_species$Parameter=="Distribution_Seasonal"),]}
   output_species$Value[output_species$Parameter=="Col_allfields"]<-paste(names(read.csv(paste0(sub(" ", "_", scientific_name), "_", sRL_userdecode(username), "_sRedList/allfields.csv"))), collapse=",")
-  output_species<-subset(output_species, is.na(output_species$Value)==F & output_species$Value != "" & substr(output_species$Parameter, 1, 9) != "Estimated")
+  output_species<-subset(output_species, is.na(output_species$Value)==F & output_species$Value != "")
   output_species$Date<-Sys.time() %>% as.character(.)
   
   # Save Outputs
