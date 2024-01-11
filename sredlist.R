@@ -244,6 +244,10 @@ function(scientific_name, username, Gbif_Source=list(), Gbif_Synonym="", Gbif_Co
 Prom<-future({
   sf::sf_use_s2(FALSE)
   
+  ### Print sessionInfo (to have it always accessible in the log)
+  print("Session Info:")
+  print(sessionInfo())
+  
   ### Clean-string from user
   scientific_name <- sRL_decode(scientific_name)
   print(scientific_name)
