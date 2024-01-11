@@ -315,10 +315,11 @@ Prom<-future({
   CountrySP_WGS$land<-"TRUE"
   
   # Flag observations to remove
-  Tests_to_run=c("capitals", "centroids", "equal", "gbif", "institutions", "zeros")
+  Tests_to_run=c("capitals", "equal", "gbif", "zeros") # Removed "centroids", "institutions"
 
   tryCatch({
     ## Apply automatic filters
+    sRL_loginfo("START - CoordinateCleaner", scientific_name)
     flags_raw <- clean_coordinates(x = dat,
                                  lon = "decimalLongitude",
                                  lat = "decimalLatitude",
@@ -326,6 +327,7 @@ Prom<-future({
                                  species = "species",
                                  capitals_rad = 1000,
                                  tests = Tests_to_run)
+    sRL_loginfo("END - CoordinateCleaner", scientific_name)
     
     ## Apply sea/land filtering (not through CoordinateCleaner, huge delay introduced when they updated to remove rgeos)
     if(nrow(CountrySP_WGS)==0){
@@ -336,14 +338,17 @@ Prom<-future({
     }
   }, error=function(e){"Bug in clean coordinates"})
   if(exists("flags_raw")==F){cat("Bug in clean coordinates"); flags_raw<-dat ; flags_raw$.val<-flags_raw$.equ<-flags_raw$.zer<-flags_raw$.cap<-flags_raw$.sea<-flags_raw$.gbf<-flags_raw$.inst<-flags_raw$.cen<-TRUE}
+  sRL_loginfo("END - Clean coordinates", scientific_name)
   
   # Assign + count use of step 1
+  sRL_loginfo("START - Save gbif output files", scientific_name)
   output_to_save<-sRL_InitLog(scientific_name, username, DisSource = "Created") ; output_to_save$Value[output_to_save$Parameter=="Gbif_Source"]<-c(ifelse(Gbif_Source[1]==1, "GBIF", ""), ifelse(Gbif_Source[2]==1, "OBIS", ""), ifelse(Gbif_Source[3]==1, "Red_List", ""), ifelse(is.null(nrow(Uploaded_Records)), "", "Uploaded")) %>% .[.!=""] %>% paste(., collapse=" + ")
   output_to_save$Count[output_to_save$Parameter=="Gbif_Source"]<-ifelse(file.exists(paste0("resources/AOH_stored/", gsub(" ", "_", sRL_decode(scientific_name)), "_", sRL_userdecode(username), "/Storage_SP.rds")), (sRL_StoreRead(scientific_name,  username, 1)$Output$Count[2]+1), 1)
   output_to_save$Value[output_to_save$Parameter=="Gbif_Synonyms"]<-ifelse(Gbif_Synonym=="", NA, paste(Gbif_Synonym, collapse="+"))
   Storage_SP<-list(flags_raw_saved=flags_raw, Creation=Sys.time(), Output=output_to_save)
   Storage_SP<-sRL_OutLog(Storage_SP, "Crop_Country", Gbif_Country)
   sRL_StoreSave(scientific_name, username,  Storage_SP)
+  sRL_loginfo("END - Save gbif output files", scientific_name)
   
   return(list(plot_data=plot1))
   
@@ -817,7 +822,7 @@ Prom<-future({
   
   ### Keep distribution in memory
   Storage_SP$distSP_saved <- distSP
-  Storage_SP<-sRL_OutLog(Storage_SP, "Mapping_Smooth", Gbif_Smooth*10) # Gbif_Smooth*10 because it is divided by 10 at the beginning of the API but should be reported raw in the RmarkDown and output files
+  Storage_SP<-sRL_OutLog(Storage_SP, "Mapping_Smooth", Gbif_Smooth)
   sRL_StoreSave(scientific_name, username,  Storage_SP)
     
   ### Plot
