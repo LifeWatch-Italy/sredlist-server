@@ -54,10 +54,38 @@ sRL_FormatUploadedRecords <- function(Uploaded_Records, scientific_name, Gbif_Sy
 
 
 
-### List of countries for Europe
+### Prepare European cropping shapefile
 sRL_EuropeList<-c("Albania", "Andorra", "Austria", "Belarus", "Belgium", "Bosnia and Herzegovina", "Bulgaria", "Croatia", "Cyprus", "Czechia", "Denmark", "Estonia", "Finland", "France", "Germany", "Greece", "Hungary", "Iceland", "Ireland", "Italy", "Latvia", "Liechtenstein", "Lithuania", "Luxembourg", "Malta", "Moldova, Republic of", "Monaco", "Montenegro", "Netherlands", "North Macedonia", "Norway", "Poland", "Portugal", "Romania", "San Marino", "Serbia", "Slovakia", "Slovenia", "Spain", "Sweden", "Switzerland", "Ukraine", "United Kingdom of Great Britain and Northern Ireland")
 sRL_EuropeList1<-c("European Russia", "Türkiye-in-Europe") # For Europe I need to include Eastern Russia and Eastern Turkey, I list them in Crop_Country1 which is empty for non European National assessments
 sRL_EU27List<-c("Austria", "Belgium", "Bulgaria", "Croatia", "Cyprus", "Czechia", "Denmark", "Estonia", "Finland", "France", "Germany", "Greece", "Hungary", "Ireland", "Italy", "Latvia", "Lithuania", "Luxembourg", "Malta", "Netherlands", "Poland", "Portugal", "Romania", "Slovakia", "Slovenia", "Spain", "Sweden")
+
+sRL_ShapeCountryNRL <- function(Country_name){
+  
+  sRL_loginfo("START - Shape Country NRL", scientific_name)
+  
+  ### Prepare list of countries
+  if(Country_name == "Europe"){
+    country_sub <- distCountries_NRL %>% subset(., .$SIS_name0 %in% sRL_EuropeList | .$SIS_name1 %in% sRL_EuropeList1) %>% st_crop(., xmin=-50, xmax=180, ymin=-90, ymax=90) # Remove Clipperton
+  }
+  
+  if(Country_name == "EU27"){
+    country_sub <- distCountries_NRL %>% subset(., .$SIS_name0 %in% sRL_EU27List) %>% st_crop(., xmin=-50, xmax=180, ymin=-90, ymax=90) # Remove Clipperton
+  }
+  
+  if(Country_name == "Mediterranean"){
+    country_sub<-st_read("Species/Map countries/Mediterranean_hotspot.shp") ; country_sub$SIS_name0<-NA
+  }
+  
+  if(! Country_name %in% c("Europe", "EU27", "Mediterranean")){
+    country_sub <- distCountries_NRL %>% subset(., .$SIS_name0 == Country_name)
+  }
+  
+  ### Merge
+  country_sub <- country_sub %>% dplyr::group_by() %>% dplyr::summarise(N= n())
+  sRL_loginfo("END - Shape Country NRL", scientific_name)
+  
+  return(country_sub)
+}
 
 
 
@@ -67,36 +95,20 @@ sRL_createDataGBIF <- function(scientific_name, GBIF_SRC, Gbif_Country, Uploaded
   ### If Gbif_Country, prepare countries file
   if(Gbif_Country != ""){
     
-    # If European RL, change Gbif_Country to a list of countries to include
-    Gbif_CountryList<-Gbif_Country
-    if(Gbif_Country=="EU27"){Gbif_CountryList <- sRL_EU27List}
-    if(Gbif_Country=="Europe"){Gbif_CountryList <- sRL_EuropeList}
-    
-    # Isolate terrestrial countries (and subnationals in Turkey and Russia if European)
-    co_terr <- distCountries_WGS %>% subset(., SIS_name0 %in% Gbif_CountryList)
-    if("France" %in% Gbif_CountryList){co_terr[co_terr$SIS_name0=="France",]<-st_crop(co_terr[co_terr$SIS_name0=="France",], xmin=-40,xmax=180,ymin=-90,ymax=90)}
-    if(Gbif_Country=="Europe"){co_terr <- st_union (co_terr,  subset(coo_raw, coo_raw$SIS_name1 %in% sRL_EuropeList1))}
-    
-    # Isolate marine countries (and subnationals in Turkey and Russia if European)
-    co_mar <- eez_raw %>% subset(., (is.na(eez_raw$SIS_name1) | eez_raw$SIS_name1 != "Clipperton I.")) %>% subset(., SIS_name0 %in% Gbif_CountryList)
-    if(Gbif_Country=="Europe"){co_mar <- st_union (co_mar,  subset(eez_raw, eez_raw$SIS_name1 %in% sRL_EuropeList1))}
-    
-    # If Mediterranean assessment, I use Mediterranean hotspot borders
-    if(Gbif_Country=="Mediterranean"){co_terr<-st_read("Species/Map countries/Mediterranean_hotspot.shp") ; co_terr$SIS_name0<-NA}
-    
-    # Merge and buffer
-    co_tot <- rbind(co_mar[,c("SIS_name0", "geometry")], co_terr[,c("SIS_name0", "geometry")]) %>% dplyr::group_by() %>% dplyr::summarise(N= n()) %>% st_buffer(., 0.01)
+    # Create shapefile to crop
+    co_tot <- sRL_ShapeCountryNRL(Gbif_Country) %>% st_buffer(., 0.00001)
     
     # Calculate extent
     co_EXT <- extent(co_tot) %>% as.vector(.)
     
-  } else {co_EXT<-c(-180,180,-90,90)}
+  } else {co_EXT<-c(-180,180,-90,90) ; co_tot<-c()}
 
   ### Download data
   # From GBIF
-  Taxon<-name_backbone(name=scientific_name)
+  Taxon<-name_backbone(name=scientific_name, strict=T)
   if("SPECIES" %in% Taxon$rank[1]){TaxKey<-Taxon$usageKey} else {TaxKey<-NULL} # Needed to avoid a wrong species from an existing genus to download all occurrences from that genus
   if(GBIF_SRC[1]==1 & is.null(TaxKey)==F){
+    sRL_loginfo("Download GBIF", scientific_name)
     
     # Calculate the total number of data in GBIF
     OCC<-occ_count(taxonKey=TaxKey, hasCoordinate = TRUE)
@@ -105,7 +117,6 @@ sRL_createDataGBIF <- function(scientific_name, GBIF_SRC, Gbif_Country, Uploaded
     if(OCC < config$LIM_GBIF){ # Download all data or structure download if more than LIM_GBIF
       dat_gbif <- sRL_SimpleGBIF(scientific_name, co_EXT)
     } else{
-      if(exists("co_tot")==F){co_tot<-c()}
       dat_gbif <- sRL_StructureGBIF(scientificName = scientific_name, co_EXT, co_tot)
     }
     
@@ -127,6 +138,7 @@ sRL_createDataGBIF <- function(scientific_name, GBIF_SRC, Gbif_Country, Uploaded
   
   # From OBIS (removing points at same location + year)
   if(GBIF_SRC[2]==1){
+    sRL_loginfo("Download OBIS", scientific_name)
     dat_obis <- robis::occurrence(scientific_name)
     dat_obis$ID<-paste0(dat_obis$decimalLongitude, dat_obis$decimalLatitude, dat_obis$date_year)
     dat_obis$year<-dat_obis$date_year
@@ -148,6 +160,7 @@ sRL_createDataGBIF <- function(scientific_name, GBIF_SRC, Gbif_Country, Uploaded
   
   # From Red List point
   if(GBIF_SRC[3]==1 & paste0(scientific_name, ".csv") %in% list.files(config$POINTdistribution_path)){
+    sRL_loginfo("Download Red List", scientific_name)
     dat_RL<-read.csv(paste0(config$POINTdistribution_path, scientific_name, ".csv"))
     dat_RL$Source_type<-"Red List"
     dat_RL$decimalLongitude<-dat_RL$longitude
@@ -173,6 +186,7 @@ sRL_createDataGBIF <- function(scientific_name, GBIF_SRC, Gbif_Country, Uploaded
   
   # From uploaded data
   if(!is.null(nrow(Uploaded_Records))){
+    sRL_loginfo("Download Uploaded Records", scientific_name)
     dat_upload<-Uploaded_Records
     dat_upload$decimalLongitude<-dat_upload$dec_long
     dat_upload$decimalLatitude<-dat_upload$dec_lat
@@ -197,6 +211,7 @@ sRL_createDataGBIF <- function(scientific_name, GBIF_SRC, Gbif_Country, Uploaded
     dat<-data.frame()
   } else {
     # Merge otherwise
+    sRL_loginfo("Merge records", scientific_name)
     dat<-rbind.fill(dat_gbif, dat_obis_sub, dat_RL, dat_upload)
     print(paste0("Number of data: ", nrow(dat)))
     
@@ -217,6 +232,7 @@ sRL_createDataGBIF <- function(scientific_name, GBIF_SRC, Gbif_Country, Uploaded
     
     # Remove observations outside country if national Red List
     if(Gbif_Country != ""){
+      sRL_loginfo("Remove observations outside NRL country", scientific_name)
       dat_proj<-st_as_sf(dat,coords = c("decimalLongitude", "decimalLatitude"), crs="+proj=longlat +datum=WGS84")
       dat_proj$InCountry<-st_join(dat_proj, co_tot, join=st_intersects)$N %>% is.na(.)==F
       dat<-subset(dat, dat$gbifID %in% dat_proj$gbifID[dat_proj$InCountry==T])
@@ -588,17 +604,17 @@ sRL_MapDistributionGBIF<-function(dat, scientific_name, First_step, AltMIN, AltM
           print("Using small elevation raster")
           }
       
-      dem.crop <- terra::crop(alt_raw, ext(mcp.spatial), snap="out")
+      dem.crop <- terra::crop(alt_raw, ext(mcp.spatial), snap="out") %>% replace(., is.na(.), 0)
       
-      sp.mcp.ras <- terra::rasterize(sp.mcp.terra, dem.crop)
+      sp.mcp.ras <- terra::rasterize(sp.mcp.terra, dem.crop, touches=T)
       dem.sp <- terra::mask(dem.crop, mask = sp.mcp.terra)
   
-      m <- c(-Inf, AltMIN, 0, AltMIN, 
+      m <- c(-Inf, (AltMIN-1), 0, (AltMIN-1), 
          AltMAX, 1, AltMAX, Inf, 0)
       rclmat <- matrix(m, ncol=3, byrow=TRUE)
       
-      sp.range <- terra::classify(dem.sp, rclmat) %>% 
-        terra::aggregate(fact = 4, fun = 'max')
+      sp.range <- terra::classify(dem.sp, rclmat)
+      if((dim(sp.range)[1]*dim(sp.range)[2])>(10^4)){sp.range <- sp.range %>% terra::aggregate(fact = 4, fun = 'max')} # Aggregate if too big
       
       sp.range[sp.range == 0] <- NA
       
@@ -735,31 +751,12 @@ sRL_cooExtract<-function(distSP, domain_pref, Crop_Country){
 
 
 ### Function to crop a country for National Red Listing
-
 sRL_CropCountry<-function(distSP, Crop_Country){
   
-  # Europe
-  Crop_Country1<-c()
-  if(Crop_Country[1]=="Europe"){
-    Crop_Country<-sRL_EuropeList
-    Crop_Country1<-sRL_EuropeList1
-  }
-  if(Crop_Country[1]=="EU27"){
-    Crop_Country<-sRL_EU27List
-  }
-  
-  ### Select countries depending on domain preferences
-  # Mediterranean
-  if(Crop_Country[1]=="Mediterranean"){
-    country_sub<-st_read("Species/Map countries/Mediterranean_hotspot.shp") %>% st_transform(., CRSMOLL) ; country_sub$SIS_name0<-NA
-  } else{
-  
-  # Others
-    country_sub <- distCountries_NRL %>% subset(., .$SIS_name0 %in% Crop_Country | .$SIS_name1 %in% Crop_Country1) %>% st_transform(., CRSMOLL)
-  }
+  country_sub <- sRL_ShapeCountryNRL(Crop_Country)
 
-  # Merge countries (needed to avoid complicate distributions)
-  country_sub<-country_sub %>% dplyr::group_by() %>% dplyr::summarise(N= n()) 
+  ### Merge countries (needed to avoid complicate distributions)
+  country_sub <- country_sub %>% st_transform(., CRSMOLL)
   
   # Crop the distribution
   distSP_crop<-st_intersection(distSP, country_sub)

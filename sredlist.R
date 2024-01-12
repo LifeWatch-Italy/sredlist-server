@@ -319,7 +319,7 @@ Prom<-future({
   CountrySP_WGS$land<-"TRUE"
   
   # Flag observations to remove
-  Tests_to_run=c("capitals", "equal", "gbif", "zeros") # Removed "centroids", "institutions"
+  Tests_to_run=c("capitals", "equal", "centroids", "gbif", "institutions", "zeros")
 
   tryCatch({
     ## Apply automatic filters
