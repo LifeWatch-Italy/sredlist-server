@@ -104,11 +104,10 @@ realms_mcp<-st_union(realms_raw) %>% st_as_sf(.) %>% st_transform(., CRSMOLL) %>
 
 # Load Crosswalk CSV and Density CSV
 density_data<-read.csv("Species/Density.table.csv", sep=",") %>% subset(., .$Density>0)
-crosswalk <- read.table("Species/Crosswalk_CCI_IUCN.txt", header=T)
+hab_scheme <- read.csv("Species/Habitat_classification_scheme.csv", header=T)
 crosswalkLARGE<-read.csv("Species/Lumbierres_large_crosswalk.csv")
 GL_file<-read.csv("Species/Generation_length_sRedList.csv", sep=",")
-if(config$crosswalk == "Santini"){crosswalk_to_use<- crosswalk[is.na(crosswalk$esa_code)==F, c("iucn_code", "esa_code")] ; names(crosswalk_to_use)<-c("code", "value")}
-if(config$crosswalk == "Lumbierres"){crosswalk_to_use<- read.table("Species/Crosswalk_CCI_IUCN_Lumbierres.txt", dec="/", header=T) ; crosswalk_to_use$code<-as.character(crosswalk_to_use$code)}
+crosswalk_to_use<- read.table("Species/Crosswalk_CCI_IUCN_Lumbierres.txt", dec="/", header=T) ; crosswalk_to_use$code<-as.character(crosswalk_to_use$code)
 
 # Load the empty output log
 output<-read.csv("Species/Output log empty.csv")
