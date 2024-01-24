@@ -214,7 +214,7 @@ sRL_PrepareCountries <- function(LIMS){
   # Calculate the tolerance parameter for simplification (depending on the longitudinal extent of the range)
   TOL=(extent(CountrySP)[2]-extent(CountrySP)[1])/1000
   
-  if(TOL>0.001){
+  if(is.na(TOL)==F & TOL>0.001){
     CountrySP<-st_simplify(CountrySP, dTolerance=TOL)}
   
   # Remove empty countries

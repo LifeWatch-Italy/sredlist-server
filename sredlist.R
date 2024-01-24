@@ -160,9 +160,6 @@ Prom<-future({
                      distSP_full$seasonal %in% choice_season &
                      distSP_full$origin %in% choice_origin)
   
-  ### Add id_no if not present
-  names(distSP)<-replace(names(distSP), tolower(names(distSP)) %in% c("id_no", "sisid"), "id_no")
-  distSP$id_no<-sRL_CalcIdno(scientific_name)
   sRL_loginfo("END - Prepare distribution", scientific_name)
   
   ### Crop_Country for National RL
@@ -174,13 +171,19 @@ Prom<-future({
   }
 
   if (nrow(distSP) > 0) {
+    
+    ### Add id_no if not present
+    names(distSP)<-replace(names(distSP), tolower(names(distSP)) %in% c("id_no", "sisid"), "id_no")
+    distSP$id_no<-sRL_CalcIdno(scientific_name)
+    
     ### Colour the distributions
     sRL_loginfo("START - Colour distribution", scientific_name)
     distSP<-sRL_ColourDistrib(distSP)
   
     ### Prepare countries if they were not charged or if we are not using the RL distribution + crop depending on the current selection of range
     if("CountrySP_saved" %not in% names(Storage_SP) | (! grepl("_RL", Dist_path))){Storage_SP$CountrySP_saved<-sRL_PrepareCountries(1.2*extent(distSP_full))} 
-    CountrySP<-st_crop(Storage_SP$CountrySP_saved, 1.2*extent(distSP))
+    CountrySP<-Storage_SP$CountrySP_saved
+    if(nrow(CountrySP)>0){CountrySP<-st_crop(CountrySP, 1.2*extent(distSP))} # Crop again in case national Red Listing or selection that reduces the extent
     
     sRL_loginfo("Plot distribution", scientific_name)
   
