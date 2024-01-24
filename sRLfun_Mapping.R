@@ -387,6 +387,26 @@ sRL_StructureGBIF<-function(scientificName, co_EXT, co_tot){
 
 
 # Step 2 --------------------------------
+sRL_PopRecords <- function(flags){
+  
+  # Popup text to have only if there are some synonyms
+  flags$Only_for_syn<-"" ; if("TRUE" %in% grepl("Synonyms_", flags$Source_type)){flags$Only_for_syn<-paste0("<b>","Species: ","</b>", flags$species_download, "<br>")}
+  
+  # Create popup text
+  flags$PopText<- paste0("<b>", revalue(as.character(is.na(flags$Reason)), c("TRUE"="VALID OBSERVATION", "FALSE"="NOT VALID OBSERVATION")),"</b>", "<br>", "<br>",
+                         "<b>","Source: ","</b>", flags$Source_type, "<br>",
+                         flags$Only_for_syn,
+                         "<b>","Observation ID: ","</b>", ifelse(is.na(flags$Link)==F, paste0("<a href='", flags$Link, "' target='_blank'>", flags$gbifID, "</a>"), flags$gbifID), "<br>",
+                         "<b>","Year: ","</b>", flags$year, "<br>",
+                         "<b>","Uncertainty (km): ","</b>", as.numeric(as.character(flags$coordinateUncertaintyInMeters))/1000, "<br>")
+  flags$PopText[is.na(flags$Reason)==F]<-paste0(flags$PopText[is.na(flags$Reason)==F], "<b>","Reason flagged: ","</b>", flags$Reason[is.na(flags$Reason)==F], "<br>")
+  
+  # Return
+  return(flags)
+}
+
+
+
 sRL_cleanDataGBIF <- function(flags, year_GBIF, uncertainty_GBIF, Gbif_yearBin, Gbif_uncertainBin, sea_GBIF, GBIF_xmin, GBIF_xmax, GBIF_ymin, GBIF_ymax) { # nolint
 
   flags$.summary<-NULL
@@ -424,17 +444,7 @@ sRL_cleanDataGBIF <- function(flags, year_GBIF, uncertainty_GBIF, Gbif_yearBin, 
   )
   
   ### Prepare the box popup for the leaflet map
-  # Popup text to have only if there are some synonyms
-  flags$Only_for_syn<-"" ; if("TRUE" %in% grepl("Synonyms_", flags$Source_type)){flags$Only_for_syn<-paste0("<b>","Species: ","</b>", flags$species_download, "<br>")}
-  
-  # Create popup text
-  flags$PopText<- paste0("<b>", revalue(as.character(is.na(flags$Reason)), c("TRUE"="VALID OBSERVATION", "FALSE"="NOT VALID OBSERVATION")),"</b>", "<br>", "<br>",
-                       "<b>","Source: ","</b>", flags$Source_type, "<br>",
-                       flags$Only_for_syn,
-                       "<b>","Observation ID: ","</b>", ifelse(is.na(flags$Link)==F, paste0("<a href='", flags$Link, "' target='_blank'>", flags$gbifID, "</a>"), flags$gbifID), "<br>",
-                       "<b>","Year: ","</b>", flags$year, "<br>",
-                       "<b>","Uncertainty (km): ","</b>", as.numeric(as.character(flags$coordinateUncertaintyInMeters))/1000, "<br>")
-  flags$PopText[is.na(flags$Reason)==F]<-paste0(flags$PopText[is.na(flags$Reason)==F], "<b>","Reason flagged: ","</b>", flags$Reason[is.na(flags$Reason)==F], "<br>")
+  flags <- sRL_PopRecords(flags)
   
   return(flags)
   
