@@ -96,7 +96,7 @@ sRL_createDataGBIF <- function(scientific_name, GBIF_SRC, Gbif_Country, Uploaded
   if(Gbif_Country != ""){
     
     # Create shapefile to crop
-    co_tot <- sRL_ShapeCountryNRL(Gbif_Country) %>% st_buffer(., 0.00001)
+    co_tot <- sRL_ShapeCountryNRL(Gbif_Country) %>% st_buffer(., 0.01)
     
     # Calculate extent
     co_EXT <- extent(co_tot) %>% as.vector(.)
