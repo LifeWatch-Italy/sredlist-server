@@ -160,7 +160,10 @@ sRL_largeAOH<-function(alt_crop, habitats_pref, altitudes_pref, rangeSP_clean, Y
   print("Suitable CCI groups:") ; print(names(CCI_suitable))
   
   # Crop and sum CCIs  
+  print(extent(rangeSP_clean))
+  print(dim(CCI_suitable))
   CCI_crop<-raster::crop(CCI_suitable, extent(rangeSP_clean), snap="out")
+  print(dim(CCI_crop))
   #CCI_sum<-sum(CCI_crop, na.rm=T)
   CCI_sum <- raster::calc(CCI_crop, sum, na.rm=T)
   print(dim(CCI_sum))
@@ -170,11 +173,14 @@ sRL_largeAOH<-function(alt_crop, habitats_pref, altitudes_pref, rangeSP_clean, Y
   alt_suitable<-(alt_crop > as.numeric(altitudes_pref[1]) & alt_crop<as.numeric(altitudes_pref[2]))
   if(class(alt_suitable)[1] != "SpatRaster"){alt_suitable<-rast(alt_suitable)}
 
+  print(dim(alt_suitable))
   AOH <- (CCI_sum*alt_suitable) %>% terra::mask(., rangeSP_clean)
+  print(dim(AOH))
   AOH <- replace(AOH, AOH>1000, NA) # NA is transformed as 100000 so I change everything above 1000 to NA (the max should always be 900)
   print(dim(AOH))
   
   # Save AOH
+  print(FILENAME)
   if(FILENAME != ""){terra::writeRaster(AOH, filename=FILENAME, overwrite=T)}
   
   
