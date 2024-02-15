@@ -318,7 +318,8 @@ Prom<-future({
   LIMS<-c(xmin=min(dat$decimalLongitude), xmax=max(dat$decimalLongitude), ymin=min(dat$decimalLatitude), ymax=max(dat$decimalLatitude))
   LIMS<-c(xmin=max(-179.9, LIMS["xmin"] - 0.1*max(1,abs(LIMS["xmin"]-LIMS["xmax"]))),   xmax=min(179.9, LIMS["xmax"] + 0.1*max(1,abs(LIMS["xmin"]-LIMS["xmax"]))),
           ymin=max(-89.9, LIMS["ymin"] - 0.1*max(1,abs(LIMS["ymin"]-LIMS["ymax"]))),    ymax=min(89.9, LIMS["ymax"] + 0.1*max(1,abs(LIMS["ymin"]-LIMS["ymax"])))) ; print(LIMS)
-  CountrySP_WGS<-st_crop(distCountries_WGS, LIMS)
+  CountrySP_WGS<-distCountries_WGS
+  tryCatch({CountrySP_WGS<-st_crop(CountrySP_WGS, LIMS)}, error=function(e){"Bug in cropping country"})
   CountrySP_WGS$land<-"TRUE"
   sRL_loginfo("Country cropped", scientific_name)
   
