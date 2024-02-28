@@ -3012,7 +3012,7 @@ function(scientific_name, file_name, Dist_path, type) {
       if(length(list.files(Dist_path, include.dirs=T))==0){unlink(Dist_path, recursive=T)}
       return(list(response = 0)) # nolint
     }
-    not_found("Species distribution not exist!") # nolint Runs only if the previous return did not work
+    not_found("Species distribution does not exist!") # nolint Runs only if the previous return did not work
   }else {
     not_found("Species distribution does not exist!") # nolint
   }
@@ -3077,7 +3077,7 @@ function(scientific_name) {
     # Return
     return(distributions)
     
-  }else { not_found("Species distribution does not exist!") } # nolint
+  }else {return(list())} # nolint
 }
 
 
