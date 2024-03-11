@@ -59,7 +59,7 @@ sRL_EuropeList<-c("Albania", "Andorra", "Austria", "Belarus", "Belgium", "Bosnia
 sRL_EuropeList1<-c("European Russia", "Türkiye-in-Europe") # For Europe I need to include Eastern Russia and Eastern Turkey, I list them in Crop_Country1 which is empty for non European National assessments
 sRL_EU27List<-c("Austria", "Belgium", "Bulgaria", "Croatia", "Cyprus", "Czechia", "Denmark", "Estonia", "Finland", "France", "Germany", "Greece", "Hungary", "Ireland", "Italy", "Latvia", "Lithuania", "Luxembourg", "Malta", "Netherlands", "Poland", "Portugal", "Romania", "Slovakia", "Slovenia", "Spain", "Sweden")
 
-sRL_ShapeCountryNRL <- function(Country_name){
+sRL_ShapeCountryNRL <- function(Country_name, scientific_name){
   
   sRL_loginfo("START - Shape Country NRL", scientific_name)
   
@@ -96,7 +96,7 @@ sRL_createDataGBIF <- function(scientific_name, GBIF_SRC, Gbif_Country, Uploaded
   if(Gbif_Country != ""){
     
     # Create shapefile to crop
-    co_tot <- sRL_ShapeCountryNRL(Gbif_Country) %>% st_buffer(., 0.01)
+    co_tot <- sRL_ShapeCountryNRL(Gbif_Country, scientific_name) %>% st_buffer(., 0.01)
     
     # Calculate extent
     co_EXT <- extent(co_tot) %>% as.vector(.)
@@ -763,7 +763,7 @@ sRL_cooExtract<-function(distSP, domain_pref, Crop_Country){
 ### Function to crop a country for National Red Listing
 sRL_CropCountry<-function(distSP, Crop_Country){
   
-  country_sub <- sRL_ShapeCountryNRL(Crop_Country)
+  country_sub <- sRL_ShapeCountryNRL(Crop_Country, scientific_name)
 
   ### Merge countries (needed to avoid complicate distributions)
   country_sub <- country_sub %>% st_transform(., CRSMOLL)

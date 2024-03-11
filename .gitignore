@@ -46,3 +46,6 @@ logs/*.log
 
 # Assessments
 Assessments/*
+
+# Log Shiny app
+resources/resources_Shiny_DD/Logs/*
