@@ -4,7 +4,7 @@ library(mapedit)
 library(sf)
 library(htmlwidgets)
 
-source(textConnection(readLines("C:/Users/Victor/Documents/sRedList/Platform/InProgress/sredlist-server-develop/server.R")[1:73]))
+source(textConnection(readLines("server.R")[1:73]))
 
 ### Charge results from step 1b2
 # http://127.0.0.1:7839/?sci_name=Azteca_xanthochroa&user=victor.cazalis
@@ -124,12 +124,20 @@ server <- function(input, output, session) {
     ### Update record flagging
     flagsSF(sRLMan_EditPoints(edits()$finished, flagsSF(), input$Pts_year, input$Pts_uncert, input$Pts_source))
       
-    ### Save flags
+    ### Save flags and record usage
+    # Save points
     Storage_SPNEW <- Storage_SP()
     Storage_SPNEW$dat_proj_saved <- sRL_SubsetGbif(flagsSF(), input$sci_name)
     Storage_SPNEW$flags <- flagsSF() %>% as.data.frame(.) %>% .[, names(.) != "geometry"]
+    
+    # Record usage
+    Storage_SPNEW$Output$Value[Storage_SPNEW$Output$Parameter=="Gbif_EditPts"]<-"yes"
+    Storage_SPNEW$Output$Count[Storage_SPNEW$Output$Parameter=="Gbif_EditPts"]<-Storage_SPNEW$Output$Count[Storage_SPNEW$Output$Parameter=="Gbif_EditPts"]+1
+    
+    # Save Storage file
     sRL_StoreSave(input$sci_name, input$user,  Storage_SPNEW)
-
+    Storage_SP(Storage_SPNEW)
+    
     ### Update map
     sRLMan_UpdateLeaflet(flagsSF(), frame=1)
 

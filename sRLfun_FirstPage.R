@@ -232,7 +232,7 @@ sRL_StoreSave<-function(scientific_name, username, Storage_SP){
   SCI<-sRL_decode(scientific_name)
   FOLDER<-paste0("resources/AOH_stored/", gsub(" ", "_", SCI), "_", sRL_userdecode(username))
   FILE=paste0(FOLDER, "/Storage_SP.rds")
-  dir.create(paste0(FOLDER, "/Plots"), recursive=T)
+  dir.create(paste0(FOLDER, "/Plots"), recursive=T, showWarnings=F)
   saveRDS(Storage_SP, file=FILE)
 }
 
