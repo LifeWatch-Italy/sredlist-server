@@ -2718,8 +2718,17 @@ Prom<-future({
   
   # Download tracking files
   if(scientific_name==config$Name_tracker & username=="victor.cazalis"){
+    
+    # ZIP tracker files DD Shiny app
+    zip(zipfile = "Species/Stored_outputs/ZIP_DD_tracker.zip", files = "resources/resources_Shiny_DD/Logs", extras = '-j')
+    
+    
+    # List files to add to zip and copy
     filesOut<-list.files("Species/Stored_outputs")
     file.copy(paste0("Species/Stored_outputs/", filesOut), paste0(output_dir, "/Outputs_", filesOut))
+    
+    # Remove ZIP DD
+    unlink("Species/Stored_outputs/ZIP_DD_tracker.zip")
   }
   
   
