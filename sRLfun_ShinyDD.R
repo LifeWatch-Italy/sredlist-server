@@ -57,6 +57,9 @@ DDfun_PlotIsoc<-function(GR, Tab_subset, Sel_SP){
 DDfun_Table<-function(GR){
   print(paste0("START - Table ", GR))
   
+  ### For init, I need a 1 line table, so I change the group of the first line
+  if(GR=="Init"){DD$Group[1] <- "Init"}
+  
   ### Keep only species from the group
   DD_sub<-subset(DD, Group==GR & DD==TRUE)
   DD_sub$List<-NA
@@ -122,7 +125,7 @@ DDfun_SelectTable <- function(Tab){
   # Extract selection
   LimitSel<-event_data("plotly_selected")
 
-  # Subset lines (only if LimisSel is not NULL, otherwise keep the full table)
+  # Subset lines (only if LimitSel is not NULL, otherwise keep the full table)
   if(is.null(LimitSel)==F){
     Tab<-subset(Tab, SP %in% LimitSel$customdata)
   }
@@ -223,10 +226,10 @@ DDfun_GBIFLeaf<-function(SP){
     
     ### Load forest
     if(Hab_SP == "Forest"){
-      Files_forest<-list.files(paste0("1.GFC_final/")) %>% .[grepl(sub(" ", "_", SP), .)]
+      Files_forest<-list.files(paste0("resources/resources_Shiny_DD/1.GFC_final/")) %>% .[grepl(sub(" ", "_", SP), .)]
       
       if(grepl("RANGEsmall", Files_forest[1])){
-        ras<-raster(paste0("1.GFC_final/", sub(" ", "_", SP), "_RANGEsmall.tif"))
+        ras<-raster(paste0("resources/resources_Shiny_DD/1.GFC_final/", sub(" ", "_", SP), "_RANGEsmall.tif"))
         ColPal<-colorNumeric(c("#d01c8b", "#a1d76a"), c(1, 100), na.color = NA)
         
         GBIF_leaflet <- GBIF_leaflet %>%
@@ -234,8 +237,8 @@ DDfun_GBIFLeaf<-function(SP){
           addLayersControl(overlayGroups=c("GBIF records", "Distribution", "Forest loss"), position="topleft", options=layersControlOptions(collapsed = FALSE))
         
       } else {
-        ras_cover<-raster(paste0("1.GFC_final/", sub(" ", "_", SP), "_coverRANGElarge.tif"))
-        ras_loss<-raster(paste0("1.GFC_final/", sub(" ", "_", SP), "_lossRANGElarge.tif"))
+        ras_cover<-raster(paste0("resources/resources_Shiny_DD/1.GFC_final/", sub(" ", "_", SP), "_coverRANGElarge.tif"))
+        ras_loss<-raster(paste0("resources/resources_Shiny_DD/1.GFC_final/", sub(" ", "_", SP), "_lossRANGElarge.tif"))
         ColPal1<-colorNumeric(c("white", "darkgreen"), domain=c(0,100), na.color=NA)
         ColPal2<-colorNumeric(c("white", "#d01c8b"), domain=c(0, 100), na.color = NA)
         
@@ -251,7 +254,7 @@ DDfun_GBIFLeaf<-function(SP){
     ### Load CCI
     if(Hab_SP == "CCI"){
       
-      Files_CCI<-list.files(paste0("1.CCI_final/")) %>% .[grepl(sub(" ", "_", SP), .)] %>% paste0("1.CCI_final/", .)
+      Files_CCI<-list.files(paste0("resources/resources_Shiny_DD/1.CCI_final/")) %>% .[grepl(sub(" ", "_", SP), .)] %>% paste0("resources/resources_Shiny_DD/1.CCI_final/", .)
       
       ras<-raster(Files_CCI)
       ColPal<-colorNumeric(c("#a6611a", "gray90", "#80cdc1", "#018571"), c(2,3,4,5), na.color = NA)
@@ -301,33 +304,28 @@ DDfun_GetWOS<-function(SP){
 }
 
 
-DDfun_AddList <- function(ListButton, NROW){
+DDfun_AddList <- function(ListButton, NROW, DDTable){
   
   print("START - Add species to list")
   
   # If Init create an empty dataframe
   if(ListButton=="Init"){
-    SP_list <- cbind(DD, ListOrder=NA)[0,]
+    SP_list <- cbind(DDTable, ListOrder=NA)[0,]
 
     } else {
       
     # Extract species name
     SP_name <- ListButton %>% strsplit(., "_") %>% unlist(.) %>% subset(., . != "buttonList") %>% paste(., collapse=" ")
     # Extract what we want to keep for that species
-    SP_list <- subset(DD, scientific_name==SP_name)
+    SP_list <- subset(DDTable, SP==SP_name)
     SP_list$ListOrder <- (NROW+1)
     }
   
-  # Subset columns
-  SP_list <- SP_list %>% subset(., select=c("Group", "ListOrder", "scientific_name", "taxo_valid", "Red_List_Authority", "Realm", "Last_assessment", "PrioDS", "pDS", "dpDS", "AOHlost", "Forestloss", "nb_GBIFgeo", "nb_GBIFgeoASS", "WOS", "WOSASS"))
-  
-  # Round some columns
-  SP_list$PrioDS <- round(SP_list$PrioDS, 3)
-  SP_list$pDS <- round(SP_list$pDS, 3)
-  SP_list$dpDS <- round(SP_list$dpDS, 3)
-  SP_list$AOHlost <- round(SP_list$AOHlost, 3)
-  SP_list$Forestloss <- round(SP_list$Forestloss, 3)
-  
+  # Remove some columns and reorder with priority and SP first
+  Col_names <- names(SP_list) %>% .[!. %in% c("List", "scientific_name", "More")] %>% .[order(! . %in% c("SP", "ListOrder"))]
+  SP_list <- SP_list[, Col_names]
+  names(SP_list) <- replace(names(SP_list), names(SP_list)=="SP", "Species")
+
   return(SP_list)
 }
 

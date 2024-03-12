@@ -121,7 +121,7 @@ ui <-fluidPage(
 server <- function(input, output) {
   
   mySpecies <- reactiveValues(SP = '')
-  myList <- reactiveVal(DDfun_AddList("Init"))
+  myList <- reactiveVal(DDfun_AddList("Init", 0, DDfun_Table(GR="Init")))
   DD_Table <- reactiveVal(data.frame())
   
   ### Track usage
@@ -165,8 +165,7 @@ server <- function(input, output) {
   
   ### Add species to the list
   observeEvent(input$list_button, {
-    myList(rbind(myList(), DDfun_AddList(input$list_button, nrow(myList()))))
-    print(myList())
+    myList(rbind(myList(), DDfun_AddList(input$list_button, nrow(myList()), DD_Table())))
   })
   
   
