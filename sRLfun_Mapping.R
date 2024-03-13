@@ -477,7 +477,7 @@ sRL_SubsetGbif<-function(flags, scientific_name){
 # Step 3 --------------------------------
 sRL_MapDistributionGBIF<-function(dat, scientific_name, First_step, AltMIN, AltMAX, Buffer_km, GBIF_crop, Gbif_Param){
 
-  ### The first step can be mcp, kernel, alpha, hydro, hydroMCP
+  ### The first step can be mcp, kernel, alpha, indivsites, coastal, hydro8, hydro10, hydro12, hydroMCP
   if(First_step=="mcp" | First_step==""){
     distGBIF<-st_as_sf(st_convex_hull(st_union(dat)))
     st_geometry(distGBIF)<-"geometry" # Rename the variable including geometry
@@ -514,6 +514,12 @@ sRL_MapDistributionGBIF<-function(dat, scientific_name, First_step, AltMIN, AltM
     distGBIF<-st_buffer(dat, 1) # The default is one meter, then they can add a buffer
   }
   
+  
+  if(First_step=="coastal"){
+    pts_buff <- st_buffer(dat, Buffer_km*1000)
+    coast <- distCountries %>% st_crop(., 1.2*ext(pts_buff)) %>% dplyr::group_by(.) %>% dplyr::summarise(N=n()) %>% st_cast(., "MULTILINESTRING") %>% st_simplify(., dTolerance=(Buffer_km*100)) # I simplify by 1/10 of the buffer in meters
+    distGBIF <- st_intersection(coast, pts_buff) %>% st_buffer(., 1) %>% st_combine(.) %>% st_as_sf(.) %>% st_simplify(., dTolerance=10)
+  }
   
   
   if(substr(First_step, 1,5)=="hydro"){

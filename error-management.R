@@ -108,6 +108,10 @@ bug_alpha <- function() {
   api_error(message = "Alpha hull could not be calculated, try with a higher alpha parameter value or use another Starting point", status = 400)
 }
 
+no_gbif_coastal <- function() {
+  api_error(message = "To use the coastal option, you must enter a non-null buffer value and crop by land or by sea", status = 400)
+}
+
 hydro_too_large <- function() {
   api_error(message = "The distribution of that species is too large to use hydrobasins level 10 or 12, please use level 8 instead", status = 400)
 }

@@ -591,6 +591,7 @@ Prom<-future({
   
   # Display some errors
   if(nrow(dat_proj)<=2 & Gbif_Start %in% c("mcp", "kernel", "alpha")){too_few_occurrences()}
+  if(Gbif_Start=="coastal" & (Gbif_Buffer==0 | Gbif_Crop=="")){no_gbif_coastal()}
   
   # Create distribution
   distSP<-sRL_MapDistributionGBIF(dat_proj, scientific_name,
