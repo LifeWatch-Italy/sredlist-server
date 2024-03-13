@@ -2766,9 +2766,9 @@ Prom<-future({
   TITLE<-ifelse(CAT_MAX=="LC", "The species does not seem to trigger a threatened category under any criterion; \n it could thus be LC or NT) \n", paste0("The species seems to meet the ", CAT_MAX, " category", CRIT_MAX, "\n"))
   SUBTITLE<-ifelse(nrow(speciesRL[speciesRL$scientific_name == scientific_name,])==1, paste0("Last published category: ", speciesRL$category[speciesRL$scientific_name == scientific_name], "\n"), "")
   
-  # Prepare Tag in case taxonomy not complete
-  Tag<-""
-  if(NA %in% Estimates[1:6]){Tag<-paste0("\n\n WARNING: The taxonomy information is incomplete (missing: ", 
+  # Prepare Tag_taxo in case taxonomy not complete
+  Tag_taxo<-""
+  if(NA %in% Estimates[1:6]){Tag_taxo<-paste0("\n\n WARNING: The taxonomy information is incomplete (missing: ", 
                                          paste0(c("Kingdom", "Phylum", "Class", "Order", "Family", "Authority")[which(is.na(Estimates[1:6]))], collapse=", "), 
                                          "), \n this will cause issue if you want to push the output ZIP file to SIS Connect")
   } else {
@@ -2777,7 +2777,7 @@ Prom<-future({
        (! toupper(Estimates[3]) %in% speciesRL$class) |
        (! toupper(Estimates[4]) %in% speciesRL$order) |
        (! toupper(Estimates[5]) %in% speciesRL$family)){
-      Tag<-paste0("\n\n WARNING: Some of the entered taxonomy (", 
+      Tag_taxo<-paste0("\n\n WARNING: Some of the entered taxonomy (", 
                   c(ifelse(toupper(Estimates[1]) %in% speciesRL$kingdom, NA, "kingdom"),
                     ifelse(toupper(Estimates[2]) %in% speciesRL$phylum, NA, "phylum"),
                     ifelse(toupper(Estimates[3]) %in% speciesRL$class, NA, "class"),
@@ -2786,6 +2786,13 @@ Prom<-future({
                     .[is.na(.)==F] %>% paste0(., collapse=", "), 
                   ") does not correspond to any of the published species. \n Make sure it fits with the Red List taxonomic backbone before pushing to SIS Connect.")}
   }
+  
+  # Prepare Tag_national in case national assessment not yet in the Red List
+  Tag_national<-ifelse(
+    (is.na(Storage_SP$Output$Value[Storage_SP$Output$Parameter=="Crop_Country"])==F & (! scientific_name %in% speciesRL$scientific_name)), 
+    "You are doing a national / regional assessment of a species that is not in the global Red List yet. If the species is endemic, please consider contributing it as a global assessment too!",
+    ""
+  )
   
   # Prepare plot
   GG_assign<-ggplot(criteria, aes(y = criterion)) +
@@ -2797,7 +2804,7 @@ Prom<-future({
     scale_x_discrete(drop = F, na.translate = FALSE) + scale_y_discrete(drop=F, na.translate = FALSE) +
     xlab("Red List Category triggered") + ylab("Criteria")+
     scale_colour_manual(drop = F, values=c("#006666ff", "#cc9900ff", "#cc6633ff", "#cc3333ff", "#b3d1d1ff", "#f0e1b3ff", "#f0d1c2ff", "#f0c2c2ff"))+
-    labs(title=TITLE, subtitle=SUBTITLE, tag=Tag)+
+    labs(title=TITLE, subtitle=SUBTITLE, tag=Tag_taxo)+
     theme_bw()  %+replace% theme(text=element_text(size=18), plot.title=element_text(hjust=0.5), plot.subtitle=element_text(hjust=0.5, size=15), plot.tag=element_text(hjust=0.5, size=14, colour="darkred"), plot.tag.position = "bottom")
   
   # Save
@@ -2825,7 +2832,8 @@ Prom<-future({
   return(
     list(
       plot=plot_assign,
-      warning_taxo=Tag
+      warning_taxo=Tag_taxo,
+      warning_national=Tag_national
     )
   )
   
