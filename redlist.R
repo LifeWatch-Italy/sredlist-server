@@ -23,11 +23,17 @@ Prom<-future({
   # Call the RL API to get information. If it does not work, use the default
   tryCatch({
     species <- rl_search(scientific_name, key = config$red_list_token)#$result
+    scientific_name <- sRL_decode(scientific_name)
+    # Add DDapp information
+    if(scientific_name %in% speciesDDapp$scientific_name & species$result$category[1]=="DD"){
+      species$result$DD_prioritiser <- paste0("This species is available in the DD prioritiser tool, it estimates a reassessment priority of ", round(100*speciesDDapp$Prio_rank[speciesDDapp$scientific_name==scientific_name]), "%.")
+    }
+    
   }, error=function(e){cat("TryCatch Red List API for detail does not work")})
 
   if(exists("species")==F){
     species<-list(result=speciesRL[1,] %>% replace(., is.na(.)==F, NA))
-    species$result$scientific_name<-sRL_decode(scientific_name)
+    species$result$scientific_name<-scientific_name
     species$result$assessment_date<-"The Red List API is not working, sorry!"
     species$result$category<-"We cannot provide the usual information on this page, but you can click Next"
   }
