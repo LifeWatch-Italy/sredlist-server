@@ -23,7 +23,6 @@ function(scientific_name, req) {
   # Parses into a Rook multipart file type;needed for API conversions
   fileInfo <- list(formContents = Rook::Multipart$parse(req)) # nolint
   # This is where the file name is stored
-  # print(fileInfo$formContents$file$filename) # nolint
   file_name <- fileInfo$formContents$req$filename
   
   print(file_ext(file_name))
@@ -37,21 +36,16 @@ function(scientific_name, req) {
   upload_folder_scientific_name <- R.utils::capitalize(paste0(stringr::str_replace(scientific_name, " ", "_"), "_Uploaded", format(Sys.time(), "_%Y%m%d"))) # nolint
   # Create a file path E.g: Distributions/Nile tilapia/Nile_tilapia_20211207/
   filePath <- paste0(config$distribution_path, scientific_name, "/", upload_folder_scientific_name, "/") # nolint
-  if (dir.exists(filePath)) {
-    print("The directory exists")
-  } else {
-    # create the "my_new_folder
-    dir.create(filePath, showWarnings = TRUE, recursive = TRUE)
-  }
+  if (! dir.exists(filePath)) {dir.create(filePath, showWarnings = TRUE, recursive = TRUE)}
   print(file_name)
   new_file_name2 = paste0(upload_folder_scientific_name, ".", file_ext(file_name)) # nolint
-  fn <- paste0(filePath, new_file_name2, sepp = "")
-  print(fn)
-  
-  #Copies the file into the designated folder
+  fn <- paste0(filePath, new_file_name2)
+
+  # Remove the file if already exists (to allow overwriting)
+  unlink(fn)
+  # Copies the file into the designated folder
   file.copy(tmpfile, fn)
-  #file.rename(fn , fn)
-  
+
   # Save a json
   text <- paste0(
     "A distribution has been stored for the species: ",
@@ -62,10 +56,10 @@ function(scientific_name, req) {
   )
   tryCatch({jsonlite::write_json(list(info = text), paste0(filePath, upload_folder_scientific_name, ".json"), auto_unbox= TRUE)}, error=function(e){cat("TryCatch JSON upload failed")})
   
+  print(paste0("Your file is now stored in ", fn))
   sRL_loginfo("END - Upload Distribution", scientific_name)
   
 
-  print(paste0("Your file is now stored in ", fn))
   return(list(path = fn))
 }
 
@@ -100,6 +94,9 @@ function(scientific_name, Dist_path = "") {
     distributions <- sf::st_read(distributionPath)
   } ,error=function(e){bug_distribution_loading()})
   
+  # Check if the distribution is not points
+  if(length(subset(st_geometry_type(distributions), ! st_geometry_type(distributions) %in% c("POINT", "LINESTRING", "MULTIPOINT", "MULTILINESTRING")))==0){upload_dist_invalid()}
+
   ### Clean the distribution
   distSP <-sRL_PrepareDistrib(distributions, scientific_name) # nolint
 
