@@ -72,8 +72,8 @@ DDfun_Table<-function(GR){
   DD_sub$Last_assessment <- as.integer(2022-(DD_sub$time_desc-DD_sub$time_descASS))
   
   ### Remove columns that should not be displayed + order columns
-  LIST_Vars<-c("List", "scientific_name", "taxo_valid", "Red_List_Authority", "Realm", "Last_assessment", "PrioDS", "pDS", "dpDS", "AOHlost", "Forestloss", "nb_GBIFgeo", "nb_GBIFgeoASS", "inc.GBIF", "WOS", "WOSASS", "inc.WOS", "site", "taxonid")
-  if(GR %in% c("Odonata", "Amphibian")){LIST_Vars<-LIST_Vars[LIST_Vars != "Red_List_Authority"]}
+  LIST_Vars<-c("List", "scientific_name", "taxo_valid", "RLAuthority", "Realm", "Last_assessment", "PrioDS", "pDS", "dpDS", "AOHlost", "Forestloss", "nb_GBIFgeo", "nb_GBIFgeoASS", "inc.GBIF", "WOS", "WOSASS", "inc.WOS", "site", "taxonid")
+  if(GR %in% c("Odonata", "Amphibian")){LIST_Vars<-LIST_Vars[LIST_Vars != "RLAuthority"]}
   DD_sub<-subset(DD_sub, select=LIST_Vars)
   
   ### Round variables
@@ -84,7 +84,7 @@ DDfun_Table<-function(GR){
   DD_sub$Forestloss<-round(100*DD_sub$Forestloss)
   
   ### Transform fields into factor to choose among modalities
-  if("Red_List_Authority" %in% names(DD_sub)){DD_sub$Red_List_Authority<-as.factor(DD_sub$Red_List_Authority)}
+  if("RLAuthority" %in% names(DD_sub)){DD_sub$RLAuthority<-as.factor(DD_sub$RLAuthority)}
   DD_sub$Realm<-as.character(DD_sub$Realm) # It has to stay a character to filter Realm1|Realm2
   DD_sub$taxo_valid<-as.factor(DD_sub$taxo_valid) ; names(DD_sub)[names(DD_sub)=="taxo_valid"]<-"Family" ; DD_sub$taxo_valid<-NULL
 
@@ -147,7 +147,7 @@ DDfun_Tooltips<-function(NAMES){
     "Family"="Taxonomic family (as classified in the Red List)",
     "Last_assessment"="Year of last assessment",
     "Realm"="Realms of species occurrence",
-    "Red_List_Authority"="Name of the Red List Authority",
+    "RLAuthority"="Name of the Red List Authority",
     "PrioDS"="Ranked priority for reassessment (0-100), considering pDS, dpDS and habitat loss",
     "pDS"="Probability of being reclassified in a data sufficient category",
     "dpDS"="Increase in probability of being reclassified in a data sufficient category since last assessment",

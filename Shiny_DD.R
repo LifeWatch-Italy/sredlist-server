@@ -32,7 +32,7 @@ DD<-readRDS("resources/resources_Shiny_DD/DD_prepared_for_ShinyREALMS.rds")
 DD$PrioDS_raw<-DD$PrioDS
 DD$PrioDS<-DD$Prio_rank
 DD$Last_assessment <- as.integer(2022-(DD$time_desc-DD$time_descASS))
-DD$Red_List_Authority<-DD$RLA
+DD$RLAuthority<-DD$RLA
 
 # Remove species not DD anymore
 DD$CurrentCat<-speciesRL$category[match(DD$taxonid, speciesRL$taxonid)]
