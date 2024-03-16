@@ -88,7 +88,7 @@ sRLMan_UpdateLeaflet <- function(flagsSF, frame, Drag){
 
 
 
-sRLMan_EditPoints <- function(EditsGeom, flagsSF, Pts_year, Pts_uncert, Pts_source){
+sRLMan_EditPoints <- function(EditsGeom, flagsSF, Pts_year, Pts_source){
   
   
   ### Remove points overlapping with polygon
@@ -117,7 +117,6 @@ sRLMan_EditPoints <- function(EditsGeom, flagsSF, Pts_year, Pts_uncert, Pts_sour
     Points_to_add$Lat_jitt <- Points_to_add$decimalLatitude
     
     Points_to_add$year <- Pts_year
-    Points_to_add$coordinateUncertaintyInMeters <- Pts_uncert*1000
     Points_to_add$source <- Pts_source
     
     ## Merge

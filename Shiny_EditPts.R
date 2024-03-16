@@ -52,7 +52,6 @@ ui <- fluidPage(
       
       titlePanel("Enter new records attributes"),
       numericInput("Pts_year", label="Year", value=NA),
-      numericInput("Pts_uncert", label="Coordinate uncertainty (km)", value=NA),
       textInput("Pts_source", label="Source", value=NA),
       titlePanel("Save changes"),
       actionButton('save', 'Save from Map', style="color: #fff; background-color: #009138ff; border-color: #009138ff")
@@ -140,7 +139,7 @@ server <- function(input, output, session) {
     sRL_loginfo("START - Save manual edit records", input$sci_name)
     
     ### Update record flagging
-    flagsSF(sRLMan_EditPoints(edits()$finished, flagsSF(), input$Pts_year, input$Pts_uncert, input$Pts_source))
+    flagsSF(sRLMan_EditPoints(edits()$finished, flagsSF(), input$Pts_year, input$Pts_source))
 
     ### Save flags and record usage
     # Save points
