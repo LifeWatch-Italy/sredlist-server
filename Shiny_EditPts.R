@@ -44,15 +44,18 @@ ui <- fluidPage(
                                  "User name:")
       ),
       editModUI("map", height=600, width = "100%"),
-      conditionalPanel(condition = "input.sci_name != ''",
-                       column(5), column(2, actionButton('save', 'Save from Map', style="color: #fff; background-color: #009138ff; border-color: #009138ff"))
-      )
+      
     ),
     sidebarPanel(
-      titlePanel("Attributes for new points"),
+      titlePanel("Drag existing records"),
+      actionButton('movePts', 'Allow dragging', style="color: #fff; background-color: #009138ff; border-color: #009138ff"), 
+      
+      titlePanel("Enter new records attributes"),
       numericInput("Pts_year", label="Year", value=NA),
       numericInput("Pts_uncert", label="Coordinate uncertainty (km)", value=NA),
-      textInput("Pts_source", label="Source", value=NA)
+      textInput("Pts_source", label="Source", value=NA),
+      titlePanel("Save changes"),
+      actionButton('save', 'Save from Map', style="color: #fff; background-color: #009138ff; border-color: #009138ff")
     )
   )
 )
@@ -110,36 +113,51 @@ server <- function(input, output, session) {
       ### Update leaflet map
       req(flags())
       flagsSF(sRLMan_JitterPoints(st_as_sf(flags(), coords = c("decimalLongitude", "decimalLatitude"), crs="+proj=longlat +datum=WGS84", remove=F)))
-      sRLMan_UpdateLeaflet(flagsSF(), frame=1)
+      sRLMan_UpdateLeaflet(flagsSF(), frame=1, Drag=F)
   })
   
   
+  ### Move points
+  # Action button to allow moving points
+  observeEvent(input$movePts, {
+    sRLMan_UpdateLeaflet(flagsSF(), frame=0, Drag=T)
+  })
+  
+  
+  # Moving points function
+  observeEvent(input$"map-map_marker_dragend", {
+
+    sRL_loginfo("START - Save dragging records", input$sci_name)
+    
+    flagsSF(sRLMan_MovePoints(flagsSF(), input$"map-map_marker_dragend"))
+    
+    sRL_loginfo("END - Save dragging records", input$sci_name)
+  })
   
   
   ### Save points
   observeEvent(input$save, {
-    
     sRL_loginfo("START - Save manual edit records", input$sci_name)
     
     ### Update record flagging
     flagsSF(sRLMan_EditPoints(edits()$finished, flagsSF(), input$Pts_year, input$Pts_uncert, input$Pts_source))
-      
+
     ### Save flags and record usage
     # Save points
     Storage_SPNEW <- Storage_SP()
     Storage_SPNEW$dat_proj_saved <- sRL_SubsetGbif(flagsSF(), input$sci_name)
     Storage_SPNEW$flags <- flagsSF() %>% as.data.frame(.) %>% .[, names(.) != "geometry"]
-    
+
     # Record usage
     Storage_SPNEW$Output$Value[Storage_SPNEW$Output$Parameter=="Gbif_EditPts"]<-"yes"
     Storage_SPNEW$Output$Count[Storage_SPNEW$Output$Parameter=="Gbif_EditPts"]<-Storage_SPNEW$Output$Count[Storage_SPNEW$Output$Parameter=="Gbif_EditPts"]+1
-    
+
     # Save Storage file
     sRL_StoreSave(input$sci_name, input$user,  Storage_SPNEW)
     Storage_SP(Storage_SPNEW)
-    
+
     ### Update map
-    sRLMan_UpdateLeaflet(flagsSF(), frame=1)
+    sRLMan_UpdateLeaflet(flagsSF(), frame=1, Drag=F)
 
     sRL_loginfo("END - Save manual edit records", input$sci_name)
   })
@@ -156,7 +174,7 @@ server <- function(input, output, session) {
     
     # Save changes and edit leaflet
     flagsSF(flagsSF_edit)
-    sRLMan_UpdateLeaflet(flagsSF(), frame=0)
+    sRLMan_UpdateLeaflet(flagsSF(), frame=0, Drag=F)
     
   })
 }

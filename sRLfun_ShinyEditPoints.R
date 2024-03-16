@@ -52,7 +52,7 @@ sRLMan_CreateLeaflet <- function(){
 
 
 
-sRLMan_UpdateLeaflet <- function(flagsSF, frame){
+sRLMan_UpdateLeaflet <- function(flagsSF, frame, Drag){
   
   # Update Popup
   flagsSF <- sRL_PopRecords(flagsSF)
@@ -70,7 +70,8 @@ sRLMan_UpdateLeaflet <- function(flagsSF, frame){
                        flagsSF$PopText, '<br>', 
                        shinyInputPts(actionButton, flagsSF$gbifID, Valid = is.na(flagsSF$Reason))
                      ),
-                     radius=8)
+                     radius=8,
+                     options = markerOptions(draggable = Drag))
   
   # Update framing if frame==1
   if(frame==1){
@@ -89,6 +90,7 @@ sRLMan_UpdateLeaflet <- function(flagsSF, frame){
 
 sRLMan_EditPoints <- function(EditsGeom, flagsSF, Pts_year, Pts_uncert, Pts_source){
   
+  
   ### Remove points overlapping with polygon
   if("rectangle" %in% EditsGeom$feature_type | "polygon" %in% EditsGeom$feature_type){
     Points_to_rm<-st_intersection(flagsSF, EditsGeom[EditsGeom$feature_type %in% c("polygon", "rectangle"),])
@@ -96,14 +98,13 @@ sRLMan_EditPoints <- function(EditsGeom, flagsSF, Pts_year, Pts_uncert, Pts_sour
     flagsSF$Reason[flagsSF$Manu_removed==T]<-"Manually_removed"
     flagsSF$Manu_removed<-NULL
   }
-  
+
   ### Add points added by user
   if("marker" %in% EditsGeom$feature_type){
     
     ## Check if we already have manual points to adapt the numerotation
     NUM <- flagsSF$gbifID %>% .[grepl("Manual_", .)] %>% sub("Manual_", "", .) %>% as.numeric(.) %>% max(c(., 0), na.rm=T)
-    print(NUM)
-    
+
     ## Populate Points to add
     Points_to_add<-EditsGeom[EditsGeom$feature_type=="marker",]
     Points_to_add$gbifID<-paste0("Manual_", (NUM+1):(NUM+nrow(Points_to_add)))
@@ -123,11 +124,15 @@ sRLMan_EditPoints <- function(EditsGeom, flagsSF, Pts_year, Pts_uncert, Pts_sour
     flagsMerged <- rbind.fill(as.data.frame(flagsSF), as.data.frame(Points_to_add))
     flagsMerged$geometry <- NULL
     flagsSF <- st_as_sf(flagsMerged, coords = c("decimalLongitude", "decimalLatitude"), crs="+proj=longlat +datum=WGS84", remove=F)
-    flagsSF <- sRL_PopRecords(flagsSF)
   }
-  
+
+  # Edit popups
+  flagsSF <- sRL_PopRecords(flagsSF)
+
   return(flagsSF)
 }
+
+
 
 
 sRLMan_JitterPoints <- function(flagsSF){
@@ -143,6 +148,23 @@ sRLMan_JitterPoints <- function(flagsSF){
   
   return(flagsSF)
   
+}
+
+
+
+sRLMan_MovePoints <- function(flagsFUN, Pts_dragged){
+  
+# Apply changes in coordinates
+flagsFUN$ID <- paste0("CircleFlags", 1:nrow(flagsFUN))
+
+flagsFUN$decimalLongitude[flagsFUN$ID==Pts_dragged$id] <- flagsFUN$Lon_jitt[flagsFUN$ID==Pts_dragged$id] <- Pts_dragged$lng
+flagsFUN$decimalLatitude[flagsFUN$ID==Pts_dragged$id] <- flagsFUN$Lat_jitt[flagsFUN$ID==Pts_dragged$id] <- Pts_dragged$lat
+
+# Add note that it was moved
+flagsFUN$Source_type[flagsFUN$ID==Pts_dragged$id] <- flagsFUN$Source_type[flagsFUN$ID==Pts_dragged$id] %>% sub("_Dragged", "", .) %>% paste0(., "_Dragged")
+flagsFUN <- sRL_PopRecords(flagsFUN)
+
+return(flagsFUN)
 }
 
 
