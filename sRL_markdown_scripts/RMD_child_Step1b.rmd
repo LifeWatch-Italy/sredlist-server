@@ -23,7 +23,7 @@ You also excluded all records with coordinates uncertainty higher than `r outlog
 
 Occurrence records are displayed here (valid records in yellow and excluded records in purple; you can click on observation get more information and exclusion reason, check the sRedList documentation for more details):
 ```{r leaflet_filter, fig.align = "center", out.width = '100%'}
-Storage_SP$Leaflet_Filter
+sRL_LeafletFlags(Storage_SP$flags)
 ```
 
 After applying these filters, your point range map included `r nrow(Storage_SP$dat_proj_saved)` occurrence records.

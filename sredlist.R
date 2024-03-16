@@ -426,27 +426,11 @@ Prom<-future({
   dat_proj=sRL_SubsetGbif(flags, scientific_name)
 
   ### Create Leaflet
-  Leaflet_Filter<-leaflet(flags) %>%
-    addTiles(group="OpenStreetMap") %>%
-    addEsriBasemapLayer(esriBasemapLayers$Imagery, group = "Satellite") %>%
-    addEsriBasemapLayer(esriBasemapLayers$Topographic, group = "Topography") %>%
-    addCircleMarkers(lng=flags$decimalLongitude,
-                     lat=flags$decimalLatitude,
-                     color=ifelse(is.na(flags$Reason)==T, "#fdcb25ff", "#440154ff"),
-                     fillOpacity=0.5,
-                     stroke=F,
-                     popup=flags$PopText,
-                     radius=8,
-                     group="Occurrence records") %>%
-    addLegend(position="bottomleft", colors=c('#fdcb25ff', '#440154ff'), labels=c("Valid", "Not valid")) %>%
-    addLayersControl(baseGroups=c("OpenStreetMap", "Satellite", "Topography"), overlayGroups="Occurrence records", position="topleft") %>%
-    addMouseCoordinates() %>%
-    addScaleBar(position = "bottomright")
+  Leaflet_Filter <- sRL_LeafletFlags(flags)
   
   ### Assign in Storage_SP
   Storage_SP$dat_proj_saved<-dat_proj
   Storage_SP$flags<-flags
-  Storage_SP$Leaflet_Filter<-Leaflet_Filter
   Storage_SP<-sRL_OutLog(Storage_SP, c("Gbif_Year", "Gbif_Uncertainty", "Gbif_Sea", "Gbif_Extent", "Gbif_automatedBin", "Gbif_yearBin", "Gbif_uncertainBin"), c(Gbif_Year, Gbif_Uncertainty, Gbif_Sea, paste0(Gbif_Extent, collapse=","), Gbif_automatedBin=="true", Gbif_yearBin, Gbif_uncertainBin))
   sRL_StoreSave(scientific_name, username,  Storage_SP)
   

@@ -473,6 +473,30 @@ sRL_SubsetGbif<-function(flags, scientific_name){
 }
 
 
+### Create leaflet
+sRL_LeafletFlags <- function(flags){
+  
+  Leaf <- leaflet(flags) %>%
+    addTiles(group="OpenStreetMap") %>%
+    addEsriBasemapLayer(esriBasemapLayers$Imagery, group = "Satellite") %>%
+    addEsriBasemapLayer(esriBasemapLayers$Topographic, group = "Topography") %>%
+    addCircleMarkers(lng=flags$decimalLongitude,
+                     lat=flags$decimalLatitude,
+                     color=ifelse(is.na(flags$Reason)==T, "#fdcb25ff", "#440154ff"),
+                     fillOpacity=0.5,
+                     stroke=F,
+                     popup=flags$PopText,
+                     radius=8,
+                     group="Occurrence records") %>%
+    addLegend(position="bottomleft", colors=c('#fdcb25ff', '#440154ff'), labels=c("Valid", "Not valid")) %>%
+    addLayersControl(baseGroups=c("OpenStreetMap", "Satellite", "Topography"), overlayGroups="Occurrence records", position="topleft") %>%
+    addMouseCoordinates() %>%
+    addScaleBar(position = "bottomright") 
+  
+  return(Leaf)
+}
+
+
 
 # Step 3 --------------------------------
 sRL_MapDistributionGBIF<-function(dat, scientific_name, First_step, AltMIN, AltMAX, Buffer_km, GBIF_crop, Gbif_Param){
