@@ -21,9 +21,26 @@ You also excluded all records with coordinates uncertainty higher than `r outlog
 `r ifelse(outlog$Value[outlog$Parameter=="Gbif_Sea"]=="", "", paste0("You excluded occurrence records made ", plyr::revalue(outlog$Value[outlog$Parameter=="Gbif_Sea"], c("excludesea"="at sea.", "excludeland"="on land."))))`
 
 
-Occurrence records are displayed here (valid records in yellow and excluded records in purple; you can click on observation get more information and exclusion reason, check the sRedList documentation for more details):
+Occurrence records are displayed in the leaflet map below (valid records in yellow and excluded records in purple; you can click on observation get more information and exclusion reason, check the sRedList documentation for more details). They are also available in the interactive table below (invalid records are displayed in the table with a non-empty 'Invalid_reason' column).
 ```{r leaflet_filter, fig.align = "center", out.width = '100%'}
-sRL_LeafletFlags(Storage_SP$flags)
+Storage_SP$Leaf_saved
+
+
+Tab <- Storage_SP$flags[, !names(Storage_SP$flags) %in% c("species", "species_download", "coordinateUncertaintyInMeters", "individualCount", "family", "taxonRank", "genericName", "specificEpithet", "institutionCode", "datasetName", ".val", ".equ", ".zer", ".cap", ".cen", ".gbf", ".inst", ".year", ".uncertainty", ".limits", "basisOfRecord", "Only_for_syn", "PopText", "Coords_merged", "unique", "Lon_jitt", "Lat_jitt", "_leaflet_id", "ID")]
+Tab$source <- substr(Tab$source, 1, 30) %>% paste0(., ifelse(nchar(.)==30, "...", ""))
+names(Tab) <- revalue(names(Tab), c("gbifID"="ID", "Reason"="Invalid_reason", "source"="source_reference", "countryCode"="country")) %>% sub("decimal", "", .)
+Tab$Link <- paste0("<a href='", Tab$Link, "' target='_blank'>Link</a>")
+Col_order <- c("Longitude", "Latitude", "ID", "Source_type", "Invalid_reason")
+Tab_ordered <- Tab[,c(Col_order, names(Tab)[!names(Tab) %in% Col_order])]
+DT::datatable(Tab_ordered, 
+              rownames=F,
+              escape=F,
+              options=list(
+    headerCallback = DT::JS(# Needed to reduce column name font
+      "function(thead) {",
+      "  $(thead).css('font-size', '0.75em');",
+      "}"))
+    ) %>% DT::formatStyle(columns = c(1:ncol(Tab_ordered)), fontSize = '75%')
 ```
 
 After applying these filters, your point range map included `r nrow(Storage_SP$dat_proj_saved)` occurrence records.

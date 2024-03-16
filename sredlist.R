@@ -569,6 +569,8 @@ Prom<-future({
   dat_proj=Storage_SP$dat_proj_saved
   if(nrow(dat_proj)==0){no_gbif_data()}
   
+  # Save leaflet for RMD report
+  Storage_SP$Leaf_saved <- sRL_LeafletFlags(Storage_SP$flags)
   
   # Display some errors
   if(nrow(dat_proj)<=2 & Gbif_Start %in% c("mcp", "kernel", "alpha")){too_few_occurrences()}
@@ -2771,7 +2773,7 @@ Prom<-future({
   
   # Prepare Tag_national in case national assessment not yet in the Red List
   Tag_national<-ifelse(
-    (is.na(Storage_SP$Output$Value[Storage_SP$Output$Parameter=="Crop_Country"])==F & (! scientific_name %in% speciesRL$scientific_name)), 
+    (Storage_SP$Output$Value[Storage_SP$Output$Parameter=="Crop_Country"]!= "" & (! scientific_name %in% speciesRL$scientific_name)), 
     "You are doing a national / regional assessment of a species that is not in the global Red List yet. If the species is endemic, please consider contributing it as a global assessment too!",
     ""
   )
