@@ -946,6 +946,7 @@ Prom<-future({
 
   # Save for SIS
   Storage_SP$Realms_saved<-Realms
+  Storage_SP$coo<-coo
   Storage_SP$coo_res<-coo_res
   tryCatch({
     Storage_SP$countries_SIS<-sRL_OutputCountries(scientific_name, coo_occ) # Keep only those occupied
