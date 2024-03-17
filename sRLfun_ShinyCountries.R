@@ -12,7 +12,7 @@ sRLCountry_CreateLeaflet <- function(coo, Storage_SP){
     "<b> Subnational entity: ","</b>", coo$SIS_name1, ifelse(is.na(coo$SIS_name1)==T, "", ifelse(coo$Level1_occupied==T, " (Present)", " (Absent)")),
     "<br>", 
     '<br>', 
-    shinyInputCountry(actionButton, paste(coo$SIS_name0, coo$SIS_name1, sep="/"), Occupied = coo$Level1_occupied)
+    shinyInputCountry(actionButton, coo$lookup, Occupied = coo$Level1_occupied)
   )
   
   # Define colour
@@ -28,6 +28,27 @@ sRLCountry_CreateLeaflet <- function(coo, Storage_SP){
 } 
 
 
+sRLCountry_CreateTable <- function(COO){
+  
+  COO <- as.data.frame(COO)
+  
+  COO$Action <- shinyInputCountry(actionButton, COO$lookup, Occupied = COO$Level1_occupied)
+  
+  COO <- COO[, !names(COO) %in% c("geometry", "Popup", "colour", "Domain", "Level0_occupied", "Level1_occupied", "lookup_SIS0")]
+  
+  
+  datatable(
+    COO,
+    escape = FALSE,
+    filter="top",
+    options = list(pageLength = 30,
+                   dom="t"
+                   ),
+    editable = list(target = "cell", disable = list(columns = c(0,1,2,6))),
+    selection="none",
+    rownames=FALSE)
+}
+
 
 shinyInputCountry <- function(FUN, Country, Occupied) {
   inputs <- character(length(Country))
@@ -36,7 +57,7 @@ shinyInputCountry <- function(FUN, Country, Occupied) {
       FUN(
         paste0(
           ifelse(Occupied[i]==T, "makeempty_", "makeoccupied_"), 
-          gsub(" ", "_", Country[i])
+          Country[i]
         ),
         label=ifelse(Occupied[i]==T, "Make Empty", "Make Occupied"), 
         style=paste0("color: ", ifelse(Occupied[i]==T, "#000", "#fff"), "; background-color: ", ifelse(Occupied[i]==T, "#D2D2D2", "#8C2316"), "; border-color: ", ifelse(Occupied[i]==T, "#D2D2D2", "#8C2316")), 
