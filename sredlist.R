@@ -883,19 +883,9 @@ Prom<-future({
   # Simplify distribution if large distribution
   if((extent(distSP_WGS)@xmax-extent(distSP_WGS)@xmin)>50){distSP_WGS<-st_simplify(distSP_WGS, dTolerance=0.05)}
   
-  # Create table of colours / labels and assign colours
-  col.df<-data.frame(
-    Code=c("MarineFALSEFALSE", "MarineTRUEFALSE", "MarineTRUETRUE", "TerrestrialFALSEFALSE", "TerrestrialTRUEFALSE", "TerrestrialTRUETRUE"),
-    Col=c("#D2D2D2", "#9595C3", "#5757A9", "white", "#F17777", "#8C2316"),
-    Label=c("Absent (marine)", "Absent from subnational (marine)", "Present (marine)", "Absent (terrestrial)", "Absent from subnational (terrestrial)", "Present (terrestrial)")
-  )
-  
+  # Assign colours
   coo$colour<-paste0(coo$Domain, coo$Level0_occupied, coo$Level1_occupied) 
-  coo$colour<-col.df$Col[match(coo$colour, col.df$Code)]
-  
-  # Prepare extent
-  EXT<-1.2*extent(coo[coo$Level0_occupied==T,])
-  if(is.na(EXT[1]) | is.na(EXT[2]) | is.na(EXT[3]) | is.na(EXT[4])){EXT<-1.2*extent(distSP_WGS)} # In case there is no overlap with countries (e.g., distribution at sea because of simplification)
+  coo$colour<-sRL_COOColours$Col[match(coo$colour, sRL_COOColours$Code)]
   
   # Extract realms
   Realms<-st_join(distSP_WGS, realms_raw, join=st_intersects)$realm %>% unique(.) %>% paste0(., collapse="|")
@@ -907,32 +897,8 @@ Prom<-future({
   info.box<-sRL_cooInfoBox_create(coo_res, Realms)
   
   # Create plot (first the one to export without the result - it makes the rmarkdown bug and it's not needed - and second adding the text results)
-  Leaflet_COOtoexport<-leaflet() %>%
-    fitBounds(lng1=EXT[1], lng2=EXT[2], lat1=EXT[3], lat2=EXT[4]) %>%
-    addPolygons(data=realms_raw, group="Realms", fillOpacity=0.5) %>%
-    addPolygons(data=coo,
-                color=ifelse(coo$Level0_occupied==T, "black", "grey"),
-                fillColor=coo$colour,
-                popup=coo$Popup,
-                stroke=T, weight=2, fillOpacity=1) %>%
-    addPolygons(data=distSP_WGS, color="#D69F32", fillOpacity=0.4, group="Range map") %>%
-    addLegend(position="bottomleft", colors=c(col.df$Col[col.df$Col %in% coo$colour], "#D69F32"), labels=c(col.df$Label[col.df$Col %in% coo$colour], "Distribution"), opacity=1)
-  
-  # Add points if we had occurrences and add layer control
-  if("dat_proj_saved" %in% names(Storage_SP)){
-    
-    Coords<-Storage_SP$dat_proj_saved %>% st_transform(., st_crs(4326)) %>% st_coordinates(.) %>% as.data.frame()
-    Leaflet_COOtoexport<-Leaflet_COOtoexport %>%
-      addCircleMarkers(lng=Coords[,1], lat=Coords[,2], color="black", fillOpacity=0.3, stroke=F, radius=2, group="Occurrence records") %>%
-      addLayersControl(overlayGroups=c("Range map", "Occurrence records", "Realms"), position="topleft", options=layersControlOptions(collapsed = FALSE)) %>% 
-      hideGroup("Realms")
-    
-  } else {
-    Leaflet_COOtoexport<-Leaflet_COOtoexport %>% addLayersControl(overlayGroups=c("Range map", "Realms"), position="topleft", options=layersControlOptions(collapsed = FALSE)) %>% hideGroup("Realms")
-  }
-  
+  Leaflet_COOtoexport <- sRL_LeafCountry(coo, distSP_WGS, realms_raw, Storage_SP)
 
-  # Create final plot for the platform
   Leaflet_COO<-Leaflet_COOtoexport %>%
     leaflet.extras::addBootstrapDependency() %>% # Add Bootstrap to be able to use a modal
     addEasyButton(easyButton(
@@ -941,7 +907,6 @@ Prom<-future({
       onClick = JS("function(btn, map){ $('#infobox').modal('show'); }")
     )) %>% # Trigger the infobox
     htmlwidgets::appendContent(info.box)  
-  
   
 
   # Save for SIS
