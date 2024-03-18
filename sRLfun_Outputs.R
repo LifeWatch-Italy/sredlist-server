@@ -18,9 +18,9 @@ sRL_OutputCountries<-function(scientific_name, countries){
   CO_SIS$CountryOccurrence.CountryOccurrenceSubfield.formerlyBred=NA
 
   # Complete presence, origin, season attributes based on attributes of the distribution used (only useful for Red List or uploaded distributions)
-  CO_SIS$season <- countries$seasonal[match(CO_SIS$lookup, countries$lookup)] %>% sub("1", "Resident", .) %>% sub("2", "Breeding Season", .) %>% sub("3", "Non-Breeding Season", .) %>% sub("4", "Passage", .) %>% sub("5", "Seasonal Occurrence Uncertain", .)
-  CO_SIS$origin <- countries$origin[match(CO_SIS$lookup, countries$lookup)] %>% sub("1", "Native", .) %>% sub("2", "Reintroduced", .) %>% sub("3", "Introduced", .) %>% sub("4", "Prehistorically Introduced", .) %>% sub("5", "Vagrant", .) %>% sub("6", "Origin Uncertain", .)
-  CO_SIS$presence <- countries$presence[match(CO_SIS$lookup, countries$lookup)] %>% sub("1", "Extant", .) %>% sub("2", "Probably Extant", .) %>% sub("3", "Possibly Extant", .) %>% sub("4", "Possibly Extinct", .) %>% sub("5", "Extinct Post-1500", .) %>% sub("6", "Presence Uncertain", .)
+  CO_SIS$presence <- countries$presence  %>% sRL_CountriesAttributes(., "presence", "num2char")
+  CO_SIS$origin <- countries$origin  %>% sRL_CountriesAttributes(., "origin", "num2char")
+  CO_SIS$season <- countries$seasonal %>% sRL_CountriesAttributes(., "seasonal", "num2char")
   
   # Change presence code if occurrence records are used (then it depends on whether we have records within the country or not)
   if(grepl("<i>", paste(CO_SIS$name, collapse=""))){
@@ -44,8 +44,11 @@ sRL_OutputCountries<-function(scientific_name, countries){
     distinct(., lookup, .keep_all=T)
   }
   
-  # Remove subnational entities that are missing in SIS to avoid bugs
-  CO_SIS<-subset(CO_SIS, grepl("Absent_SIS", CO_SIS$name)==F)
+  # Add lookups to subnational entities that are missing in SIS
+  CO_SIS$lookup[CO_SIS$name=="Arica y Parinacota (Absent_SIS)"] <- "notSIS1"
+  CO_SIS$lookup[CO_SIS$name=="Los Rios (Absent_SIS)"] <- "notSIS2"
+  CO_SIS$lookup[CO_SIS$name=="Nuble (Absent_SIS)"] <- "notSIS3"
+  CO_SIS$lookup[CO_SIS$name=="Telangana (Absent_SIS)"] <- "notSIS4"
   
   # Remove lines with no countries name if it happens
   CO_SIS<-subset(CO_SIS, is.na(CO_SIS$name)==F)

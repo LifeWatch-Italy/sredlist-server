@@ -7,18 +7,20 @@ Storage_SP$Leaflet_COO
 
 The list of realms is: `r paste0(unlist(strsplit(Storage_SP$Realms_saved, "[|]")), collapse=", ")`
 
-The list of countries of occurrence is:
+The list of countries of occurrence is`r if(outlog$Value[outlog$Parameter=="COO_EditShiny"]=="yes"){" (after it was manually edited through the interactive map)}`:
 
 ```{r print_coo, out.width='100%'}
-# COO_df<-Storage_SP$coo_occ
-# names(COO_df)<-c("Country", "Subnational")
-# COO_df$Subnational<-replace(COO_df$Subnational, is.na(COO_df$Subnational), "")
-# for(i in which(grepl("<i>", COO_df$Country))){Name<-COO_df$Country[i] %>% sub("<i>", "", .) %>% sub("</i>", "", .) ; if(Name %in% COO_df$Country){COO_df$Country[i]<-Name}} # For each country in italics, I check if it also exists not italics and, if so, write it in regular plain text
-# knitr::kable(COO_df, "simple")
-htmltools::HTML(Storage_SP$coo_res)
+COO_df<-Storage_SP$coo_occ %>% as.data.frame(.) %>% .[, ! names(.) %in% c("geometry", "Popup", "colour", "Domain", "Level0_occupied", "Level1_occupied", "lookup_SIS0")]
+
+DT::datatable(COO_df, rownames=F,
+              options=list(
+                pageLength = 20,
+                headerCallback = DT::JS(# Needed to reduce column name font
+                  "function(thead) {",
+                  "  $(thead).css('font-size', '0.75em');",
+                  "}"))
+) %>% DT::formatStyle(columns = c(1:ncol(COO_df)), fontSize = '75%')
 ```
 
-<br>
-`r ifelse(grepl("<i>", paste(Storage_SP$coo_res, collapse="")), "Entities are written in italics if they overlap with the polygon distribution but not with occurrence records (they are included in countries.csv in the ZIP output). By default, we assumed for all countries the codes 'Native' for origin, 'Resident' for seasonality. For presence, we assumed 'Extant' for all countries with occurrence records and 'Possibly Extant' for countries overlapping with the distribution but without occurrence records (i.e., those written in italics)", "By default, we assumed for all countries the codes 'Extant' for presence, 'Native' for origin, 'Resident' for seasonality")`. If you want to edit those, or the list of countries, you will have to do that manually in SIS. If you do not want to use this list at all, you can delete the 'countries.csv' file from the ZIP output.
 
 

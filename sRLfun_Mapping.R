@@ -808,11 +808,16 @@ sRL_CropCountry<-function(distSP, Crop_Country){
 
 
 ### Functions to prepare results of COO analysis (the first one prepares and I keep coo_occ for final report, the second creates the infobox)
-sRL_cooInfoBox_prepare<-function(coo, Storage_SP){
+sRL_cooInfoBox_prepare<-function(coo){
   
   # Subset coo with presence + if needed I group by (needed when marine + terrestrial since there are 2 polygons, one with occurrence and one without)
   coo_occ<-subset(coo, coo$Level1_occupied==T) 
   if(nlevels(as.factor(paste0(coo_occ$SIS_name0, coo_occ$SIS_name1))) < nrow(coo_occ)){coo_occ <- coo_occ %>% dplyr::group_by(SIS_name0, SIS_name1, lookup, lookup_SIS0, presence, origin, seasonal) %>% dplyr::summarise(N= n())}
+  
+  return(coo_occ)
+}
+
+sRL_cooInfoBox_format<-function(coo_occ, Storage_SP){
   
   # If occurrences, check which entities have occurrence records
   if("dat_proj_saved" %in% names(Storage_SP)){
@@ -823,10 +828,6 @@ sRL_cooInfoBox_prepare<-function(coo, Storage_SP){
     coo_occ$SIS_name0[coo_occ$Records==F & is.na(coo_occ$SIS_name1)==F] <- paste0("<i>", coo_occ$SIS_name0[coo_occ$Records==F & is.na(coo_occ$SIS_name1)==F], "</i>") # Italicise country if subnational entity has no occurrence records (I later keep the non-italics name if some entities are not in italics)
   }
   
-  return(coo_occ)
-}
-
-sRL_cooInfoBox_format<-function(coo_occ){
   # Extract list of COO for info.box
   RES<-NULL
   for(C in levels(droplevels(as.factor(coo_occ$lookup_SIS0)))){
@@ -867,6 +868,33 @@ sRL_cooInfoBox_create<-function(RES, Realms){
   return(info.box)
   
 }
+
+
+sRL_CountriesAttributes <- function(Attributes, COL, TransDir){
+  
+  if(COL=="presence"){
+    Pres_tab <- data.frame(Num=1:6, Char=c("Extant", "Probably Extant", "Possibly Extant", "Possibly Extinct", "Extinct Post-1500", "Presence Uncertain"))
+    if(TransDir=="char2num"){New_Attributes <- Pres_tab$Num[match(Attributes, Pres_tab$Char)] %>% as.numeric(.)} 
+    if(TransDir=="num2char"){New_Attributes <- Pres_tab$Char[match(Attributes, Pres_tab$Num)]} 
+  }
+  
+  if(COL=="origin"){
+    Orig_tab <- data.frame(Num=1:6, Char=c("Native", "Reintroduced", "Introduced", "Prehistorically Introduced", "Vagrant", "Origin Uncertain"))
+    if(TransDir=="char2num"){New_Attributes <- Orig_tab$Num[match(Attributes, Orig_tab$Char)] %>% as.numeric(.)} 
+    if(TransDir=="num2char"){New_Attributes <- Orig_tab$Char[match(Attributes, Orig_tab$Num)]} 
+  }
+  
+  if(COL=="seasonal"){
+    Seas_tab <- data.frame(Num=1:5, Char=c("Resident", "Breeding Season", "Non-Breeding Season", "Passage", "Seasonal Occurrence Uncertain"))
+    if(TransDir=="char2num"){New_Attributes <- Seas_tab$Num[match(Attributes, Seas_tab$Char)] %>% as.numeric(.)} 
+    if(TransDir=="num2char"){New_Attributes <- Seas_tab$Char[match(Attributes, Seas_tab$Num)]} 
+  }
+  
+  return(New_Attributes)
+}
+
+
+
 
 
 

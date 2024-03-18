@@ -892,8 +892,8 @@ Prom<-future({
   print(Realms)
   
   # Prepare command for results button
-  coo_occ<-sRL_cooInfoBox_prepare(coo, Storage_SP)
-  coo_res<-sRL_cooInfoBox_format(coo_occ)
+  coo_occ<-sRL_cooInfoBox_prepare(coo)
+  coo_res<-sRL_cooInfoBox_format(coo_occ, Storage_SP)
   info.box<-sRL_cooInfoBox_create(coo_res, Realms)
   
   # Create plot (first the one to export without the result - it makes the rmarkdown bug and it's not needed - and second adding the text results)
@@ -912,11 +912,7 @@ Prom<-future({
   # Save for SIS
   Storage_SP$Realms_saved<-Realms
   Storage_SP$coo<-coo
-  Storage_SP$coo_res<-coo_res
-  tryCatch({
-    Storage_SP$countries_SIS<-sRL_OutputCountries(scientific_name, coo_occ) # Keep only those occupied
-  }, error=function(e){"Bug in exporting countries of occurrence for SIS"})
-  
+  Storage_SP$coo_occ<-coo_occ
   Storage_SP$Leaflet_COO<-Leaflet_COOtoexport
   sRL_StoreSave(scientific_name, username,  Storage_SP)
   
@@ -2641,9 +2637,11 @@ Prom<-future({
   dir.create(output_dir)
   
   # Countries (but enabling skipping step) + prepare assessments.csv
-  if("countries_SIS" %in% names(Storage_SP)){
-    countries_SIS<-Storage_SP$countries_SIS
-    write.csv(countries_SIS, paste0(output_dir, "/countries.csv"), row.names = F)
+  if("coo_occ" %in% names(Storage_SP)){
+    tryCatch({
+      countries_SIS<-sRL_OutputCountries(scientific_name, Storage_SP$coo_occ)  %>% subset(., grepl("Absent_SIS", .$CountryOccurrence.CountryOccurrenceSubfield.CountryOccurrenceName)==F)
+      write.csv(countries_SIS, paste0(output_dir, "/countries.csv"), row.names = F)    
+    }, error=function(e){"Bug in exporting countries of occurrence for SIS"})
     assessments_SIS<-sRL_OutputAssessments(scientific_name, Storage_SP$Realms_saved, Storage_SP$Output$Value[Storage_SP$Output$Parameter=="System_pref"][1], populationTrend)
   } else {assessments_SIS<-sRL_OutputAssessments(scientific_name, NA, NA, populationTrend)}
   

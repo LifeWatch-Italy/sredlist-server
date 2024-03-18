@@ -42,7 +42,8 @@ sRLCountry_CreateTable <- function(COO){
     escape = FALSE,
     filter="top",
     options = list(pageLength = 30,
-                   dom="t"
+                   dom="t",
+                   columnDefs=list(list(targets=6, searchable = FALSE))
                    ),
     editable = list(target = "cell", disable = list(columns = c(0,1,2,6))),
     selection="none",
