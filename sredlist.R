@@ -892,7 +892,7 @@ Prom<-future({
   print(Realms)
   
   # Prepare command for results button
-  coo_occ<-sRL_cooInfoBox_prepare(coo)
+  coo_occ<-sRL_cooInfoBox_prepare(coo, Storage_SP)
   coo_res<-sRL_cooInfoBox_format(coo_occ, Storage_SP)
   info.box<-sRL_cooInfoBox_create(coo_res, Realms)
   

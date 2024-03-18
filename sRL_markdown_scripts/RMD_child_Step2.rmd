@@ -7,7 +7,7 @@ Storage_SP$Leaflet_COO
 
 The list of realms is: `r paste0(unlist(strsplit(Storage_SP$Realms_saved, "[|]")), collapse=", ")`
 
-The list of countries of occurrence is`r if(outlog$Value[outlog$Parameter=="COO_EditShiny"]=="yes"){" (after it was manually edited through the interactive map)}`:
+The list of countries of occurrence is`r if("COO_EditShiny" %in% outlog$Parameter){" (after it was manually edited through the interactive map)"}`:
 
 ```{r print_coo, out.width='100%'}
 COO_df<-Storage_SP$coo_occ %>% as.data.frame(.) %>% .[, ! names(.) %in% c("geometry", "Popup", "colour", "Domain", "Level0_occupied", "Level1_occupied", "lookup_SIS0")]

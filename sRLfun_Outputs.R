@@ -9,18 +9,29 @@ sRL_OutputCountries<-function(scientific_name, countries){
   # Assign the name to provide (SIS_name1 if available, SIS_name2 otherwise)
   countries$Name<-ifelse(is.na(countries$SIS_name1), countries$SIS_name0, countries$SIS_name1)
   
-  # Prepare file (including level 0 when level 1 is subnational)
-  CO_SIS<-data.frame(name=c(countries$Name, countries$SIS_name0),
-                     lookup=c(countries$lookup, countries$lookup_SIS0)) %>%
-    .[order(grepl("<i>", .[,1])),] %>%
-    distinct(., lookup, .keep_all = T)
-    
+  ### Prepare file (including level 0 when level 1 is subnational)
+  # Create one dataset with only level1
+  CO_SIS1 <- subset(countries, is.na(SIS_name1)==F) %>% .[, c("SIS_name1", "lookup", "presence", "origin", "seasonal")] %>% as.data.frame(.)
+  CO_SIS1$geometry <-NULL
+  CO_SIS1$name <- CO_SIS1$SIS_name1
+  
+  # Create one dataset with only level0 (and keeping all values for those in level1)
+  CO_SIS0 <- ddply(countries, .(SIS_name0), function(x){data.frame(
+    name=x$SIS_name0[1],
+    lookup=x$lookup_SIS0[1],
+    presence=paste(unique(x$presence), sep="|"),
+    origin=paste(unique(x$origin), sep="|"),
+    seasonal=paste(unique(x$seasonal), sep="|")
+  )})
+  
+  # Merge both
+  CO_SIS <- rbind(CO_SIS0[,c("name", "lookup", "presence", "origin", "seasonal")], CO_SIS1[,c("name", "lookup", "presence", "origin", "seasonal")])
   CO_SIS$CountryOccurrence.CountryOccurrenceSubfield.formerlyBred=NA
 
   # Complete presence, origin, season attributes based on attributes of the distribution used (only useful for Red List or uploaded distributions)
-  CO_SIS$presence <- countries$presence  %>% sRL_CountriesAttributes(., "presence", "num2char")
-  CO_SIS$origin <- countries$origin  %>% sRL_CountriesAttributes(., "origin", "num2char")
-  CO_SIS$season <- countries$seasonal %>% sRL_CountriesAttributes(., "seasonal", "num2char")
+  CO_SIS$presence <- CO_SIS$presence  %>% sRL_CountriesAttributes(., "presence", "num2char")
+  CO_SIS$origin <- CO_SIS$origin  %>% sRL_CountriesAttributes(., "origin", "num2char")
+  CO_SIS$seasonal <- CO_SIS$seasonal %>% sRL_CountriesAttributes(., "seasonal", "num2char")
   
   # Change presence code if occurrence records are used (then it depends on whether we have records within the country or not)
   if(grepl("<i>", paste(CO_SIS$name, collapse=""))){
@@ -32,8 +43,8 @@ sRL_OutputCountries<-function(scientific_name, countries){
   CO_SIS$internal_taxon_id<-sRL_CalcIdno(scientific_name)
   
   # Add attributes when missing at level0
-  for(L in which(is.na(CO_SIS$season))){
-    CO_SIS$season[L] <- CO_SIS$season[CO_SIS$lookup %in% subset(coo_raw, SIS_name0==CO_SIS$name[L])$lookup] %>% strsplit(., "[|]") %>% unlist() %>% unique() %>% subset(., is.na(.)==F) %>% paste(., collapse="|")
+  for(L in which(is.na(CO_SIS$seasonal))){
+    CO_SIS$seasonal[L] <- CO_SIS$seasonal[CO_SIS$lookup %in% subset(coo_raw, SIS_name0==CO_SIS$name[L])$lookup] %>% strsplit(., "[|]") %>% unlist() %>% unique() %>% subset(., is.na(.)==F) %>% paste(., collapse="|")
     CO_SIS$presence[L] <- CO_SIS$presence[CO_SIS$lookup %in% subset(coo_raw, SIS_name0==CO_SIS$name[L])$lookup] %>% strsplit(., "[|]") %>% unlist() %>% unique() %>% subset(., is.na(.)==F) %>% paste(., collapse="|")
     CO_SIS$origin[L] <- CO_SIS$origin[CO_SIS$lookup %in% subset(coo_raw, SIS_name0==CO_SIS$name[L])$lookup] %>% strsplit(., "[|]") %>% unlist() %>% unique() %>% subset(., is.na(.)==F) %>% paste(., collapse="|")
   }
@@ -55,7 +66,7 @@ sRL_OutputCountries<-function(scientific_name, countries){
   
   # Rename CO_SIS columns (very long so easier to add them here only)
   names(CO_SIS)<-revalue(names(CO_SIS), c(
-    "season"="CountryOccurrence.CountryOccurrenceSubfield.seasonality",
+    "seasonal"="CountryOccurrence.CountryOccurrenceSubfield.seasonality",
     "presence"="CountryOccurrence.CountryOccurrenceSubfield.presence",
     "origin"="CountryOccurrence.CountryOccurrenceSubfield.origin",
     "lookup"="CountryOccurrence.CountryOccurrenceSubfield.CountryOccurrenceLookup",

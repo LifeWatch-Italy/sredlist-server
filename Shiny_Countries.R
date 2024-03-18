@@ -1,7 +1,3 @@
-### TO DO
-# TO TEST: What happens with SISabsent (when matching existing attributes + when exporting)
-# Tracking (inc. did I change manually)
-# RMD
 
 library(shiny)
 library(leaflet)
@@ -74,6 +70,7 @@ server <- function(input, output, session) {
   
   ### CREATE REACTIVE VALUES ---------
   COO <- reactiveVal()
+  COO_uniq <- reactiveVal()
   Change_tomake <- reactiveVal(data.frame(lookup=NA, Change=NA)[0,])
   Storage_SP <- reactiveVal()
   
@@ -101,13 +98,17 @@ server <- function(input, output, session) {
         # Load COO and add lookups for subnational entities not in SIS
         COO_touse <- Storage_SP()$coo %>% .[order(.$presence),]
         COO_touse$lookup[is.na(COO_touse$lookup)] <- revalue(COO_touse$SIS_name1[is.na(COO_touse$lookup)], c("Arica y Parinacota (Absent_SIS)"="notSIS1", "Los Rios (Absent_SIS)"="notSIS2", "Nuble (Absent_SIS)"="notSSIS3", "Telangana (Absent_SIS)"="notSIS4"))
-        # Add attributes from countries_SIS
+        # Add attributes from coo_occ
         coo_occ <- Storage_SP()$coo_occ
+        if("Records" %in% names(coo_occ)){coo_occ$presence <- ifelse(coo_occ$Records, 1, 3)}
         COO_touse$presence <- coo_occ$presence[match(COO_touse$lookup, coo_occ$lookup)] %>% as.character(.)
         COO_touse$origin <- coo_occ$origin[match(COO_touse$lookup, coo_occ$lookup)] %>% as.character(.)
         COO_touse$seasonal <- coo_occ$seasonal[match(COO_touse$lookup, coo_occ$lookup)] %>% as.character(.)
         # Update COO()
         COO(COO_touse)
+        # Create COO_uniq for table (needs to remove marine/terrestrial duplicates)
+        COO_uniq(as.data.frame(COO_touse) %>% distinct(., lookup, .keep_all=T))
+        
       }, error=function(e){"<b>We could not find the COO extract. Please try again.</b>"})
       if(Error_mess != "TRUE"){showNotification(ui=HTML(Error_mess), type="error", duration=8)}
       
@@ -127,6 +128,7 @@ server <- function(input, output, session) {
                                    Change=Change_dir)
     ))
     
+    
     sRL_loginfo("END - Record change to make", input$sci_name)
     
   })
@@ -137,8 +139,8 @@ server <- function(input, output, session) {
     sRL_loginfo("START - Record table edits", input$sci_name)
     
     # Extract the changes that have been made
-    Change_lookup <- COO()$lookup[input$COO_table_cell_edit$row]
-    Column <- names(COO())[(input$COO_table_cell_edit$col+3)]
+    Change_lookup <- COO_uniq()$lookup[input$COO_table_cell_edit$row]
+    Column <- names(COO_uniq())[(input$COO_table_cell_edit$col+3)]
     Change_val <- paste0(Column, "_", input$COO_table_cell_edit$value)
     
     # Check if values are valid
@@ -154,6 +156,8 @@ server <- function(input, output, session) {
                                      Change=Change_val)
       )) 
     }
+    
+    print(Change_tomake())
     
     sRL_loginfo("END - Record table edits", input$sci_name)
     
@@ -176,12 +180,12 @@ server <- function(input, output, session) {
           COO_NEW$origin[COO_NEW$lookup==Change_tomake()$lookup[R]] <- ifelse(Change_tomake()$Change[R]==TRUE, 1, NA)
           COO_NEW$seasonal[COO_NEW$lookup==Change_tomake()$lookup[R]] <- ifelse(Change_tomake()$Change[R]==TRUE, 1, NA)
         } else {
-          
+
           # Apply changes in attributes (+ if presence attribute changed from yes to no (or reverse), also change Level1_occupied)
           if(grepl("presence", Change_tomake()$Change[R])){
             COO_NEW$presence[COO_NEW$lookup==Change_tomake()$lookup[R]] <- unlist(strsplit(Change_tomake()$Change[R], "_"))[2]
             COO_NEW$Level1_occupied[COO_NEW$lookup==Change_tomake()$lookup[R]] <- ifelse(Change_tomake()$Change[R]=="presence_", FALSE, TRUE)
-            if(COO_NEW$Level1_occupied[COO_NEW$lookup==Change_tomake()$lookup[R]]==""){COO_NEW$presence[COO_NEW$lookup==Change_tomake()$lookup[R]] <- NA ; COO_NEW$origin[COO_NEW$lookup==Change_tomake()$lookup[R]] <- NA ; COO_NEW$seasonal[COO_NEW$lookup==Change_tomake()$lookup[R]] <- NA}
+            if(!TRUE %in% COO_NEW$Level1_occupied[COO_NEW$lookup==Change_tomake()$lookup[R]]){COO_NEW$presence[COO_NEW$lookup==Change_tomake()$lookup[R]] <- NA ; COO_NEW$origin[COO_NEW$lookup==Change_tomake()$lookup[R]] <- NA ; COO_NEW$seasonal[COO_NEW$lookup==Change_tomake()$lookup[R]] <- NA}
             }
           if(grepl("origin", Change_tomake()$Change[R])){COO_NEW$origin[COO_NEW$lookup==Change_tomake()$lookup[R]] <- unlist(strsplit(Change_tomake()$Change[R], "_"))[2]}
           if(grepl("seasonal", Change_tomake()$Change[R])){COO_NEW$seasonal[COO_NEW$lookup==Change_tomake()$lookup[R]] <- unlist(strsplit(Change_tomake()$Change[R], "_"))[2]}
@@ -199,6 +203,7 @@ server <- function(input, output, session) {
     
     # Save changes in COO and Storage_SP
     COO(COO_NEW)
+    COO_uniq(as.data.frame(COO_NEW) %>% distinct(., lookup, .keep_all=T))
     Storage_SPNEW <- Storage_SP()
     Storage_SPNEW$coo <- COO()
 
@@ -234,9 +239,9 @@ server <- function(input, output, session) {
     })
   
   output$COO_table <- renderDataTable({
-    req(COO())
+    req(COO_uniq())
     print("New table")
-    sRLCountry_CreateTable(COO())
+    sRLCountry_CreateTable(COO_uniq())
   })
 }
 

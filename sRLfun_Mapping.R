@@ -808,11 +808,16 @@ sRL_CropCountry<-function(distSP, Crop_Country){
 
 
 ### Functions to prepare results of COO analysis (the first one prepares and I keep coo_occ for final report, the second creates the infobox)
-sRL_cooInfoBox_prepare<-function(coo){
+sRL_cooInfoBox_prepare<-function(coo, Storage_SP){
   
   # Subset coo with presence + if needed I group by (needed when marine + terrestrial since there are 2 polygons, one with occurrence and one without)
   coo_occ<-subset(coo, coo$Level1_occupied==T) 
   if(nlevels(as.factor(paste0(coo_occ$SIS_name0, coo_occ$SIS_name1))) < nrow(coo_occ)){coo_occ <- coo_occ %>% dplyr::group_by(SIS_name0, SIS_name1, lookup, lookup_SIS0, presence, origin, seasonal) %>% dplyr::summarise(N= n())}
+  
+  if("dat_proj_saved" %in% names(Storage_SP)){
+    dat_proj<-Storage_SP$dat_proj_saved %>% st_transform(., st_crs(coo_occ))
+    coo_occ$Records<-st_intersects(coo_occ, dat_proj) %>% lengths(.)>0
+  }
   
   return(coo_occ)
 }
@@ -821,8 +826,6 @@ sRL_cooInfoBox_format<-function(coo_occ, Storage_SP){
   
   # If occurrences, check which entities have occurrence records
   if("dat_proj_saved" %in% names(Storage_SP)){
-    dat_proj<-Storage_SP$dat_proj_saved %>% st_transform(., st_crs(coo_occ))
-    coo_occ$Records<-st_intersects(coo_occ, dat_proj) %>% lengths(.)>0
     coo_occ$SIS_name0[coo_occ$Records==F & is.na(coo_occ$SIS_name1)] <- paste0("<i>", coo_occ$SIS_name0[coo_occ$Records==F & is.na(coo_occ$SIS_name1)], "</i>") # Italicise countries with no occurrence records and that are not split in subnational entities
     coo_occ$SIS_name1[coo_occ$Records==F & is.na(coo_occ$SIS_name1)==F] <- paste0("<i>", coo_occ$SIS_name1[coo_occ$Records==F & is.na(coo_occ$SIS_name1)==F], "</i>") # Italicise subnational entities with no occurrence records
     coo_occ$SIS_name0[coo_occ$Records==F & is.na(coo_occ$SIS_name1)==F] <- paste0("<i>", coo_occ$SIS_name0[coo_occ$Records==F & is.na(coo_occ$SIS_name1)==F], "</i>") # Italicise country if subnational entity has no occurrence records (I later keep the non-italics name if some entities are not in italics)
@@ -872,25 +875,23 @@ sRL_cooInfoBox_create<-function(RES, Realms){
 
 sRL_CountriesAttributes <- function(Attributes, COL, TransDir){
   
-  if(COL=="presence"){
-    Pres_tab <- data.frame(Num=1:6, Char=c("Extant", "Probably Extant", "Possibly Extant", "Possibly Extinct", "Extinct Post-1500", "Presence Uncertain"))
-    if(TransDir=="char2num"){New_Attributes <- Pres_tab$Num[match(Attributes, Pres_tab$Char)] %>% as.numeric(.)} 
-    if(TransDir=="num2char"){New_Attributes <- Pres_tab$Char[match(Attributes, Pres_tab$Num)]} 
+  ### Prepare translation table
+  if(COL=="presence"){TAB <- data.frame(Num=1:6, Char=c("Extant", "Probably Extant", "Possibly Extant", "Possibly Extinct", "Extinct Post-1500", "Presence Uncertain"))}
+  if(COL=="origin"){TAB <- data.frame(Num=1:6, Char=c("Native", "Reintroduced", "Introduced", "Prehistorically Introduced", "Vagrant", "Origin Uncertain"))}
+  if(COL=="seasonal"){TAB <- data.frame(Num=1:5, Char=c("Resident", "Breeding Season", "Non-Breeding Season", "Passage", "Seasonal Occurrence Uncertain"))}
+  
+  ### Transform from character to numeric (in reverse order otherwise "Extant" is replaced before "Possibly Extant")
+  if(TransDir=="char2num"){
+    for(i in nrow(TAB):1){Attributes <- gsub(TAB$Char[i], TAB$Num[i], Attributes)}
   }
   
-  if(COL=="origin"){
-    Orig_tab <- data.frame(Num=1:6, Char=c("Native", "Reintroduced", "Introduced", "Prehistorically Introduced", "Vagrant", "Origin Uncertain"))
-    if(TransDir=="char2num"){New_Attributes <- Orig_tab$Num[match(Attributes, Orig_tab$Char)] %>% as.numeric(.)} 
-    if(TransDir=="num2char"){New_Attributes <- Orig_tab$Char[match(Attributes, Orig_tab$Num)]} 
+  ### Transform from numeric to character
+  if(TransDir=="num2char"){
+    Attributes <- as.character(Attributes)
+    for(i in 1:nrow(TAB)){Attributes <- gsub(TAB$Num[i], TAB$Char[i], Attributes)}
   }
   
-  if(COL=="seasonal"){
-    Seas_tab <- data.frame(Num=1:5, Char=c("Resident", "Breeding Season", "Non-Breeding Season", "Passage", "Seasonal Occurrence Uncertain"))
-    if(TransDir=="char2num"){New_Attributes <- Seas_tab$Num[match(Attributes, Seas_tab$Char)] %>% as.numeric(.)} 
-    if(TransDir=="num2char"){New_Attributes <- Seas_tab$Char[match(Attributes, Seas_tab$Num)]} 
-  }
-  
-  return(New_Attributes)
+  return(Attributes)
 }
 
 

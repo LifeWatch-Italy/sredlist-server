@@ -30,13 +30,13 @@ sRLCountry_CreateLeaflet <- function(coo, Storage_SP){
 
 sRLCountry_CreateTable <- function(COO){
   
-  COO <- as.data.frame(COO)
-  
+  # Add action button
   COO$Action <- shinyInputCountry(actionButton, COO$lookup, Occupied = COO$Level1_occupied)
   
+  # Subset column
   COO <- COO[, !names(COO) %in% c("geometry", "Popup", "colour", "Domain", "Level0_occupied", "Level1_occupied", "lookup_SIS0")]
   
-  
+  # Make a pretty datatable
   datatable(
     COO,
     escape = FALSE,
