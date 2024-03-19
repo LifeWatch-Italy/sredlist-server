@@ -2021,10 +2021,8 @@ function(scientific_name, username) { # nolint
 }
 
 
-# Step 6: Optional analyses ----------------------------------------------------------------
+# Step 6: Fragmentation ----------------------------------------------------------------
 
-
-## a: Fragmentation -------------------------------
 #* Species dispersion preferences
 #* @get species/<scientific_name>/dispersion-preferences
 #* @param scientific_name:string Scientific Name
@@ -2182,8 +2180,7 @@ Prom<-future({
 
 
 
-
-## b: Remote sensing products ---------------------------
+# Step 7: Remote sensing products ----------------------------------------------------------------
 
 #* Calculate trends in RS products
 #* @get species/<scientific_name>/analysis/RS_analysis
@@ -2191,7 +2188,7 @@ Prom<-future({
 #* @param RSproduct:string RSproduct
 #* @serializer unboxedJSON
 #* @tag sRedList
-function(scientific_name, username, RSproduct = "") { # nolint    
+function(scientific_name, username, GL_species="1", RSproduct = "") { # nolint    
   
 Prom<-future({
   sf::sf_use_s2(FALSE)
@@ -2199,13 +2196,14 @@ Prom<-future({
   # Charge parameters
   scientific_name<-sRL_decode(scientific_name)
   Storage_SP<-sRL_StoreRead(scientific_name,  username, MANDAT=1)
-  distSP<-Storage_SP$RangeClean_saved
-  GL<-ifelse("GL_saved" %in% names(Storage_SP), Storage_SP$GL_saved, 1)
+  distSP<-Storage_SP$distSP_saved
+  GL_species<-GL_species %>% gsub(" ", "", .) %>% sub(",", ".", .) %>% as.numeric(.) ; print(GL_species) ; if(is.na(GL_species)){incorrect_GL()}
+  Storage_SP$GL_saved<-GL_species
   print(RSproduct)
   
   # Run functions to calculate trends
-  if(RSproduct=="Human_density"){List_trendsRS<-sRL_CalcHumandensity(scientific_name, username, distSP, GL)}
-  if(RSproduct=="Forest_cover"){List_trendsRS<-sRL_CalcForestchange(scientific_name, username, distSP, GL)}
+  if(RSproduct=="Human_density"){List_trendsRS<-sRL_CalcHumandensity(scientific_name, username, distSP, GL_species)}
+  if(RSproduct=="Forest_cover"){List_trendsRS<-sRL_CalcForestchange(scientific_name, username, distSP, GL_species)}
   if(RSproduct=="Human_modification"){List_trendsRS<-sRL_CalcModification(scientific_name, username, distSP)}
 
   # Save usage
@@ -2293,7 +2291,7 @@ function(scientific_name, username, RSproduct) { # nolint
 
 
 
-# Step 7: Summary ----------------------------------------------------------------
+# Step 8: Summary ----------------------------------------------------------------
 
 ## Final estimates -------
 #* Upload all parameters
