@@ -723,7 +723,7 @@ sRL_cooExtract<-function(distSP, domain_pref, Crop_Country){
     coo<-coo_raw
     
     # Map intersection and summarise attributes
-    inter<-st_intersection(distSP, coo) %>% as.data.frame() %>% ddply(., .(SIS_name0, SIS_name1, lookup, lookup_SIS0), function(x){data.frame(presence=paste(unique(x$presence), collapse="|"), origin=paste(unique(x$origin), collapse="|"), seasonal=paste(unique(x$seasonal), collapse="|"))})
+    inter<-st_intersection(distSP, coo) %>% as.data.frame() %>% ddply(., .(SIS_name0, SIS_name1, lookup, lookup_SIS0), function(x){data.frame(presence=paste(sort(unique(x$presence)), collapse="|"), origin=paste(sort(unique(x$origin)), collapse="|"), seasonal=paste(sort(unique(x$seasonal)), collapse="|"))})
     
     # Match attributes
     coo$presence<-inter$presence[match(coo$lookup, inter$lookup)]

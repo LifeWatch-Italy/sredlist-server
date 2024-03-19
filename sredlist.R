@@ -877,8 +877,9 @@ Prom<-future({
   Storage_SP<-sRL_OutLog(Storage_SP, "System_pref", paste(domain_pref, collapse="|"))
   
   # Prepare distribution and calculate COO
-  distSP_WGS<-distSP %>% st_transform(., st_crs(coo_raw)) %>% dplyr::group_by(origin, presence, seasonal) %>% dplyr::summarise(N= n())
+  distSP_WGS<-distSP %>% st_transform(., st_crs(coo_raw)) 
   coo<-sRL_cooExtract(distSP_WGS, domain_pref, Storage_SP$Output$Value[Storage_SP$Output$Parameter=="Crop_Country"])
+  distSP_WGS <- distSP_WGS %>% dplyr::group_by(origin, presence, seasonal) %>% dplyr::summarise(N= n())
   
   # Simplify distribution if large distribution
   if((extent(distSP_WGS)@xmax-extent(distSP_WGS)@xmin)>50){distSP_WGS<-st_simplify(distSP_WGS, dTolerance=0.05)}
@@ -2196,7 +2197,7 @@ Prom<-future({
   # Charge parameters
   scientific_name<-sRL_decode(scientific_name)
   Storage_SP<-sRL_StoreRead(scientific_name,  username, MANDAT=1)
-  distSP<-Storage_SP$distSP_saved
+  distSP<-Storage_SP$distSP_saved %>% dplyr::group_by() %>% dplyr::summarise(N= n())
   GL_species<-GL_species %>% gsub(" ", "", .) %>% sub(",", ".", .) %>% as.numeric(.) ; print(GL_species) ; if(is.na(GL_species)){incorrect_GL()}
   Storage_SP$GL_saved<-GL_species
   print(RSproduct)

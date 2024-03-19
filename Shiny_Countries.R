@@ -96,7 +96,7 @@ server <- function(input, output, session) {
       Error_mess<-tryCatch({
         Storage_SP(sRL_StoreRead(input$sci_name,  input$user, MANDAT=1))
         # Load COO and add lookups for subnational entities not in SIS
-        COO_touse <- Storage_SP()$coo %>% .[order(.$presence),]
+        COO_touse <- Storage_SP()$coo
         COO_touse$lookup[is.na(COO_touse$lookup)] <- revalue(COO_touse$SIS_name1[is.na(COO_touse$lookup)], c("Arica y Parinacota (Absent_SIS)"="notSIS1", "Los Rios (Absent_SIS)"="notSIS2", "Nuble (Absent_SIS)"="notSSIS3", "Telangana (Absent_SIS)"="notSIS4"))
         # Add attributes from coo_occ
         coo_occ <- Storage_SP()$coo_occ
@@ -104,6 +104,8 @@ server <- function(input, output, session) {
         COO_touse$presence <- coo_occ$presence[match(COO_touse$lookup, coo_occ$lookup)] %>% as.character(.)
         COO_touse$origin <- coo_occ$origin[match(COO_touse$lookup, coo_occ$lookup)] %>% as.character(.)
         COO_touse$seasonal <- coo_occ$seasonal[match(COO_touse$lookup, coo_occ$lookup)] %>% as.character(.)
+        # Order lines
+        COO_touse <- COO_touse[order(COO_touse$presence, COO_touse$SIS_name0, COO_touse$SIS_name1),]
         # Update COO()
         COO(COO_touse)
         # Create COO_uniq for table (needs to remove marine/terrestrial duplicates)
@@ -145,9 +147,10 @@ server <- function(input, output, session) {
     
     # Check if values are valid
     STOP=0
-    if(Column=="presence" & (! sub("presence_", "", Change_val) %in% c("", "1", "2", "3", "4", "5", "6"))){STOP=1 ; showNotification(ui=HTML("Presence column can only include values from 1 to 6"), type="error", duration=5)}
-    if(Column=="origin" & (! sub("origin_", "", Change_val) %in% c("", "1", "2", "3", "4", "5", "6"))){STOP=1 ; showNotification(ui=HTML("Origin column can only include values from 1 to 6"), type="error", duration=5)}
-    if(Column=="seasonal" & (! sub("seasonal_", "", Change_val) %in% c("", "1", "2", "3", "4", "5"))){STOP=1 ; showNotification(ui=HTML("Seasonal column can only include values from 1 to 5"), type="error", duration=5)}
+    check_attribute <- function(Val, nums){Values <- Val %>% strsplit(., "[|]") %>% unlist(.) ; return(! FALSE %in% (Values %in% as.character(nums)))} # Return TRUE if attributes are ok, FALSE if a value is not in nums
+    if(Column=="presence" & check_attribute(sub("presence_", "", Change_val), c(1:6))==F){STOP=1 ; showNotification(ui=HTML("Presence column can only include values from 1 to 6"), type="error", duration=5)}
+    if(Column=="origin" & check_attribute(sub("origin_", "", Change_val), c(1:6))==F){STOP=1 ; showNotification(ui=HTML("Origin column can only include values from 1 to 6"), type="error", duration=5)}
+    if(Column=="seasonal" & check_attribute(sub("seasonal_", "", Change_val), c(1:5))==F){STOP=1 ; showNotification(ui=HTML("Seasonal column can only include values from 1 to 5"), type="error", duration=5)}
     
     # Store changes in Change_tomake
     if(STOP==0){
@@ -199,7 +202,6 @@ server <- function(input, output, session) {
     
     # Order by presence
     COO_NEW <- COO_NEW[order(COO_NEW$presence, COO_NEW$SIS_name0, COO_NEW$SIS_name1),]
-    
     
     # Save changes in COO and Storage_SP
     COO(COO_NEW)
