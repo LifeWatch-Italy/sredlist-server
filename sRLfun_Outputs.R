@@ -253,7 +253,7 @@ sRL_OutputDistribution<-function(scientific_name, Storage_SP, username){
   distSIS$data_sens<-0
   
   # Send geometry column at the end of the table
-  distSIS<-distSIS[, c(names(distSIS)[names(distSIS) != "geometry"], "geometry")]
+  if("geometry" %in% names(distSIS)){distSIS<-distSIS[, c(names(distSIS)[names(distSIS) != "geometry"], "geometry")]}
   
   # Transform NA in "" to match SIS
   distSIS<-replace(distSIS, is.na(distSIS), "")
