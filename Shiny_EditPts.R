@@ -1,3 +1,7 @@
+# Set working directory (Victor path if we are on his laptop, LifeWatch path otherwise)
+setwd(dir=ifelse(file.exists("C:/Users/Victor"),"C:/Users/Victor/Documents/sRedList/Platform/InProgress/sredlist-server-develop", "/media/docker/sRedList/sredlist-server"))
+
+
 library(shiny)
 library(leaflet)
 library(mapedit)
