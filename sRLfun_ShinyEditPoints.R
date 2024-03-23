@@ -127,7 +127,10 @@ sRLMan_EditPoints <- function(EditsGeom, flagsSF, Pts_year, Pts_source){
 
   # Edit popups
   flagsSF <- sRL_PopRecords(flagsSF)
-
+  
+  # Rerun jitter function
+  flagsSF <- sRLMan_JitterPoints(flagsSF)
+  
   return(flagsSF)
 }
 

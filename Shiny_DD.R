@@ -185,10 +185,14 @@ server <- function(input, output) {
       filter="top",
       options = list(pageLength = 50,
                      columnDefs=list(list(targets=0, searchable = FALSE), list(targets=(which(names(DD_TableSelect)=="More")-1), searchable = FALSE), list(targets=2, regex = TRUE)), # Prevent column "List" and "More" from being searchable to filter
-                     dom = 't' # dom='t' is to remove the search bar
+                     dom = 't', # dom='t' is to remove the search bar
+                     headerCallback = DT::JS(# Needed to reduce column name font
+                       "function(thead) {",
+                       "  $(thead).css('font-size', '0.75em');",
+                       "}")
       ),
       callback = JS(paste0("var tips = ['",paste0(DD_tooltips ,collapse = "','"),"'], header = table.columns().header(); for (var i = 0; i < tips.length; i++) {$(header[i]).attr('title', tips[i]);}")),
-      rownames=FALSE)
+      rownames=FALSE) %>% DT::formatStyle(columns = c(1:ncol(DD_TableSelect)), fontSize = '75%')
   })
   
   ### Plot

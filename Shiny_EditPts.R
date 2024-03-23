@@ -148,9 +148,9 @@ server <- function(input, output, session) {
     ### Save flags and record usage
     # Save points
     Storage_SPNEW <- Storage_SP()
-    Storage_SPNEW$dat_proj_saved <- sRL_SubsetGbif(flagsSF(), input$sci_name)
     Storage_SPNEW$flags <- flagsSF() %>% as.data.frame(.) %>% .[, names(.) != "geometry"]
-
+    Storage_SPNEW$dat_proj_saved <- sRL_SubsetGbif(Storage_SPNEW$flags, input$sci_name) # I use Storage_SPNEW$flags to make sure we are not using a df with geometries
+    
     # Record usage
     Storage_SPNEW$Output$Value[Storage_SPNEW$Output$Parameter=="Gbif_EditPts"]<-"yes"
     Storage_SPNEW$Output$Count[Storage_SPNEW$Output$Parameter=="Gbif_EditPts"]<-Storage_SPNEW$Output$Count[Storage_SPNEW$Output$Parameter=="Gbif_EditPts"]+1
