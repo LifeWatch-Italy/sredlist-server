@@ -217,7 +217,7 @@ server <- function(input, output, session) {
     Storage_SPNEW$coo_occ <- coo_occ
     
     # Save leaflet
-    Storage_SPNEW$Leaflet_COO <- sRLCountry_CreateLeaflet(COO(), Storage_SP())
+    Storage_SPNEW$Leaflet_COO <- sRLCountry_CreateLeaflet(COO(), Storage_SP(), F)
     
     # Record usage
     Storage_SPNEW$Output$Value[Storage_SPNEW$Output$Parameter=="COO_EditShiny"]<-"yes"
@@ -239,7 +239,7 @@ server <- function(input, output, session) {
   output$Leaf <- renderLeaflet({
     req(COO())
     print("New map")
-    sRLCountry_CreateLeaflet(COO(), Storage_SP())
+    sRLCountry_CreateLeaflet(COO(), Storage_SP(), T)
     })
   
   output$COO_table <- renderDataTable({

@@ -1,19 +1,19 @@
 ### Create leaflet map
 
-sRLCountry_CreateLeaflet <- function(coo, Storage_SP){
+sRLCountry_CreateLeaflet <- function(coo, Storage_SP, Include_Buttons){
   
   # Load distribution
   distSP <- Storage_SP$distSP_saved %>% st_transform(., "+init=epsg:4326") %>% dplyr::group_by(origin, presence, seasonal) %>% dplyr::summarise(N= n())
   if((extent(distSP)@xmax-extent(distSP)@xmin)>50){distSP<-st_simplify(distSP, dTolerance=0.05)}
   
-  # Edit popup
+  # Edit popup (include buttons for the output leaflet but not the one stored for RMD)
   coo$Popup <- paste0(
     "<b> National entity: ","</b>", coo$SIS_name0, ifelse(coo$Level0_occupied==T, " (Present)", " (Absent)"), "<br>", "<br>",
     "<b> Subnational entity: ","</b>", coo$SIS_name1, ifelse(is.na(coo$SIS_name1)==T, "", ifelse(coo$Level1_occupied==T, " (Present)", " (Absent)")),
     "<br>", 
-    '<br>', 
-    shinyInputCountry(actionButton, coo$lookup, Occupied = coo$Level1_occupied)
-  )
+    '<br>')
+  
+  if(Include_Buttons==T){coo$Popup <- paste0(coo$Popup, shinyInputCountry(actionButton, coo$lookup, Occupied = coo$Level1_occupied))}
   
   # Define colour
   coo$colour<-paste0(coo$Domain, coo$Level0_occupied, coo$Level1_occupied) 
