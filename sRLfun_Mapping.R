@@ -541,8 +541,11 @@ sRL_MapDistributionGBIF<-function(dat, scientific_name, First_step, AltMIN, AltM
   
   if(First_step=="coastal"){
     pts_buff <- st_buffer(dat, Buffer_km*1000)
+    # Extract coast, transform to line and create distribution
     coast <- distCountries %>% st_crop(., 1.2*ext(pts_buff)) %>% dplyr::group_by(.) %>% dplyr::summarise(N=n()) %>% st_cast(., "MULTILINESTRING") %>% st_simplify(., dTolerance=(Buffer_km*100)) # I simplify by 1/10 of the buffer in meters
     distGBIF <- st_intersection(coast, pts_buff) %>% st_buffer(., 1) %>% st_combine(.) %>% st_as_sf(.) %>% st_simplify(., dTolerance=10)
+    # Return error if no coast overlap
+    if(is.na(extent(distGBIF)[1])){no_coastoverlap()}
   }
   
   

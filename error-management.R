@@ -116,6 +116,10 @@ no_gbif_coastal <- function() {
   api_error(message = "To use the coastal option, you must enter a non-null buffer value and crop by land or by sea", status = 400)
 }
 
+no_coastoverlap  <- function() {
+  api_error(message = "The coast line is not overlapping with your distribution. Increase buffer size or change starting point", status = 400)
+}
+
 hydro_too_large <- function() {
   api_error(message = "The distribution of that species is too large to use hydrobasins level 10 or 12, please use level 8 instead", status = 400)
 }

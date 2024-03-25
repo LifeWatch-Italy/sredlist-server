@@ -543,7 +543,8 @@ function(scientific_name, username, Gbif_Start="", Gbif_Param=list(), Gbif_Buffe
 # Parameter error
 if(Gbif_Start=="alpha" & Gbif_Param[1] <= 0){neg_alpha()}
 if(Gbif_Start=="kernel" & Gbif_Param[2] <= 0){neg_kernel()}
-
+if(Gbif_Start=="coastal" & (Gbif_Buffer==0 | Gbif_Crop=="")){no_gbif_coastal()}
+  
 # Check the Step 2 has been run since Step 1 was last updated  
 scientific_name <- sRL_decode(scientific_name)
 Storage_SP=sRL_StoreRead(scientific_name,  username, MANDAT=1)
@@ -574,7 +575,6 @@ Prom<-future({
   
   # Display some errors
   if(nrow(dat_proj)<=2 & Gbif_Start %in% c("mcp", "kernel", "alpha")){too_few_occurrences()}
-  if(Gbif_Start=="coastal" & (Gbif_Buffer==0 | Gbif_Crop=="")){no_gbif_coastal()}
   
   # Create distribution
   distSP<-sRL_MapDistributionGBIF(dat_proj, scientific_name,
