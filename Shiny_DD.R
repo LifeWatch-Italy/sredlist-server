@@ -118,20 +118,12 @@ ui <-fluidPage(
 
 
 
-server <- function(input, output) {
+server <- function(input, output, session) {
   
   mySpecies <- reactiveValues(SP = '')
   myList <- reactiveVal(DDfun_AddList("Init", 0, DDfun_Table(GR="Init")))
   DD_Table <- reactiveVal(data.frame())
-  
-  ### Track usage
-  track_usage(
-    storage_mode = store_rds(path = paste0(getwd(), "/resources/resources_Shiny_DD/Logs")),
-    what=c("session", "input"),
-    app_name="sRL_DDapp"
-  )
-  
-  
+  Tracker_df <- reactiveVal(data.frame(Date=NA, Group=NA, Action=c("Count_table", "More", "Create_priority", "Download_priority"), Val=0))
   
   
   ### EVENTS ###
@@ -151,6 +143,7 @@ server <- function(input, output) {
   observeEvent(input$select_button, {
     SP_name <- strsplit(input$select_button, "_")[[1]][c(2,3)] %>% paste(., collapse=" ")
     selectedRow <- which(DD_Table()$SP==SP_name)[1]
+    Tracker_df(DDfun_Track(Tracker_df(), "More", 0))
     
     if(DD_Table()$Group[1] == input$TaxoGroup){
       mySpecies$Title <<- paste0('<h3>More information on <i>', SP_name, '</i> (last assessed in ', DD_Table()$Last_assessment[selectedRow], ')</h3>')
@@ -166,6 +159,7 @@ server <- function(input, output) {
   ### Add species to the list
   observeEvent(input$list_button, {
     myList(rbind(myList(), DDfun_AddList(input$list_button, nrow(myList()), DD_Table())))
+    Tracker_df(DDfun_Track(Tracker_df(), "Create_priority", 0))
   })
   
   
@@ -178,7 +172,7 @@ server <- function(input, output) {
     req(input$TaxoGroup != "Select your group")
     DD_TableSelect <- DDfun_SelectTable(DD_Table()) %>% .[, ! names(.) %in% c("SP", "Group")]
     DD_tooltips <- DDfun_Tooltips(names(DD_Table())) %>% .[! . %in% c("SP", "Group")]
-    
+
     datatable(
       DD_TableSelect,
       escape = FALSE,
@@ -206,9 +200,14 @@ server <- function(input, output) {
       plotly::event_register("plotly_selecting")
   })
   
+  
   ### Download priority list
   output$downloadList <- downloadHandler(
-    filename = function() {paste0("My_DD_Priority_List_", Sys.Date(), ".csv")},
+    filename = function() {
+      print("Download list")
+      Tracker_df(DDfun_Track(Tracker_df(), "Download_priority", nrow(myList())))
+      paste0("My_DD_Priority_List_", Sys.Date(), ".csv")
+      },
     content = function(file) {write.csv(myList(), file, row.names = FALSE)}
   )
   
@@ -220,6 +219,37 @@ server <- function(input, output) {
   output$myWOSList <- renderText({mySpecies$WOSList})
   output$myGBIFTitle <- renderText({mySpecies$GBIFTitle})
   output$mymap <- renderLeaflet({mySpecies$GBIFmap})
+  
+  
+  ### SAVE TRACKER WHEN SESSION ENDS ###
+  session$onSessionEnded(function() {
+    print("START - Save when session closes")
+
+    tryCatch({
+
+      Track_dir <- "Species/Stored_outputs"
+      Track_name <- "Tracker_DDprio.rds"
+
+      # Create tracking file if not existant
+      if(! Track_name %in% list.files(Track_dir)){saveRDS(data.frame(Date=NA, Group=NA, Action=NA)[0,], paste(Track_dir, Track_name, sep="/"))}
+
+      # Load file and add new tracker
+      Old_tracker <- readRDS(paste(Track_dir, Track_name, sep="/"))
+      isolate(New_tracker <- Tracker_df()) # Isolate is needed in a non-reactive function
+      New_tracker$Group <- isolate(input$TaxoGroup)
+      New_tracker$Date <- Sys.Date()
+      
+      # Save (only if we have a group)
+      if(New_tracker$Group[1] != "Select your group"){
+        saveRDS(rbind(Old_tracker, New_tracker), paste(Track_dir, Track_name, sep="/")) 
+      }
+
+    }, error=function(e){cat("Bug when saving tracker")})
+    
+    print("END - Save when session closes")
+
+  })
+  
 }
 
 

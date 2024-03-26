@@ -337,3 +337,20 @@ shinyInput <- function(FUN, SPs, id, ...) {
   }
   inputs
 }
+
+
+
+### Function to record usage for tracker
+DDfun_Track <- function(tracker_df, ACT, Nrows){
+
+  # Count
+  if(ACT %in% c("Create_priority", "More", "Count_table")){tracker_df$Val[tracker_df$Action==ACT] <- as.numeric(tracker_df$Val[tracker_df$Action==ACT])+1}
+  
+  # Or report nrow of priority list
+  if(ACT=="Download_priority"){tracker_df$Val[tracker_df$Action==ACT] <- Nrows}
+
+  return(tracker_df)
+  
+  
+}
+
