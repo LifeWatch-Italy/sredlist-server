@@ -123,7 +123,7 @@ server <- function(input, output, session) {
   mySpecies <- reactiveValues(SP = '')
   myList <- reactiveVal(DDfun_AddList("Init", 0, DDfun_Table(GR="Init")))
   DD_Table <- reactiveVal(data.frame())
-  Tracker_df <- reactiveVal(data.frame(Date=NA, Group=NA, Action=c("Count_table", "More", "Create_priority", "Download_priority"), Val=0))
+  Tracker_df <- reactiveVal(data.frame(Date=NA, Group=NA, Action=c("More", "Create_priority", "Download_priority"), Val=0))
   
   
   ### EVENTS ###

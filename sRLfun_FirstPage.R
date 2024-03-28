@@ -183,21 +183,32 @@ sRL_PrepareDistrib <- function(distributions, scientific_name){
 
 ### Colour the distribution
 sRL_ColourDistrib <- function(distSP){
+  
+  ### Deal with 1|4 (at least useful when colouring COO)
+  for(R in which(grepl("[|]", distSP$presence))){distSP$presence[R] <- distSP$presence[R] %>% strsplit(., "[|]") %>% unlist(.) %>% as.numeric(.) %>% min(.) %>% as.character(.)}
+  for(R in which(grepl("[|]", distSP$origin))){distSP$origin[R] <- distSP$origin[R] %>% strsplit(., "[|]") %>% unlist(.) %>% as.numeric(.) %>% min(.) %>% as.character(.)}
+  for(R in which(grepl("[|]", distSP$seasonal))){distSP$seasonal[R] <- distSP$seasonal[R] %>% strsplit(., "[|]") %>% unlist(.) %>% as.numeric(.) %>% min(.) %>% as.character(.)}
+  
+  ### Colourise
   if(nrow(distSP) > 0){ 
     distSP$cols <- NA
-    distSP$cols <- revalue(as.character(distSP$presence), c("1"=NA, "2"=NA, "3"=NA, "4"="mistyrose1", "5"="brown4", "6"="gray70")) # nolint    if (nrow(distSP) > 0) {
-    for (i in which(is.na(distSP$cols))) {
+    distSP$cols <- revalue(as.character(distSP$presence), c("1"=NA, "2"=NA, "3"=NA, "4"="#FFE4E1", "5"="#8B2323", "6"="#B3B3B3"), warn_missing=F) # nolint    if (nrow(distSP) > 0) {
+    
+    for (i in which(is.na(distSP$cols) & is.na(distSP$presence)==F)) {
       if (distSP$origin[i] == "1") {
-        if(distSP$seasonal[i] == "1"){ distSP$cols[i] <- revalue(as.character(distSP$presence[i]), c("1"="#d95f02", "2"="#fc8d62", "3"="#fc8d62"))} # nolint
-        if(distSP$seasonal[i] == "2"){ distSP$cols[i] <- revalue(as.character(distSP$presence[i]), c("1"="#1b9e77", "2"="#66c2a5", "3"="#66c2a5"))} # nolint
-        if(distSP$seasonal[i] == "3"){ distSP$cols[i] <- revalue(as.character(distSP$presence[i]), c("1"="#7570b3", "2"="#8da0cb", "3"="#8da0cb"))} # nolint
-        if(distSP$seasonal[i] == "4"){ distSP$cols[i] <- revalue(as.character(distSP$presence[i]), c("1"="yellowgreen", "2"="yellow2", "3"="yellow2"))} # nolint
-        if(distSP$seasonal[i] == "5"){ distSP$cols[i]<-"gray70"}
+        if(distSP$seasonal[i] == "1"){ distSP$cols[i] <- revalue(as.character(distSP$presence[i]), c("1"="#d95f02", "2"="#fc8d62", "3"="#fc8d62"), warn_missing=F)} # nolint
+        if(distSP$seasonal[i] == "2"){ distSP$cols[i] <- revalue(as.character(distSP$presence[i]), c("1"="#1b9e77", "2"="#66c2a5", "3"="#66c2a5"), warn_missing=F)} # nolint
+        if(distSP$seasonal[i] == "3"){ distSP$cols[i] <- revalue(as.character(distSP$presence[i]), c("1"="#7570b3", "2"="#8da0cb", "3"="#8da0cb"), warn_missing=F)} # nolint
+        if(distSP$seasonal[i] == "4"){ distSP$cols[i] <- revalue(as.character(distSP$presence[i]), c("1"="#9ACD32", "2"="#EEEE00", "3"="#8B8B00"), warn_missing=F)} # nolint
+        if(distSP$seasonal[i] == "5"){ distSP$cols[i]<-"#B3B3B3"}
       } else{
-        distSP$cols[i]<-revalue(as.character(distSP$origin[i]), c("2"="darkorchid1", "3"="darkorchid4", "4"="darkseagreen3", "5"="gray70", "6"="darkorchid1")) # nolint
+        distSP$cols[i]<-revalue(as.character(distSP$origin[i]), c("2"="#BF3EFF", "3"="#68228B", "4"="#9BCD9B", "5"="#B3B3B3", "6"="#BF3EFF"), warn_missing=F) # nolint
       }   # nolint
     }
   }
+  
+  # Fill with white
+  distSP$cols[is.na(distSP$cols)==T] <- "white"
   
   return(distSP)
 }

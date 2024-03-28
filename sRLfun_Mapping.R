@@ -913,17 +913,17 @@ sRL_LeafCountry <- function(coo, distSP_WGS, realms_raw, Storage_SP){
   Leaflet_COOtoexport<-leaflet() %>%
     fitBounds(lng1=EXT[1], lng2=EXT[2], lat1=EXT[3], lat2=EXT[4]) %>%
     addPolygons(data=coo,
-                color=ifelse(coo$Level0_occupied==T, "black", "grey"),
+                color=ifelse(coo$Level1_occupied==T, "black", "grey"),
                 fillColor=coo$colour,
                 popup=coo$Popup,
                 stroke=T, weight=2, fillOpacity=1) %>%
-    addPolygons(data=distSP_WGS, color="#D69F32", fill=F, group="Distribution") %>%
-    addLegend(position="bottomleft", colors=c(sRL_COOColours$Col[sRL_COOColours$Col %in% coo$colour], "#D69F32"), labels=c(sRL_COOColours$Label[sRL_COOColours$Col %in% coo$colour], "Distribution"), opacity=1)
+    addPolygons(data=distSP_WGS, color="#D69F32", fill=F, group="Distribution")
   GROUPS<-c("Distribution")
   
-  # Add realms (only if nrow>0 as I used empty df to say I don't want realms in Shiny_Countries)
+  # Add realms (only if nrow>0 as I used empty df to say I don't want realms in Shiny_Countries); also add legend only for the first leaflet
   if(nrow(realms_raw)>0){
     Leaflet_COOtoexport<-Leaflet_COOtoexport %>%
+      addLegend(position="bottomleft", colors=c(sRL_COOColours$Col[sRL_COOColours$Col %in% coo$colour], "#D69F32"), labels=c(sRL_COOColours$Label[sRL_COOColours$Col %in% coo$colour], "Distribution"), opacity=1) %>%
       addPolygons(data=realms_raw, group="Realms", fillOpacity=0.5)
     GROUPS <- c(GROUPS, "Realms")
   }

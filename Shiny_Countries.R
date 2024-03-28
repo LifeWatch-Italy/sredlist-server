@@ -61,7 +61,7 @@ ui <- fluidPage(
         HTML('<font color="#009138"> <b>Click "Save changes" to apply changes to the map and save</b></font><br>'),
         actionButton('save', 'Save changes', style="color: #fff; background-color: #009138ff; border-color: #009138ff")
         ),
-      div(DT::DTOutput("COO_table"), style = "font-size:60%"),
+      div(DT::DTOutput("COO_table"), style = "font-size:80%"),
       width=6
     )
   )
