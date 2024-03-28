@@ -544,12 +544,12 @@ function(scientific_name, username, Gbif_Start="", Gbif_Param=list(), Gbif_Buffe
 if(Gbif_Start=="alpha" & Gbif_Param[1] <= 0){neg_alpha()}
 if(Gbif_Start=="kernel" & Gbif_Param[2] <= 0){neg_kernel()}
 if(Gbif_Start=="coastal" & (Gbif_Buffer==0 | Gbif_Crop=="")){no_gbif_coastal()}
-  
+
 # Check the Step 2 has been run since Step 1 was last updated  
 scientific_name <- sRL_decode(scientific_name)
 Storage_SP=sRL_StoreRead(scientific_name,  username, MANDAT=1)
 if(! "dat_proj_saved" %in% names(Storage_SP)){run_Step2()}  
-  
+
 Prom<-future({
   sf::sf_use_s2(FALSE)
 

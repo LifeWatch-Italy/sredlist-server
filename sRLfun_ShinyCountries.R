@@ -19,8 +19,8 @@ sRLCountry_CreateLeaflet <- function(coo, Storage_SP, Include_Buttons){
   coo$colour<-paste0(coo$Domain, coo$Level0_occupied, coo$Level1_occupied) 
   coo$colour<-sRL_COOColours$Col[match(coo$colour, sRL_COOColours$Code)]
   
-  # Create leaflet from sRLfun_Mapping function
-  Leaflet_COO <- sRL_LeafCountry(coo, distSP, realms_raw, Storage_SP)
+  # Create leaflet from sRLfun_Mapping function (I provide empty df for realms because I don't want them for this leaflet)
+  Leaflet_COO <- sRL_LeafCountry(coo, distSP, data.frame(), Storage_SP)
   
   
   return(Leaflet_COO)
@@ -36,14 +36,15 @@ sRLCountry_CreateTable <- function(COO){
   # Subset column
   COO <- COO[, !names(COO) %in% c("geometry", "Popup", "colour", "Domain", "Level0_occupied", "Level1_occupied", "lookup_SIS0")]
   
+  # Rename columns
+  names(COO) <- revalue(names(COO), c("SIS_name0"="Country", "SIS_name1"="Sub-country"))
+  
   # Make a pretty datatable
   datatable(
     COO,
     escape = FALSE,
-    filter="top",
-    options = list(pageLength = 30,
-                   dom="t",
-                   columnDefs=list(list(targets=6, searchable = FALSE))
+    options = list(pageLength = 15,
+                   dom="ftp"
                    ),
     editable = list(target = "cell", disable = list(columns = c(0,1,2,6))),
     selection="none",

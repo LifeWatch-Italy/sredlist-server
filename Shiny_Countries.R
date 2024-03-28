@@ -52,13 +52,17 @@ ui <- fluidPage(
         leafletOutput('Leaf', height=600, width="100%"), 
         type=3, color.background = "#f5f5f5ff"
       ),
-      width=7
+      width=6
     ),
     sidebarPanel(
       titlePanel("Edit Countries of occurrence"),
-      actionButton('save', 'Save changes', style="color: #fff; background-color: #009138ff; border-color: #009138ff"),
-      DT::DTOutput("COO_table"),
-      width=5
+      conditionalPanel(
+        "input.button_occupied || input.COO_table_cell_edit",
+        HTML('<font color="#009138"> <b>Click "Save changes" to apply changes to the map and save</b></font><br>'),
+        actionButton('save', 'Save changes', style="color: #fff; background-color: #009138ff; border-color: #009138ff")
+        ),
+      div(DT::DTOutput("COO_table"), style = "font-size:60%"),
+      width=6
     )
   )
 )

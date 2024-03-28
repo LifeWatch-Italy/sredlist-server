@@ -912,14 +912,21 @@ sRL_LeafCountry <- function(coo, distSP_WGS, realms_raw, Storage_SP){
   # Create leaflet
   Leaflet_COOtoexport<-leaflet() %>%
     fitBounds(lng1=EXT[1], lng2=EXT[2], lat1=EXT[3], lat2=EXT[4]) %>%
-    addPolygons(data=realms_raw, group="Realms", fillOpacity=0.5) %>%
     addPolygons(data=coo,
                 color=ifelse(coo$Level0_occupied==T, "black", "grey"),
                 fillColor=coo$colour,
                 popup=coo$Popup,
                 stroke=T, weight=2, fillOpacity=1) %>%
-    addPolygons(data=distSP_WGS, color="#D69F32", fillOpacity=0.4, group="Range map") %>%
+    addPolygons(data=distSP_WGS, color="#D69F32", fill=F, group="Distribution") %>%
     addLegend(position="bottomleft", colors=c(sRL_COOColours$Col[sRL_COOColours$Col %in% coo$colour], "#D69F32"), labels=c(sRL_COOColours$Label[sRL_COOColours$Col %in% coo$colour], "Distribution"), opacity=1)
+  GROUPS<-c("Distribution")
+  
+  # Add realms (only if nrow>0 as I used empty df to say I don't want realms in Shiny_Countries)
+  if(nrow(realms_raw)>0){
+    Leaflet_COOtoexport<-Leaflet_COOtoexport %>%
+      addPolygons(data=realms_raw, group="Realms", fillOpacity=0.5)
+    GROUPS <- c(GROUPS, "Realms")
+  }
   
   # Add points if we had occurrences and add layer control
   if("dat_proj_saved" %in% names(Storage_SP)){
@@ -927,13 +934,18 @@ sRL_LeafCountry <- function(coo, distSP_WGS, realms_raw, Storage_SP){
     Coords<-Storage_SP$dat_proj_saved %>% st_transform(., st_crs(4326)) %>% st_coordinates(.) %>% as.data.frame()
     Leaflet_COOtoexport<-Leaflet_COOtoexport %>%
       addCircleMarkers(lng=Coords[,1], lat=Coords[,2], color="black", fillOpacity=0.3, stroke=F, radius=2, group="Occurrence records") %>%
-      addLayersControl(overlayGroups=c("Range map", "Occurrence records", "Realms"), position="topleft", options=layersControlOptions(collapsed = FALSE)) %>% 
+      addLayersControl(overlayGroups=c("Distribution", "Occurrence records", "Realms"), position="topleft", options=layersControlOptions(collapsed = FALSE)) %>% 
       hideGroup("Realms")
     
-  } else {
-    Leaflet_COOtoexport<-Leaflet_COOtoexport %>% addLayersControl(overlayGroups=c("Range map", "Realms"), position="topleft", options=layersControlOptions(collapsed = FALSE)) %>% hideGroup("Realms")
+    GROUPS <- c(GROUPS, "Occurrence records")
+    
   }
   
+  # Manage groups
+  Leaflet_COOtoexport<-Leaflet_COOtoexport %>%
+    addLayersControl(overlayGroups=sort(GROUPS), position="topleft", options=layersControlOptions(collapsed = FALSE))
+  
+  if("Realms" %in% GROUPS){Leaflet_COOtoexport<-Leaflet_COOtoexport %>% hideGroup("Realms")}
   
   # Return leaflet
   return(Leaflet_COOtoexport)
