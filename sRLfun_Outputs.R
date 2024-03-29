@@ -19,9 +19,9 @@ sRL_OutputCountries<-function(scientific_name, countries){
   CO_SIS0 <- ddply(countries, .(SIS_name0), function(x){data.frame(
     name=x$SIS_name0[1],
     lookup=x$lookup_SIS0[1],
-    presence=paste(unique(x$presence), sep="|"),
-    origin=paste(unique(x$origin), sep="|"),
-    seasonal=paste(unique(x$seasonal), sep="|")
+    presence=paste(unique(unlist(strsplit(x$presence, "[|]"))), sep="[|]"),
+    origin=paste(unique(unlist(strsplit(x$origin, "[|]"))), sep="[|]"),
+    seasonal=paste(unique(unlist(strsplit(x$seasonal, "[|]"))), sep="[|]")
   )})
   
   # Merge both

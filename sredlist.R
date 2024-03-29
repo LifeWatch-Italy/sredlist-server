@@ -2638,8 +2638,8 @@ Prom<-future({
   # Countries (but enabling skipping step) + prepare assessments.csv
   if("coo_occ" %in% names(Storage_SP)){
     tryCatch({
-      countries_SIS<-sRL_OutputCountries(scientific_name, Storage_SP$coo_occ)  %>% subset(., grepl("Absent_SIS", .$CountryOccurrence.CountryOccurrenceSubfield.CountryOccurrenceName)==F)
-      write.csv(countries_SIS, paste0(output_dir, "/countries.csv"), row.names = F)    
+      countries_SIS<-sRL_OutputCountries(scientific_name, Storage_SP$coo_occ) %>% subset(., grepl("Absent_SIS", .$CountryOccurrence.CountryOccurrenceSubfield.CountryOccurrenceName)==F)
+      write.csv(countries_SIS, paste0(output_dir, "/countries.csv"), row.names = F)
     }, error=function(e){"Bug in exporting countries of occurrence for SIS"})
     assessments_SIS<-sRL_OutputAssessments(scientific_name, Storage_SP$Realms_saved, Storage_SP$Output$Value[Storage_SP$Output$Parameter=="System_pref"][1], populationTrend)
   } else {assessments_SIS<-sRL_OutputAssessments(scientific_name, NA, NA, populationTrend)}
