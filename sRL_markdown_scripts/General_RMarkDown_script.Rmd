@@ -54,17 +54,17 @@ An assessment has been completed on the sRedList platform for the species *`r sR
 <br><br><br>
 
 
-## Step 6a: Fragmentation
+## Step 6: Fragmentation
 `r if("Fragmentation_Isolation" %in% outlog$Parameter){tryCatch({knitr::knit_child("sRL_markdown_scripts/RMD_child_Step6a.rmd")}, error=function(e){"!! Error in reporting step 6a !!"})} else {NO_STEP}`
 <br><br><br>
 
 
-## Step 6b: Trends in remote-sensing products
+## Step 7: Trends in remote-sensing products
 `r if("Usage_RS" %in% outlog$Parameter){tryCatch({knitr::knit_child("sRL_markdown_scripts/RMD_child_Step6b.rmd")}, error=function(e){"!! Error in reporting step 6b !!"})} else {NO_STEP}`
 <br><br><br>
 
 
-## Step 7: Summary and assign categories
+## Step 8: Summary and assign categories
 `r tryCatch({knitr::knit_child("sRL_markdown_scripts/RMD_child_Step7.rmd")}, error=function(e){"!! Error in reporting step 7 !!"})`
 
 
