@@ -1250,7 +1250,6 @@ Prom<-future({
   distSP=Storage_SP$distSP_saved ; if(nrow(distSP)==0){empty_distrib()}
 
   # Habitat table (for aoh analysis and for SIS Connect)
-  if(! exists("habitats_pref_MARGINAL")){habitats_pref_MARGINAL=NA}
   habitats_pref_DF<-sRL_PrepareHabitatFile(scientific_name, habitats_pref, habitats_pref_MARGINAL)
   print(habitats_pref_DF)
   Storage_SP$habitats_SIS=habitats_pref_DF
