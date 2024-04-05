@@ -215,7 +215,10 @@ Prom<-future({
   } else {
     alt_pref<-list(name=scientific_name, result=sRL_PrepareAltitudeFile(scientific_name, altitudes_pref=c(NA,NA)))
   }
-
+  
+  # Elevation source from Red List or calculated
+  alt_pref$result$src_lower <- ifelse(is.na(alt_pref$result$elevation_lower), "The proposed lower elevation preference corresponds to the lowest elevation within the species range", "The proposed lower elevation preference corresponds to the one published in last assessment")
+  alt_pref$result$src_upper <- ifelse(is.na(alt_pref$result$elevation_upper), "The proposed upper elevation preference corresponds to the highest elevation within the species range", "The proposed upper elevation preference corresponds to the one published in last assessment")
   
   # If no altitude preference, take from raster
   if(is.na(alt_pref$result$elevation_lower+alt_pref$result$elevation_upper)){
@@ -250,8 +253,8 @@ Prom<-future({
   }
 
   # If something remains NA -> 0, 9000
-  if(is.na(alt_pref$result$elevation_lower)==T){alt_pref$result$elevation_lower<-0}
-  if(is.na(alt_pref$result$elevation_upper)==T){alt_pref$result$elevation_upper<-9000}
+  if(is.na(alt_pref$result$elevation_lower)==T){alt_pref$result$elevation_lower<-0 ; alt_pref$result$src_lower<-"default"}
+  if(is.na(alt_pref$result$elevation_upper)==T){alt_pref$result$elevation_upper<-9000 ; alt_pref$result$src_upper<-"default"}
   
   sRL_loginfo("END - Altitude extract", scientific_name)
   sRL_StoreSave(scientific_name, username, Storage_SP)
