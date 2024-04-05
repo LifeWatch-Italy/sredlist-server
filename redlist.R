@@ -217,8 +217,8 @@ Prom<-future({
   }
   
   # Elevation source from Red List or calculated
-  alt_pref$result$src_lower <- ifelse(is.na(alt_pref$result$elevation_lower), "The proposed lower elevation preference corresponds to the lowest elevation within the species range", "The proposed lower elevation preference corresponds to the one published in last assessment")
-  alt_pref$result$src_upper <- ifelse(is.na(alt_pref$result$elevation_upper), "The proposed upper elevation preference corresponds to the highest elevation within the species range", "The proposed upper elevation preference corresponds to the one published in last assessment")
+  alt_pref$result$src_lower <- ifelse(is.na(alt_pref$result$elevation_lower), "The proposed lower elevation preference was calculated as the lowest elevation within the species range", "The proposed lower elevation preference was retrieved from the last assessment")
+  alt_pref$result$src_upper <- ifelse(is.na(alt_pref$result$elevation_upper), "The proposed upper elevation preference was calculated as the highest elevation within the species range", "The proposed upper elevation preference was retrieved from the last assessment")
   
   # If no altitude preference, take from raster
   if(is.na(alt_pref$result$elevation_lower+alt_pref$result$elevation_upper)){

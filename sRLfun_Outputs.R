@@ -246,11 +246,30 @@ sRL_OutputDistribution<-function(scientific_name, Storage_SP, username){
   distSIS$seasonal<-1
   distSIS$spatialref<-"WGS84"
   distSIS$yrcompiled<-Sys.time() %>% format(., "%Y")
-  distSIS$citation<-"sRedList Working Group 2023" # To fill
+  distSIS$citation<-"sRedList Working Group 2024" # To fill
   distSIS$source<-"sRedList platform"
   distSIS$id_no<-sRL_CalcIdno(scientific_name)
   distSIS$compiler<-username
   distSIS$data_sens<-0
+  
+  # Add distribution creation parameter in dist_comm
+  tryCatch({
+    Outpts <- Storage_SP$Output
+    distSIS$dist_comm<-paste0(
+      "The distribution was created on the sRedList platform from ", 
+      nrow(Storage_SP$dat_proj_saved), 
+      " occurrence records (source=", Outpts$Value[Outpts$Parameter=="Gbif_Source"], ") ",
+      "with settings: Starting point=", Outpts$Value[Outpts$Parameter=="Mapping_Start"], 
+      ifelse(Outpts$Value[Outpts$Parameter=="Mapping_Start"]=="alpha", paste0(" (alpha_parameter=", Outpts$Value[Outpts$Parameter=="Alpha_parameter"], ")"), ""),
+      ifelse(Outpts$Value[Outpts$Parameter=="Mapping_Start"]=="kernel", paste0(" (kernel_parameter=", Outpts$Value[Outpts$Parameter=="Kernel_parameter"], ")"), ""),
+      ", buffer=", Outpts$Value[Outpts$Parameter=="Mapping_Buffer"], 
+      ", crop=", Outpts$Value[Outpts$Parameter=="Mapping_Crop"], 
+      ifelse(Outpts$Value[Outpts$Parameter=="Mapping_Altitude"] == "0,9000", "", paste0(", altitude=", Outpts$Value[Outpts$Parameter=="Mapping_Altitude"])), 
+      ", smooth=", Outpts$Value[Outpts$Parameter=="Mapping_Smooth"]
+      ) %>% substr(., 1, 250)
+    
+  }, error=function(e){cat("Bug in creating dist_comm (comment for distribution)")})
+  
   
   # Send geometry column at the end of the table
   if("geometry" %in% names(distSIS)){distSIS<-distSIS[, c(names(distSIS)[names(distSIS) != "geometry"], "geometry")]}
