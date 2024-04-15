@@ -81,6 +81,7 @@ ui <-fluidPage(
   
   fluidRow(
     column(6,
+           conditionalPanel('false', textInput("user", "User name:")),
            fluidRow(
              column(6,
                     selectInput("TaxoGroup", "Group:", choices=c("Select your group", levels(as.factor(DD$Group))))),
@@ -127,6 +128,11 @@ server <- function(input, output, session) {
   
   
   ### EVENTS ###
+  ### Read the URL parameter from session$clientData$url_search
+  observe({
+    query <- parseQueryString(session$clientData$url_search)
+    updateTextInput(session, "user", value = query[['user']])
+  })
   
   ### Observe Event when the group is selected
   observeEvent(input$TaxoGroup, {
@@ -231,17 +237,19 @@ server <- function(input, output, session) {
       Track_name <- "Tracker_DDprio.rds"
 
       # Create tracking file if not existant
-      if(! Track_name %in% list.files(Track_dir)){saveRDS(data.frame(Date=NA, Group=NA, Action=NA)[0,], paste(Track_dir, Track_name, sep="/"))}
+      if(! Track_name %in% list.files(Track_dir)){saveRDS(data.frame(Date=NA, Group=NA, Action=NA, User=NA, UniqID=NA)[0,], paste(Track_dir, Track_name, sep="/"))}
 
       # Load file and add new tracker
       Old_tracker <- readRDS(paste(Track_dir, Track_name, sep="/"))
       isolate(New_tracker <- Tracker_df()) # Isolate is needed in a non-reactive function
       New_tracker$Group <- isolate(input$TaxoGroup)
-      New_tracker$Date <- Sys.Date()
+      New_tracker$Date <- as.character(Sys.Date())
+      New_tracker$User <- isolate(input$user)
+      New_tracker$UniqID <- sample(10000,1) # Get a unique number to easily differentiate sessions
       
       # Save (only if we have a group)
       if(New_tracker$Group[1] != "Select your group"){
-        saveRDS(rbind(Old_tracker, New_tracker), paste(Track_dir, Track_name, sep="/")) 
+        saveRDS(rbind.fill(Old_tracker, New_tracker), paste(Track_dir, Track_name, sep="/")) 
       }
 
     }, error=function(e){cat("Bug when saving tracker")})
