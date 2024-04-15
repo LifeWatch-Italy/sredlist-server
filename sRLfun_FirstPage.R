@@ -338,7 +338,10 @@ sRL_cleaningMemory<-function(Time_limit){
       
       # Keep track in Stored_Output
       if(length(toremove_temp)>0){
+      
       tryCatch({
+        print(paste0("Species_to_record (clean function): ", paste(toremove_temp, collapse=" + "), "_close"))
+        
         FileStored<-paste0("Species/Stored_outputs/Stored_", substr(Sys.Date(), 1, 7), ".rds")
 
         # Determine if I have to run distributions cleaning function (only once at the start of the month)        

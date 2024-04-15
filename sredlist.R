@@ -2820,6 +2820,8 @@ function(scientific_name, username) {
   
   # Save Outputs
   tryCatch({
+    print(paste0("Species_to_record (zip function): ", scientific_name, " by ", username, "_close"))
+    
     FileStored<-paste0("Species/Stored_outputs/Stored_", substr(Sys.Date(), 1, 7), ".rds")
     if(file.exists(FileStored)){
       Saved_output<-readRDS(FileStored)
