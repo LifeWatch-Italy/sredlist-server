@@ -630,7 +630,7 @@ Prom<-future({
   
   # Keep distribution in memory
   Storage_SP$distSP3_saved=distSP[, names(distSP) != "alphaTEMPO"]
-  Storage_SP<-sRL_OutLog(Storage_SP, c("Mapping_Start", "Mapping_Crop", "Mapping_Buffer", "Mapping_Altitude", "Kernel_parameter", "Alpha_parameter", "Mapping_Merge"), c(Gbif_Start, Gbif_Crop, Gbif_Buffer, paste0(Gbif_Altitude, collapse=","), ifelse(Gbif_Start=="kernel", Gbif_Param[2], NA), ifelse(Gbif_Start=="alpha", Gbif_Param[1], NA), Gbif_RLDistBin))
+  Storage_SP<-sRL_OutLog(Storage_SP, c("Mapping_Start", "Mapping_Crop", "Mapping_Buffer", "Mapping_Altitude", "Kernel_parameter", "Alpha_parameter", "Mapping_Merge"), c(Gbif_Start, Gbif_Crop, Gbif_Buffer, paste0(Gbif_Altitude, collapse=", "), ifelse(Gbif_Start=="kernel", Gbif_Param[2], NA), ifelse(Gbif_Start=="alpha", Gbif_Param[1], NA), Gbif_RLDistBin))
   sRL_StoreSave(scientific_name, username,  Storage_SP)
   
   return(list(
@@ -777,8 +777,8 @@ Prom<-future({
       if(Crop_par %in% c("cropland", "cropsea") | (is.na(Crop_Country) == F & Crop_Country != "") ){
         distSP<-sRL_MapDistributionGBIF(Storage_SP$dat_proj_saved, scientific_name,
                                         First_step=Storage_SP$Output$Value[Storage_SP$Output$Parameter=="Mapping_Start"],
-                                        AltMIN=Storage_SP$Output$Value[Storage_SP$Output$Parameter=="Mapping_Altitude"] %>% strsplit(., ",") %>% unlist(.) %>% as.numeric(.) %>% .[1], 
-                                        AltMAX=Storage_SP$Output$Value[Storage_SP$Output$Parameter=="Mapping_Altitude"] %>% strsplit(., ",") %>% unlist(.) %>% as.numeric(.) %>% .[2],
+                                        AltMIN=Storage_SP$Output$Value[Storage_SP$Output$Parameter=="Mapping_Altitude"] %>% strsplit(., ", ") %>% unlist(.) %>% as.numeric(.) %>% .[1], 
+                                        AltMAX=Storage_SP$Output$Value[Storage_SP$Output$Parameter=="Mapping_Altitude"] %>% strsplit(., ", ") %>% unlist(.) %>% as.numeric(.) %>% .[2],
                                         Buffer_km=as.numeric(Storage_SP$Output$Value[Storage_SP$Output$Parameter=="Mapping_Buffer"]),
                                         GBIF_crop="",
                                         Gbif_Param=c(as.numeric(Storage_SP$Output$Value[Storage_SP$Output$Parameter=="Alpha_parameter"]), as.numeric(Storage_SP$Output$Value[Storage_SP$Output$Parameter=="Kernel_parameter"])))
@@ -2654,7 +2654,7 @@ Prom<-future({
   ref_SIS<-sRL_OutputRef(scientific_name, Storage_SP) 
   taxo_SIS<-sRL_OutputTaxo(scientific_name, Estimates)
   out_save<-Storage_SP$Output[Storage_SP$Output$Definition !="Only used to track usage",] %>% subset(., select=names(.)[names(.) != "Count"])
-  
+
   # Save csv files in a folder
   write.csv(replace(allfields_to_save, is.na(allfields_to_save), ""), paste0(output_dir, "/allfields.csv"), row.names = F)
   write.csv(taxo_SIS, paste0(output_dir, "/taxonomy.csv"), row.names = F)
@@ -2808,7 +2808,7 @@ function(scientific_name, username) {
   if(output_species$Value[output_species$Parameter=="Gbif_yearBin"]=="FALSE"){output_species<-output_species[-which(output_species$Parameter=="Gbif_yearBin"),]}
   if(output_species$Value[output_species$Parameter=="Gbif_uncertainBin"]=="FALSE"){output_species<-output_species[-which(output_species$Parameter=="Gbif_uncertainBin"),]}
   if(output_species$Value[output_species$Parameter=="Mapping_Buffer"]=="0"){output_species<-output_species[-which(output_species$Parameter=="Mapping_Buffer"),]}
-  if(output_species$Value[output_species$Parameter=="Mapping_Altitude"]=="0,9000"){output_species<-output_species[-which(output_species$Parameter=="Mapping_Altitude"),]}
+  if(output_species$Value[output_species$Parameter=="Mapping_Altitude"]=="0, 9000"){output_species<-output_species[-which(output_species$Parameter=="Mapping_Altitude"),]}
   if(output_species$Value[output_species$Parameter=="Mapping_Merge"]=="FALSE"){output_species<-output_species[-which(output_species$Parameter=="Mapping_Merge"),]}
   if(output_species$Value[output_species$Parameter=="Mapping_Smooth"]=="0"){output_species<-output_species[-which(output_species$Parameter=="Mapping_Smooth"),]}
   if(output_species$Value[output_species$Parameter=="Distribution_Presence"]=="1,2"){output_species<-output_species[-which(output_species$Parameter=="Distribution_Presence"),]}
