@@ -1055,8 +1055,15 @@ function(scientific_name) {
   density_estimate = density_data$Density[density_data$Species == scientific_name] %>% round(., 2)
   if(length(density_estimate)>1){density_estimate<-mean(density_estimate, na.rm=T)}
   
+  # Load source of density
+  SRC <- ifelse(is.na(density_estimate), 
+                        "We did not find density estimate to suggest.",
+                        paste0("Density estimate extracted from ", density_data$Source[density_data$Species == scientific_name][1])
+                        )
+  
   return(list(
     raw_density=as.character(density_estimate),
+    density_src=SRC,
     perc_mature=as.character(100),
     perc_suitable=as.character(100)
   ));
@@ -1112,8 +1119,15 @@ function(scientific_name) {
 
   # If value in GL_file we take it, otherwise default=1
   GL_species = ifelse(scientific_name %in% GL_file$internal_taxon_name, GL_file$GL_estimate[GL_file$internal_taxon_name==scientific_name][1], 1)
-
-  return(list(GL_species = as.character(GL_species)))
+  
+  # Get GL source
+  SRC <- ifelse(scientific_name %in% GL_file$internal_taxon_name, paste0("A generation length was found in ", GL_file$Source[GL_file$internal_taxon_name==scientific_name][1]), "default")
+  
+  
+  return(list(
+    GL_species = as.character(GL_species),
+    GL_src = SRC
+    ))
 }
 
 
