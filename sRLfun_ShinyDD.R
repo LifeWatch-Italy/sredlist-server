@@ -1,7 +1,7 @@
 
 ### Prepare the plot to display
 DDfun_PlotIsoc<-function(GR, Tab_subset, Sel_SP){
-  print(paste0("START - Plot ", GR))
+  #print(paste0("START - Plot ", GR))
   
   DD_GR<-subset(DD, Group==GR & is.na(PrioDS_raw)==F)
   QUANT<-quantile(DD_GR$PrioDS_raw, probs=c(0,0.5,0.75,0.9,1))

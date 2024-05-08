@@ -1,6 +1,28 @@
 
 
 
+### Functions to keep a single value for presence or origin in COO (see Mapping Standards p.18-19; only seasonal can have multiple codes in SIS)
+sRL_SelectUniquePres <- function(x){
+  Pres_tokeep <- rep(NA, length(x))
+  
+  for(i in 1:length(Pres_tokeep)){
+    Pres_tokeep[i] <- x[i] %>% strsplit(., "[|]") %>% unlist(.) %>% factor(., levels = c("1","2","3","4","5","6")) %>% sort(.) %>% as.character(.) %>% .[1]
+  }
+  
+  return(Pres_tokeep)
+}
+
+sRL_SelectUniqueOrig <- function(x){
+  Orig_tokeep <- rep(NA, length(x))
+  
+  for(i in 1:length(Orig_tokeep)){
+    Orig_tokeep[i] <- x[i] %>% strsplit(., "[|]") %>% unlist(.) %>% factor(., levels = c("1","2","6","3","4","5")) %>% sort(.) %>% as.character(.) %>% .[1]
+  }
+  
+  return(Orig_tokeep)
+}
+
+
 
 ### Prepare countries output csv
 sRL_OutputCountries<-function(scientific_name, countries){
@@ -14,14 +36,14 @@ sRL_OutputCountries<-function(scientific_name, countries){
   CO_SIS1 <- subset(countries, is.na(SIS_name1)==F) %>% .[, c("SIS_name1", "lookup", "presence", "origin", "seasonal")] %>% as.data.frame(.)
   CO_SIS1$geometry <-NULL
   CO_SIS1$name <- CO_SIS1$SIS_name1
-  
+
   # Create one dataset with only level0 (and keeping all values for those in level1)
   CO_SIS0 <- ddply(countries, .(SIS_name0), function(x){data.frame(
     name=x$SIS_name0[1],
     lookup=x$lookup_SIS0[1],
-    presence=paste(unique(unlist(strsplit(x$presence, "[|]"))), sep="[|]"),
-    origin=paste(unique(unlist(strsplit(x$origin, "[|]"))), sep="[|]"),
-    seasonal=paste(unique(unlist(strsplit(x$seasonal, "[|]"))), sep="[|]")
+    presence=paste(unique(unlist(strsplit(x$presence, "[|]"))), collapse="|"),
+    origin=paste(unique(unlist(strsplit(x$origin, "[|]"))), collapse="|"),
+    seasonal=paste(unique(unlist(strsplit(x$seasonal, "[|]"))), collapse="|")
   )})
   
   # Merge both
@@ -29,10 +51,10 @@ sRL_OutputCountries<-function(scientific_name, countries){
   CO_SIS$CountryOccurrence.CountryOccurrenceSubfield.formerlyBred=NA
 
   # Complete presence, origin, season attributes based on attributes of the distribution used (only useful for Red List or uploaded distributions)
-  CO_SIS$presence <- CO_SIS$presence  %>% sRL_CountriesAttributes(., "presence", "num2char")
-  CO_SIS$origin <- CO_SIS$origin  %>% sRL_CountriesAttributes(., "origin", "num2char")
+  CO_SIS$presence <- CO_SIS$presence %>% sRL_SelectUniquePres(.) %>% sRL_CountriesAttributes(., "presence", "num2char")
+  CO_SIS$origin <- CO_SIS$origin %>% sRL_SelectUniqueOrig(.) %>% sRL_CountriesAttributes(., "origin", "num2char")
   CO_SIS$seasonal <- CO_SIS$seasonal %>% sRL_CountriesAttributes(., "seasonal", "num2char")
-  
+
   # Change presence code if occurrence records are used (then it depends on whether we have records within the country or not)
   if(grepl("<i>", paste(CO_SIS$name, collapse=""))){
     CO_SIS$presence <- ifelse(grepl("<i>", CO_SIS$name), "Possibly Extant", "Extant") # Possibly extant if no occurrence records within country, extant otherwise
@@ -327,7 +349,7 @@ sRL_OutputOccurrences <- function(scientific_name, Storage_SP, username) {
   dat_SIS$spatialref<-"WGS84"
   dat_SIS$event_year<-dat$event_year
   dat_SIS$citation<-"IUCN (International Union for Conservation of Nature)"
-  dat_SIS$source<-dat$source
+  if("source" %in% names(dat)){dat_SIS$source<-substr(dat$source, 1, 253)}
   dat_SIS$id_no<-sRL_CalcIdno(scientific_name)
   dat_SIS$compiler<-username
   dat_SIS$data_sens<-0

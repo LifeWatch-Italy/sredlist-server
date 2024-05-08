@@ -197,6 +197,7 @@ sRL_createDataGBIF <- function(scientific_name, GBIF_SRC, Gbif_Country, Uploaded
     names(dat_upload)<-replace(names(dat_upload), names(dat_upload)=="Source", "source")
     names(dat_upload)<-replace(names(dat_upload), names(dat_upload)=="basisofrec", "basisOfRecord")
     dat_upload <- subset(dat_upload, decimalLongitude > co_EXT[1] & decimalLongitude < co_EXT[2] & decimalLatitude > co_EXT[3] & decimalLatitude < co_EXT[4]) # Restrict to country of interest before subsampling
+    if(!"source" %in% names(dat_upload)){dat_upload$source<-NA}
     
     # If too many data (with a higher threshold), keep a sample 
     if(nrow(dat_upload) > 3*config$LIM_GBIF){
@@ -726,11 +727,13 @@ sRL_cooExtract<-function(distSP, domain_pref, Crop_Country){
     coo<-coo_raw
     
     # Map intersection and summarise attributes
-    inter<-st_intersection(distSP, coo) %>% as.data.frame() %>% ddply(., .(SIS_name0, SIS_name1, lookup, lookup_SIS0), function(x){data.frame(presence=paste(sort(unique(x$presence)), collapse="|"), origin=paste(sort(unique(x$origin)), collapse="|"), seasonal=paste(sort(unique(x$seasonal)), collapse="|"))})
+    inter<-st_intersection(distSP, coo) %>% 
+      as.data.frame() %>% 
+      ddply(., .(SIS_name0, SIS_name1, lookup, lookup_SIS0), function(x){data.frame(presence=paste(sort(unique(x$presence)), collapse="|"), origin=paste(sort(unique(x$origin)), collapse="|"), seasonal=paste(sort(unique(x$seasonal)), collapse="|"))})
     
     # Match attributes
-    coo$presence<-inter$presence[match(coo$lookup, inter$lookup)]
-    coo$origin<-inter$origin[match(coo$lookup, inter$lookup)]
+    coo$presence<-inter$presence[match(coo$lookup, inter$lookup)] %>% sRL_SelectUniquePres(.)
+    coo$origin<-inter$origin[match(coo$lookup, inter$lookup)] %>% sRL_SelectUniqueOrig(.)
     coo$seasonal<-inter$seasonal[match(coo$lookup, inter$lookup)]
     
     ### Prepare plot attributed
@@ -880,7 +883,7 @@ sRL_CountriesAttributes <- function(Attributes, COL, TransDir){
   
   ### Prepare translation table
   if(COL=="presence"){TAB <- data.frame(Num=1:6, Char=c("Extant", "Probably Extant", "Possibly Extant", "Possibly Extinct", "Extinct Post-1500", "Presence Uncertain"))}
-  if(COL=="origin"){TAB <- data.frame(Num=1:6, Char=c("Native", "Reintroduced", "Introduced", "Prehistorically Introduced", "Vagrant", "Origin Uncertain"))}
+  if(COL=="origin"){TAB <- data.frame(Num=1:6, Char=c("Native", "Reintroduced", "Introduced", "Vagrant", "Origin Uncertain", "Assisted Colonisation"))}
   if(COL=="seasonal"){TAB <- data.frame(Num=1:5, Char=c("Resident", "Breeding Season", "Non-Breeding Season", "Passage", "Seasonal Occurrence Uncertain"))}
   
   ### Transform from character to numeric (in reverse order otherwise "Extant" is replaced before "Possibly Extant")

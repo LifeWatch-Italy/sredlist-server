@@ -22,5 +22,5 @@ DT::datatable(COO_df, rownames=F,
 ) %>% DT::formatStyle(columns = c(1:ncol(COO_df)), fontSize = '75%')
 ```
 
-
+*Note that if multiple presence or origin codes are selected for a single entity, the platform will only keep the appropriate value (following the hierarchy described in the Mapping Standards) in the outputs (countries.csv).*
 

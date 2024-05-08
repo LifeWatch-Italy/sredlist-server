@@ -2688,6 +2688,8 @@ Prom<-future({
   
   # Save distribution and occurrences if from GBIF
   if(is.null(Storage_SP$gbif_number_saved)==F){
+    sRL_loginfo("Start saving distribution", scientific_name)
+    
     distSIS<-sRL_OutputDistribution(scientific_name, Storage_SP, username_formatted)
     if("hybas_concat" %in% names(Storage_SP$distSP_saved)){
       hydroSIS<-sRL_OutputHydrobasins(distSIS, Storage_SP)

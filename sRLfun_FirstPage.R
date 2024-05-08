@@ -124,7 +124,6 @@ sRL_ReadDistribution <- function(scientific_name, path) {
     distributions <- sf::st_read(distributionPath)
   }
   
-  #distributions<-st_read("Distributions/Chameleons/CHAMELEONS.shp") # nolint
   return(distributions)
 }
 
