@@ -93,11 +93,12 @@ function(scientific_name) {
 #* Plot the distributions plot from RedList API
 #* @get species/<scientific_name>/distribution
 #* @param scientific_name:string Scientific Name
+#* @param username:string Username
 #* @param Dist_path:string Distribution Folder default RedList
 #* @serializer png list(width = 800, height = 600)
 #* @tag RedList
 function(scientific_name, username, Dist_path = "") {
-
+print(username)
   Prom<-future({
 
     ### Filter param

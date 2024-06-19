@@ -500,7 +500,7 @@ sRL_LeafletFlags <- function(flags){
 
 
 # Step 3 --------------------------------
-sRL_MapDistributionGBIF<-function(dat, scientific_name, First_step, AltMIN, AltMAX, Buffer_km, GBIF_crop, Gbif_Param){
+sRL_MapDistributionGBIF<-function(dat, scientific_name, First_step, AltMIN, AltMAX, Buffer_km, Gbif_Param){
 
   ### The first step can be mcp, kernel, alpha, indivsites, coastal, hydro8, hydro10, hydro12, hydroMCP
   if(First_step=="mcp" | First_step==""){
@@ -613,23 +613,6 @@ sRL_MapDistributionGBIF<-function(dat, scientific_name, First_step, AltMIN, AltM
     distGBIF$geometry<-st_intersection(distGBIF, realms_mcp)$geometry
   }
   
-  ### Apply crop by land/sea
-  if(GBIF_crop %in% c("cropland", "cropsea")){
-    
-    # Create countries map based on the buffer
-    CountrySP<-st_crop(distCountries_mapping, 1.1*extent(distGBIF))
-  
-    # Remove land or sea if requested
-    if(GBIF_crop=="cropland"){
-      if(nrow(CountrySP)==0){no_land_map()}
-      distGBIF<-st_intersection(distGBIF, CountrySP) %>% 
-        dplyr::group_by(binomial) %>% dplyr::summarise(N = n())}
-
-    if(GBIF_crop=="cropsea" & nrow(CountrySP)>0){ # If nrow==0 it means there is no overlap between countries and the extent of distGBIF, so everything is already at sea
-      countr<-CountrySP %>% st_crop(., extent(distGBIF)) %>% dplyr::group_by() %>% dplyr::summarise(N = n())
-      distGBIF<-st_difference(distGBIF, countr)}
-  }
-  
   
   ### Apply crop by altitude
   if(AltMIN>0 | AltMAX<9000){
@@ -681,6 +664,31 @@ sRL_MapDistributionGBIF<-function(dat, scientific_name, First_step, AltMIN, AltM
   
   return(distGBIF)
   
+}
+
+
+### Crop distribution (not integrated in sRL_MapDistribution to enable saving the intermediate for smoothing)
+sRL_CropDistributionGBIF <- function(distGBIF, GBIF_crop){
+  
+  ### Apply crop by land/sea
+  if(GBIF_crop %in% c("cropland", "cropsea")){
+    
+    # Create countries map based on the buffer
+    CountrySP<-st_crop(distCountries_mapping, 1.1*extent(distGBIF))
+    
+    # Remove land or sea if requested
+    if(GBIF_crop=="cropland"){
+      if(nrow(CountrySP)==0){no_land_map()}
+      distGBIF<-st_intersection(distGBIF, CountrySP) %>% 
+        dplyr::group_by(binomial) %>% dplyr::summarise(N = n())}
+    
+    if(GBIF_crop=="cropsea" & nrow(CountrySP)>0){ # If nrow==0 it means there is no overlap between countries and the extent of distGBIF, so everything is already at sea
+      countr<-CountrySP %>% st_crop(., extent(distGBIF)) %>% dplyr::group_by() %>% dplyr::summarise(N = n())
+      distGBIF<-st_difference(distGBIF, countr)}
+    
+  }
+  
+  return(distGBIF)
 }
 
 
