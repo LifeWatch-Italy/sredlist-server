@@ -680,11 +680,14 @@ sRL_CropDistributionGBIF <- function(distGBIF, GBIF_crop){
     if(GBIF_crop=="cropland"){
       if(nrow(CountrySP)==0){no_land_map()}
       distGBIF<-st_intersection(distGBIF, CountrySP) %>% 
-        dplyr::group_by(binomial) %>% dplyr::summarise(N = n())}
+        dplyr::group_by(binomial, presence, origin, seasonal) %>% dplyr::summarise(N = n())
+      }
     
     if(GBIF_crop=="cropsea" & nrow(CountrySP)>0){ # If nrow==0 it means there is no overlap between countries and the extent of distGBIF, so everything is already at sea
       countr<-CountrySP %>% st_crop(., extent(distGBIF)) %>% dplyr::group_by() %>% dplyr::summarise(N = n())
-      distGBIF<-st_difference(distGBIF, countr)}
+      distGBIF<-st_difference(distGBIF, countr) %>% 
+        dplyr::group_by(binomial, presence, origin, seasonal) %>% dplyr::summarise(N = n())
+      }
     
   }
   
@@ -805,7 +808,7 @@ sRL_cooExtract<-function(distSP, domain_pref, Crop_Country){
 
 
 ### Function to crop a country for National Red Listing
-sRL_CropCountry<-function(distSP, Crop_Country){
+sRL_CropCountry<-function(distSP, Crop_Country, scientific_name){
   
   country_sub <- sRL_ShapeCountryNRL(Crop_Country, scientific_name)
 

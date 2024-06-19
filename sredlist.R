@@ -163,7 +163,7 @@ Prom<-future({
   Storage_SP<-sRL_OutLog(Storage_SP, "Crop_Country", Crop_Country)
   if(Crop_Country != ""){
     sRL_loginfo("START - Crop country \n", scientific_name)
-    distSP<-sRL_CropCountry(distSP, Crop_Country)
+    distSP<-sRL_CropCountry(distSP, Crop_Country, scientific_name)
     sRL_loginfo("END - Crop country \n", scientific_name)
   }
 
@@ -604,7 +604,7 @@ Prom<-future({
   
   # Crop by country
   Crop_Country<-Storage_SP$Output$Value[Storage_SP$Output$Parameter=="Crop_Country"]
-  if(is.na(Crop_Country) == F & Crop_Country != ""){distSP <- sRL_CropCountry(distSP, Crop_Country)}
+  if(is.na(Crop_Country) == F & Crop_Country != ""){distSP <- sRL_CropCountry(distSP, Crop_Country, scientific_name)}
 
   # Map countries (keeping max extent between points and polygons)
   EXT_max <-  do.call(raster::bind, sapply(c(extent(distSP), extent(dat_proj)), FUN = function(x){as(x, 'SpatialPolygons')}))  %>% sp::bbox(.) %>% extent(.)
@@ -787,7 +787,7 @@ Prom<-future({
       } else {distSP<-Storage_SP$distSP3_saved}
       distSP<-smoothr::smooth(distSP, method = "ksmooth", smoothness=(exp(Gbif_Smooth/20)-1), max_distance=10000)
       # Crop country if National Red Listing
-      if(is.na(Crop_Country) == F & Crop_Country != ""){distSP <- sRL_CropCountry(distSP, Crop_Country)}
+      if(is.na(Crop_Country) == F & Crop_Country != ""){distSP <- sRL_CropCountry(distSP, Crop_Country, scientific_name)}
       
       } else{
         distSP<-Storage_SP$distSP3_saved
