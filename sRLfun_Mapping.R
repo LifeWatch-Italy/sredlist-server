@@ -283,10 +283,10 @@ sRL_StructureGBIF<-function(scientificName, co_EXT, co_tot){
   
   # If extent is small, cut the grid in ca. 100 square cells
   if(max(DeltaX, DeltaY) < (10*Max_Cell)){
-    NX<- round(10*DeltaX / sqrt(DeltaX*DeltaY)) # Calculates the number of cells to have in one row so that we end up with ca. 100 square cells
-    NY<- round(10*DeltaY / sqrt(DeltaX*DeltaY))
-    Lon_breaks<-seq((min(coords$X, na.rm=T)-1), max(coords$X, na.rm=T), length.out=(NX+1))
-    Lat_breaks<-seq((min(coords$Y, na.rm=T)-1), max(coords$Y, na.rm=T), length.out=(NY+1))
+    NX<- round(10*DeltaX / sqrt(DeltaX*DeltaY)) %>% min(., length(unique(coords$X))) # Calculates the number of cells to have in one row so that we end up with ca. 100 square cells; then take number of existing cells if that's lower
+    NY<- round(10*DeltaY / sqrt(DeltaX*DeltaY)) %>% min(., length(unique(coords$Y)))
+    Lon_breaks<-seq((min(coords$X, na.rm=T)-1), max(coords$X, na.rm=T)+1, length.out=(NX+1))
+    Lat_breaks<-seq((min(coords$Y, na.rm=T)-1), max(coords$Y, na.rm=T)+1, length.out=(NY+1))
     
     # If extent is large, cut the grid in Max_Cell square cells
   } else{
@@ -357,13 +357,13 @@ sRL_StructureGBIF<-function(scientificName, co_EXT, co_tot){
   while(i<LIMgbif){
     if(sum(TAB$N_download) < sum(TAB$N)){ # If not all columns are complete I add only to those not full, otherwise to all columns (happens as Fetch only includes data with year)
       TAB$N_download[TAB$N_download<TAB$N]<-TAB$N_download[TAB$N_download<TAB$N]+1
-    } else {TAB$N_download<-round(TAB$N_download*1.05)}
+    } else {TAB$N_download<-ceiling(TAB$N_download*1.05)}
     i=sum(TAB$N_download)
   }
 
   ##### STRUCTURE DOWNLOAD
   # Download one data (just for column names)
-  dat_structured<-rgbif::occ_data(scientificName=scientificName, hasCoordinate = T, limit=1)$data 
+  dat_structured<-rgbif::occ_data(scientificName=scientificName, hasCoordinate = T, limit=1)$data
   
   # Download group per group
   for(GR in 1:nrow(TAB)){
@@ -379,9 +379,17 @@ sRL_StructureGBIF<-function(scientificName, co_EXT, co_tot){
   
   # Merge
   dat_structured<-dat_structured[2:nrow(dat_structured),]
-  print("Finished Structured GBIF download")
+  
+  ### If for some reason, we have few records (<500), re-run a non-representative download and save an empty file to record this happened
+  if(nrow(dat_structured) < (config$LIM_GBIF/4)){
+    dat_structured <- sRL_SimpleGBIF(scientificName, co_EXT)
+    print(paste0("Non-representative sample downloaded for ", scientificName, ".csv"))
+    write.csv("", paste0("Species/Stored_outputs/Non-representative sample downloaded for ", scientificName, ".csv"))
+    }
   
   dat_structured$Source_type<-"GBIF sample"
+  
+  print("Finished Structured GBIF download")
   
   return(dat_structured)
 }
