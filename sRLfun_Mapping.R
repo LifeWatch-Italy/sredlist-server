@@ -687,8 +687,11 @@ sRL_CropDistributionGBIF <- function(distGBIF, GBIF_crop){
       countr<-CountrySP %>% st_crop(., extent(distGBIF)) %>% dplyr::group_by() %>% dplyr::summarise(N = n())
       distGBIF<-st_difference(distGBIF, countr) %>% 
         dplyr::group_by(binomial, presence, origin, seasonal) %>% dplyr::summarise(N = n())
-      }
+    }
     
+    # 1m buffer to avoid having lines at some borders (very quick)
+    distGBIF <- st_buffer(distGBIF, 1)
+
   }
   
   return(distGBIF)
@@ -724,6 +727,27 @@ sRL_saveMapDistribution <- function(scientific_name, Storage_SP) {
   )
   jsonlite::write_json(list(info = text), paste0(filePath, upload_folder_scientific_name, ".json"), auto_unbox= TRUE) # nolint
   return(upload_folder_scientific_name)
+}
+
+
+### Merge SF polygons with different columns
+sRL_rbindfillSF <- function(poly1, poly2){
+  
+  ### Add missing lines to poly1
+  for(C1 in names(poly2)[! names(poly2) %in% names(poly1)]){poly1[,C1]<-NA}
+  
+  ### Add missing lines to poly2
+  for(C2 in names(poly1)[! names(poly1) %in% names(poly2)]){poly2[,C2]<-NA}
+  
+  ### Merge both
+  poly_merged <- rbind(poly1, poly2)
+  
+  ### If binomial or id_no present but not complete, complete them
+  if("binomial" %in% names(poly_merged) & T %in% is.na(poly_merged$binomial)){poly_merged$binomial[is.na(poly_merged$binomial)] <- poly_merged$binomial[is.na(poly_merged$binomial)==F][1]}
+  if("id_no" %in% names(poly_merged) & T %in% is.na(poly_merged$id_no)){poly_merged$id_no[is.na(poly_merged$id_no)] <- poly_merged$id_no[is.na(poly_merged$id_no)==F][1]}
+  
+  ### Return
+  return(poly_merged)
 }
 
 
