@@ -1,7 +1,7 @@
 
 
 ### Charge rasters functions
-sRL_ChargeAltRaster<-function(){alt_raw<-rast(config$alt_raster_path) ; crs(alt_raw)<-CRSMOLL ; return(alt_raw)}  # I ensure the CRS is correctly assigned (it was saved as a CRSMOLL raster)}
+sRL_ChargeAltRaster<-function(){alt_raw<-rast(config$alt_raster_path) ; crs(alt_raw)<-CRSMOLL ; names(alt_raw)[1]<-"Elevation_reprojMollweide3" ; return(alt_raw)}  # I ensure the CRS is correctly assigned (it was saved as a CRSMOLL raster)}
 
 sRL_ChargeCci2Raster<-function(){cci2<-rast(config$cci2_raster_path); crs(cci2)<-CRSMOLL ; return(cci2)}
 
