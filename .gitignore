@@ -43,6 +43,8 @@ logs/*.log
 
 # Resources
 #resources/Distributions/*
+resources/AOH_stored/*
+Species/Stored_outputs/*
 
 # Assessments
 Assessments/*
