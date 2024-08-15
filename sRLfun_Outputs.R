@@ -73,7 +73,7 @@ sRL_OutputCountries<-function(scientific_name, countries){
   
   # Remove countries that appear twice (in EEZ and COO), and keep "Extant" if both present
   CO_SIS<-CO_SIS %>% 
-    arrange(lookup, desc(factor(presence, c("Presence Uncertain", "Extinct Post-1500", "Possibly Extinct", "Possibly Extant", "Probably Extant", "Extant")))) %>% # First arrange to get lines with Extant before so that it keeps Extant if both Extant and Possibly Extant
+    arrange(lookup, desc(factor(presence, c("Expected Additional Range", "Presence Uncertain", "Extinct Post-1500", "Possibly Extinct", "Possibly Extant", "Probably Extant", "Extant")))) %>% # First arrange to get lines with Extant before so that it keeps Extant if both Extant and Possibly Extant
     distinct(., lookup, .keep_all=T)
   }
   

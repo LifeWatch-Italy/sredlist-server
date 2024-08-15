@@ -154,7 +154,7 @@ server <- function(input, output, session) {
     # Check if values are valid
     STOP=0
     check_attribute <- function(Val, nums){Values <- Val %>% strsplit(., "[|]") %>% unlist(.) ; return(! FALSE %in% (Values %in% as.character(nums)))} # Return TRUE if attributes are ok, FALSE if a value is not in nums
-    if(Column=="presence" & check_attribute(sub("presence_", "", Change_val), c(1:6))==F){STOP=1 ; showNotification(ui=HTML("Presence column can only include values from 1 to 6"), type="error", duration=5)}
+    if(Column=="presence" & check_attribute(sub("presence_", "", Change_val), c(1:7))==F){STOP=1 ; showNotification(ui=HTML("Presence column can only include values from 1 to 7"), type="error", duration=5)}
     if(Column=="origin" & check_attribute(sub("origin_", "", Change_val), c(1:6))==F){STOP=1 ; showNotification(ui=HTML("Origin column can only include values from 1 to 6"), type="error", duration=5)}
     if(Column=="seasonal" & check_attribute(sub("seasonal_", "", Change_val), c(1:5))==F){STOP=1 ; showNotification(ui=HTML("Seasonal column can only include values from 1 to 5"), type="error", duration=5)}
     

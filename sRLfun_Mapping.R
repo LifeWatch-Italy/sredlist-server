@@ -436,8 +436,8 @@ sRL_cleanDataGBIF <- function(flags, year_GBIF, uncertainty_GBIF, Gbif_yearBin, 
   ### Add flagging for points outside GBIF_xmin...
   flags$.limits<-(flags$decimalLongitude < GBIF_xmin | flags$decimalLongitude > GBIF_xmax | flags$decimalLatitude < GBIF_ymin | flags$decimalLatitude > GBIF_ymax)==F
   
-  ### Flag points with presence 4,5,6 (for uploaded or RL points)
-  if("presence" %in% names(flags)){flags$.pres<-as.character(! flags$presence %in% c("4", "5", "6"))}
+  ### Flag points with presence 4,5,6,7 (for uploaded or RL points)
+  if("presence" %in% names(flags)){flags$.pres<-as.character(! flags$presence %in% c("4", "5", "6", "7"))}
   
   ### Add a column with pasted reasons
   flags$Reason<-apply(
@@ -932,7 +932,7 @@ sRL_cooInfoBox_create<-function(RES, Realms){
 sRL_CountriesAttributes <- function(Attributes, COL, TransDir){
   
   ### Prepare translation table
-  if(COL=="presence"){TAB <- data.frame(Num=1:6, Char=c("Extant", "Probably Extant", "Possibly Extant", "Possibly Extinct", "Extinct Post-1500", "Presence Uncertain"))}
+  if(COL=="presence"){TAB <- data.frame(Num=1:7, Char=c("Extant", "Probably Extant", "Possibly Extant", "Possibly Extinct", "Extinct Post-1500", "Presence Uncertain", "Expected Additional Range"))}
   if(COL=="origin"){TAB <- data.frame(Num=1:6, Char=c("Native", "Reintroduced", "Introduced", "Vagrant", "Origin Uncertain", "Assisted Colonisation"))}
   if(COL=="seasonal"){TAB <- data.frame(Num=1:5, Char=c("Resident", "Breeding Season", "Non-Breeding Season", "Passage", "Seasonal Occurrence Uncertain"))}
   

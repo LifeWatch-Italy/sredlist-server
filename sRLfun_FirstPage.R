@@ -150,7 +150,7 @@ sRL_PrepareDistrib <- function(distributions, scientific_name){
   distributions$binomial<-distributions$binomial %>% sRL_decode(.)
   
   # If empty values, I replace by 1
-  distributions$presence <- replace(distributions$presence, ! distributions$presence %in% c(1:6), 1) %>% as.numeric(.)
+  distributions$presence <- replace(distributions$presence, ! distributions$presence %in% c(1:7), 1) %>% as.numeric(.)
   distributions$origin <- replace(distributions$origin, ! distributions$origin %in% c(1:6), 1) %>% as.numeric(.)
   distributions$seasonal <- replace(distributions$seasonal, ! distributions$seasonal %in% c(1:5), 1) %>% as.numeric(.)
   
@@ -191,7 +191,7 @@ sRL_ColourDistrib <- function(distSP){
   ### Colourise
   if(nrow(distSP) > 0){ 
     distSP$cols <- NA
-    distSP$cols <- revalue(as.character(distSP$presence), c("1"=NA, "2"=NA, "3"=NA, "4"="#FFE4E1", "5"="#8B2323", "6"="#B3B3B3"), warn_missing=F) # nolint    if (nrow(distSP) > 0) {
+    distSP$cols <- revalue(as.character(distSP$presence), c("1"=NA, "2"=NA, "3"=NA, "4"="#FFE4E1", "5"="#8B2323", "6"="#B3B3B3", "7"="#228B22"), warn_missing=F) # nolint    if (nrow(distSP) > 0) {
     
     for (i in which(is.na(distSP$cols) & is.na(distSP$presence)==F)) {
       if (distSP$origin[i] == "1") {
