@@ -630,7 +630,7 @@ Prom<-future({
   sRL_loginfo("END - Maps the distribution", scientific_name)
   
   # Keep distribution in memory
-  Storage_SP$distSP3_saved=distSP[, names(distSP) != "alphaTEMPO"]
+  Storage_SP$distSP_saved=distSP[, names(distSP) != "alphaTEMPO"]
   Storage_SP$distSP3_BeforeCrop <- distSP_BeforeCrop
   Storage_SP<-sRL_OutLog(Storage_SP, c("Mapping_Start", "Mapping_Crop", "Mapping_Buffer", "Mapping_Altitude", "Kernel_parameter", "Alpha_parameter", "Mapping_Merge"), c(Gbif_Start, Gbif_Crop, Gbif_Buffer, paste0(Gbif_Altitude, collapse=", "), ifelse(Gbif_Start=="kernel", Gbif_Param[2], NA), ifelse(Gbif_Start=="alpha", Gbif_Param[1], NA), Gbif_RLDistBin))
   sRL_StoreSave(scientific_name, username,  Storage_SP)

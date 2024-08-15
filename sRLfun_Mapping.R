@@ -578,7 +578,6 @@ sRL_MapDistributionGBIF<-function(dat, scientific_name, First_step, AltMIN, AltM
       
       # Load shapefile of LEVEL
       Path_cells<-paste0("Hydro_cut_", LEV, "/Hydrobasins_level", LEV, "_cut_cell", Cells, ".shp") %>% paste0(sub("Hydrobasins_level8_ready.shp", "", config$hydrobasins_path), .)
-      if(file.exists(Path_cells[1])==F){api_error(message = "Hydrobasins levels 10 and 12 are not working yet but we are working on it; please use level 8 for now", status=400)} # TO BE REMOVED WHEN FILES ARE READY
       hydroLEV_raw<-st_read(Path_cells[1])
       if(length(Path_cells)>1){
         for(PATH in Path_cells[2:length(Path_cells)]){
@@ -741,18 +740,26 @@ sRL_saveMapDistribution <- function(scientific_name, Storage_SP) {
 ### Merge SF polygons with different columns
 sRL_rbindfillSF <- function(poly1, poly2){
   
-  ### Add missing lines to poly1
+  # If one of them is null, return the other one
+  if(is.null(poly1)){return(poly2)}
+  if(is.null(poly2)){return(poly1)}
+  
+  ### Homogenise column names
+  st_geometry(poly1) <- "geometry"
+  st_geometry(poly2) <- "geometry"
+  
+  ### Add missing columns to poly1
   for(C1 in names(poly2)[! names(poly2) %in% names(poly1)]){poly1[,C1]<-NA}
   
-  ### Add missing lines to poly2
+  ### Add missing columns to poly2
   for(C2 in names(poly1)[! names(poly1) %in% names(poly2)]){poly2[,C2]<-NA}
   
   ### Merge both
   poly_merged <- rbind(poly1, poly2)
   
   ### If binomial or id_no present but not complete, complete them
-  if("binomial" %in% names(poly_merged) & T %in% is.na(poly_merged$binomial)){poly_merged$binomial[is.na(poly_merged$binomial)] <- poly_merged$binomial[is.na(poly_merged$binomial)==F][1]}
-  if("id_no" %in% names(poly_merged) & T %in% is.na(poly_merged$id_no)){poly_merged$id_no[is.na(poly_merged$id_no)] <- poly_merged$id_no[is.na(poly_merged$id_no)==F][1]}
+  if("binomial" %in% names(poly_merged)){if(T %in% is.na(poly_merged$binomial)){poly_merged$binomial[is.na(poly_merged$binomial)] <- poly_merged$binomial[is.na(poly_merged$binomial)==F][1]}}
+  if("id_no" %in% names(poly_merged)){if(T %in% is.na(poly_merged$id_no)){poly_merged$id_no[is.na(poly_merged$id_no)] <- poly_merged$id_no[is.na(poly_merged$id_no)==F][1]}}
   
   ### Return
   return(poly_merged)
