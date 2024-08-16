@@ -508,7 +508,7 @@ sRL_LeafletFlags <- function(flags){
 
 
 # Step 3 --------------------------------
-sRL_MapDistributionGBIF<-function(dat, scientific_name, First_step, AltMIN, AltMAX, Buffer_km, Gbif_Param){
+sRL_MapDistributionGBIF<-function(dat, scientific_name, username, First_step, AltMIN, AltMAX, Buffer_km, Gbif_Param){
 
   ### The first step can be mcp, kernel, alpha, indivsites, coastal, hydro8, hydro10, hydro12, hydroMCP
   if(First_step=="mcp" | First_step==""){
@@ -668,9 +668,37 @@ sRL_MapDistributionGBIF<-function(dat, scientific_name, First_step, AltMIN, AltM
   if(substr(First_step, 1,5)=="hydro"){distGBIF$hybas_concat<-paste0(unique(interHyd$hybas_id), collapse=",")}
   if(First_step=="hydroMCP"){distGBIF$hybas_withrecords <- hydro8_withrecord}
   
+  # Additional attributes
+  distGBIF$yrcompiled <- format(Sys.Date(), "%Y")
+  distGBIF$citation<-"sRedList 2024" # To fill
+  distGBIF$source<-"sRedList platform"
+  distGBIF$compiler<-sRL_userformatted(username)
+  distGBIF$data_sens<-0
+  distGBIF$spatialref<-"WGS84"
   
   return(distGBIF)
   
+}
+
+
+### Prepare dist_comm for distribution shp
+sRL_DistComment <- function(Output, N_dat){
+  tryCatch({
+    Comm<-paste0(
+      "The distribution was created on the sRedList platform from ", 
+      N_dat, 
+      " occurrence records (source=", Output$Value[Output$Parameter=="Gbif_Source"], ") ",
+      "with settings: Starting point=", Output$Value[Output$Parameter=="Mapping_Start"], 
+      ifelse(Output$Value[Output$Parameter=="Mapping_Start"]=="alpha", paste0(" (alpha_parameter=", Output$Value[Output$Parameter=="Alpha_parameter"], ")"), ""),
+      ifelse(Output$Value[Output$Parameter=="Mapping_Start"]=="kernel", paste0(" (kernel_parameter=", Output$Value[Output$Parameter=="Kernel_parameter"], ")"), ""),
+      ", buffer=", Output$Value[Output$Parameter=="Mapping_Buffer"], 
+      ", crop=", Output$Value[Output$Parameter=="Mapping_Crop"], 
+      ifelse(Output$Value[Output$Parameter=="Mapping_Altitude"] == "0,9000", "", paste0(", altitude=", Output$Value[Output$Parameter=="Mapping_Altitude"])), 
+      ", smooth=", Output$Value[Output$Parameter=="Mapping_Smooth"]
+    ) %>% substr(., 1, 250)
+  }, error=function(e){cat("Bug in creating dist_comm (comment for distribution)")})
+  
+  return(Comm)
 }
 
 

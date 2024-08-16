@@ -544,6 +544,8 @@ function(scientific_name, username, Gbif_Start="", Gbif_Param=list(), Gbif_Buffe
 if(Gbif_Start=="alpha" & Gbif_Param[1] <= 0){neg_alpha()}
 if(Gbif_Start=="kernel" & Gbif_Param[2] <= 0){neg_kernel()}
 if(Gbif_Start=="coastal" & (Gbif_Buffer==0 | Gbif_Crop=="")){no_gbif_coastal()}
+if(grepl("hydro", Gbif_Start) & (Gbif_Buffer>0 | Gbif_Crop!="" | Gbif_Altitude[1]!="0" | Gbif_Altitude[2]!="9000" | Gbif_RLDistBin=="true")){hydro_modified()}
+
 
 # Check the Step 2 has been run since Step 1 was last updated  
 scientific_name <- sRL_decode(scientific_name)
@@ -577,7 +579,7 @@ Prom<-future({
   if(nrow(dat_proj)<=2 & Gbif_Start %in% c("mcp", "kernel", "alpha")){too_few_occurrences()}
   
   # Create distribution
-  distSP_BeforeCrop <- sRL_MapDistributionGBIF(dat_proj, scientific_name,
+  distSP_BeforeCrop <- sRL_MapDistributionGBIF(dat_proj, scientific_name, username,
                                   First_step=Gbif_Start,
                                   AltMIN=as.numeric(Gbif_Altitude[1]), AltMAX=as.numeric(Gbif_Altitude[2]),
                                   Buffer_km=as.numeric(Gbif_Buffer),
@@ -630,14 +632,20 @@ Prom<-future({
   sRL_loginfo("END - Maps the distribution", scientific_name)
   
   # Keep distribution in memory
+  Storage_SP<-sRL_OutLog(Storage_SP, c("Mapping_Start", "Mapping_Crop", "Mapping_Buffer", "Mapping_Altitude", "Kernel_parameter", "Alpha_parameter", "Mapping_Merge"), c(Gbif_Start, Gbif_Crop, Gbif_Buffer, paste0(Gbif_Altitude, collapse=", "), ifelse(Gbif_Start=="kernel", Gbif_Param[2], NA), ifelse(Gbif_Start=="alpha", Gbif_Param[1], NA), Gbif_RLDistBin))
+  distSP$dist_comm <-sRL_DistComment(Output=Storage_SP$Output, N_dat=nrow(dat_proj))
   Storage_SP$distSP_saved=distSP[, names(distSP) != "alphaTEMPO"]
   Storage_SP$distSP3_BeforeCrop <- distSP_BeforeCrop
-  Storage_SP<-sRL_OutLog(Storage_SP, c("Mapping_Start", "Mapping_Crop", "Mapping_Buffer", "Mapping_Altitude", "Kernel_parameter", "Alpha_parameter", "Mapping_Merge"), c(Gbif_Start, Gbif_Crop, Gbif_Buffer, paste0(Gbif_Altitude, collapse=", "), ifelse(Gbif_Start=="kernel", Gbif_Param[2], NA), ifelse(Gbif_Start=="alpha", Gbif_Param[1], NA), Gbif_RLDistBin))
   sRL_StoreSave(scientific_name, username,  Storage_SP)
   
+  # Save distribution in the platform
+  gbif_path <- sRL_saveMapDistribution(scientific_name, Storage_SP)
+  
+  
   return(list(
-    plot_eoo = plot3,
-    gbif_data_number  = as.numeric(Storage_SP$gbif_number_saved)
+    plot_CreatedDistri = plot3,
+    gbif_data_number  = as.numeric(Storage_SP$gbif_number_saved),
+    gbif_path = gbif_path
   ))
   
 }, gc=T, seed=T)
@@ -676,7 +684,7 @@ function(scientific_name, username) {
     
     ### Create distributions
     # MCP
-    dist_mcp<-data.frame() ; tryCatch({dist_mcp<-sRL_MapDistributionGBIF(dat_proj, scientific_name, First_step="mcp", AltMIN=0, AltMAX=9000, Buffer_km=0, Gbif_Param=c(0,0))}, error=function(e){"Error in mapping showcase"})
+    dist_mcp<-data.frame() ; tryCatch({dist_mcp<-sRL_MapDistributionGBIF(dat_proj, scientific_name, username, First_step="mcp", AltMIN=0, AltMAX=9000, Buffer_km=0, Gbif_Param=c(0,0))}, error=function(e){"Error in mapping showcase"})
     
     G_mcp<-ggplot()+geom_sf(data=CountrySP, fill="gray70")+geom_sf(data=dist_mcp, fill="darkred")+geom_sf(data=dat_proj)+sRLTheme_maps+ggtitle("Minimum Convex Polygon")
     
@@ -684,7 +692,7 @@ function(scientific_name, username) {
     if(NSites<=50){
       Buff_raw<- sqrt((EXT_max[2]-EXT_max[1])^2+(EXT_max[4]-EXT_max[3])^2)/20000 # The buffer will be a 20th of the diagonal and in km
       Buff <- Buff_raw %>% round(.) %>% round(., -1*(nchar(.)-1)) %>% max(., 1)
-      dist_indiv<-data.frame() ; tryCatch({dist_indiv<-sRL_MapDistributionGBIF(dat_proj, scientific_name, First_step="indivsites", AltMIN=0, AltMAX=9000, Buffer_km=Buff, Gbif_Param=c(0,0))}, error=function(e){"Error in mapping showcase"})
+      dist_indiv<-data.frame() ; tryCatch({dist_indiv<-sRL_MapDistributionGBIF(dat_proj, scientific_name, username, First_step="indivsites", AltMIN=0, AltMAX=9000, Buffer_km=Buff, Gbif_Param=c(0,0))}, error=function(e){"Error in mapping showcase"})
       
       G_indiv<-ggplot()+geom_sf(data=CountrySP, fill="gray70")+geom_sf(data=dist_indiv, fill="darkred")+geom_sf(data=dat_proj)+sRLTheme_maps+ggtitle(paste0("Individual localities (buffer of ", Buff, "km)"))
     } else {G_indiv<-ggplot()+theme_void()}
@@ -694,9 +702,9 @@ function(scientific_name, username) {
     alphaB=1
     alphaC=10
     
-    dist_alphaA<-data.frame() ; tryCatch({dist_alphaA<-sRL_MapDistributionGBIF(dat_proj, scientific_name, First_step="alpha", AltMIN=0, AltMAX=9000, Buffer_km=0, Gbif_Param=c(alphaA,0))}, error=function(e){"Error in mapping showcase"})
-    dist_alphaB<-data.frame() ; tryCatch({dist_alphaB<-sRL_MapDistributionGBIF(dat_proj, scientific_name, First_step="alpha", AltMIN=0, AltMAX=9000, Buffer_km=0, Gbif_Param=c(alphaB,0))}, error=function(e){"Error in mapping showcase"})
-    dist_alphaC<-data.frame() ; tryCatch({dist_alphaC<-sRL_MapDistributionGBIF(dat_proj, scientific_name, First_step="alpha", AltMIN=0, AltMAX=9000, Buffer_km=0, Gbif_Param=c(alphaC,0))}, error=function(e){"Error in mapping showcase"})
+    dist_alphaA<-data.frame() ; tryCatch({dist_alphaA<-sRL_MapDistributionGBIF(dat_proj, scientific_name, username, First_step="alpha", AltMIN=0, AltMAX=9000, Buffer_km=0, Gbif_Param=c(alphaA,0))}, error=function(e){"Error in mapping showcase"})
+    dist_alphaB<-data.frame() ; tryCatch({dist_alphaB<-sRL_MapDistributionGBIF(dat_proj, scientific_name, username, First_step="alpha", AltMIN=0, AltMAX=9000, Buffer_km=0, Gbif_Param=c(alphaB,0))}, error=function(e){"Error in mapping showcase"})
+    dist_alphaC<-data.frame() ; tryCatch({dist_alphaC<-sRL_MapDistributionGBIF(dat_proj, scientific_name, username, First_step="alpha", AltMIN=0, AltMAX=9000, Buffer_km=0, Gbif_Param=c(alphaC,0))}, error=function(e){"Error in mapping showcase"})
     
     G_alphaA<-ggplot()+geom_sf(data=CountrySP, fill="gray70")+geom_sf(data=dist_alphaA, fill="darkred")+geom_sf(data=dat_proj)+sRLTheme_maps+ggtitle(paste0("Alpha hull (parameter = ", alphaA, ")"))
     G_alphaB<-ggplot()+geom_sf(data=CountrySP, fill="gray70")+geom_sf(data=dist_alphaB, fill="darkred")+geom_sf(data=dat_proj)+sRLTheme_maps+ggtitle(paste0("Alpha hull (parameter = ", alphaB, ")"))
@@ -709,9 +717,9 @@ function(scientific_name, username) {
       kernelB=0.9
       kernelC=0.99
       
-      dist_kernelA<-data.frame() ; tryCatch({dist_kernelA<-sRL_MapDistributionGBIF(dat_proj, scientific_name, First_step="kernel", AltMIN=0, AltMAX=9000, Buffer_km=0, Gbif_Param=c(0,kernelA))}, error=function(e){"Error in mapping showcase"})
-      dist_kernelB<-data.frame() ; tryCatch({dist_kernelB<-sRL_MapDistributionGBIF(dat_proj, scientific_name, First_step="kernel", AltMIN=0, AltMAX=9000, Buffer_km=0, Gbif_Param=c(0,kernelB))}, error=function(e){"Error in mapping showcase"})
-      dist_kernelC<-data.frame() ; tryCatch({dist_kernelC<-sRL_MapDistributionGBIF(dat_proj, scientific_name, First_step="kernel", AltMIN=0, AltMAX=9000, Buffer_km=0, Gbif_Param=c(0,kernelC))}, error=function(e){"Error in mapping showcase"})
+      dist_kernelA<-data.frame() ; tryCatch({dist_kernelA<-sRL_MapDistributionGBIF(dat_proj, scientific_name, username, First_step="kernel", AltMIN=0, AltMAX=9000, Buffer_km=0, Gbif_Param=c(0,kernelA))}, error=function(e){"Error in mapping showcase"})
+      dist_kernelB<-data.frame() ; tryCatch({dist_kernelB<-sRL_MapDistributionGBIF(dat_proj, scientific_name, username, First_step="kernel", AltMIN=0, AltMAX=9000, Buffer_km=0, Gbif_Param=c(0,kernelB))}, error=function(e){"Error in mapping showcase"})
+      dist_kernelC<-data.frame() ; tryCatch({dist_kernelC<-sRL_MapDistributionGBIF(dat_proj, scientific_name, username, First_step="kernel", AltMIN=0, AltMAX=9000, Buffer_km=0, Gbif_Param=c(0,kernelC))}, error=function(e){"Error in mapping showcase"})
       
       G_kernelA<-ggplot()+geom_sf(data=CountrySP, fill="gray70")+geom_sf(data=dist_kernelA, fill="darkred")+geom_sf(data=dat_proj)+sRLTheme_maps+ggtitle(paste0("Kernel (parameter = ", kernelA, ")"))
       G_kernelB<-ggplot()+geom_sf(data=CountrySP, fill="gray70")+geom_sf(data=dist_kernelB, fill="darkred")+geom_sf(data=dat_proj)+sRLTheme_maps+ggtitle(paste0("Kernel (parameter = ", kernelB, ")"))
@@ -742,110 +750,110 @@ function(scientific_name, username) {
 }
 
 
-
-
-## 4: Smooth ----------------------------------------------------------------
-#* GBIF smooth
-#* @get species/<scientific_name>/gbif-smooth
-#* @param scientific_name:string Scientific Name
-#* @serializer json
-#* @tag sRedList
-function(scientific_name) {return(list(Gbif_Smooth = 0))}
-
-#* Global Biodiversity Information Facility 4 (smooth)
-#* @get species/<scientific_name>/gbif4
-#* @param scientific_name:string Scientific Name
-#* @param Gbif_Smooth:num Gbif_Smooth
-#* @serializer unboxedJSON
-#* @tag sRedList
-function(scientific_name, username, Gbif_Smooth=-1) {
-  
-Prom<-future({
-  TRY=0
-  tryCatch({
-    sf::sf_use_s2(FALSE)
-    
-    ### Transform parameters GBIF filtering
-    sRL_loginfo("Start GBIF 4", scientific_name)
-    scientific_name <- sRL_decode(scientific_name)
-    Storage_SP=sRL_StoreRead(scientific_name,  username, MANDAT=1)
-    Crop_par<-Storage_SP$Output$Value[Storage_SP$Output$Parameter=="Mapping_Crop"]
-    Crop_Country<-Storage_SP$Output$Value[Storage_SP$Output$Parameter=="Crop_Country"]
-    
-    ### Smooth if parameter >0
-    Gbif_Smooth=as.numeric(Gbif_Smooth) ; print(Gbif_Smooth)
-    if(Gbif_Smooth>0){
-      
-      if(Crop_par %in% c("cropland", "cropsea") | (is.na(Crop_Country) == F & Crop_Country != "") ){
-        distSP<-sRL_MapDistributionGBIF(Storage_SP$dat_proj_saved, scientific_name,
-                                        First_step=Storage_SP$Output$Value[Storage_SP$Output$Parameter=="Mapping_Start"],
-                                        AltMIN=Storage_SP$Output$Value[Storage_SP$Output$Parameter=="Mapping_Altitude"] %>% strsplit(., ", ") %>% unlist(.) %>% as.numeric(.) %>% .[1], 
-                                        AltMAX=Storage_SP$Output$Value[Storage_SP$Output$Parameter=="Mapping_Altitude"] %>% strsplit(., ", ") %>% unlist(.) %>% as.numeric(.) %>% .[2],
-                                        Buffer_km=as.numeric(Storage_SP$Output$Value[Storage_SP$Output$Parameter=="Mapping_Buffer"]),
-                                        Gbif_Param=c(as.numeric(Storage_SP$Output$Value[Storage_SP$Output$Parameter=="Alpha_parameter"]), as.numeric(Storage_SP$Output$Value[Storage_SP$Output$Parameter=="Kernel_parameter"]))
-                                        ) %>% sRL_CropDistributionGBIF(., Gbif_Crop)
-      } else {distSP<-Storage_SP$distSP3_saved}
-      distSP<-smoothr::smooth(distSP, method = "ksmooth", smoothness=(exp(Gbif_Smooth/20)-1), max_distance=10000)
-      # Crop country if National Red Listing
-      if(is.na(Crop_Country) == F & Crop_Country != ""){distSP <- sRL_CropCountry(distSP, Crop_Country, scientific_name)}
-      
-      } else{
-        distSP<-Storage_SP$distSP3_saved
-      }
-    distSP<-st_make_valid(distSP)
-
-    ### If smooth and the distribution should be cropped by land/sea, we crop again after smoothing
-    if(Gbif_Smooth>0 & Crop_par %in% c("cropland", "cropsea")){
-      CountrySP<-Storage_SP$CountrySP_saved
-      
-      if(Crop_par=="cropland"){
-        distSP<-st_intersection(distSP, CountrySP) %>% 
-          dplyr::group_by(binomial) %>% dplyr::summarise(N = n())}
-      
-      if(Crop_par=="cropsea"){
-        countr<-distCountries_mapping %>% st_crop(., extent(distSP)) %>% dplyr::group_by() %>% dplyr::summarise(N = n())
-        distSP<-st_difference(distSP, countr)}
-      
-      distSP$id_no<-sRL_CalcIdno(scientific_name)
-      distSP$seasonal<-distSP$origin<-distSP$presence<-1
-    }
-    TRY=1
-  }, error=function(e){cat("Smooth did not work")})
-  
-  # If problem in the TryCatch (i.e., smoothing not possible), I return the original distribution
-  if(TRY==0){no_smooth()}
-  
-  ### Keep distribution in memory
-  Storage_SP$distSP_saved <- distSP
-  Storage_SP<-sRL_OutLog(Storage_SP, "Mapping_Smooth", Gbif_Smooth)
-  sRL_StoreSave(scientific_name, username,  Storage_SP)
-    
-  ### Plot
-  ggsave(paste0("resources/AOH_stored/", sub(" ", "_", scientific_name), "_", sRL_userdecode(username), "/Plots/plot_final.png"), (
-    ggplot() + 
-      geom_sf(data=Storage_SP$CountrySP_saved, fill="gray70")+
-      geom_sf(data = distSP, fill="darkred") + 
-      geom_sf(data=Storage_SP$dat_proj_saved) +
-      ggtitle("")+
-      sRLTheme_maps
-  ), width=18, height=5.5) # nolint
-  plot_final <- base64enc::dataURI(file = paste0("resources/AOH_stored/", sub(" ", "_", scientific_name), "_", sRL_userdecode(username), "/Plots/plot_final.png"), mime = "image/png") # nolint
-    
-  # Save distribution in the platform
-  gbif_path <- sRL_saveMapDistribution(scientific_name, Storage_SP)
-  sRL_loginfo("End GBIF 4", scientific_name)
-  
-  return(list(
-    plot_eoo = plot_final,
-    eoo_km2 = 1, # eoo_km2 parameter is used in the client to know if we come from GBIF or RL distribution, so I have to keep it here or to change the client
-    eoo_rating = 1,
-    gbif_path = gbif_path
-  ))
-
-}, gc=T, seed=T)
-
-return(Prom) 
-}
+# 
+# 
+# ## 4: Smooth ----------------------------------------------------------------
+# #* GBIF smooth
+# #* @get species/<scientific_name>/gbif-smooth
+# #* @param scientific_name:string Scientific Name
+# #* @serializer json
+# #* @tag sRedList
+# function(scientific_name) {return(list(Gbif_Smooth = 0))}
+# 
+# #* Global Biodiversity Information Facility 4 (smooth)
+# #* @get species/<scientific_name>/gbif4
+# #* @param scientific_name:string Scientific Name
+# #* @param Gbif_Smooth:num Gbif_Smooth
+# #* @serializer unboxedJSON
+# #* @tag sRedList
+# function(scientific_name, username, Gbif_Smooth=-1) {
+#   
+# Prom<-future({
+#   TRY=0
+#   tryCatch({
+#     sf::sf_use_s2(FALSE)
+#     
+#     ### Transform parameters GBIF filtering
+#     sRL_loginfo("Start GBIF 4", scientific_name)
+#     scientific_name <- sRL_decode(scientific_name)
+#     Storage_SP=sRL_StoreRead(scientific_name,  username, MANDAT=1)
+#     Crop_par<-Storage_SP$Output$Value[Storage_SP$Output$Parameter=="Mapping_Crop"]
+#     Crop_Country<-Storage_SP$Output$Value[Storage_SP$Output$Parameter=="Crop_Country"]
+#     
+#     ### Smooth if parameter >0
+#     Gbif_Smooth=as.numeric(Gbif_Smooth) ; print(Gbif_Smooth)
+#     if(Gbif_Smooth>0){
+#       
+#       if(Crop_par %in% c("cropland", "cropsea") | (is.na(Crop_Country) == F & Crop_Country != "") ){
+#         distSP<-sRL_MapDistributionGBIF(Storage_SP$dat_proj_saved, scientific_name,
+#                                         First_step=Storage_SP$Output$Value[Storage_SP$Output$Parameter=="Mapping_Start"],
+#                                         AltMIN=Storage_SP$Output$Value[Storage_SP$Output$Parameter=="Mapping_Altitude"] %>% strsplit(., ", ") %>% unlist(.) %>% as.numeric(.) %>% .[1], 
+#                                         AltMAX=Storage_SP$Output$Value[Storage_SP$Output$Parameter=="Mapping_Altitude"] %>% strsplit(., ", ") %>% unlist(.) %>% as.numeric(.) %>% .[2],
+#                                         Buffer_km=as.numeric(Storage_SP$Output$Value[Storage_SP$Output$Parameter=="Mapping_Buffer"]),
+#                                         Gbif_Param=c(as.numeric(Storage_SP$Output$Value[Storage_SP$Output$Parameter=="Alpha_parameter"]), as.numeric(Storage_SP$Output$Value[Storage_SP$Output$Parameter=="Kernel_parameter"]))
+#                                         ) %>% sRL_CropDistributionGBIF(., Gbif_Crop)
+#       } else {distSP<-Storage_SP$distSP3_saved}
+#       distSP<-smoothr::smooth(distSP, method = "ksmooth", smoothness=(exp(Gbif_Smooth/20)-1), max_distance=10000)
+#       # Crop country if National Red Listing
+#       if(is.na(Crop_Country) == F & Crop_Country != ""){distSP <- sRL_CropCountry(distSP, Crop_Country, scientific_name)}
+#       
+#       } else{
+#         distSP<-Storage_SP$distSP3_saved
+#       }
+#     distSP<-st_make_valid(distSP)
+# 
+#     ### If smooth and the distribution should be cropped by land/sea, we crop again after smoothing
+#     if(Gbif_Smooth>0 & Crop_par %in% c("cropland", "cropsea")){
+#       CountrySP<-Storage_SP$CountrySP_saved
+#       
+#       if(Crop_par=="cropland"){
+#         distSP<-st_intersection(distSP, CountrySP) %>% 
+#           dplyr::group_by(binomial) %>% dplyr::summarise(N = n())}
+#       
+#       if(Crop_par=="cropsea"){
+#         countr<-distCountries_mapping %>% st_crop(., extent(distSP)) %>% dplyr::group_by() %>% dplyr::summarise(N = n())
+#         distSP<-st_difference(distSP, countr)}
+#       
+#       distSP$id_no<-sRL_CalcIdno(scientific_name)
+#       distSP$seasonal<-distSP$origin<-distSP$presence<-1
+#     }
+#     TRY=1
+#   }, error=function(e){cat("Smooth did not work")})
+#   
+#   # If problem in the TryCatch (i.e., smoothing not possible), I return the original distribution
+#   if(TRY==0){no_smooth()}
+#   
+#   ### Keep distribution in memory
+#   Storage_SP$distSP_saved <- distSP
+#   Storage_SP<-sRL_OutLog(Storage_SP, "Mapping_Smooth", Gbif_Smooth)
+#   sRL_StoreSave(scientific_name, username,  Storage_SP)
+#     
+#   ### Plot
+#   ggsave(paste0("resources/AOH_stored/", sub(" ", "_", scientific_name), "_", sRL_userdecode(username), "/Plots/plot_final.png"), (
+#     ggplot() + 
+#       geom_sf(data=Storage_SP$CountrySP_saved, fill="gray70")+
+#       geom_sf(data = distSP, fill="darkred") + 
+#       geom_sf(data=Storage_SP$dat_proj_saved) +
+#       ggtitle("")+
+#       sRLTheme_maps
+#   ), width=18, height=5.5) # nolint
+#   plot_final <- base64enc::dataURI(file = paste0("resources/AOH_stored/", sub(" ", "_", scientific_name), "_", sRL_userdecode(username), "/Plots/plot_final.png"), mime = "image/png") # nolint
+#     
+#   # Save distribution in the platform
+#   gbif_path <- sRL_saveMapDistribution(scientific_name, Storage_SP)
+#   sRL_loginfo("End GBIF 4", scientific_name)
+#   
+#   return(list(
+#     plot_eoo = plot_final,
+#     eoo_km2 = 1, # eoo_km2 parameter is used in the client to know if we come from GBIF or RL distribution, so I have to keep it here or to change the client
+#     eoo_rating = 1,
+#     gbif_path = gbif_path
+#   ))
+# 
+# }, gc=T, seed=T)
+# 
+# return(Prom) 
+# }
 
 
 
@@ -2508,7 +2516,6 @@ Prom<-future({
   
   Estimates<-replace(Estimates, Estimates %in% c("undefined", " "), NA)
   print(Estimates)
-  username_formatted<-gsub("[.]", " ", sRL_userdecode(username)) %>% tools::toTitleCase(.)
 
   #Filter param
   sRL_loginfo("Start Criteria calculation", scientific_name)
@@ -2692,13 +2699,13 @@ Prom<-future({
   if(is.null(Storage_SP$gbif_number_saved)==F){
     sRL_loginfo("Start saving distribution", scientific_name)
     
-    distSIS<-sRL_OutputDistribution(scientific_name, Storage_SP, username_formatted)
+    distSIS<-sRL_OutputDistribution(scientific_name, Storage_SP)
     if("hybas_concat" %in% names(Storage_SP$distSP_saved)){
       hydroSIS<-sRL_OutputHydrobasins(distSIS, Storage_SP)
       write.csv(hydroSIS, paste0(output_dir, "/sRedList_", gsub(" ", ".", scientific_name), "_Hydrobasins.csv"), row.names=F)
     }
    st_write(distSIS, paste0(output_dir, "/sRedList_", gsub(" ", ".", scientific_name), "_Distribution.shp"), append=F)
-   write.csv(sRL_OutputOccurrences(scientific_name, Storage_SP, username_formatted), paste0(output_dir, "/sRedList_", gsub(" ", ".", scientific_name), "_Occurrences.csv"), row.names=F)
+   write.csv(sRL_OutputOccurrences(scientific_name, Storage_SP, distSIS), paste0(output_dir, "/sRedList_", gsub(" ", ".", scientific_name), "_Occurrences.csv"), row.names=F)
   }
 
   ### Calculate criteria

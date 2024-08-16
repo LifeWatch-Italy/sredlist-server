@@ -88,7 +88,7 @@ server <- function(input, output, session) {
   observe({
     query <- parseQueryString(session$clientData$url_search)
     updateTextInput(session, "sci_name", value = query[['sci_name']] %>% gsub("_" , " ", .) %>% gsub("%20%" , " ", .))
-    updateTextInput(session, "user", value = query[['user']])
+    updateTextInput(session, "user", value = query[['user']] %>% sRL_userdecode(.))
   })
   
   

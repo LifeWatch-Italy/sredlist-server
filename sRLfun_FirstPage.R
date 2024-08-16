@@ -435,13 +435,16 @@ sRL_userdecode<-function(username){
   return(username)
 }
 
+sRL_userformatted <- function(username){
+  username_formatted <- gsub("[.]", " ", sRL_userdecode(username)) %>% tools::toTitleCase(.)
+  return(username_formatted)
+}
 
 
 ### Function sRL_RemoveDistrib: removes distributions created with GBIF or uploaded in >15 days
 sRL_RemoveDistrib<-function(Max_Days){
   
   cat("START - Cleaning distributions \n")
-  
   
   # List all distribution files
   list_dist<-list.files(config$distribution_path, recursive = T)

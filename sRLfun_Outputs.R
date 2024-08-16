@@ -253,45 +253,17 @@ sRL_OutputAssessments<-function(scientific_name, Realms, Systems, Trends){
 
 
 ### Prepare distribution output shapefile
-sRL_OutputDistribution<-function(scientific_name, Storage_SP, username){
+sRL_OutputDistribution<-function(scientific_name, Storage_SP){
   
   distSP<-Storage_SP$distSP_saved
   
+  # List of columns to include
+  COL_REQ <- c("presence", "origin", "seasonal", "compiler", "yrcompiled", "citation", "spatialref", "subspecies", "subpop", "data_sens", "sens_comm", "source", "dist_comm", "island", "tax_comm", "id_no", "Shape_Leng", "Shape_Area")
+  
   # Create template
   distSP$sci_name<-scientific_name
-  distSIS<-distSP[, c("sci_name")]
-  distSIS[,c("presence", "origin", "seasonal", "compiler", "yrcompiled", "citation", "spatialref", "subspecies", "subpop", "data_sens", "sens_comm", "source", "dist_comm", "island", "tax_comm", "id_no", "Shape_Leng", "Shape_Area")]<-NA
-  
-  # Fill in some information
-  distSIS$presence<-1
-  distSIS$origin<-1
-  distSIS$seasonal<-1
-  distSIS$spatialref<-"WGS84"
-  distSIS$yrcompiled<-Sys.time() %>% format(., "%Y")
-  distSIS$citation<-"sRedList Working Group 2024" # To fill
-  distSIS$source<-"sRedList platform"
-  distSIS$id_no<-sRL_CalcIdno(scientific_name)
-  distSIS$compiler<-username
-  distSIS$data_sens<-0
-  
-  # Add distribution creation parameter in dist_comm
-  tryCatch({
-    Outpts <- Storage_SP$Output
-    distSIS$dist_comm<-paste0(
-      "The distribution was created on the sRedList platform from ", 
-      nrow(Storage_SP$dat_proj_saved), 
-      " occurrence records (source=", Outpts$Value[Outpts$Parameter=="Gbif_Source"], ") ",
-      "with settings: Starting point=", Outpts$Value[Outpts$Parameter=="Mapping_Start"], 
-      ifelse(Outpts$Value[Outpts$Parameter=="Mapping_Start"]=="alpha", paste0(" (alpha_parameter=", Outpts$Value[Outpts$Parameter=="Alpha_parameter"], ")"), ""),
-      ifelse(Outpts$Value[Outpts$Parameter=="Mapping_Start"]=="kernel", paste0(" (kernel_parameter=", Outpts$Value[Outpts$Parameter=="Kernel_parameter"], ")"), ""),
-      ", buffer=", Outpts$Value[Outpts$Parameter=="Mapping_Buffer"], 
-      ", crop=", Outpts$Value[Outpts$Parameter=="Mapping_Crop"], 
-      ifelse(Outpts$Value[Outpts$Parameter=="Mapping_Altitude"] == "0,9000", "", paste0(", altitude=", Outpts$Value[Outpts$Parameter=="Mapping_Altitude"])), 
-      ", smooth=", Outpts$Value[Outpts$Parameter=="Mapping_Smooth"]
-      ) %>% substr(., 1, 250)
-    
-  }, error=function(e){cat("Bug in creating dist_comm (comment for distribution)")})
-  
+  distSIS<-distSP[, names(distSP) %in% COL_REQ]
+  distSIS[, COL_REQ[! COL_REQ %in% names(distSIS)]] <- NA
   
   # Send geometry column at the end of the table
   if("geometry" %in% names(distSIS)){distSIS<-distSIS[, c(names(distSIS)[names(distSIS) != "geometry"], "geometry")]}
@@ -329,7 +301,7 @@ sRL_OutputHydrobasins<-function(distSIS, Storage_SP){
 
 
 ### Save occurrences shapefile from the GBIF procedure
-sRL_OutputOccurrences <- function(scientific_name, Storage_SP, username) {
+sRL_OutputOccurrences <- function(scientific_name, Storage_SP, distSIS) {
   
   # Transform in lat/lon
   dat<-Storage_SP$dat_proj_saved %>% st_transform(., "+init=epsg:4326")
@@ -340,20 +312,25 @@ sRL_OutputOccurrences <- function(scientific_name, Storage_SP, username) {
   dat_SIS[,c("presence", "origin", "seasonal", "compiler", "yrcompiled", "citation", "dec_lat", "dec_long", "spatialref", "subspecies", "subpop", "data_sens", "sens_comm", "event_year", "source", "basisofrec", "catalog_no", "dist_comm", "island", "tax_comm", "id_no")]<-NA
 
   # Fill in some information
-  dat_SIS$presence<-1
-  dat_SIS$origin<-1
-  dat_SIS$seasonal<-1
-  dat_SIS$yrcompiled<-Sys.time() %>% format(., "%Y")
+  # dat_SIS$presence<-1
+  # dat_SIS$origin<-1
+  # dat_SIS$seasonal<-1
+  dat_SIS$id_no<-sRL_CalcIdno(scientific_name)
   dat_SIS$dec_long<-st_coordinates(dat_SIS)[,1]
   dat_SIS$dec_lat<-st_coordinates(dat_SIS)[,2]
-  dat_SIS$spatialref<-"WGS84"
   dat_SIS$event_year<-dat$event_year
-  dat_SIS$citation<-"IUCN (International Union for Conservation of Nature)"
   if("source" %in% names(dat)){dat_SIS$source<-substr(dat$source, 1, 253)}
-  dat_SIS$id_no<-sRL_CalcIdno(scientific_name)
-  dat_SIS$compiler<-username
-  dat_SIS$data_sens<-0
   
+  dat_SIS$yrcompiled <- distSIS$yrcompiled[1]
+  dat_SIS$citation <- distSIS$citation[1]
+  dat_SIS$compiler <- distSIS$compiler[1]
+  dat_SIS$data_sens <- distSIS$data_sens[1]
+  dat_SIS$sens_comm <- distSIS$sens_comm[1]
+  dat_SIS$island <- distSIS$island[1]
+  dat_SIS$dist_comm <- "Occurrence records gathered from the sRedList platform"
+  
+  dat_SIS$spatialref<-"WGS84"
+
   # Format basis of Record
   if("basisOfRecord" %in% names(dat)){
     dat_SIS$basisofrec<-revalue(as.character(dat$basisOfRecord), c(

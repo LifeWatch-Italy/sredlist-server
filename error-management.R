@@ -136,8 +136,8 @@ coords_outofbound <- function() {
   api_error(message = "Coordinates should be in decimal with longitude (dec_long) between -180 and 180 and latitude (dec_lat) between -90 and 90. Make sure you used dots and not commas to write decimals in your csv file, this may cause issues.", status = 400)
 }
 
-no_smooth <- function() {
-  api_error(message = "Smoothing was not possible with the parameter you chose. Try another parameter, or set it to 0 to skip smoothing", status = 400)
+hydro_modified <- function() {
+  api_error(message = "Hydrobasins should not be modified. Please set buffer and crop parameters to default.", status = 400)
 }
 
 wrong_species_upload <- function() {
