@@ -308,18 +308,15 @@ sRL_OutputOccurrences <- function(scientific_name, Storage_SP, distSIS) {
 
   # Create template shape
   dat$sci_name<-scientific_name
-  dat_SIS<-dat[, c("sci_name", "gbifID")]
-  dat_SIS[,c("presence", "origin", "seasonal", "compiler", "yrcompiled", "citation", "dec_lat", "dec_long", "spatialref", "subspecies", "subpop", "data_sens", "sens_comm", "event_year", "source", "basisofrec", "catalog_no", "dist_comm", "island", "tax_comm", "id_no")]<-NA
+  dat_SIS<-dat[, c("sci_name", "gbifID", "presence", "origin", "seasonal")]
+  dat_SIS[,c("compiler", "yrcompiled", "citation", "dec_lat", "dec_long", "spatialref", "subspecies", "subpop", "data_sens", "sens_comm", "event_year", "source", "basisofrec", "catalog_no", "dist_comm", "island", "tax_comm", "id_no")]<-NA
 
   # Fill in some information
-  # dat_SIS$presence<-1
-  # dat_SIS$origin<-1
-  # dat_SIS$seasonal<-1
   dat_SIS$id_no<-sRL_CalcIdno(scientific_name)
   dat_SIS$dec_long<-st_coordinates(dat_SIS)[,1]
   dat_SIS$dec_lat<-st_coordinates(dat_SIS)[,2]
   dat_SIS$event_year<-dat$event_year
-  if("source" %in% names(dat)){dat_SIS$source<-substr(dat$source, 1, 253)}
+  if("source" %in% names(dat)){dat_SIS$source<-substr(dat$source, 1, 254)}
   
   dat_SIS$yrcompiled <- distSIS$yrcompiled[1]
   dat_SIS$citation <- distSIS$citation[1]
@@ -327,8 +324,9 @@ sRL_OutputOccurrences <- function(scientific_name, Storage_SP, distSIS) {
   dat_SIS$data_sens <- distSIS$data_sens[1]
   dat_SIS$sens_comm <- distSIS$sens_comm[1]
   dat_SIS$island <- distSIS$island[1]
-  dat_SIS$dist_comm <- "Occurrence records gathered from the sRedList platform"
-  
+  tryCatch({
+    dat_SIS$dist_comm <- paste0("Occurrence records (N=", nrow(dat), ") were gathered and filtered in the sRedList platform from the source: ", gsub(" + ", ", ", Storage_SP$Output$Value[Storage_SP$Output$Parameter=="Gbif_Source"]), " on the ", Sys.Date())
+  }, error=function(e){"Error in field distribution comment for occurrences"})
   dat_SIS$spatialref<-"WGS84"
 
   # Format basis of Record

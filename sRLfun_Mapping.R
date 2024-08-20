@@ -695,7 +695,7 @@ sRL_DistComment <- function(Output, N_dat){
       ", crop=", Output$Value[Output$Parameter=="Mapping_Crop"], 
       ifelse(Output$Value[Output$Parameter=="Mapping_Altitude"] == "0,9000", "", paste0(", altitude=", Output$Value[Output$Parameter=="Mapping_Altitude"])), 
       ", smooth=", Output$Value[Output$Parameter=="Mapping_Smooth"]
-    ) %>% substr(., 1, 250)
+    ) %>% substr(., 1, 254)
   }, error=function(e){cat("Bug in creating dist_comm (comment for distribution)")})
   
   return(Comm)

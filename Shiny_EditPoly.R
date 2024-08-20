@@ -1,17 +1,13 @@
 
 
 ### TO CONNECT WITH SREDLIST
-# 2 distribution attributes: what's in there for 1a (check fields)
-# 3 Points attributes should depend on polygons + improve dist_comm for points
-# 4 Saving hydrobasins should be done with real hydrobasins (not simplified version)
-# 5 Possibility with 1a: edit distri is before selecting attributes (inc Countries), then called "Choose the attributes to use in spatial analyses" that should also be selected in 1b (maybe only if several attributes? that could only happen with hydro or edited manually); then check 1a + 2 + Prev is working fine; then check ift's ok to call again the step just before Shiny (both 1a and 1b)
-# 5 When saving, should make the distribution ready for next steps (for now it means polygons should be merged which is a shame... + make sure I have the needed columns for AOH)
-# 6 the distribution should be available at the end if I modified a RL distribution -> it's the opportunity to include checkboxes of files to upload (distribution would be ticked by default if modified or created)
-# 7 Record usage; Steve would like a logfile to be created with all changes tracked. Alternatively I can save a map in the RMD comparing the two maps
-# 8 Check each line of the script
 
-# Draw polygon bug + sliders not working
-# Citation suggestion for distribution should be different (the distribution not sRL!), check published maps
+# Saving hydrobasins should be done with real hydrobasins (not simplified version)
+# Possibility with 1a: edit distri is before selecting attributes (inc Countries), then called "Choose the attributes to use in spatial analyses" that should also be selected in 1b (maybe only if several attributes? that could only happen with hydro or edited manually); then check 1a + 2 + Prev is working fine; then check ift's ok to call again the step just before Shiny (both 1a and 1b)
+# When saving, should make the distribution ready for next steps (for now it means polygons should be merged which is a shame... + make sure I have the needed columns for AOH)
+# the distribution should be available at the end if I modified a RL distribution -> it's the opportunity to include checkboxes of files to upload (distribution would be ticked by default if modified or created)
+# Record usage (log and RMD); Steve would like a logfile to be created with all changes tracked. Alternatively I can save a map in the RMD comparing the two maps
+# Check each line of the script
 
 
 # Set working directory (Victor path if we are on his laptop, LifeWatch path otherwise)
@@ -77,14 +73,14 @@ ui <- page_fillable(
              }")
     )),
   
-  ### Make everything 20% smaller (better included in iframe like that)
-  tags$style("
-                body {
-      -moz-transform: scale(0.8, 0.8); /* Moz-browsers */
-      zoom: 0.8; /* Other non-webkit browsers */
-      zoom: 80%; /* Webkit browsers */
-  }
-                "),
+  ### Make everything 20% smaller (better included in iframe like that). It works but creates bugs with sliders and draw polygons (the mouse is not correctly rescaled)
+  # tags$style("
+  #               body {
+  #     -moz-transform: scale(0.8, 0.8); /* Moz-browsers */
+  #     zoom: 0.8; /* Other non-webkit browsers */
+  #     zoom: 80%; /* Webkit browsers */
+  # }
+  #               "),
   
   # add button for reassessment with hydrobasins
   conditionalPanel(condition='output.Suggest_hydro=="yes"',
@@ -304,15 +300,26 @@ server <- function(input, output, session) {
     Storage_SP(Stor_tempo)
     
     # ONLY FOR ONLINE TESTING (remove distSP_saved in case one was saved before and then we click on discard)
-    Stor <- Storage_SP() ; Stor$distSP_saved <- NULL ; Storage_SP(Stor) ; sRL_StoreSave(input$sci_name, "victor.cazalis", Stor)
+    #Stor <- Storage_SP() ; Stor$distSP_saved <- NULL ; Storage_SP(Stor) ; sRL_StoreSave(input$sci_name, "victor.cazalis", Stor)
     
-    ### Prepare textInput
-    updateTextInput(session, "Field_source", value = "sRedList platform")
-    updateNumericInput(session, "Field_yrcompiled", value = 2024)
-    updateTextInput(session, "Field_citation", value = "sRedList 2024")
-    updateTextInput(session, "Field_compiler", value = "Victor Cazalis")
-    updateTextInput(session, "Field_distcomm", value = dist_loaded$dist_comm[1])
-    #updateTextInput(session, "Field_island", value = Island_name) # Ideally I could automatically extract if on an island?
+    ### Prepare textInput initial values
+    tryCatch({
+      updateTextInput(session, "Field_source", value = ifelse(("source" %in% names(dist_loaded) & is.na(dist_loaded$source[1])==F), dist_loaded$source[1], "sRedList platform"))
+      updateNumericInput(session, "Field_yrcompiled", value = format(Sys.time(), "%Y"))
+      updateTextInput(session, "Field_citation", value = ifelse(("citation" %in% names(dist_loaded) & is.na(dist_loaded$citation[1])==F), dist_loaded$citation[1], "IUCN (International Union for Conservation of Nature)"))
+      updateTextInput(session, "Field_compiler", value = ifelse(("compiler" %in% names(dist_loaded) & is.na(dist_loaded$compiler[1])==F), dist_loaded$compiler[1], sRL_userformatted(input$user)))
+      updateTextInput(session, "Field_island", value = ifelse(("island" %in% names(dist_loaded) & is.na(dist_loaded$island[1])==F), dist_loaded$island[1], "")) # Ideally I could automatically extract if on an island?
+      updateCheckboxInput(session, "Field_datasens", value = ifelse(("TRUE" %in% dist_loaded$data_sens | "true" %in% dist_loaded$data_sens | "1" %in% dist_loaded$data_sens), TRUE, FALSE))
+      updateTextInput(session, "Field_senscomm", value = ifelse(("sens_comm" %in% names(dist_loaded) & is.na(dist_loaded$sens_comm[1])==F), dist_loaded$sens_comm[1], ""))
+      # Prepare distcomm
+      New_DistComm <- ifelse(Stor_tempo$Output$Value[Stor_tempo$Output$Parameter=="Distribution_Source"] == "Created", 
+                             dist_loaded$dist_comm[1], 
+                             ifelse(is.na(dist_loaded$dist_comm[1]), 
+                                    paste0("The distribution was taken from the sRedList platform (", Stor_tempo$Output$Value[Stor_tempo$Output$Parameter=="Distribution_Source"], ") and was "), 
+                                    " It was ") %>% paste0(., "manually edited on the sRedList platform on the ", Sys.Date(), ".")
+      )
+      updateTextInput(session, "Field_distcomm", value = substr(New_DistComm, 1, 254))
+    }, error=function(e){"Error in field extraction"})
     
     ### Process distribution
     distSP(dist_loaded)
@@ -872,10 +879,22 @@ server <- function(input, output, session) {
     dist_tosave$sens_comm <- input$Field_senscomm
     dist_tosave$island <- input$Field_island
     dist_tosave$dist_comm <- input$Field_distcomm
+    if(nchar(input$Field_distcomm)>254){showNotification(ui=HTML(paste0("Distribution comment cannot be longer than 254 characters (currently ", nchar(input$Field_distcomm)," characters), please reduce the text.")), type="error", duration=3) ; req(F)}
     
     Storage_SPNEW$distSP_saved <- dist_tosave
     
-    # 
+    ### Extract points attributes
+    if(is.null(nrow(dat_pts()))==F){
+      # Intersect
+      pts_inter <- st_join(dat_pts(), dist_tosave, join=st_intersects)
+      # Save in dat_proj_saved
+      Storage_SPNEW$dat_proj_saved$presence <- pts_inter$presence[match(Storage_SPNEW$dat_proj_saved$gbifID, pts_inter$gbifID)]
+      Storage_SPNEW$dat_proj_saved$origin <- pts_inter$origin[match(Storage_SPNEW$dat_proj_saved$gbifID, pts_inter$gbifID)]
+      Storage_SPNEW$dat_proj_saved$seasonal <- pts_inter$seasonal[match(Storage_SPNEW$dat_proj_saved$gbifID, pts_inter$gbifID)]
+      print(Storage_SPNEW$dat_proj_saved$presence)
+    }
+    
+    
     # if(AllowEdit()=="hydro"){
     #   dist_tosave <- distSP() %>% subset(., is.na(presence)==F)
     #   #dist_comb <- dist_tosave %>% group_by(.) %>% summarise_all(last)
