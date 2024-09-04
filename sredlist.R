@@ -2696,7 +2696,7 @@ Prom<-future({
   
   
   # Save distribution and occurrences if from GBIF
-  if(is.null(Storage_SP$gbif_number_saved)==F){
+  if(is.null(Storage_SP$gbif_number_saved)==F | is.na(Storage_SP$Output$Value[Storage_SP$Output$Parameter=="Gbif_EditPoly"])==F){
     sRL_loginfo("Start saving distribution", scientific_name)
     
     distSIS<-sRL_OutputDistribution(scientific_name, Storage_SP)
@@ -2705,7 +2705,11 @@ Prom<-future({
       write.csv(hydroSIS, paste0(output_dir, "/sRedList_", gsub(" ", ".", scientific_name), "_Hydrobasins.csv"), row.names=F)
     }
    st_write(distSIS, paste0(output_dir, "/sRedList_", gsub(" ", ".", scientific_name), "_Distribution.shp"), append=F)
-   write.csv(sRL_OutputOccurrences(scientific_name, Storage_SP, distSIS), paste0(output_dir, "/sRedList_", gsub(" ", ".", scientific_name), "_Occurrences.csv"), row.names=F)
+   
+   ### Save occurrence records
+   if(is.null(Storage_SP$gbif_number_saved)==F){
+     write.csv(sRL_OutputOccurrences(scientific_name, Storage_SP, distSIS), paste0(output_dir, "/sRedList_", gsub(" ", ".", scientific_name), "_Occurrences.csv"), row.names=F)
+   }
   }
 
   ### Calculate criteria

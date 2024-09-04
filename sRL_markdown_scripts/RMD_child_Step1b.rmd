@@ -86,11 +86,8 @@ The range map created at this step is:
 
 
 
-### Smooth range map
-`r ifelse(outlog$Value[outlog$Parameter=="Mapping_Smooth"]==0, "You did not use the smoothing option to make polygon edges less sharp.", paste0("You used the smoothing option to make polygon edges less sharp with a smoothing parameter of ", outlog$Value[outlog$Parameter=="Mapping_Smooth"], "."))`
+`r if("Gbif_EditPoly" %in% outlog$Parameter){"You finally edited the polygon range map manually on the interactive map to obtain the following map:"}`
 
-The final range map used in the next analyses is:
-<br>
-<center>
-![](`r paste0(outDir, '/Plots/plot_final.png')`){width=1200px}
-</center>
+```{r edited_range_map1b, out.width='100%'}
+png::readPNG(paste0(outDir, "/Plots/plot_manually_edited.png")) %>% grid::rasterGrob() %>% gridExtra::grid.arrange()
+```

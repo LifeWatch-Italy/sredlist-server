@@ -55,5 +55,6 @@ NA,NA,NA,Trends_leaflet,0,Only used to track usage,NA
 NA,NA,NA,RS_leaflet,0,Only used to track usage,NA
 NA,NA,NA,Gbif_Extract_Elevation,0,Only used to track usage,NA
 NA,NA,NA,Gbif_Extract_Habitat,0,Only used to track usage,NA
-NA,NA,NA,Gbif_EditPts,0,Only used to track usage,NA
+NA,NA,NA,Gbif_EditPts,0,Records if the occurrence records were edited manually,NA
 NA,NA,NA,COO_EditShiny,0,Only used to track usage,NA
+NA,NA,NA,Gbif_EditPoly,0,Records if the polygon range map was edited manually,NA

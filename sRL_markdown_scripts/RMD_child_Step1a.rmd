@@ -10,3 +10,10 @@ The distribution map used along the assessment was the following:
 <center>
 ![](`r paste0(outDir, '/Plots/plot_dist.png')`){width=800px}
 </center>
+
+```{r edited_range_map1a, out.width='100%'}
+if("Gbif_EditPoly" %in% outlog$Parameter){"You manually edited the polygon range map on the interactive map to obtain the following map:"}
+
+png::readPNG(paste0(outDir, "/Plots/plot_manually_edited.png")) %>% grid::rasterGrob() %>% gridExtra::grid.arrange()
+
+```

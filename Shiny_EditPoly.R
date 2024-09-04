@@ -3,12 +3,18 @@
 ### TO CONNECT WITH SREDLIST
 
 # Saving hydrobasins should be done with real hydrobasins (not simplified version)
-# Possibility with 1a: edit distri is before selecting attributes (inc Countries), then called "Choose the attributes to use in spatial analyses" that should also be selected in 1b (maybe only if several attributes? that could only happen with hydro or edited manually); then check 1a + 2 + Prev is working fine; then check ift's ok to call again the step just before Shiny (both 1a and 1b)
-# When saving, should make the distribution ready for next steps (for now it means polygons should be merged which is a shame... + make sure I have the needed columns for AOH)
-# the distribution should be available at the end if I modified a RL distribution -> it's the opportunity to include checkboxes of files to upload (distribution would be ticked by default if modified or created)
-# Record usage (log and RMD); Steve would like a logfile to be created with all changes tracked. Alternatively I can save a map in the RMD comparing the two maps
-# Check each line of the script
+# DISCUSS LM: Possibility with 1a: edit distri is before selecting attributes (inc Countries), then called "Choose the attributes to use in spatial analyses" that should also be selected in 1b (maybe only if several attributes? that could only happen with hydro or edited manually); then check 1a + 2 + Prev is working fine; then check ift's ok to call again the step just before Shiny (both 1a and 1b)
+# DISCUSS LM: When saving, make sure correct projection, should make the distribution ready for next steps (for now it means polygons should be merged which is a shame... + make sure I have the needed columns for AOH)
+# DISCUSS LM: New reference with the paper (adding the version number but always keeping 2024)?
 
+### IF I HAVE TIME (during testing otherwise)
+# Add checkboxes at the end for the files to include or not in the zip file?
+
+### DURING TESTING
+# Check each line of the script
+# Add tracking usage in Usage tracking
+# Can I track a bit better the different steps (not sure I can do it but it would be quite useful to know that you moved points, simplified by X, cut one polygon to change attributes). Might be too complex for the importance
+# Improve country background for RMD plot saved
 
 # Set working directory (Victor path if we are on his laptop, LifeWatch path otherwise)
 setwd(dir=ifelse(file.exists("C:/Users/Victor"),"C:/Users/Victor/Documents/sRedList/Platform/InProgress/sredlist-server-develop", "/media/docker/sRedList/sredlist-server"))
@@ -661,8 +667,10 @@ server <- function(input, output, session) {
     ### Polygons
     drawn <- P_tot %>% subset(., grepl("POLYGON", st_geometry_type(.)) & (! .$Row %in% drawn_storage()$Row))
     if(nrow(drawn)>0){
-      
       print("Record and apply polygon drawing")
+      
+      if(nrow(P_drawn)==1){showNotification(ui=HTML("When you finished drawing new polygons, please click on save to be able to specify their attributes."), type="message", duration=2)}
+      
       drawn$Applied <- F # Add column tracking if changes was applied
       # Store in drawn_storage
       if(is.null(drawn_storage())){
@@ -881,6 +889,15 @@ server <- function(input, output, session) {
     dist_tosave$dist_comm <- input$Field_distcomm
     if(nchar(input$Field_distcomm)>254){showNotification(ui=HTML(paste0("Distribution comment cannot be longer than 254 characters (currently ", nchar(input$Field_distcomm)," characters), please reduce the text.")), type="error", duration=3) ; req(F)}
     
+    # if(AllowEdit()=="hydro"){
+    #   dist_tosave <- distSP() %>% subset(., is.na(presence)==F)
+    #   #dist_comb <- dist_tosave %>% group_by(.) %>% summarise_all(last)
+    #   dist_comb$hybas_concat <- paste0(dist_tosave$hybas_id, collapse=";")
+    #   Storage_SPNEW$distSP_saved <- dist_comb %>% st_transform(., crs=st_crs(Storage_SP()$distSP3_BeforeCrop))
+    # } else {
+    #   Storage_SPNEW$distSP_saved <- distSP()
+    # }
+    
     Storage_SPNEW$distSP_saved <- dist_tosave
     
     ### Extract points attributes
@@ -894,20 +911,21 @@ server <- function(input, output, session) {
       print(Storage_SPNEW$dat_proj_saved$presence)
     }
     
+    ### Save plot edited distribution for report
+    dist_tosave$cols <- sRL_ColourDistrib(dist_tosave)$cols
+    plot_dist <- ggplot() +
+     geom_sf(data = Storage_SPNEW$CountrySP_saved, fill="gray96", col="gray50") + # nolint
+     geom_sf(data = dist_tosave, fill = dist_tosave$cols) +
+     theme_void() +
+     ggtitle("")
     
-    # if(AllowEdit()=="hydro"){
-    #   dist_tosave <- distSP() %>% subset(., is.na(presence)==F)
-    #   #dist_comb <- dist_tosave %>% group_by(.) %>% summarise_all(last)
-    #   dist_comb$hybas_concat <- paste0(dist_tosave$hybas_id, collapse=";")
-    #   Storage_SPNEW$distSP_saved <- dist_comb %>% st_transform(., crs=st_crs(Storage_SP()$distSP3_BeforeCrop))
-    # } else {
-    #   Storage_SPNEW$distSP_saved <- distSP()
-    # }
+    ggsave(paste0("resources/AOH_stored/", sub(" ", "_", input$sci_name), "_", sRL_userdecode(input$user), "/Plots/plot_manually_edited.png"), plot_dist, width=10, height=8)
     
-    # # Record usage
-    # Storage_SPNEW$Output$Value[Storage_SPNEW$Output$Parameter=="Gbif_EditPts"]<-"yes"
-    # Storage_SPNEW$Output$Count[Storage_SPNEW$Output$Parameter=="Gbif_EditPts"]<-Storage_SPNEW$Output$Count[Storage_SPNEW$Output$Parameter=="Gbif_EditPts"]+1
     
+    # Record usage
+    Storage_SPNEW$Output$Value[Storage_SPNEW$Output$Parameter=="Gbif_EditPoly"]<-paste0("yes", "_", AllowEdit())
+    Storage_SPNEW$Output$Count[Storage_SPNEW$Output$Parameter=="Gbif_EditPoly"]<-Storage_SPNEW$Output$Count[Storage_SPNEW$Output$Parameter=="Gbif_EditPoly"]+1
+
     # Save Storage file
     sRL_StoreSave(input$sci_name, input$user,  Storage_SPNEW)
     Storage_SP(Storage_SPNEW)
