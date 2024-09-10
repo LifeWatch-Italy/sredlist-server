@@ -27,15 +27,15 @@ sRLPolyg_InitDistri <- function(distSP, CRS){
 sRLPolyg_PrepareHydro <- function(distSP, hydro_raw, HydroLev, SRC_created){
   
   # Crop hydro (take all hydrobasins intersecting a 50km buffer)
-  hydroSP <-  st_filter(hydro_raw, st_buffer(st_as_sfc(st_bbox(distSP)), 50000), .predicate = st_intersects)
-  if(nrow(hydroSP)==0){return(data.frame())}
+  hydroSP_HQ <-  st_filter(hydro_raw, st_buffer(st_as_sfc(st_bbox(distSP)), 50000), .predicate = st_intersects)
+  if(nrow(hydroSP_HQ)==0){return(data.frame())}
   
   # If level 10 or 12, charge the layers
   if(HydroLev %in% c("hydro10", "hydro12")){
-    distSP$Grid_cells<-NA ; distSP$Grid_cells[1]<-paste0(unique(hydroSP$Grid_cells), collapse="")
+    distSP$Grid_cells<-NA ; distSP$Grid_cells[1]<-paste0(unique(hydroSP_HQ$Grid_cells), collapse="")
     
     # List files to load
-    Cells <- hydroSP$Grid_cells %>% unique(.) %>% paste0(., collapse="") %>% strsplit(., ",") %>% unlist(.) %>% unique(.) %>% subset(., . !="") %>% as.numeric(.)
+    Cells <- hydroSP_HQ$Grid_cells %>% unique(.) %>% paste0(., collapse="") %>% strsplit(., ",") %>% unlist(.) %>% unique(.) %>% subset(., . !="") %>% as.numeric(.)
     
     # Load shapefile of LEVEL
     Path_cells<-paste0("Hydro_cut_", sub("hydro", "", HydroLev), "/Hydrobasins_level", sub("hydro", "", HydroLev), "_cut_cell", Cells, ".shp") %>% paste0(sub("Hydrobasins_level8_ready.shp", "", config$hydrobasins_path), .)
@@ -49,21 +49,22 @@ sRLPolyg_PrepareHydro <- function(distSP, hydro_raw, HydroLev, SRC_created){
     st_crs(hydroLEV_raw)<-CRSMOLL
     
     # Crop new hydro in the 50km buffer
-    hydroSP <-  st_filter(hydroLEV_raw, st_buffer(st_as_sfc(st_bbox(distSP)), 50000), .predicate = st_intersects)
+    hydroSP_HQ <-  st_filter(hydroLEV_raw, st_buffer(st_as_sfc(st_bbox(distSP)), 50000), .predicate = st_intersects)
     
   }
 
   # Simplify
-  if(npts(hydroSP)>(50*nrow(hydroSP))){hydroSP <- ms_simplify(hydroSP, keep=(50*nrow(hydroSP))/npts(hydroSP), keep_shapes=T)}
+  hydroSP <- hydroSP_HQ
+  if(npts(hydroSP_HQ)>(50*nrow(hydroSP_HQ))){hydroSP <- ms_simplify(hydroSP, keep=(50*nrow(hydroSP))/npts(hydroSP), keep_shapes=T)}
   
   # Attributes (depends if hydrobasins from created distribution or from "Edit as hydrobasins" button)
   if(SRC_created=="yes"){
-    # Use hybas_concat column to know which hydrobasins are in the hydrobasins
-    hydroSP$InDistri <- hydroSP$hybas_id %in% unlist(strsplit(distSP$hybas_concat, ","))
-    hydroSP$presence <- hydroSP$origin <- hydroSP$seasonal <- ifelse(hydroSP$InDistri==T, 1, NA)
-    # Edit presence with records
-    if("hybas_withrecords" %in% names(distSP)){hydroSP$presence[hydroSP$presence==1 & (! hydroSP$hybas_id %in% unlist(strsplit(distSP$hybas_withrecords, ",")))] <- 3} # Possibly extent for hydroMCP
-  
+    # Use hybas_id column to know which hydrobasins are in the hydrobasins
+    hydroSP$InDistri <- hydroSP$hybas_id %in% distSP$hybas_id
+    hydroSP$presence <- distSP$presence[match(hydroSP$hybas_id, distSP$hybas_id)]
+    hydroSP$origin <- distSP$origin[match(hydroSP$hybas_id, distSP$hybas_id)]
+    hydroSP$seasonal <- distSP$seasonal[match(hydroSP$hybas_id, distSP$hybas_id)]
+
   } else {
     
     # Create centroids of hydrobasins
@@ -84,10 +85,11 @@ sRLPolyg_PrepareHydro <- function(distSP, hydro_raw, HydroLev, SRC_created){
   hydroSP$Popup <- sRLPolyg_CreatePopup(hydroSP)
   
   # Transform
+  hydroSP_HQ <- hydroSP_HQ %>% st_transform(., 4326)
   hydroSP <- hydroSP %>% st_transform(., 4326)
   hydroSP$N<-NULL
   
-  return(hydroSP)
+  return(list(hydroSP_HQ=hydroSP_HQ, hydroSP=hydroSP))
   
 }
 
@@ -161,7 +163,7 @@ STYLE="label.control-label, .selectize-control.single {
 
 sRLPolyg_CreatePopup <- function(distSP){
   
-  if("hybas_concat" %in% names(distSP) | "hybas_id" %in% names(distSP)){
+  if("hybas_id" %in% names(distSP)){
     distSP$ConditionHydro <- ifelse(is.na(distSP$presence), "hydroEmpty", "hydroOccupied")
     Popup <- paste0("<b>Hydrobasin ID: ", distSP$hybas_id, " </b><br><br>")
   } else {

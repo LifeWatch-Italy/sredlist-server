@@ -2,10 +2,8 @@
 
 ### TO CONNECT WITH SREDLIST
 
-# Saving hydrobasins should be done with real hydrobasins (not simplified version)
 # DISCUSS LM: Possibility with 1a: edit distri is before selecting attributes (inc Countries), then called "Choose the attributes to use in spatial analyses" that should also be selected in 1b (maybe only if several attributes? that could only happen with hydro or edited manually); then check 1a + 2 + Prev is working fine; then check ift's ok to call again the step just before Shiny (both 1a and 1b)
 # DISCUSS LM: When saving, make sure correct projection, should make the distribution ready for next steps (for now it means polygons should be merged which is a shame... + make sure I have the needed columns for AOH)
-# DISCUSS LM: New reference with the paper (adding the version number but always keeping 2024)?
 
 ### IF I HAVE TIME (during testing otherwise)
 # Add checkboxes at the end for the files to include or not in the zip file?
@@ -32,7 +30,8 @@ library(shinyWidgets)
 library(spsComps) # For addLoader in server
 
 
-source(textConnection(readLines("server.R")[1:120])) ## XX TO IMPROVE TO ONLY INCLUDE WHAT IS NEEDED
+source(textConnection(readLines("server.R")[1:123])) ## XX TO IMPROVE TO ONLY INCLUDE WHAT IS NEEDED
+
 
 ### Load functions
 source("sRLfun_ShinyEditPolyg.R")
@@ -44,7 +43,7 @@ source("sRLfun_ShinyEditPolyg.R")
 ### Specify url
 options(shiny.host = '127.0.0.1')
 options(shiny.port = 6211)
-# http://127.0.0.1:6211/?sci_name=Lophornis_brachylophus&user=0000-0003-0850-883x
+# http://127.0.0.1:6211/?sci_name=Lophornis_brachylophus&user=victor.cazalis
 
 
 ### UI ----------
@@ -284,7 +283,9 @@ server <- function(input, output, session) {
     # Load distribution
     if(T %in% grepl("hydro", Stor_tempo$Output$Value)){
       dist_loaded0 <- Stor_tempo$distSP3_BeforeCrop
-      dist_loaded <- sRLPolyg_PrepareHydro(dist_loaded0, hydro_raw, Stor_tempo$Output$Value[Stor_tempo$Output$Parameter=="Mapping_Start"], SRC_created="yes")
+      # Extract hydrobasins, will return a list with hydroSP to use and hydro_HQ with hydrobasins in the original quality
+      hydro_ready <- sRLPolyg_PrepareHydro(dist_loaded0, hydro_raw, Stor_tempo$Output$Value[Stor_tempo$Output$Parameter=="Mapping_Start"], SRC_created="yes")
+      dist_loaded <- hydro_ready[["hydroSP"]] ; Stor_tempo$hydroSP_HQ <- hydro_ready[["hydroSP_HQ"]]
       if(nrow(dist_loaded)==0){showNotification("The distribution does not overlap with hydrobasins, we cannot load the distribution", type="error", duration=3); req(F)}
     } else {
       dist_loaded <- Stor_tempo$distSP_saved
@@ -387,7 +388,8 @@ server <- function(input, output, session) {
     AllowEdit("hydro")
     
     ### Subset hydrobasins
-    dist_hydro <- sRLPolyg_PrepareHydro(st_transform(distSP(), CRSMOLL), hydro_raw, "hydro8", SRC_created="no")
+    hydro_ready <- sRLPolyg_PrepareHydro(st_transform(distSP(), CRSMOLL), hydro_raw, "hydro8", SRC_created="no")
+    dist_hydro <- hydro_ready[["hydroSP"]] ; Stor_tempo <- Storage_SP() ; Stor_tempo$hydroSP_HQ <- hydro_ready[["hydroSP_HQ"]] ; Storage_SP(Stor_tempo)
     if(nrow(dist_hydro)==0){showNotification("The distribution does not overlap with hydrobasins, we cannot load the distribution", type="error", duration=3); loader_loadhydro$hide(); req(F)}
     distSP(dist_hydro)
 
@@ -414,8 +416,7 @@ server <- function(input, output, session) {
     if(input$SimplifyLoading==T){
       
       Simplif_par <- 3000 / npts(distSP()) # Keep = number of points wanted / total points
-      print(Simplif_par)
-      
+
       dist_simpl <- ms_simplify(distSP(), keep=Simplif_par, keep_shapes=T) %>% st_make_valid(.) %>% .[which(grepl("POLYGON", st_geometry_type(.))),]
       print(paste0("Distribution was reduced by ", round(1-npts(dist_simpl)/npts(distSP()),3)*100, "% (", npts(dist_simpl), " points remaining)"))
       if(nrow(dist_simpl) != nrow(distSP())){dist_simpl$Popup <- sRLPolyg_CreatePopup(dist_simpl)} # Recreate popups if some polygons were created by smoothing
@@ -875,10 +876,15 @@ server <- function(input, output, session) {
   #### Save polygon edits --------
   observeEvent(input$save, {
     sRL_loginfo("START - Save manual edit polygon", input$sci_name)
-    
+
     ### Save distribution (with edited attribute fields)
     Storage_SPNEW <- Storage_SP()
     dist_tosave <- distSP()
+    # Change for HQ geometries if hydro was simplified
+    if("hydroSP_HQ" %in% names(Storage_SPNEW)){
+      dist_tosave$geometry <- Storage_SPNEW$hydroSP_HQ$geometry[match(dist_tosave$hybas_id, Storage_SPNEW$hydroSP_HQ$hybas_id)]
+    }
+    # Add attributes
     dist_tosave$source <- input$Field_source
     dist_tosave$yrcompiled <- input$Field_yrcompiled
     dist_tosave$citation <- input$Field_citation
@@ -888,16 +894,11 @@ server <- function(input, output, session) {
     dist_tosave$island <- input$Field_island
     dist_tosave$dist_comm <- input$Field_distcomm
     if(nchar(input$Field_distcomm)>254){showNotification(ui=HTML(paste0("Distribution comment cannot be longer than 254 characters (currently ", nchar(input$Field_distcomm)," characters), please reduce the text.")), type="error", duration=3) ; req(F)}
-    
-    # if(AllowEdit()=="hydro"){
-    #   dist_tosave <- distSP() %>% subset(., is.na(presence)==F)
-    #   #dist_comb <- dist_tosave %>% group_by(.) %>% summarise_all(last)
-    #   dist_comb$hybas_concat <- paste0(dist_tosave$hybas_id, collapse=";")
-    #   Storage_SPNEW$distSP_saved <- dist_comb %>% st_transform(., crs=st_crs(Storage_SP()$distSP3_BeforeCrop))
-    # } else {
-    #   Storage_SPNEW$distSP_saved <- distSP()
-    # }
-    
+    # Subset if hydrobasins
+    if(AllowEdit()=="hydro"){
+     dist_tosave <- dist_tosave %>% subset(., is.na(presence)==F)
+    }
+    # Save
     Storage_SPNEW$distSP_saved <- dist_tosave
     
     ### Extract points attributes
@@ -908,7 +909,6 @@ server <- function(input, output, session) {
       Storage_SPNEW$dat_proj_saved$presence <- pts_inter$presence[match(Storage_SPNEW$dat_proj_saved$gbifID, pts_inter$gbifID)]
       Storage_SPNEW$dat_proj_saved$origin <- pts_inter$origin[match(Storage_SPNEW$dat_proj_saved$gbifID, pts_inter$gbifID)]
       Storage_SPNEW$dat_proj_saved$seasonal <- pts_inter$seasonal[match(Storage_SPNEW$dat_proj_saved$gbifID, pts_inter$gbifID)]
-      print(Storage_SPNEW$dat_proj_saved$presence)
     }
     
     ### Save plot edited distribution for report
@@ -963,7 +963,7 @@ server <- function(input, output, session) {
       if("distSP_saved" %in% names(Storage_SP())){
         dist_loaded <- Storage_SP()$distSP_saved
       } else {
-          dist_loaded <- Storage_SP()$distSP3_BeforeCrop %>% sRLPolyg_PrepareHydro(., hydro_raw, paste0("hydro", substr(dist_saved$hybas_concat[1],2,3)), SRC_created="yes") # SRC_created is yes even if we used "Edit as hydrobasins" for a RL distribution to avoid charging hydrobasins from the scratch
+          dist_loaded <- Storage_SP()$distSP3_BeforeCrop %>% sRLPolyg_PrepareHydro(., hydro_raw, paste0("hydro", substr(dist_saved$hybas_id[1],2,3)), SRC_created="yes")$hydroSP # SRC_created is yes even if we used "Edit as hydrobasins" for a RL distribution to avoid charging hydrobasins from the scratch
           }
     } else {
       if("distSP_saved" %in% names(Storage_SP())){dist_loaded <- Storage_SP()$distSP_saved} else {dist_loaded <- Storage_SP()$distSP_saved}

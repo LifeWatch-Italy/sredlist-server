@@ -2700,10 +2700,11 @@ Prom<-future({
     sRL_loginfo("Start saving distribution", scientific_name)
     
     distSIS<-sRL_OutputDistribution(scientific_name, Storage_SP)
-    if("hybas_concat" %in% names(Storage_SP$distSP_saved)){
+    if("hybas_id" %in% names(Storage_SP$distSP_saved)){
       hydroSIS<-sRL_OutputHydrobasins(distSIS, Storage_SP)
       write.csv(hydroSIS, paste0(output_dir, "/sRedList_", gsub(" ", ".", scientific_name), "_Hydrobasins.csv"), row.names=F)
     }
+    distSIS <- distSIS %>% dplyr::group_by(across(.cols=-"geometry")) %>% dplyr::summarise()
    st_write(distSIS, paste0(output_dir, "/sRedList_", gsub(" ", ".", scientific_name), "_Distribution.shp"), append=F)
    
    ### Save occurrence records

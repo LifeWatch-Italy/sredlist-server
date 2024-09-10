@@ -89,5 +89,7 @@ The range map created at this step is:
 `r if("Gbif_EditPoly" %in% outlog$Parameter){"You finally edited the polygon range map manually on the interactive map to obtain the following map:"}`
 
 ```{r edited_range_map1b, out.width='100%'}
-png::readPNG(paste0(outDir, "/Plots/plot_manually_edited.png")) %>% grid::rasterGrob() %>% gridExtra::grid.arrange()
+if("Gbif_EditPoly" %in% outlog$Parameter){
+  png::readPNG(paste0(outDir, "/Plots/plot_manually_edited.png")) %>% grid::rasterGrob() %>% gridExtra::grid.arrange()
+}
 ```

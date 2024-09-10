@@ -596,9 +596,8 @@ sRL_MapDistributionGBIF<-function(dat, scientific_name, username, First_step, Al
     
     if(First_step=="hydroMCP"){
       mcp<-st_as_sf(st_convex_hull(st_union(dat))) ; st_geometry(mcp)<-"geometry"
-      hydro8_withrecord<-paste0(unique(interHyd$hybas_id), collapse=",") # Extract hydrobasins with occurrence records
-      interHyd<-st_join(mcp, hydro8_sub, join=st_intersects) %>% subset(., is.na(.$hybas_id)==F) # Identify hydrobasins with data 
-      distGBIF<-subset(hydro_raw, hydro_raw$hybas_id %in% interHyd$hybas_id) # Isolate these hydrobasins
+      interHydMCP<-st_join(mcp, hydro8_sub, join=st_intersects) %>% subset(., is.na(.$hybas_id)==F) # Identify hydrobasins with data 
+      distGBIF<-subset(hydro_raw, hydro_raw$hybas_id %in% interHydMCP$hybas_id) # Isolate these hydrobasins
     }
     
     if(nrow(distGBIF)==0){no_hydrobasins()}
@@ -607,9 +606,9 @@ sRL_MapDistributionGBIF<-function(dat, scientific_name, username, First_step, Al
   
 
   
-  ### Merge
+  ### Merge (not if hydrobasins, we keep 1 line per hydrobasin)
   distGBIF$binomial <- scientific_name
-  distGBIF<-distGBIF %>% dplyr::group_by(binomial) %>% dplyr::summarise(N = n())
+  if(substr(First_step, 1,5)!="hydro"){distGBIF<-distGBIF %>% dplyr::group_by(binomial) %>% dplyr::summarise(N = n())}
   
   ### Apply buffer
   distGBIF<-st_buffer(distGBIF, Buffer_km*1000) %>% st_as_sf()
@@ -662,12 +661,11 @@ sRL_MapDistributionGBIF<-function(dat, scientific_name, username, First_step, Al
   distGBIF$binomial<-scientific_name
   distGBIF$id_no<-sRL_CalcIdno(scientific_name)
   distGBIF$presence<-1
+  if(First_step=="hydroMCP"){distGBIF$presence <- ifelse(distGBIF$hybas_id %in% interHyd$hybas_id, 1, 3)}
   distGBIF$origin<-1
   distGBIF$seasonal<-1
   if(exists("Alpha_scaled")){distGBIF$alphaTEMPO<-Alpha_scaled} # Save alpha scaled if I use alpha hull
-  if(substr(First_step, 1,5)=="hydro"){distGBIF$hybas_concat<-paste0(unique(interHyd$hybas_id), collapse=",")}
-  if(First_step=="hydroMCP"){distGBIF$hybas_withrecords <- hydro8_withrecord}
-  
+
   # Additional attributes
   distGBIF$yrcompiled <- format(Sys.Date(), "%Y")
   distGBIF$citation<-"sRedList 2024" # To fill

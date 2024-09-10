@@ -261,7 +261,7 @@ sRL_OutputDistribution<-function(scientific_name, Storage_SP){
   COL_REQ <- c("presence", "origin", "seasonal", "compiler", "yrcompiled", "citation", "spatialref", "subspecies", "subpop", "data_sens", "sens_comm", "source", "dist_comm", "island", "tax_comm", "id_no", "Shape_Leng", "Shape_Area")
   
   # Create template
-  distSP$sci_name<-scientific_name
+  distSIS$sci_name<-scientific_name
   distSIS<-distSP[, names(distSP) %in% COL_REQ]
   distSIS[, COL_REQ[! COL_REQ %in% names(distSIS)]] <- NA
   
@@ -277,37 +277,27 @@ sRL_OutputDistribution<-function(scientific_name, Storage_SP){
 
 sRL_OutputHydrobasins<-function(distSIS, Storage_SP){
   
-  # Extract hyrobasin list
-  Hydro_list<-Storage_SP$distSP_saved$hybas_concat %>% strsplit(., ",") %>% unlist(.)
-  
   # distSIS to data frame
   distSIS<-as.data.frame(distSIS)
   distSIS$geometry<-NULL
   
-  # Export hydrobasins with as many lines as hydrobasins
-  HydroSIS<-distSIS[1,]
-  HydroSIS[1:length(Hydro_list),]<-distSIS[1,]
-  HydroSIS$hybas_id<-Hydro_list
+  # Add hydrobasin codes
+  Hydro_saved<-Storage_SP$distSP_saved
+  distSIS$hybas_id<-Storage_SP$distSP_saved$hybas_id
   
-  # If hydroMCP, make a difference between hydrobasins with occurrence records and those without
-  if("hybas_withrecords" %in% names(Storage_SP$distSP_saved)){
-    Hydro_withrecords<-Storage_SP$distSP_saved$hybas_withrecords %>% strsplit(., ",") %>% unlist(.)
-    HydroSIS$presence[!HydroSIS$hybas_id %in% Hydro_withrecords]<-3
-  }
-  
-  return(HydroSIS)
+  return(distSIS)
 }
-
-
 
 ### Save occurrences shapefile from the GBIF procedure
 sRL_OutputOccurrences <- function(scientific_name, Storage_SP, distSIS) {
   
   # Transform in lat/lon
-  dat<-Storage_SP$dat_proj_saved %>% st_transform(., "+init=epsg:4326")
-
+  dat <- Storage_SP$dat_proj_saved %>% st_transform(., "+init=epsg:4326")
+  
   # Create template shape
   dat$sci_name<-scientific_name
+  if("year" %in% names(dat)){dat$event_year<-dat$year}
+  if(!"presence" %in% names(dat)){dat$presence <- dat$origin <- dat$seasonal <- 1}
   dat_SIS<-dat[, c("sci_name", "gbifID", "presence", "origin", "seasonal")]
   dat_SIS[,c("compiler", "yrcompiled", "citation", "dec_lat", "dec_long", "spatialref", "subspecies", "subpop", "data_sens", "sens_comm", "event_year", "source", "basisofrec", "catalog_no", "dist_comm", "island", "tax_comm", "id_no")]<-NA
 
