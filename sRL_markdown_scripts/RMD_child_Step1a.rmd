@@ -1,10 +1,9 @@
 
-For the whole process on the platform you used as polygon distribution `r revalue(outlog$Value[outlog$Parameter=="Distribution_Source"], c("Red List"="the distribution that was published with the last Red List assessment", "Uploaded"="a distribution map that was uploaded on the platform", "StoredOnPlatform"="a distribution map that was previously created on the platform from occurrence records"))`.
-You then filtered the distribution, keeping only presence codes `r outlog$Value[outlog$Parameter == "Distribution_Presence"]`, origin codes `r outlog$Value[outlog$Parameter == "Distribution_Origin"]`, and seasonal codes `r outlog$Value[outlog$Parameter == "Distribution_Seasonal"]`.
+For the whole process on the platform you used as polygon distribution `r revalue(outlog$Value[outlog$Parameter=="Distribution_Source"], c("Red List"="the distribution that was published with the last Red List assessment", "Uploaded"="a distribution map that was uploaded on the platform", "StoredOnPlatform"="a distribution map that was previously created on the platform from occurrence records"), warn_missing = F)`.
 
 `r ifelse(is.na(outlog$Value[outlog$Parameter=="Crop_Country"]), "", paste0("You only kept the part of the distribution that is included in ", outlog$Value[outlog$Parameter=="Crop_Country"], " (National Red Listing option)."))` 
 
-The distribution map used along the assessment was the following:
+This distribution was the following map:
 
 <br>
 <center>
@@ -18,3 +17,11 @@ if("Gbif_EditPoly" %in% outlog$Parameter){
 png::readPNG(paste0(outDir, "/Plots/plot_manually_edited.png")) %>% grid::rasterGrob() %>% gridExtra::grid.arrange()
 }
 ```
+
+You then filtered the distribution, keeping only presence codes `r outlog$Value[outlog$Parameter == "Distribution_Presence"]`, origin codes `r outlog$Value[outlog$Parameter == "Distribution_Origin"]`, and seasonal codes `r outlog$Value[outlog$Parameter == "Distribution_Seasonal"]`. This distribution was used for quantitative analyses (to calculate EOO, AOO, trends in AOH, fragmentation and trends in remote-sensed products) and was:
+
+<br>
+<center>
+![](`r paste0(outDir, '/Plots/plot_selected.png')`){width=800px}
+</center>
+

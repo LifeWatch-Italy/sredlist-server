@@ -1,12 +1,12 @@
 
 
 ### TO CONNECT WITH SREDLIST
+  # Selecting attributes in 1a and 1b should be needed only if several attributes (try with getDistributionInfo) !! validDistribution should be true
+  # When I click back from 2 to 1a, manual changes are removed
+  # Add a if() similar to download_tracker to get zip files that users did not manage to download (perhaps increase the time before zip are removed)
 
-# DISCUSS LM: Possibility with 1a: edit distri is before selecting attributes (inc Countries), then called "Choose the attributes to use in spatial analyses" that should also be selected in 1b (maybe only if several attributes? that could only happen with hydro or edited manually); then check 1a + 2 + Prev is working fine; then check ift's ok to call again the step just before Shiny (both 1a and 1b)
-# DISCUSS LM: When saving, make sure correct projection, should make the distribution ready for next steps (for now it means polygons should be merged which is a shame... + make sure I have the needed columns for AOH)
+# TEST (both large and small) Distri for quantitative analyses should be merged + fonctions in steps 3-7 should be adapted (especially check AOH).
 
-### IF I HAVE TIME (during testing otherwise)
-# Add checkboxes at the end for the files to include or not in the zip file?
 
 ### DURING TESTING
 # Check each line of the script

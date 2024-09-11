@@ -93,7 +93,7 @@ sRL_OutputCountries<-function(scientific_name, countries){
     "origin"="CountryOccurrence.CountryOccurrenceSubfield.origin",
     "lookup"="CountryOccurrence.CountryOccurrenceSubfield.CountryOccurrenceLookup",
     "name"="CountryOccurrence.CountryOccurrenceSubfield.CountryOccurrenceName"
-  ))
+  ), warn_missing = F)
   
   # Transform NA in "" to match SIS
   CO_SIS<-replace(CO_SIS, is.na(CO_SIS), "")
@@ -261,8 +261,8 @@ sRL_OutputDistribution<-function(scientific_name, Storage_SP){
   COL_REQ <- c("presence", "origin", "seasonal", "compiler", "yrcompiled", "citation", "spatialref", "subspecies", "subpop", "data_sens", "sens_comm", "source", "dist_comm", "island", "tax_comm", "id_no", "Shape_Leng", "Shape_Area")
   
   # Create template
-  distSIS$sci_name<-scientific_name
   distSIS<-distSP[, names(distSP) %in% COL_REQ]
+  distSIS$sci_name<-scientific_name
   distSIS[, COL_REQ[! COL_REQ %in% names(distSIS)]] <- NA
   
   # Send geometry column at the end of the table
@@ -332,7 +332,7 @@ sRL_OutputOccurrences <- function(scientific_name, Storage_SP, distSIS) {
       "OBSERVATION"="HumanObservation",
       "PRESERVED_SPECIMEN"="PreservedSpecimen",
       "OCCURRENCE"="HumanObservation"
-    ))
+    ), warn_missing = F)
   }
   
   # If data from the Red List or Uploaded, copy the information previously saved
@@ -390,9 +390,9 @@ extract_range<-function(carac){
 crit_apply<-function(crit, CRIT, Val){
   
   if(length(Val)!=0){ # If Val is empty (i.e. no value for this parameter in allfields), I leave empty
-    Val_num<-revalue(Val, c("LC"="1", "VU"="2", "EN"="3", "CR"="4")) %>% as.numeric(.)
-    crit$Cat_ThresholdMIN[crit$criterion==CRIT]<-min(Val_num) %>% as.character(.) %>% revalue(., c("1"="LC", "2"="VU", "3"="EN", "4"="CR"))
-    crit$Cat_ThresholdMAX[crit$criterion==CRIT]<-max(Val_num) %>% as.character(.) %>% revalue(., c("1"="LC", "2"="VU", "3"="EN", "4"="CR"))
+    Val_num<-revalue(Val, c("LC"="1", "VU"="2", "EN"="3", "CR"="4"), warn_missing = F) %>% as.numeric(.)
+    crit$Cat_ThresholdMIN[crit$criterion==CRIT]<-min(Val_num) %>% as.character(.) %>% revalue(., c("1"="LC", "2"="VU", "3"="EN", "4"="CR"), warn_missing = F)
+    crit$Cat_ThresholdMAX[crit$criterion==CRIT]<-max(Val_num) %>% as.character(.) %>% revalue(., c("1"="LC", "2"="VU", "3"="EN", "4"="CR"), warn_missing = F)
   }
   return(crit)
 }
@@ -537,7 +537,7 @@ sRL_CriteriaCalculator <- function(allfields){
     # If the only one is severe fragmentation, subcriteria not met
     if(sev.fragm==TRUE){crit$Subcrit[crit$criterion %in% c("B1", "B2")]<-0} else {
       # If fluctuations or decline met, I check the highest category met by number of locations
-      crit$Subcrit[crit$criterion %in% c("B1", "B2")]<-revalue(sort(factor(N.loc, levels=c("LC", "VU", "EN", "CR")), decreasing=T)[1], c("CR"="1", "EN"="EN", "VU"="VU", "LC"="0")) %>% as.character(.)
+      crit$Subcrit[crit$criterion %in% c("B1", "B2")]<-revalue(sort(factor(N.loc, levels=c("LC", "VU", "EN", "CR")), decreasing=T)[1], c("CR"="1", "EN"="EN", "VU"="VU", "LC"="0"), warn_missing = F) %>% as.character(.)
     }
     
     ## If I used N.loc with EN or VU, I can adapt the category met
@@ -587,9 +587,9 @@ sRL_CriteriaCalculator <- function(allfields){
   ### Criterion C1
   if(is.na(crit_CPOP[1])==F){
     # Extract declines and keep the one that applies
-    crit_C1b_1gen<-revalue(as.character(extract_range(allfields$PopulationDeclineGenerations1.range)>=25), c("TRUE"="CR", "FALSE"="LC"))
-    crit_C1b_2gen<-revalue(as.character(extract_range(allfields$PopulationDeclineGenerations2.range)>=20), c("TRUE"="EN", "FALSE"="LC"))
-    crit_C1b_3gen<-revalue(as.character(extract_range(allfields$PopulationDeclineGenerations3.range)>=10), c("TRUE"="VU", "FALSE"="LC"))
+    crit_C1b_1gen<-revalue(as.character(extract_range(allfields$PopulationDeclineGenerations1.range)>=25), c("TRUE"="CR", "FALSE"="LC"), warn_missing = F)
+    crit_C1b_2gen<-revalue(as.character(extract_range(allfields$PopulationDeclineGenerations2.range)>=20), c("TRUE"="EN", "FALSE"="LC"), warn_missing = F)
+    crit_C1b_3gen<-revalue(as.character(extract_range(allfields$PopulationDeclineGenerations3.range)>=10), c("TRUE"="VU", "FALSE"="LC"), warn_missing = F)
     
     if("CR" %in% crit_C1b_1gen){crit_C1b<-crit_C1b_1gen} else {
       if("EN" %in% crit_C1b_2gen){crit_C1b<-crit_C1b_2gen} else {
@@ -680,7 +680,7 @@ sRL_CriteriaCalculator <- function(allfields){
   
   ### Criterion D2
   if(is.na(allfields$AreaRestricted.isRestricted)==F){
-    crit_D2<-revalue(allfields$AreaRestricted.isRestricted, c("Yes"="VU", "No"="LC"))
+    crit_D2<-revalue(allfields$AreaRestricted.isRestricted, c("Yes"="VU", "No"="LC"), warn_missing = F)
     crit<-crit_apply(crit, "D2", crit_D2)
     crit$Subcrit[crit$criterion=="D2"]<-1
   }

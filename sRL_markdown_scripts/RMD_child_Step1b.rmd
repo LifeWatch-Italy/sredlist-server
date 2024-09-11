@@ -18,7 +18,7 @@ To filter occurrence records, the platform offers some automated filters from th
 In addition, you excluded all records made before `r outlog$Value[outlog$Parameter=="Gbif_Year"]` (`r ifelse(outlog$Value[outlog$Parameter=="Gbif_yearBin"]=="TRUE", "also excluding", "but keeping")` records that do not have year information).
 You also excluded all records with coordinates uncertainty higher than `r outlog$Value[outlog$Parameter=="Gbif_Uncertainty"]`km (`r ifelse(outlog$Value[outlog$Parameter=="Gbif_uncertainBin"]=="TRUE", "also excluding", "but keeping")` records that do not have coordinate uncertainty information).
 `r ifelse(outlog$Value[outlog$Parameter=="Gbif_Extent"]=="-180,180,-90,90", "", paste0("You restricted to occurrence records included in a square of coordinates: ", outlog$Value[outlog$Parameter=="Gbif_Extent"], "."))` 
-`r ifelse(outlog$Value[outlog$Parameter=="Gbif_Sea"]=="", "", paste0("You excluded occurrence records made ", plyr::revalue(outlog$Value[outlog$Parameter=="Gbif_Sea"], c("excludesea"="at sea.", "excludeland"="on land."))))`
+`r ifelse(outlog$Value[outlog$Parameter=="Gbif_Sea"]=="", "", paste0("You excluded occurrence records made ", plyr::revalue(outlog$Value[outlog$Parameter=="Gbif_Sea"], c("excludesea"="at sea.", "excludeland"="on land."), warn_missing = F)))`
 `r if("Gbif_EditPts" %in% outlog$Parameter){"You finally edited points manually on the interactive map."}`
 
 Occurrence records are displayed in the leaflet map below (valid records in yellow and excluded records in purple; you can click on observation get more information and exclusion reason, check the sRedList documentation for more details). They are also available in the interactive table below (invalid records are displayed in the table with a non-empty 'Invalid_reason' column).
@@ -28,7 +28,7 @@ Storage_SP$Leaf_saved
 
 Tab <- Storage_SP$flags[, !names(Storage_SP$flags) %in% c("species", "species_download", "coordinateUncertaintyInMeters", "individualCount", "family", "taxonRank", "genericName", "specificEpithet", "institutionCode", "datasetName", ".val", ".equ", ".zer", ".cap", ".cen", ".gbf", ".inst", ".year", ".uncertainty", ".limits", "basisOfRecord", "Only_for_syn", "PopText", "Coords_merged", "unique", "Lon_jitt", "Lat_jitt", "_leaflet_id", "ID")]
 if("source" %in% names(Tab)){Tab$source <- substr(Tab$source, 1, 30) %>% paste0(., ifelse(nchar(.)==30, "...", ""))}
-names(Tab) <- revalue(names(Tab), c("gbifID"="ID", "Reason"="Invalid_reason", "source"="source_reference", "countryCode"="country")) %>% sub("decimal", "", .)
+names(Tab) <- revalue(names(Tab), c("gbifID"="ID", "Reason"="Invalid_reason", "source"="source_reference", "countryCode"="country"), warn_missing = F) %>% sub("decimal", "", .)
 if("Link" %in% names(Tab)){Tab$Link <- paste0("<a href='", Tab$Link, "' target='_blank'>Link</a>")}
 Col_order <- c("Longitude", "Latitude", "ID", "Source_type", "Invalid_reason")
 Tab_ordered <- Tab[,c(Col_order, names(Tab)[!names(Tab) %in% Col_order])]
@@ -66,7 +66,7 @@ PRINT_starting<-outlog$Value[outlog$Parameter=="Mapping_Start"] %>% plyr::revalu
   "hydro10"="map all hydrobasins (level 10) with occurrence records",
   "hydro12"="map all hydrobasins (level 12) with occurrence records",
   "hydroMCP"="map all hydrobasins (level 8) that overlap with the minimum convex polygon around occurrence records"
-))
+), warn_missing = F)
 
 ELEV<-outlog$Value[outlog$Parameter=="Mapping_Altitude"] %>% strsplit(., ",") %>% unlist(.) %>% gsub(" ", "", .)
 
@@ -74,7 +74,7 @@ ELEV<-outlog$Value[outlog$Parameter=="Mapping_Altitude"] %>% strsplit(., ",") %>
 
 To create a polygon range map, you chose first to `r PRINT_starting`. 
 `r if(outlog$Value[outlog$Parameter=="Mapping_Buffer"]>0){paste0("You then buffered that polygon by ", outlog$Value[outlog$Parameter=="Mapping_Buffer"], " km.")}` 
-`r plyr::revalue(outlog$Value[outlog$Parameter=="Mapping_Crop"], c("cropland"="You excluded all the marine area from the polygon.", "cropsea"="You excluded all the terrestrial area from the polygon."))` 
+`r plyr::revalue(outlog$Value[outlog$Parameter=="Mapping_Crop"], c("cropland"="You excluded all the marine area from the polygon.", "cropsea"="You excluded all the terrestrial area from the polygon."), warn_missing = F)` 
 `r if(outlog$Value[outlog$Parameter=="Mapping_Altitude"] != "0, 9000"){paste0("You asked to restrict the polygon to area that is between ", ELEV[1], " and ", ELEV[2], "m of elevation.")}`  
 `r if(outlog$Value[outlog$Parameter=="Mapping_Merge"]=="TRUE"){"You asked to merge the polygon you created with the published range map of the species (if it exists)."}` 
 
@@ -93,3 +93,12 @@ if("Gbif_EditPoly" %in% outlog$Parameter){
   png::readPNG(paste0(outDir, "/Plots/plot_manually_edited.png")) %>% grid::rasterGrob() %>% gridExtra::grid.arrange()
 }
 ```
+
+
+You then filtered the distribution, keeping only presence codes `r outlog$Value[outlog$Parameter == "Distribution_Presence"]`, origin codes `r outlog$Value[outlog$Parameter == "Distribution_Origin"]`, and seasonal codes `r outlog$Value[outlog$Parameter == "Distribution_Seasonal"]`. This distribution was used for quantitative analyses (to calculate EOO, AOO, trends in AOH, fragmentation and trends in remote-sensed products) and was:
+
+<br>
+<center>
+![](`r paste0(outDir, '/Plots/plot_selected.png')`){width=800px}
+</center>
+

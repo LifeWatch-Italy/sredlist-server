@@ -1,4 +1,15 @@
 
+# Merge distribution (for the quantitative analyses)
+sRL_MergeDistri <- function(distSP){
+  
+  distSP$presence <- distSP$origin <- distSP$seasonal <- 1
+  distSP$cols <- NULL
+  
+  distSP_merged <- distSP %>% dplyr::group_by(binomial, id_no, presence, origin, seasonal) %>% dplyr::summarise(.groups="keep")
+  
+  return(distSP_merged)
+}
+
 
 # Step 1 --------------------------------
 sRL_FormatUploadedRecords <- function(Uploaded_Records, scientific_name, Gbif_Synonym){
