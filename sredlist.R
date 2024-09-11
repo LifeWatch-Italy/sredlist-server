@@ -2581,14 +2581,15 @@ Prom<-future({
   write.csv(assessments_SIS, paste0(output_dir, "/assessments.csv"), row.names = F)
   
   # Download tracking files
-  if(scientific_name==config$Name_tracker & username=="victor.cazalis"){
-    
-    # List files to add to zip and copy
-    filesOut<-list.files("Species/Stored_outputs")
-    file.copy(paste0("Species/Stored_outputs/", filesOut), paste0(output_dir, "/Outputs_", filesOut))
-    
+  print(username)
+  if(grepl("victor.cazalis", username)){
+    # List files stored in Stored_outputs to add to zip and copy
+    if(scientific_name==config$Name_tracker){filesOut<-list.files("Species/Stored_outputs") %>% paste0("Species/Stored_outputs/", .)}
+    # or list all zip files not removed yet
+    if(scientific_name==sub("3","4",config$Name_tracker)){filesOut<-list.files() %>% .[grepl(".zip", .)]; print(filesOut)}
+    # Copy files
+    file.copy(filesOut, paste0(output_dir, "/Outputs_", filesOut))
   }
-  
   
   # Save distribution and occurrences if from GBIF
   if(is.null(Storage_SP$gbif_number_saved)==F | is.na(Storage_SP$Output$Value[Storage_SP$Output$Parameter=="Gbif_EditPoly"])==F){
@@ -2932,7 +2933,6 @@ function(scientific_name) {
           metadata <- NULL
           if (file_ext(fileName) == "json") {
             metadata = jsonlite::read_json(paste0(config$distribution_path, scientific_name, "/", distributionFolder, "/", fileName), simplifyVector = FALSE)  # nolint 
-            print(metadata)
           }
           files <- append(files, list(
             list(
