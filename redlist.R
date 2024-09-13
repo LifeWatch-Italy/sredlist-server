@@ -226,11 +226,11 @@ Prom<-future({
     
     CALCU<-ifelse((is.na(alt_pref$result$elevation_lower) & is.na(alt_pref$result$elevation_upper)), "Calculated", "Half_Calculated")
     ### Small ranges
-    Range_size<-as.numeric(sum(st_area(Storage_SP$distSP_saved)))/(10^6)
+    Range_size<-as.numeric(sum(st_area(Storage_SP$distSP_selected)))/(10^6)
     
     if(Range_size < 10000){
       sRL_loginfo("Run altitude extract (Small range)", scientific_name)
-      EXTR<-round(exactextractr::exact_extract(sRL_ChargeAltRaster(), Storage_SP$distSP_saved, c("min", "max")))
+      EXTR<-round(exactextractr::exact_extract(sRL_ChargeAltRaster(), Storage_SP$distSP_selected, c("min", "max")))
       if(is.na(alt_pref$result$elevation_lower)==T){alt_pref$result$elevation_lower<-min(EXTR$min, na.rm=T)}
       if(is.na(alt_pref$result$elevation_upper)==T){alt_pref$result$elevation_upper<-max(EXTR$max, na.rm=T)}
     }

@@ -1,10 +1,5 @@
 
 
-### DURING TESTING
-# Check each line of the script
-# Add tracking usage in Usage tracking
-# Can I track a bit better the different steps (not sure I can do it but it would be quite useful to know that you moved points, simplified by X, cut one polygon to change attributes). Might be too complex for the importance
-# Improve country background for RMD plot saved
 
 # Set working directory (Victor path if we are on his laptop, LifeWatch path otherwise)
 setwd(dir=ifelse(file.exists("C:/Users/Victor"),"C:/Users/Victor/Documents/sRedList/Platform/InProgress/sredlist-server-develop", "/media/docker/sRedList/sredlist-server"))
@@ -115,7 +110,7 @@ ui <- page_fillable(
                    textInput("Field_compiler", label="Compiler")
           ),
           fluidRow(checkboxInput("Field_datasens", label="Data sensitive", value=0),
-                   textInput("Field_senscomm", label="Data Sensitive comment"),
+                   conditionalPanel(condition='input.Field_datasens==true', textInput("Field_senscomm", label="Data Sensitive comment")),
                    textInput("Field_island", label="Island")
           ),
           textInput("Field_distcomm", label="Distribution comment", width="100%")
