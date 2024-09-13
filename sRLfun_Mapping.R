@@ -5,8 +5,8 @@ sRL_MergeDistri <- function(distSP){
   distSP$presence <- distSP$origin <- distSP$seasonal <- 1
   distSP$cols <- NULL
   
-  distSP_merged <- distSP %>% dplyr::group_by(binomial, id_no, presence, origin, seasonal) %>% dplyr::summarise(.groups="keep")
-  
+  distSP_merged <- distSP %>% dplyr::group_by(binomial, id_no, presence, origin, seasonal) %>% dplyr::summarise(.groups="keep") %>% ungroup(.) %>% st_cast("MULTIPOLYGON") %>% st_as_sf(.)
+    
   return(distSP_merged)
 }
 

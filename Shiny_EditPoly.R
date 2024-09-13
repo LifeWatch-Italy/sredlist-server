@@ -1,13 +1,5 @@
 
 
-### TO CONNECT WITH SREDLIST
-  # Selecting attributes in 1a and 1b should be needed only if several attributes (try with getDistributionInfo) !! validDistribution should be true
-  # When I click back from 2 to 1a, manual changes are removed
-  # Add a if() similar to download_tracker to get zip files that users did not manage to download (perhaps increase the time before zip are removed)
-
-# TEST (both large and small) Distri for quantitative analyses should be merged + fonctions in steps 3-7 should be adapted (especially check AOH).
-
-
 ### DURING TESTING
 # Check each line of the script
 # Add tracking usage in Usage tracking

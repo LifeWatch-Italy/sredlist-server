@@ -95,7 +95,7 @@ function(scientific_name, username) {
 #* @get species/<scientific_name>/distribution
 #* @param scientific_name:string Scientific Name
 #* @param Dist_path:string Distribution Folder default RedList
-#* @serializer png list(width = 800, height = 600)
+#* @serializer unboxedJSON
 #* @tag sRedList1
  function(scientific_name, username, Crop_Country="", Dist_path = "") { # nolint
 
@@ -163,18 +163,20 @@ function(scientific_name, username) {
      Storage_SP<-sRL_OutLog(Storage_SP, "Distribution_Source", DisSource) # If Dist_path ends by _RL it comes from the RL, uploaded otherwise
      sRL_StoreSave(scientific_name, username,  Storage_SP)
      
-     # Save plot for RMarkDown (and create repository)
+     # Save plot
+     EXT <- extent(distSP) ; size_scale <- (EXT[2]-EXT[1])/(EXT[4]-EXT[3])
      dir.create(paste0("resources/AOH_stored/", sub(" ", "_", scientific_name), "_", sRL_userdecode(username), "/Plots"), recursive=T)
-     ggsave(paste0("resources/AOH_stored/", sub(" ", "_", scientific_name), "_", sRL_userdecode(username), "/Plots/plot_dist.png"), plot_dist, width=10, height=8)
-
+     ggsave(paste0("resources/AOH_stored/", sub(" ", "_", scientific_name), "_", sRL_userdecode(username), "/Plots/plot_dist.png"), plot_dist, width=10, height=8/size_scale)
+     plot_distENC <- base64enc::dataURI(file = paste0("resources/AOH_stored/", sub(" ", "_", scientific_name), "_", sRL_userdecode(username), "/Plots/plot_dist.png"), mime = "image/png")
+     
      sRL_loginfo("END - Prepare distribution 1a", scientific_name)
      
   # Return
-  return(plot_dist)
+  return(list(plot_edit=plot_distENC))
 
-}, gc=T, seed=T) %>% then(onRejected=function(err) {return(ggplot()+ggtitle("ERROR: we are not able to create this plot, please report that error")+labs(subtitle=err))})
+}, gc=T, seed=T)
 
-return(Prom %...>% plot())
+return(Prom)
 }
 
 
@@ -185,7 +187,7 @@ return(Prom %...>% plot())
 #* @param presences:[int] presences (1, 2)
 #* @param seasons:[int] seasons (1, 2)
 #* @param origins:[int] origins (1, 2)
-#* @serializer png list(width = 800, height = 600)
+#* @serializer unboxedJSON
 #* @tag sRedList1
 function(scientific_name, username, presences = list(), seasons = list() , origins = list()) { # nolint
   
@@ -220,16 +222,18 @@ function(scientific_name, username, presences = list(), seasons = list() , origi
 
     # Save plot for RMarkDown (and create repository)
     ggsave(paste0("resources/AOH_stored/", sub(" ", "_", scientific_name), "_", sRL_userdecode(username), "/Plots/plot_selected.png"), plot_dist, width=10, height=8)
-
+    plot_distENC <- base64enc::dataURI(file = paste0("resources/AOH_stored/", sub(" ", "_", scientific_name), "_", sRL_userdecode(username), "/Plots/plot_selected.png"), mime = "image/png")
+    
     sRL_loginfo("END - Prepare attributes", scientific_name)
     
     # Return
-    return(plot_dist)
+    return(list(plot_selected=plot_distENC))
     
-  }, gc=T, seed=T) %>% then(onRejected=function(err) {return(ggplot()+ggtitle("ERROR: we are not able to create this plot, please report that error")+labs(subtitle=err))})
+  }, gc=T, seed=T)
   
-  return(Prom %...>% plot())
+  return(Prom)
 }
+
 
 
 
