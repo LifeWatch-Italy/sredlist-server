@@ -178,22 +178,22 @@ sRLPolyg_CreatePopup <- function(distSP){
     shinyInputRmPolygon(actionButton, distSP$ID, distSP$ConditionHydro),
     "<br><br>")
   
-  ### Add attributes selectors (except if empty hydrobasin)
+  ### Add individual smooth / simplify options (except for hydrobasins)
   distSub <- subset(distSP, distSP$ConditionHydro != "hydroEmpty")
   
+  if("no" %in% distSP$ConditionHydro){
+    Popup[distSP$ConditionHydro != "hydroEmpty"] <- paste0(
+      Popup[distSP$ConditionHydro != "hydroEmpty"],
+      shinyInputSmoothPolygon(distSub, "Smooth"),
+      shinyInputSmoothPolygon(distSub, "Simplify"),
+      "</center><br><br>"
+    )
+  }
+  
+  ### Add attributes selectors (except if empty hydrobasin)
   Popup[distSP$ConditionHydro != "hydroEmpty"] <- paste0(
     Popup[distSP$ConditionHydro != "hydroEmpty"],
     
-    # Add smooth and simplify (except for hydrobasins)
-    ifelse("no" %in% distSP$ConditionHydro,
-           paste0("<center>",
-                  shinyInputSmoothPolygon(distSub, "Smooth"),
-                  shinyInputSmoothPolygon(distSub, "Simplify"),
-                  "</center><br><br>"),
-           ""
-           ),
-    
-    # Add attributes
     "<b> Edit Presence: ","</b><br>",
     shinyInputEditAttribute(distSub, "presence", 1),
     shinyInputEditAttribute(distSub, "presence", 2),
@@ -257,6 +257,8 @@ sRLPolyg_UpdateLeaflet <- function(distSP, dat_pts, frame, PolygRemove="", Allow
 
 ### Smooth function
 sRLPolyg_Smooth <- function(distSP, Smooth_par){
+  
+  if(npts(distSP) < 20){distSP <- smoothr::densify(distSP, n=5)}
   
   distSP_smoothed <- distSP %>% 
     smoothr::smooth(., method = "ksmooth", smoothness=(exp(as.numeric(Smooth_par)/20)-1), max_distance=10000) %>%

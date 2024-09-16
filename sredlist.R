@@ -216,7 +216,7 @@ function(scientific_name, username, presences = list(), seasons = list() , origi
       ggtitle("")
 
     ### Save the distribution in memory (after merging it)
-    Storage_SP$distSP_selected <- sRL_MergeDistri(distSP)
+    Storage_SP$distSP_selected <- sRL_MergeDistri(distSP) %>% st_transform(., CRSMOLL)
     Storage_SP<-sRL_OutLog(Storage_SP, c("Distribution_Presence", "Distribution_Seasonal", "Distribution_Origin"), c(paste0(presences, collapse=","), paste0(seasons, collapse=","), paste0(origins, collapse=",")))
     sRL_StoreSave(scientific_name, username,  Storage_SP)
 
@@ -2588,11 +2588,15 @@ Prom<-future({
   print(username)
   if(grepl("victor.cazalis", username)){
     # List files stored in Stored_outputs to add to zip and copy
-    if(scientific_name==config$Name_tracker){filesOut<-list.files("Species/Stored_outputs") %>% paste0("Species/Stored_outputs/", .)}
+    if(scientific_name==config$Name_tracker){
+      filesOut<-list.files("Species/Stored_outputs") %>% paste0("Species/Stored_outputs/", .)
+      file.copy(filesOut, paste0(output_dir, "/Outputs_", filesOut))
+      }
     # or list all zip files not removed yet
-    if(scientific_name==sub("3","4",config$Name_tracker)){filesOut<-list.files() %>% .[grepl(".zip", .)]; print(filesOut)}
-    # Copy files
-    file.copy(filesOut, paste0(output_dir, "/Outputs_", filesOut))
+    if(scientific_name==sub("3","4",config$Name_tracker)){
+      filesOut<-list.files() %>% .[grepl(".zip", .)]
+      file.copy(filesOut, paste0(output_dir, "/Outputs_", filesOut))
+      }
   }
   
   # Save distribution and occurrences if from GBIF

@@ -298,10 +298,13 @@ server <- function(input, output, session) {
     
     ### Prepare textInput initial values
     tryCatch({
-      updateTextInput(session, "Field_source", value = ifelse(("source" %in% names(dist_loaded) & is.na(dist_loaded$source[1])==F), dist_loaded$source[1], "sRedList platform"))
+      if(! "compiler" %in% names(dist_loaded)){dist_loaded$compiler <- NA}
+      if(! "citation" %in% names(dist_loaded)){dist_loaded$citation <- NA}
+      if(! "source" %in% names(dist_loaded)){dist_loaded$source <- NA}
+      updateTextInput(session, "Field_source", value = ifelse((is.na(dist_loaded$source[1])==F), dist_loaded$source[1], "sRedList platform"))
       updateNumericInput(session, "Field_yrcompiled", value = format(Sys.time(), "%Y"))
-      updateTextInput(session, "Field_citation", value = ifelse(("citation" %in% names(dist_loaded) & is.na(dist_loaded$citation[1])==F), dist_loaded$citation[1], "IUCN (International Union for Conservation of Nature)"))
-      updateTextInput(session, "Field_compiler", value = ifelse(("compiler" %in% names(dist_loaded) & is.na(dist_loaded$compiler[1])==F), dist_loaded$compiler[1], sRL_userformatted(input$user)))
+      updateTextInput(session, "Field_citation", value = ifelse((is.na(dist_loaded$citation[1])==F), dist_loaded$citation[1], "IUCN (International Union for Conservation of Nature)"))
+      updateTextInput(session, "Field_compiler", value = ifelse((is.na(dist_loaded$compiler[1])==F), dist_loaded$compiler[1], sRL_userformatted(input$user)))
       updateTextInput(session, "Field_island", value = ifelse(("island" %in% names(dist_loaded) & is.na(dist_loaded$island[1])==F), dist_loaded$island[1], "")) # Ideally I could automatically extract if on an island?
       updateCheckboxInput(session, "Field_datasens", value = ifelse(("TRUE" %in% dist_loaded$data_sens | "true" %in% dist_loaded$data_sens | "1" %in% dist_loaded$data_sens), TRUE, FALSE))
       updateTextInput(session, "Field_senscomm", value = ifelse(("sens_comm" %in% names(dist_loaded) & is.na(dist_loaded$sens_comm[1])==F), dist_loaded$sens_comm[1], ""))
@@ -657,7 +660,7 @@ server <- function(input, output, session) {
     if(nrow(drawn)>0){
       print("Record and apply polygon drawing")
       
-      if(nrow(P_drawn)==1){showNotification(ui=HTML("When you finished drawing new polygons, please click on save to be able to specify their attributes."), type="message", duration=2)}
+      if(is.null(P_drawn)==F){if(nrow(P_drawn)==1){showNotification(ui=HTML("When you finished drawing new polygons, please click on save to be able to specify their attributes."), type="message", duration=2)}}
       
       drawn$Applied <- F # Add column tracking if changes was applied
       # Store in drawn_storage

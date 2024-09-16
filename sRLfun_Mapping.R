@@ -2,11 +2,17 @@
 # Merge distribution (for the quantitative analyses)
 sRL_MergeDistri <- function(distSP){
   
+  # Prepare columns
   distSP$presence <- distSP$origin <- distSP$seasonal <- 1
   distSP$cols <- NULL
+  if(! "id_no" %in% names(distSP)){distSP$id_no <- sRL_CalcIdno(distSP$binomial[1])}
   
+  # Make valid if it's not
+  if("FALSE" %in% as.character(st_is_valid(distSP))){distSP <- st_make_valid(distSP)}
+  
+  # Merge
   distSP_merged <- distSP %>% dplyr::group_by(binomial, id_no, presence, origin, seasonal) %>% dplyr::summarise(.groups="keep") %>% ungroup(.) %>% st_cast("MULTIPOLYGON") %>% st_as_sf(.)
-    
+  
   return(distSP_merged)
 }
 
