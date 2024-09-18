@@ -52,7 +52,10 @@ sRLPolyg_PrepareHydro <- function(distSP, hydro_raw, HydroLev, SRC_created){
     hydroSP_HQ <-  st_filter(hydroLEV_raw, st_buffer(st_as_sfc(st_bbox(distSP)), 50000), .predicate = st_intersects)
     
   }
-
+  
+  # Add binomial
+  hydroSP_HQ$binomial <- distSP$binomial[1]
+  
   # Simplify
   hydroSP <- hydroSP_HQ
   if(npts(hydroSP_HQ)>(50*nrow(hydroSP_HQ))){hydroSP <- ms_simplify(hydroSP, keep=(50*nrow(hydroSP))/npts(hydroSP), keep_shapes=T)}
