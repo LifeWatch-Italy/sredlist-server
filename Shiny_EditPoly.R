@@ -1,6 +1,4 @@
 
-
-
 # Set working directory (Victor path if we are on his laptop, LifeWatch path otherwise)
 setwd(dir=ifelse(file.exists("C:/Users/Victor"),"C:/Users/Victor/Documents/sRedList/Platform/InProgress/sredlist-server-develop", "/media/docker/sRedList/sredlist-server"))
 
@@ -870,10 +868,15 @@ server <- function(input, output, session) {
     ### Save distribution (with edited attribute fields)
     Storage_SPNEW <- Storage_SP()
     dist_tosave <- distSP()
+    
     # Change for HQ geometries if hydro was simplified
     if("hydroSP_HQ" %in% names(Storage_SPNEW)){
       dist_tosave$geometry <- Storage_SPNEW$hydroSP_HQ$geometry[match(dist_tosave$hybas_id, Storage_SPNEW$hydroSP_HQ$hybas_id)]
     }
+    
+    # Check at least one polygon remains
+    if(nrow(dist_tosave)==0){showNotification(ui=HTML("You removed all polygons from your distribution and it is now empty. We discarded your last edits to bring back your former distribution."), type="error", duration=3) ; Run_discard(Run_discard()+1) ; req(F)}
+    
     # Add attributes
     dist_tosave$source <- input$Field_source
     dist_tosave$yrcompiled <- input$Field_yrcompiled
