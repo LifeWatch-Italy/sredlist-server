@@ -233,6 +233,7 @@ server <- function(input, output, session) {
   dat_pts <- reactiveVal()
   drawn_storage <- reactiveVal()
   lines_storage <- reactiveVal()
+  track_storage <- reactiveValues(L=list(Hydro_init=0, Hydro_editas=0, Simplify_init=0, Simplify=0, Smooth=0, Split=0, CropLand=0, CropCountry=0, ManuDrawEdit=0, Attributes=0, RmPoly=0, AddHydro=0, RmHydro=0, BatchAddHydro=0, BatchRmHydro=0))
   markers_storage <- reactiveVal()
   AllowEdit <- reactiveVal()
   Run_discard <- reactiveVal(0) # Reactive value that calls Discard button (either from the discard button itself or from other functions, eg if users click on drag with hydrobasins)
@@ -269,6 +270,7 @@ server <- function(input, output, session) {
     if(T %in% grepl("hydro", Stor_tempo$Output$Value)){
       dist_loaded0 <- Stor_tempo$distSP3_BeforeCrop
       # Extract hydrobasins, will return a list with hydroSP to use and hydro_HQ with hydrobasins in the original quality
+      track_storage$L$Hydro_init <- track_storage$L$Hydro_init+1
       hydro_ready <- sRLPolyg_PrepareHydro(dist_loaded0, hydro_raw, Stor_tempo$Output$Value[Stor_tempo$Output$Parameter=="Mapping_Start"], SRC_created="yes")
       dist_loaded <- hydro_ready[["hydroSP"]] ; Stor_tempo$hydroSP_HQ <- hydro_ready[["hydroSP_HQ"]]
       if(nrow(dist_loaded)==0){showNotification("The distribution does not overlap with hydrobasins, we cannot load the distribution", type="error", duration=3); req(F)}
@@ -373,6 +375,7 @@ server <- function(input, output, session) {
     
     ### Loader
     loader_loadhydro <- addLoader$new("EditAsHydroButt", color = "#009138ff", method = "full_screen", height = "30rem", opacity=0.4) ; loader_loadhydro$show()
+    track_storage$L$Hydro_editas <- track_storage$L$Hydro_editas+1
     AllowEdit("hydro")
     
     ### Subset hydrobasins
@@ -399,6 +402,7 @@ server <- function(input, output, session) {
     
     ### Loader
     loader_simplifload <- addLoader$new("SimplifyLoading", color = "#009138ff", method = "full_screen", height = "30rem", opacity=0.4) ; loader_simplifload$show()
+    track_storage$L$Simplify_init <- track_storage$L$Simplify_init+1
     
     ### Simplify
     if(input$SimplifyLoading==T){
@@ -436,6 +440,7 @@ server <- function(input, output, session) {
     
     ### Loader
     loader_simplif <- addLoader$new("SimplifyButton", color = "white", method = "inline") ; loader_simplif$show()
+    track_storage$L$Simplify <- track_storage$L$Simplify+1
     
     ### Check parameter > 0
     if(input$Simplify_par==0){
@@ -490,6 +495,7 @@ server <- function(input, output, session) {
     
     ### Loader
     loader_smooth <- addLoader$new("SmoothButton", color = "white", method = "inline") ; loader_smooth$show()
+    track_storage$L$Smooth <- track_storage$L$Smooth+1
     
     ### Check parameter > 0
     if(input$Smooth_par==0){
@@ -552,6 +558,7 @@ server <- function(input, output, session) {
     
     ### Loader
     loader_split <- addLoader$new("SplitButton", color = "white", method = "inline") ; loader_split$show()
+    track_storage$L$Split <- track_storage$L$Split+1
     
     # Cut polygon with lines (only for the lines intersecting the polygons to compute faster)
     dist_inter <- st_filter(distSP(), drawn_line, .predicate = st_intersects)
@@ -585,6 +592,7 @@ server <- function(input, output, session) {
     
     # Loader
     loader_cropland <- addLoader$new("CroplandButton", color = "white", method = "inline") ; loader_cropland$show()
+    track_storage$L$CropLand <- track_storage$L$CropLand+1
     
     # Crop by land/sea
     Crop_par <- ifelse(Storage_SP()$CropLand_option =="Crop by sea", "cropsea", "cropland")
@@ -609,6 +617,7 @@ server <- function(input, output, session) {
     
     # Loader
     loader_cropcountry <- addLoader$new("CropcountryButton", color = "white", method = "inline") ; loader_cropcountry$show()
+    track_storage$L$CropCountry <- track_storage$L$CropCountry+1
     
     # Crop country if National Red Listing
     Crop_Country<-Storage_SP()$Output$Value[Storage_SP()$Output$Parameter=="Crop_Country"]
@@ -700,6 +709,7 @@ server <- function(input, output, session) {
     
     req(F %in% drawn_storage()$Applied)
     sRL_loginfo("START - Apply polygon drawing and editing", input$sci_name)
+    track_storage$L$ManuDrawEdit <- track_storage$L$ManuDrawEdit+1
     
     # Combine dist and drawn polygons
     dist <- distSP()
@@ -730,12 +740,14 @@ server <- function(input, output, session) {
     
     ### Remove polygons (non hydrobasins)
     if(substr(input$button_RmPolygon, 1, 9)=="RmPolygon"){
+      track_storage$L$RmPoly <- track_storage$L$RmPoly+1
       PolygID <- input$button_RmPolygon %>% sub("RmPolygon_", "", .)
       distSP_edit <- distSP_edit[! distSP_edit$ID %in% PolygID,]
     }
     
     ### Remove hydrobasin
     if(substr(input$button_RmPolygon, 1, 7)=="RmHydro"){
+      track_storage$L$RmHydro <- track_storage$L$RmHydro+1
       PolygID <- input$button_RmPolygon %>% sub("RmHydro_", "", .)
       distSP_edit[distSP_edit$ID %in% PolygID, c("presence", "origin", "seasonal")] <- NA
       distSP_edit$Popup[distSP_edit$ID %in% PolygID] <- sRLPolyg_CreatePopup(distSP_edit[distSP_edit$ID %in% PolygID,])
@@ -743,6 +755,7 @@ server <- function(input, output, session) {
     
     ### Add hydrobasin
     if(substr(input$button_RmPolygon, 1, 8)=="AddHydro"){
+      track_storage$L$AddHydro <- track_storage$L$AddHydro+1
       if(input$Pres_batch==2){showNotification(ui=HTML("Presence 'Probably Extant' is deprecated, code 1 (extant) was used instead"), type="warning", duration=2)}
       PolygID <- input$button_RmPolygon %>% sub("AddHydro_", "", .)
       distSP_edit$presence[distSP_edit$ID %in% PolygID] <- ifelse(input$Pres_batch==2, 1, input$Pres_batch)
@@ -761,11 +774,10 @@ server <- function(input, output, session) {
   #### Edit attributes ------------
   observeEvent(input$button_EditAtt, {
     sRL_loginfo("START - Edit attributes", input$sci_name)
-    print(input$button_EditAtt)
+    track_storage$L$Attributes <- track_storage$L$Attributes+1
     
     # Collect command line and stop if users selected presence "Probably Extant"
     CMD <- input$button_EditAtt %>% strsplit(., "_") %>% unlist(.)
-    print(CMD)
     if(CMD[2]=="Attribute=presence" & CMD[4]=="NewVal=2"){showNotification(ui=HTML(Pres2_error), type="error", duration=2) ; req(FALSE)}
     
     # Edit distSP
@@ -787,6 +799,7 @@ server <- function(input, output, session) {
   #### Batch add hydrobasins with markers ------------
   observeEvent(input$Add_batch, {
     sRL_loginfo("START - Batch add hydrobasins", input$sci_name)
+    track_storage$L$BatchAddHydro <- track_storage$L$BatchAddHydro+1
     
     # Return error if presence 2 selected
     if(input$Pres_batch==2){showNotification(ui=HTML(Pres2_error), type="error", duration=2) ; req(FALSE)}
@@ -827,6 +840,7 @@ server <- function(input, output, session) {
   #### Batch remove hydrobasins with markers -------------
   observeEvent(input$Rm_batch, {
     sRL_loginfo("START - Batch remove hydrobasins", input$sci_name)
+    track_storage$L$BatchRmHydro <- track_storage$L$BatchRmHydro+1
     
     # Prepare markers
     req(is.null(markers_storage())==F)
@@ -920,9 +934,10 @@ server <- function(input, output, session) {
     
     
     # Record usage
-    Storage_SPNEW$Output$Value[Storage_SPNEW$Output$Parameter=="Gbif_EditPoly"]<-paste0("yes", "_", AllowEdit())
+    Storage_SPNEW$Output$Value[Storage_SPNEW$Output$Parameter=="Gbif_EditPoly"]<-"yes"
     Storage_SPNEW$Output$Count[Storage_SPNEW$Output$Parameter=="Gbif_EditPoly"]<-Storage_SPNEW$Output$Count[Storage_SPNEW$Output$Parameter=="Gbif_EditPoly"]+1
-
+    Storage_SPNEW$Output$Value[Storage_SPNEW$Output$Parameter=="Gbif_EditPoly_details"] <- paste(names(track_storage$L), unlist(track_storage$L), sep="=") %>% paste(., collapse=", ")
+    
     # Save Storage file
     sRL_StoreSave(input$sci_name, input$user,  Storage_SPNEW)
     Storage_SP(Storage_SPNEW)
