@@ -869,6 +869,10 @@ server <- function(input, output, session) {
     Storage_SPNEW <- Storage_SP()
     dist_tosave <- distSP()
     
+    # Crop if needed
+    EXT_dist <- extent(dist_tosave)
+    if(EXT_dist[1]<(-180) | EXT_dist[2]>180 | EXT_dist[3]<(-90) | EXT_dist[4]>90){dist_tosave <- st_crop(dist_tosave, xmin=-179.999,xmax=179.999,ymin=-89.999,ymax=89.999) ; distSP(dist_tosave)}
+    
     # Change for HQ geometries if hydro was simplified
     if("hydroSP_HQ" %in% names(Storage_SPNEW)){
       dist_tosave$geometry <- Storage_SPNEW$hydroSP_HQ$geometry[match(dist_tosave$hybas_id, Storage_SPNEW$hydroSP_HQ$hybas_id)]
@@ -892,7 +896,7 @@ server <- function(input, output, session) {
      dist_tosave <- dist_tosave %>% subset(., is.na(presence)==F)
     }
     # Save
-    Storage_SPNEW$distSP_saved <- dist_tosave
+    Storage_SPNEW$distSP_saved <- dist_tosave 
     
     ### Extract points attributes
     if(is.null(nrow(dat_pts()))==F){
