@@ -10,6 +10,14 @@ This distribution was the following map:
 ![](`r paste0(outDir, '/Plots/plot_dist.png')`){width=800px}
 </center>
 
+`r if("Leaflet_comparison" %in% names(Storage_SP)){paste0("You compared the distribution range map with the available occurrence records from GBIF (filtered out with the default filtering options from Step 1b-2) to see if the range map needs updating: ", Storage_SP$comparison_result, ".")}`
+
+```{r comparison_range_map1a, out.width='100%'}
+if("Leaflet_comparison" %in% names(Storage_SP)){
+Storage_SP$Leaflet_comparison
+}
+```
+
 `r if("Gbif_EditPoly" %in% outlog$Parameter){"You manually edited the polygon range map on the interactive map to obtain the following map:"}`
 
 ```{r edited_range_map1a, out.width='100%'}

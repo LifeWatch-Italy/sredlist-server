@@ -230,7 +230,7 @@ server <- function(input, output, session) {
   ### CREATE REACTIVE VALUES
   distSP <- reactiveVal()
   Storage_SP <- reactiveVal()
-  dat_pts <- reactiveVal()
+  dat_pts <- reactiveVal() # Occurence records gathered in 1b OR in 1a by comparing distribution with GBIF
   drawn_storage <- reactiveVal()
   lines_storage <- reactiveVal()
   track_storage <- reactiveValues(L=list(Hydro_init=0, Hydro_editas=0, Simplify_init=0, Simplify=0, Smooth=0, Split=0, CropLand=0, CropCountry=0, ManuDrawEdit=0, Attributes=0, RmPoly=0, AddHydro=0, RmHydro=0, BatchAddHydro=0, BatchRmHydro=0))
@@ -293,9 +293,6 @@ server <- function(input, output, session) {
     # Save Storage_SP
     Storage_SP(Stor_tempo)
     
-    # ONLY FOR ONLINE TESTING (remove distSP_saved in case one was saved before and then we click on discard)
-    #Stor <- Storage_SP() ; Stor$distSP_saved <- NULL ; Storage_SP(Stor) ; sRL_StoreSave(input$sci_name, "victor.cazalis", Stor)
-    
     ### Prepare textInput initial values
     tryCatch({
       if(! "compiler" %in% names(dist_loaded)){dist_loaded$compiler <- NA}
@@ -343,13 +340,20 @@ server <- function(input, output, session) {
       pts_raw <- Storage_SP()$dat_proj_saved %>% st_transform(., 4326)
       dat_coords <- st_coordinates(pts_raw)
       pts_raw$lon <- dat_coords[,1] ; pts_raw$lat <- dat_coords[,2]
+      pts_raw$Pts_type <- "1b"
       dat_pts(pts_raw)
     }
     
-    
+    ### Add points if distribution compared with GBIF
+    if("data_comparison" %in% names(Storage_SP())){
+      pts_comparison <- st_as_sf(Storage_SP()$data_comparison, coords = c("decimalLongitude", "decimalLatitude"), crs="+proj=longlat +datum=WGS84")
+      dat_coords <- st_coordinates(pts_comparison)
+      pts_comparison$lon <- dat_coords[,1] ; pts_comparison$lat <- dat_coords[,2]
+      pts_comparison$Pts_type <- "comparison"
+      dat_pts(pts_comparison)
+    }
+
     # Message if distribution loaded is too big
-    #if(npts(dist_loaded)>100000){showNotification(ui=HTML("The distribution is too complex to be efficiently processed here. We suggest you update it directly in your favourite GIS software."), type="warn", duration=8)}
-    #if(npts(dist_loaded)>5000 & npts(dist_loaded)<100000){showNotification(ui=HTML("The distribution is quite complex which may slow down seriously the editing process. You may want to start by simplifying it (see the top of the left panel)."), type="warn", duration=8)}
     if(npts(dist_loaded)>5000 & AllowEdit()!="hydro"){
       print(npts(dist_loaded))
       ask_confirmation(inputId = "SimplifyLoading", 

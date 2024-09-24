@@ -200,7 +200,7 @@ function(scientific_name, username) {
     
     ### Download GBIF data
     dat <- sRL_createDataGBIF(scientific_name, c(1,0,0), "", "")
-    if(nrow(dat)==0){no_records()}
+    if(nrow(dat)==0){return(leaflet() %>% addControl(HTML("We did not find any GBIF record for this species"), position = "topleft", className="map-title"))}
     
     # Apply automated filters
     tryCatch({
@@ -216,16 +216,21 @@ function(scientific_name, username) {
     if(exists("flags")==F){cat("Bug in clean coordinates"); flags<-dat ; flags$.val<-flags$.equ<-flags$.zer<-flags$.cap<-flags$.sea<-flags$.gbf<-flags$.inst<-flags$.cen<-TRUE}
     
     # Prepare and subset records
-    flags <- sRL_cleanDataGBIF(flags, 1900, 10, F, F, "", -180, 180, -90, 90)
-
-    ### Create Leaflet
-    Leaflet_DistriComparison <- sRL_LeafletComparison(flags, distSP)
+    flags <- sRL_cleanDataGBIF(flags, 1900, 10, F, F, "", -180, 180, -90, 90) %>% sRL_prepareDataComparison(., distSP)
     
-    # ### Assign in Storage_SP
-    # Storage_SP$dat_proj_saved<-dat_proj
-    # Storage_SP$flags<-flags
-    # Storage_SP<-sRL_OutLog(Storage_SP, c("Gbif_Year", "Gbif_Uncertainty", "Gbif_Sea", "Gbif_Extent", "Gbif_automatedBin", "Gbif_yearBin", "Gbif_uncertainBin"), c(Gbif_Year, Gbif_Uncertainty, Gbif_Sea, paste0(Gbif_Extent, collapse=","), Gbif_automatedBin=="true", Gbif_yearBin, Gbif_uncertainBin))
-    # sRL_StoreSave(scientific_name, username,  Storage_SP)
+    # Prepare result sentence
+    Comparison_result <- paste0(round(100*length(which(flags$ValidDistri=="In"))/length(which(flags$ValidDistri %in% c("In", "Out")))), "% of valid GBIF occurrence records were found inside the current distribution")
+    if(flags$Source_type[1]=="GBIF sample"){Comparison_result <- paste0(Comparison_result, " (based on an incomplete but geographically representative sample of ", nrow(flags), " occurrence records)")}
+    
+    ### Create Leaflet
+    Leaflet_DistriComparison <- sRL_LeafletComparison(flags, distSP, Comparison_result)
+    
+    ### Assign in Storage_SP
+    Storage_SP$data_comparison <- flags
+    Storage_SP$comparison_result <- Comparison_result
+    Storage_SP$Leaflet_comparison <- Leaflet_DistriComparison
+    Storage_SP <- sRL_OutLog(Storage_SP, "Distri_comparison", "yes")
+    sRL_StoreSave(scientific_name, username,  Storage_SP)
     
     sRL_loginfo("END - Compare distribution and GBIF occurrences", scientific_name)
     

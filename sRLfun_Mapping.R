@@ -17,21 +17,28 @@ sRL_MergeDistri <- function(distSP){
 }
 
 
-# Create leaflet comparing distribution and GBIF occurrences (1a)
-sRL_LeafletComparison <- function(flags, distSP){
+# Create leaflet comparing distribution and GBIF occurrences (1a), first function to prepare data, second function for leaflet
+sRL_prepareDataComparison <- function(flags, distSP){
   
   # Project flags and distri
   flags <- st_as_sf(flags, coords = c("decimalLongitude", "decimalLatitude"), crs="+proj=longlat +datum=WGS84")
   flags$decimalLongitude <- st_coordinates(flags)[,1]
   flags$decimalLatitude <- st_coordinates(flags)[,2]
   distSP <- st_transform(distSP, 4326)
-  print(distSP)
+  
   # Extract if record in distribution or not
   flags$InDistri <- is.na(st_join(flags, distSP, join=st_intersects)$presence)==F
   flags$ValidDistri <- ifelse(is.na(flags$Reason), ifelse(flags$InDistri, "In", "Out"), "Invalid")
   
   # Update popup
   flags$PopText <- flags$PopText %>% gsub("<b>NOT VALID OBSERVATION</b>", "", .) %>% gsub("<b>VALID OBSERVATION</b>", "", .) %>% paste0("<b>", revalue(flags$ValidDistri, c("In"="Inside distribution", "Out"="Outside distribution", "Invalid"="Invalid record")), "</b>", .)
+  
+  return(flags)
+}
+
+sRL_LeafletComparison <- function(flags, distSP, Comparison_result){
+  
+  distSP <- st_transform(distSP, 4326)
   
   # Prepare map
   Leaf <- leaflet(flags) %>%
@@ -63,12 +70,12 @@ sRL_LeafletComparison <- function(flags, distSP){
     padding-right: 10px; 
     background: rgba(255,255,255,0.75);
     font-weight: bold;
-    font-size: 28px;
+    font-size: 18px;
   }
 "))
   
   TitleProportion <- tags$div(
-    tag.map.title, HTML(paste0(round(100*length(which(flags$ValidDistri=="In"))/length(which(flags$ValidDistri %in% c("In", "Out")))), "% of valid GBIF occurrence records were found inside the current distribution"))
+    tag.map.title, HTML(Comparison_result)
   )
   
   Leaf <- Leaf %>%

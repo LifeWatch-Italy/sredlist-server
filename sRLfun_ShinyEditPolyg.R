@@ -230,7 +230,7 @@ sRLPolyg_CreatePopup <- function(distSP){
 
 
 
-sRLPolyg_UpdateLeaflet <- function(distSP, dat_pts, frame, PolygRemove="", AllowEdit="yes"){
+sRLPolyg_UpdateLeaflet <- function(distSP, dat_pts, frame, PolygRemove="", AllowEdit="yes", dat_comparison){
   
   # Update map 
   distSP$cols <- sRL_ColourDistrib(distSP)$cols %>% replace(., .=="white", "black") %>% replace(., .=="#FFE4E1", "darksalmon")
@@ -241,9 +241,17 @@ sRLPolyg_UpdateLeaflet <- function(distSP, dat_pts, frame, PolygRemove="", Allow
   
   # Add data points (has to be done each time to be on top of polygons)
   if(is.null(nrow(dat_pts))==F){
-    leafletProxy("map-map") %>% 
-      addCircleMarkers(lng = dat_pts$lon, lat = dat_pts$lat, radius=5, stroke=F, fillOpacity=0.8, color="black", popup=dat_pts$PopText, group="Occurrences") %>%
-      addLayersControl(baseGroups=c("OpenStreetMap", "Satellite", "Topography"), overlayGroups=c("Occurrences"), position="bottomleft")
+    if(dat_pts$Pts_type[1]=="1b"){
+      leafletProxy("map-map") %>% 
+        addCircleMarkers(lng = dat_pts$lon, lat = dat_pts$lat, radius=5, stroke=F, fillOpacity=0.8, color="black", popup=dat_pts$PopText, group="Occurrences") %>%
+        addLayersControl(baseGroups=c("OpenStreetMap", "Satellite", "Topography"), overlayGroups=c("Occurrences"), position="bottomleft")
+    } else {
+      leafletProxy("map-map") %>% 
+        addCircleMarkers(lng = dat_pts$lon, lat = dat_pts$lat, radius=5, stroke=F, fillOpacity=0.8, color=revalue(dat_pts$ValidDistri, c("In"="#fdcb25ff", "Out"="#EA5F94", "Invalid"="#440154ff")), popup=dat_pts$PopText, group="Occurrences") %>%
+        addLegend(position="bottomleft", colors=c('#fdcb25ff', '#EA5F94', '#440154ff'), labels=c("Inside distribution", "Outside distribution", "Invalid record")) %>%
+        addLayersControl(baseGroups=c("OpenStreetMap", "Satellite", "Topography"), overlayGroups=c("Occurrences"), position="bottomleft")
+    }
+    
   }
   
   # Update framing if frame==1
