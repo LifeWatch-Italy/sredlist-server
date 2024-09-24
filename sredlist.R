@@ -180,6 +180,64 @@ return(Prom)
 }
 
 
+## Compare distribution and GBIF (1a) ----
+#* Compare distribution and GBIF available occurrences
+#* @get species/<scientific_name>/comparison-distri-GBIF
+#* @param scientific_name:string Scientific Name
+#* @serializer htmlwidget
+#* @tag sRedList
+function(scientific_name, username) {
+  
+  Prom<-future({
+    sf::sf_use_s2(FALSE)
+    
+    sRL_loginfo("START - Compare distribution and GBIF occurrences", scientific_name)
+    
+    ### Load distribution
+    scientific_name <- sRL_decode(scientific_name)
+    Storage_SP=sRL_StoreRead(scientific_name,  username, MANDAT=0)
+    distSP <- Storage_SP$distSP_saved
+    
+    ### Download GBIF data
+    dat <- sRL_createDataGBIF(scientific_name, c(1,0,0), "", "")
+    if(nrow(dat)==0){no_records()}
+    
+    # Apply automated filters
+    tryCatch({
+      flags <- clean_coordinates(x = dat,
+                                     lon = "decimalLongitude",
+                                     lat = "decimalLatitude",
+                                     countries = "countryCode",
+                                     species = "species",
+                                     capitals_rad = 1000,
+                                     tests = c("capitals", "equal", "centroids", "gbif", "institutions", "zeros")
+                                     )
+    }, error=function(e){"Bug in clean coordinates"})
+    if(exists("flags")==F){cat("Bug in clean coordinates"); flags<-dat ; flags$.val<-flags$.equ<-flags$.zer<-flags$.cap<-flags$.sea<-flags$.gbf<-flags$.inst<-flags$.cen<-TRUE}
+    
+    # Prepare and subset records
+    flags <- sRL_cleanDataGBIF(flags, 1900, 10, F, F, "", -180, 180, -90, 90)
+
+    ### Create Leaflet
+    Leaflet_DistriComparison <- sRL_LeafletComparison(flags, distSP)
+    
+    # ### Assign in Storage_SP
+    # Storage_SP$dat_proj_saved<-dat_proj
+    # Storage_SP$flags<-flags
+    # Storage_SP<-sRL_OutLog(Storage_SP, c("Gbif_Year", "Gbif_Uncertainty", "Gbif_Sea", "Gbif_Extent", "Gbif_automatedBin", "Gbif_yearBin", "Gbif_uncertainBin"), c(Gbif_Year, Gbif_Uncertainty, Gbif_Sea, paste0(Gbif_Extent, collapse=","), Gbif_automatedBin=="true", Gbif_yearBin, Gbif_uncertainBin))
+    # sRL_StoreSave(scientific_name, username,  Storage_SP)
+    
+    sRL_loginfo("END - Compare distribution and GBIF occurrences", scientific_name)
+    
+    return(Leaflet_DistriComparison)
+    
+  }, gc=T, seed=T)
+  
+  return(Prom)
+  
+}
+
+
 
 ## Plot selected distribution attributes (1a and 1b) ----
 #* @get species/<scientific_name>/distribution-attributes

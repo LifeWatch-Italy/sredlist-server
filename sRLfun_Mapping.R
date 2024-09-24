@@ -17,6 +17,67 @@ sRL_MergeDistri <- function(distSP){
 }
 
 
+# Create leaflet comparing distribution and GBIF occurrences (1a)
+sRL_LeafletComparison <- function(flags, distSP){
+  
+  # Project flags and distri
+  flags <- st_as_sf(flags, coords = c("decimalLongitude", "decimalLatitude"), crs="+proj=longlat +datum=WGS84")
+  flags$decimalLongitude <- st_coordinates(flags)[,1]
+  flags$decimalLatitude <- st_coordinates(flags)[,2]
+  distSP <- st_transform(distSP, 4326)
+  print(distSP)
+  # Extract if record in distribution or not
+  flags$InDistri <- is.na(st_join(flags, distSP, join=st_intersects)$presence)==F
+  flags$ValidDistri <- ifelse(is.na(flags$Reason), ifelse(flags$InDistri, "In", "Out"), "Invalid")
+  
+  # Update popup
+  flags$PopText <- flags$PopText %>% gsub("<b>NOT VALID OBSERVATION</b>", "", .) %>% gsub("<b>VALID OBSERVATION</b>", "", .) %>% paste0("<b>", revalue(flags$ValidDistri, c("In"="Inside distribution", "Out"="Outside distribution", "Invalid"="Invalid record")), "</b>", .)
+  
+  # Prepare map
+  Leaf <- leaflet(flags) %>%
+    addTiles(group="OpenStreetMap") %>%
+    addEsriBasemapLayer(esriBasemapLayers$Imagery, group = "Satellite") %>%
+    addEsriBasemapLayer(esriBasemapLayers$Topographic, group = "Topography") %>%
+    addPolygons(data=distSP, color=distSP$cols, fillColor=distSP$cols, stroke=F, weight=2, fillOpacity=0.7) %>%
+    addCircleMarkers(lng=flags$decimalLongitude,
+                     lat=flags$decimalLatitude,
+                     color=revalue(flags$ValidDistri, c("In"="#fdcb25ff", "Out"="#EA5F94", "Invalid"="#440154ff")),
+                     fillOpacity=0.5,
+                     stroke=F,
+                     popup=flags$PopText,
+                     radius=8,
+                     group="Occurrence records") %>%
+    addLegend(position="bottomleft", colors=c('#fdcb25ff', '#EA5F94', '#440154ff'), labels=c("Inside distribution", "Outside distribution", "Invalid record")) %>%
+    addLayersControl(baseGroups=c("OpenStreetMap", "Satellite", "Topography"), overlayGroups="Occurrence records", position="topleft") %>%
+    addMouseCoordinates() %>%
+    addScaleBar(position = "bottomright")
+  
+  # Add title
+  tag.map.title <- tags$style(HTML("
+  .leaflet-control.map-title { 
+    transform: translate(-50%,20%);
+    position: fixed !important;
+    left: 50%;
+    text-align: center;
+    padding-left: 10px; 
+    padding-right: 10px; 
+    background: rgba(255,255,255,0.75);
+    font-weight: bold;
+    font-size: 28px;
+  }
+"))
+  
+  TitleProportion <- tags$div(
+    tag.map.title, HTML(paste0(round(100*length(which(flags$ValidDistri=="In"))/length(which(flags$ValidDistri %in% c("In", "Out")))), "% of valid GBIF occurrence records were found inside the current distribution"))
+  )
+  
+  Leaf <- Leaf %>%
+    addControl(TitleProportion, position = "topleft", className="map-title")
+  
+  return(Leaf)
+}
+
+
 # Step 1 --------------------------------
 sRL_FormatUploadedRecords <- function(Uploaded_Records, scientific_name, Gbif_Synonym){
 
