@@ -98,7 +98,7 @@ function(scientific_name) {
 #* @serializer png list(width = 800, height = 600)
 #* @tag RedList
 function(scientific_name, username, Dist_path = "") {
-print(username)
+
   Prom<-future({
 
     ### Filter param

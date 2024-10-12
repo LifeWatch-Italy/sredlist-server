@@ -2846,7 +2846,7 @@ function(scientific_name, username) {
 
 
 
-# MX: Other functions (platform buidling) ----------------------------------------------------------------
+# MX: Distribution managing functions (platform buidling) ----------------------------------------------------------------
 
 
 
@@ -2858,6 +2858,8 @@ function(scientific_name, username) {
 #* @serializer unboxedJSON
 #* @tag sRedList
 function(start = 0, end = 10, filter = "") {
+
+Prom<-future({
   if (nchar(filter) < 3 && filter != "") {
     invalid_params("You must enter at least 3 characters.")
   }
@@ -2924,6 +2926,10 @@ function(start = 0, end = 10, filter = "") {
       )));
   }
   return(distributions)
+
+}, gc=T, seed=T)
+
+return(Prom)
 }
 
 #* Number of distributions on the platform
@@ -2940,13 +2946,20 @@ function() {
 #* @param scientific_name:str Digit Scientific Name (min. 3 characters)
 #* @tag sRedList
 function(scientific_name) {
+
+Prom<-future({
   if (nchar(scientific_name) < 3) {
     invalid_params("You must enter at least 3 characters.")
   }
   species_distribution <- as.data.frame(list.files(config$distribution_path))
   colnames(species_distribution) <- "scientific_name"
   indices <- grep(tolower(scientific_name), tolower(species_distribution$scientific_name))  # nolint
+
   return(species_distribution[indices, ])
+
+}, gc=T, seed=T)
+
+return(Prom)
 }
 
 #* Delete distribution from sRedList platform
@@ -2959,6 +2972,7 @@ function(scientific_name) {
 #* @tag sRedList
 function(scientific_name, file_name, Dist_path, type) {
 
+Prom<-future({
   scientific_name <- sRL_decode(scientific_name)
   file_name <- url_decode(file_name)
   Dist_path <- url_decode(Dist_path) %>% paste0(config$distribution_path, .)
@@ -2974,6 +2988,10 @@ function(scientific_name, file_name, Dist_path, type) {
   }else {
     not_found("Species distribution does not exist!") # nolint
   }
+  
+}, gc=T, seed=T)
+
+return(Prom)
 }
 
 #* Get distributions species from sRedList platform excluding GBIF distributions
@@ -2982,7 +3000,8 @@ function(scientific_name, file_name, Dist_path, type) {
 #* @serializer unboxedJSON
 #* @tag sRedList
 function(scientific_name) {
-  
+Prom<-future({
+    
   #Filter param
   scientific_name <- sRL_decode(scientific_name)
   
@@ -3035,6 +3054,10 @@ function(scientific_name) {
     return(distributions)
     
   }else {return(list())} # nolint
+  
+}, gc=T, seed=T)
+  
+return(Prom)
 }
 
 
