@@ -1428,7 +1428,7 @@ Prom<-future({
   AOH_km2 <-  sRL_areaAOH(AOH2[[1]], "cci") # Same scale in small or large AOH because the unit is always 1 cell of the fine raster
   if(Uncertain=="Uncertain_yes"){AOH_km2_opt <-  sRL_areaAOH(AOH2_opt[[1]], "cci") ;  Storage_SP$AOHkm2OPT_saved<-AOH_km2_opt}
   Storage_SP$AOHkm2_saved<-AOH_km2
-
+  
   ### Upper AOO ----
   sRL_loginfo("START - Calculate Upper AOO", scientific_name)
   grid22<-sRL_ChargeGrid22Raster()
@@ -1488,7 +1488,6 @@ Prom<-future({
   if (density_pref[1] != '-1') {Storage_SP$density_saved<-density_pref}
   Storage_SP$aoo_km2<-AOO_km2
   sRL_loginfo("END - Saving plot AOO", scientific_name)
-  
   
 
   ### Save parameters and results
@@ -1556,8 +1555,14 @@ Prom<-future({
     plot3<-base64enc::dataURI(file = paste0("resources/AOH_stored/", sub(" ", "_", scientific_name), "_", sRL_userdecode(username), "/Plots/aoo_from_points.png"), mime = "image/png")
 
     sRL_loginfo("END - AOO calculation from points", scientific_name)
+  } else {pts<-NULL}
+  
+  # Calculate model and point prevalence (AOH validation)
+  if(Uncertain=="Uncertain_no"){
+    Validation_Prevalence <- sRL_CalcAohPrevalence(aoh=AOH2[[1]], aoh_opt=NULL, type=AOH_type, points=pts)
+  } else {
+    Validation_Prevalence <- sRL_CalcAohPrevalence(aoh=AOH2[[1]], aoh_opt=AOH2_opt[[1]], type=AOH_type, points=pts)
   }
-
   
   ### Save Storage_SP ----
   Storage_SP<-sRL_OutLog(Storage_SP, "AOH_time", as.numeric(format(Sys.time(), "%s"))-as.numeric(format(TIC, "%s")))
@@ -1568,8 +1573,11 @@ Prom<-future({
     aoh_km2 = ifelse(Uncertain=="Uncertain_no", AOH_km2, paste(AOH_km2, AOH_km2_opt, sep="-")), 
     aoo_km2 = ifelse(Uncertain=="Uncertain_no", AOO_km2, paste(AOO_km2, AOO_km2_opt, sep="-")),
     plot_aoh = plot1,
-    plot_aoh_2x2 = plot2
+    plot_aoh_2x2 = plot2,
+    validation_model = Validation_Prevalence$Model_prevalence
   )
+  
+  if("Point_prevalence" %in% names(Validation_Prevalence)){LIST$validation_points <- Validation_Prevalence$Point_prevalence}
   
   if("dat_proj_saved" %in% names(Storage_SP)){
     LIST$plot_aoopts<-plot3

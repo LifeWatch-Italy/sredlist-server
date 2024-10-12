@@ -190,7 +190,42 @@ sRL_largeAOH<-function(alt_crop, habitats_pref, altitudes_pref, rangeSP_clean, Y
 }
 
 
-
+### Validate AOH map with model and point prevalences
+sRL_CalcAohPrevalence<-function(aoh, aoh_opt, type, points){
+  
+  ### Transform to percentages
+  if(type=="Small"){aoh <- aoh*100 ; if(is.null(aoh_opt)==F){aoh_opt <- aoh_opt*100}}
+  if(type=="Large"){aoh <- aoh/9 ; if(is.null(aoh_opt)==F){aoh_opt <- aoh_opt/9}}
+  
+  ### Calculate model prevalence (proportion of suitable grid cells inside the range map); works with mean for both small and large ranges
+  MPrev1 <- round(global(aoh, "mean", na.rm=TRUE))
+  if(is.null(aoh_opt)==F){MPrev2 <- round(global(aoh_opt, "mean", na.rm=TRUE))}
+  
+  Model_prevalence <- ifelse(
+    exists("MPrev2"),
+    paste0(MPrev1, "-", MPrev2, "%"),
+    paste0(MPrev1, "%")
+  )
+  
+  LIST_Prev <- list(Model_prevalence=Model_prevalence)
+  
+  ### Calculate point prevalence (proportion of point localities data falling inside the AoH map); works with mean for both small and large ranges
+  if(is.null(points)==F){
+    points <- st_as_sf(points)
+    points$AOH <- extract(aoh, st_coordinates(points))[,1] %>% replace(., is.na(.), 0)
+    if(is.null(aoh_opt)==F){points$AOH_opt <- extract(aoh_opt, st_coordinates(points))[,1] %>% replace(., is.na(.), 0)}
+    
+    Point_prevalence <- ifelse(
+      is.null(aoh_opt),
+      paste0(round(mean(points$AOH)), "%"),
+      paste0(round(mean(points$AOH)), "-", round(mean(points$AOH_opt)), "%")
+    )
+    
+    LIST_Prev$Point_prevalence=Point_prevalence
+  }
+  
+  return(LIST_Prev)
+}
 
 ### Log-scale for colour plot in Large Trends
 colour_bidirect_scale <- trans_new("logpeps",
