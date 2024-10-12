@@ -5,10 +5,9 @@ Pres2_error <- "Presence 'Probably Extant' is deprecated, please select another 
 sRLPolyg_InitDistri <- function(distSP, CRS){
   
   # Transform and split each polygon
-  distSP <- distSP %>% st_transform(., CRS)
-  distSP <- distSP %>% st_cast(., "MULTIPOLYGON", warn=F) %>% st_cast(., "POLYGON", warn=F) # Transform and split in multiple polygons
+  distSP <- distSP %>% st_transform(., CRS) %>% st_cast(., "MULTIPOLYGON", warn=F) %>% st_cast(., "POLYGON", warn=F) # Transform and split in multiple polygons
 
-  # Adapt ID column
+  # Adapt ID column (and make sure we don't have 2 polygons with same name, which can happen eg when split by line)
   if(! "ID" %in% names(distSP)){
     distSP$ID <- paste0("distSP", 1:nrow(distSP))
   } else {
@@ -251,7 +250,6 @@ sRLPolyg_UpdateLeaflet <- function(distSP, dat_pts, frame, PolygRemove="", Allow
         addLegend(position="bottomleft", colors=c('#fdcb25ff', '#EA5F94', '#440154ff'), labels=c("Inside distribution", "Outside distribution", "Invalid record")) %>%
         addLayersControl(baseGroups=c("OpenStreetMap", "Satellite", "Topography"), overlayGroups=c("Occurrences"), position="bottomleft")
     }
-    
   }
   
   # Update framing if frame==1

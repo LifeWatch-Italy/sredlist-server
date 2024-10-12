@@ -15,7 +15,7 @@ library(shinyWidgets)
 library(spsComps) # For addLoader in server
 
 
-source(textConnection(readLines("server.R")[1:123])) ## XX TO IMPROVE TO ONLY INCLUDE WHAT IS NEEDED
+source(textConnection(readLines("server.R")[1:123]))
 
 
 ### Load functions
@@ -137,7 +137,7 @@ ui <- page_fillable(
                              column(8, sliderInput("Smooth_par", label="Smooth (%)", min=0, max=100, value=0)),
                              column(4, style="margin-top: 35px;",
                                     actionButton('SmoothButton', 'Smooth', style="color: #fff; background-color: #009138ff; border-color: #009138ff", icon=icon("arrow-right", lib="font-awesome")),
-                                    tooltip(trigger=bs_icon("info-circle"), "Smooth polygon borders (eg. when your distribution has sharp angles and you want it to be softer). Set percentage, then click 'Smooth' button."),
+                                    tooltip(trigger=bs_icon("info-circle"), "Smooth polygon borders (eg. when your distribution has sharp angles and you want it to be smoother). Set percentage, then click 'Smooth' button."),
                              ),
                            )),
                        
@@ -150,8 +150,6 @@ ui <- page_fillable(
                        ),
                        
                        ## Crop
-                       verbatimTextOutput("CropLand"),
-                       verbatimTextOutput("CropCountry"),
                        conditionalPanel(condition='output.CropLand!="" | output.CropCountry!=""',
                                         HTML("<br><br>"),
                                         div(align="center",
@@ -228,14 +226,14 @@ server <- function(input, output, session) {
   edits <- sRLPolyg_CreateLeaflet("hydro")
   
   ### CREATE REACTIVE VALUES
-  distSP <- reactiveVal()
-  Storage_SP <- reactiveVal()
-  dat_pts <- reactiveVal() # Occurence records gathered in 1b OR in 1a by comparing distribution with GBIF
-  drawn_storage <- reactiveVal()
-  lines_storage <- reactiveVal()
-  track_storage <- reactiveValues(L=list(Hydro_init=0, Hydro_editas=0, Simplify_init=0, Simplify=0, Smooth=0, Split=0, CropLand=0, CropCountry=0, ManuDrawEdit=0, Attributes=0, RmPoly=0, AddHydro=0, RmHydro=0, BatchAddHydro=0, BatchRmHydro=0))
-  markers_storage <- reactiveVal()
-  AllowEdit <- reactiveVal()
+  distSP <- reactiveVal() # distribution
+  Storage_SP <- reactiveVal() # Species storage file from sRedList
+  dat_pts <- reactiveVal() # Occurrence records gathered in 1b OR in 1a by comparing distribution with GBIF
+  drawn_storage <- reactiveVal() # Polygons manually drawn or edited
+  lines_storage <- reactiveVal() # Lines manually drawn or edited
+  track_storage <- reactiveValues(L=list(Hydro_init=0, Hydro_editas=0, Simplify_init=0, Simplify=0, Smooth=0, Split=0, CropLand=0, CropCountry=0, ManuDrawEdit=0, Attributes=0, RmPoly=0, AddHydro=0, RmHydro=0, BatchAddHydro=0, BatchRmHydro=0)) # List of counters used for usage tracking
+  markers_storage <- reactiveVal() # Markers manually drawn or edited
+  AllowEdit <- reactiveVal() # Factor used to inform if we propose the default or the hydrobasin version + if we allow editing manually (not allowed if distribution too complex and users clicked 'No' in the popup)
   Run_discard <- reactiveVal(0) # Reactive value that calls Discard button (either from the discard button itself or from other functions, eg if users click on drag with hydrobasins)
   Suggest_hydro <- reactiveVal("no") # Reactive value that becomes T if we should add the button "Edit as hydrobasins", ie if this is a reassessment of a freshwater species
   Unsaved_changes <- reactiveVal("no") # Reactive value that becomes T when there are unsaved changes
@@ -255,14 +253,13 @@ server <- function(input, output, session) {
   observeEvent(input$sci_name, {
     
     req(input$sci_name) ; req(input$sci_name != "")
-    #req(is.null(nrow(distSP()))) # Does not run if distSP already loaded
+    
     sRL_loginfo("START - Load distribution", input$sci_name)
     
     ### Loader
     loader_load <- addLoader$new("sci_name", color = "#009138ff", method = "full_screen", height = "30rem", opacity=0.4) ; loader_load$show()
     
     ### Load StorageSP and distSP
-    #Error_mess<-tryCatch({
     Stor_tempo <- sRL_StoreRead(input$sci_name,  input$user, MANDAT=1)
     if(length(names(Stor_tempo))<=1){loader_load$hide() ; req(F)}
     
@@ -285,7 +282,7 @@ server <- function(input, output, session) {
       Stor_tempo$CropLand_option <- substr(Stor_tempo$Output$Value[Stor_tempo$Output$Parameter=="Mapping_Crop"], 5, 10) ; if(is.na(Stor_tempo$CropLand_option)==F & Stor_tempo$CropLand_option != ""){Stor_tempo$CropLand_option <- paste0("Crop by ", Stor_tempo$CropLand_option)} 
       Stor_tempo$CropLand_tooltip <- ifelse(Stor_tempo$CropLand_option=="Crop by land", "The distribution was previously cropped by land, you can crop again with this button after editing the distribution if needed.", "The distribution was previously cropped by sea, you can crop again with this button after editing the distribution if needed.")
     } else {
-      Domain_Centroid <- st_point_on_surface(dist_loaded[1,]) %>% st_transform(., st_crs(distCountries_mapping)) %>% st_intersects(., distCountries_mapping)
+      Domain_Centroid <- st_point_on_surface(dist_loaded[1,]) %>% st_transform(., st_crs(distCountries_mapping)) %>% st_intersects(., distCountries_mapping) # Take a central point within the distribution and check if it's at sea or at land
       Stor_tempo$CropLand_option <- ifelse(length(Domain_Centroid[[1]])>0, "Crop by land", "Crop by sea")
       Stor_tempo$CropLand_tooltip <- ifelse(length(Domain_Centroid[[1]])>0, "You can crop the distribution by land to keep only the terrestrial part", "You can crop the distribution by sea to keep only the marine part")
     }
@@ -310,7 +307,7 @@ server <- function(input, output, session) {
                              dist_loaded$dist_comm[1], 
                              ifelse(is.na(dist_loaded$dist_comm[1]), 
                                     paste0("The distribution was taken from the sRedList platform (", Stor_tempo$Output$Value[Stor_tempo$Output$Parameter=="Distribution_Source"], ") and was "), 
-                                    " It was ") %>% paste0(., "manually edited on the sRedList platform on the ", Sys.Date(), ".")
+                                    paste0(dist_loaded$dist_comm[1], " It was ")) %>% paste0(., "manually edited on the sRedList platform on the ", Sys.Date(), ".")
       )
       updateTextInput(session, "Field_distcomm", value = substr(New_DistComm, 1, 254))
     }, error=function(e){"Error in field extraction"})
@@ -318,18 +315,14 @@ server <- function(input, output, session) {
     ### Process distribution
     distSP(dist_loaded)
     
-    #}, error=function(e){"<b>We could not find the polygon created in Step 1b of the sRedList platform. Please try again.</b>"})
-    #if(Error_mess != "TRUE"){showNotification(ui=HTML(Error_mess), type="error", duration=8)}
-    #req(Error_mess=="TRUE")
-    
     ### Extract AllowEdit status (important that the leaflet is not created with "editable" as a group for hydrobasins, otherwise hydrobasins are draggable)
     AllowEdit(ifelse("hybas_id" %in% names(dist_loaded), "hydro", "yes"))
     
-    # Edit Suggest_hydro to determine if we display the 'Edit as hydrobasins' buttton
+    # Edit Suggest_hydro to determine if we display the 'Edit as hydrobasins' button
     speciesRL_sub <- subset(speciesRL, scientific_name == input$sci_name)
     if(AllowEdit()!="hydro" & nrow(speciesRL_sub)>0 & speciesRL_sub$freshwater_system[1]==T & Stor_tempo$Output$Value[Stor_tempo$Output$Parameter=="Distribution_Source"] != "Created"){Suggest_hydro("yes")}
     
-    ### Reload edits and storages (only for testing in shinyapps.io)
+    ### Reload edits and storages (needed to make sure we start from zero; bugs otherwise)
     edits <- sRLPolyg_CreateLeaflet(AllowEdit())
     lines <- lines_storage() ; if(is.null(nrow(lines))==F){lines$Applied <- T ; lines_storage(lines)}
     drawn <- drawn_storage() ; if(is.null(nrow(drawn))==F){drawn$Applied <- T ; drawn_storage(drawn)}
@@ -359,7 +352,7 @@ server <- function(input, output, session) {
       ask_confirmation(inputId = "SimplifyLoading", 
                        type = "warning", 
                        title = "Distribution too heavy", 
-                       text="The distribution is too complex to be efficiently edited here. You can choose to simplify it, which will allow you to edit it manually. If you choose not to simplify, you won't be able to edit manually (only adding polygons and changing attributes)",
+                       text="The distribution is too complex to be efficiently edited here. You can choose to simplify it, which will allow you to edit it manually. If you choose not to simplify, you won't be able to edit manually (only adding polygons and changing attributes will be possible)",
                        btn_labels = c("Do not simplify", "Simplify"),
                        btn_colors = c("#dea218ff", "#009138ff"))
     } else {
@@ -376,6 +369,7 @@ server <- function(input, output, session) {
   
   #### Load as hydrobasins -----
   observeEvent(input$EditAsHydroButt, {
+    sRL_loginfo("START - Load as hydrobasins", input$sci_name)
     
     ### Loader
     loader_loadhydro <- addLoader$new("EditAsHydroButt", color = "#009138ff", method = "full_screen", height = "30rem", opacity=0.4) ; loader_loadhydro$show()
@@ -414,8 +408,8 @@ server <- function(input, output, session) {
       Simplif_par <- 3000 / npts(distSP()) # Keep = number of points wanted / total points
 
       dist_simpl <- ms_simplify(distSP(), keep=Simplif_par, keep_shapes=T) %>% st_make_valid(.) %>% .[which(grepl("POLYGON", st_geometry_type(.))),]
-      print(paste0("Distribution was reduced by ", round(1-npts(dist_simpl)/npts(distSP()),3)*100, "% (", npts(dist_simpl), " points remaining)"))
-      if(nrow(dist_simpl) != nrow(distSP())){dist_simpl$Popup <- sRLPolyg_CreatePopup(dist_simpl)} # Recreate popups if some polygons were created by smoothing
+      showNotification(ui=HTML(paste0("The distribution was successfully reduced by ", round(1-npts(dist_simpl)/npts(distSP()),3)*100, "% (", npts(dist_simpl), " points remaining)")), type="message", duration=2)
+      if(nrow(dist_simpl) != nrow(distSP())){dist_simpl$Popup <- sRLPolyg_CreatePopup(dist_simpl)} # Recreate popups if some polygons were created by simplifying
       distSP(dist_simpl)
       
       # Save (in case discard is used)
@@ -424,7 +418,7 @@ server <- function(input, output, session) {
       sRL_StoreSave(input$sci_name, input$user,  Storage_SPNEW)
     }
     
-    # Update AllowEdit (to ensure that edit remain impossible even if users click Save or Discard)
+    # Update AllowEdit (to ensure that editing remains impossible even if users click Save or Discard)
     if(AllowEdit() != "hydro"){AllowEdit(ifelse(input$SimplifyLoading==T, "yes", "no"))}
     
     ### Update leaflet map (necessary to call CreateLeaflet in case no simplification was selected to have the correct text for onRender for toolbar tooltips)
@@ -554,7 +548,7 @@ server <- function(input, output, session) {
   observeEvent(input$SplitButton, {
     sRL_loginfo("START - Split polygons with line", input$sci_name)
     
-    # Prepare lines (take from drawn or edited if they were manually edited)
+    # Prepare lines (taken from drawn, or from edited if they were manually edited)
     req(is.null(lines_storage())==F)
     drawn_line <- lines_storage() %>% subset(., .$Applied==F)
     req(nrow(drawn_line)>0)
@@ -564,7 +558,7 @@ server <- function(input, output, session) {
     loader_split <- addLoader$new("SplitButton", color = "white", method = "inline") ; loader_split$show()
     track_storage$L$Split <- track_storage$L$Split+1
     
-    # Cut polygon with lines (only for the lines intersecting the polygons to compute faster)
+    # Cut polygon with lines (only polygons intersecting the lines to compute faster)
     dist_inter <- st_filter(distSP(), drawn_line, .predicate = st_intersects)
     dist_notinter <- subset(distSP(), ! ID %in% dist_inter$ID) # Put aside polygons not affected by the cut (no need to edit Popup for those)
     dist_split <- lwgeom::st_split(dist_inter, st_union(st_cast(drawn_line, 'MULTILINESTRING', warn=F))) %>% st_collection_extract('POLYGON')
@@ -653,18 +647,16 @@ server <- function(input, output, session) {
     lines <- P_tot %>% subset(., grepl("LINE", st_geometry_type(.)) & (! .$Row %in% lines_storage()$Row))
     if(nrow(lines)>0){
       print("Record line drawing")
-      lines$Applied <- F # Add column tracking if changes was applied
+      lines$Applied <- F # Create column recording if changes were applied or not
 
       # Store in lines_storage
       if(is.null(lines_storage())){
         lines_storage(lines)
-
       } else {
         lines_ST <- lines_storage() %>% subset(., ! .$layerId %in% lines$layerId) # Remove lines stored that were modified
         lines_storage(sRL_rbindfillSF(lines_ST, lines))
       }
     }
-    
     
     ### Polygons
     drawn <- P_tot %>% subset(., grepl("POLYGON", st_geometry_type(.)) & (! .$Row %in% drawn_storage()$Row))
@@ -673,7 +665,8 @@ server <- function(input, output, session) {
       
       if(is.null(P_drawn)==F){if(nrow(P_drawn)==1){showNotification(ui=HTML("When you finished drawing new polygons, please click on save to be able to specify their attributes."), type="message", duration=2)}}
       
-      drawn$Applied <- F # Add column tracking if changes was applied
+      drawn$Applied <- F # Create column recording if changes were applied or not
+      
       # Store in drawn_storage
       if(is.null(drawn_storage())){
         drawn_storage(drawn)
@@ -695,7 +688,7 @@ server <- function(input, output, session) {
     markers <- P_tot %>% subset(., grepl("POINT", st_geometry_type(.)) & (! .$Row %in% markers_storage()$Row))
     if(nrow(markers)>0){
       print("Record marker drawing")
-      markers$Applied <- F # Add column tracking if changes was applied
+      markers$Applied <- F # Create column recording if changes were applied or not
       
       # Store in markers_storage
       if(is.null(markers_storage())){
@@ -742,7 +735,7 @@ server <- function(input, output, session) {
     sRL_loginfo("START - Remove polygon", input$sci_name)
     distSP_edit <- distSP()
     
-    ### Remove polygons (non hydrobasins)
+    ### Remove polygons (not hydrobasins)
     if(substr(input$button_RmPolygon, 1, 9)=="RmPolygon"){
       track_storage$L$RmPoly <- track_storage$L$RmPoly+1
       PolygID <- input$button_RmPolygon %>% sub("RmPolygon_", "", .)
@@ -909,10 +902,12 @@ server <- function(input, output, session) {
     dist_tosave$island <- input$Field_island
     dist_tosave$dist_comm <- input$Field_distcomm
     if(nchar(input$Field_distcomm)>254){showNotification(ui=HTML(paste0("Distribution comment cannot be longer than 254 characters (currently ", nchar(input$Field_distcomm)," characters), please reduce the text.")), type="error", duration=3) ; req(F)}
+    
     # Subset if hydrobasins
     if(AllowEdit()=="hydro"){
      dist_tosave <- dist_tosave %>% subset(., is.na(presence)==F)
     }
+    
     # Save
     Storage_SPNEW$distSP_saved <- dist_tosave 
     
@@ -933,9 +928,7 @@ server <- function(input, output, session) {
      geom_sf(data = dist_tosave, fill = dist_tosave$cols) +
      theme_void() +
      ggtitle("")
-    
     ggsave(paste0("resources/AOH_stored/", sub(" ", "_", input$sci_name), "_", sRL_userdecode(input$user), "/Plots/plot_manually_edited.png"), plot_dist, width=10, height=8)
-    
     
     # Record usage
     Storage_SPNEW$Output$Value[Storage_SPNEW$Output$Parameter=="Gbif_EditPoly"]<-"yes"
@@ -957,20 +950,15 @@ server <- function(input, output, session) {
   
   
   #### Discard changes ----------
+  ### Trigger discard function when discard button is clicked
   observeEvent(input$discard, {
     Run_discard(Run_discard()+1)
   })
   
+  ### Apply discard effect (when button clicked or when an error was found and Run_discard was called)
   observeEvent(Run_discard(), {
     req(Run_discard()>0)
     sRL_loginfo("START - Discard changes", input$sci_name)
-    
-    ### Load StorageSP and distSP
-    # Error_mess<-tryCatch({
-    #   Storage_SP(sRL_StoreRead(input$sci_name,  input$user, MANDAT=1))
-    #   dist_loaded <- dist_loaded %>% sRLPolyg_InitDistri(., 4326)
-    # }, error=function(e){"<b>We could not find the polygon created in Step 1b of the sRedList platform. Please try again.</b>"})
-    # if(Error_mess != "TRUE"){showNotification(ui=HTML(Error_mess), type="error", duration=8)}
     
     PolygToRemove <- distSP()$ID
     
@@ -986,7 +974,6 @@ server <- function(input, output, session) {
       dist_loaded <- sRLPolyg_InitDistri(dist_loaded, 4326)
     }
     distSP(dist_loaded)
-    
     
     ### Edit storage reactive values saying everything was applied
     lines <- lines_storage() ; lines$Applied <- T ; lines_storage(lines)
