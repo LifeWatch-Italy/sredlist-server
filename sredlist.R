@@ -1622,7 +1622,23 @@ function(scientific_name, username) { # nolint
      addEsriBasemapLayer(esriBasemapLayers$Topographic, group = "Topography") %>%
      addPolygons(data=distPROJ, color="#D69F32", fillOpacity=0, group="Distribution") %>% 
      addMouseCoordinates()
-
+    
+    # Add occurrence records if available
+    if("dat_proj_saved" %in% names(Storage_SP)){
+      dat_proj<-Storage_SP$dat_proj_saved %>% st_transform(., st_crs(4326))
+      COORDS<-st_coordinates(dat_proj)
+      dat_proj$lon<-COORDS[,1] ; dat_proj$lat<-COORDS[,2]
+      
+      AOH_leaflet <- AOH_leaflet %>%
+        addCircleMarkers(lng=dat_proj$lon,
+                         lat=dat_proj$lat,
+                         color="black",
+                         fillOpacity=0.5,
+                         stroke=F,
+                         radius=2,
+                         group="Records")
+      Overlay_records <- "Records"
+    } else {Overlay_records <- NULL}
 
     ### Color palette
     ColPal<-colorNumeric(colorRamp(c("#FBCB3C", "#25BC5A"), interpolate = "spline"), c(0,1), na.color = NA)
@@ -1638,12 +1654,12 @@ function(scientific_name, username) { # nolint
       AOH_leaflet<-AOH_leaflet %>%
         addRasterImage(aohPROJ/FACT, method="ngb", group="Minimum AOH", opacity=0.5, colors=ColPal) %>%
         addRasterImage(AOH_opt/FACT, method="ngb", group="Maximum AOH", opacity=0.5, colors=ColPal) %>%
-        addLayersControl(baseGroups=c("OpenStreetMap", "Satellite", "Topography"), overlayGroups=c("Distribution", "Minimum AOH", "Maximum AOH"), position="topleft", options=layersControlOptions(collapsed = FALSE))
+        addLayersControl(baseGroups=c("OpenStreetMap", "Satellite", "Topography"), overlayGroups=c(Overlay_records, "Distribution", "Minimum AOH", "Maximum AOH"), position="topleft", options=layersControlOptions(collapsed = FALSE))
 
     } else {
       AOH_leaflet<-AOH_leaflet %>%
         addRasterImage(aohPROJ/FACT, method="ngb", group="AOH", opacity=0.5, colors=ColPal) %>%
-        addLayersControl(baseGroups=c("OpenStreetMap", "Satellite", "Topography"), overlayGroups=c("Distribution", "AOH"), position="topleft", options=layersControlOptions(collapsed = FALSE))
+        addLayersControl(baseGroups=c("OpenStreetMap", "Satellite", "Topography"), overlayGroups=c(Overlay_records, "Distribution", "AOH"), position="topleft", options=layersControlOptions(collapsed = FALSE))
     }
 
 
