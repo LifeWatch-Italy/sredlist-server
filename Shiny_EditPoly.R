@@ -15,7 +15,7 @@ library(shinyWidgets)
 library(spsComps) # For addLoader in server
 
 
-source(textConnection(readLines("server.R")[1:123]))
+source(textConnection(readLines("server.R")[15:123]))
 
 
 ### Load functions
@@ -714,7 +714,10 @@ server <- function(input, output, session) {
     
     drawn <- drawn_ST[drawn_ST$Applied==F,]
     drawn$ID <- drawn$layerId
-    drawn$presence <- drawn$origin <- drawn$seasonal <- 1
+    drawn$presence <- dist$presence[match(drawn$ID, dist$ID)] %>% replace(., is.na(.), 1)
+    drawn$origin <- dist$origin[match(drawn$ID, dist$ID)] %>% replace(., is.na(.), 1)
+    drawn$seasonal <- dist$seasonal[match(drawn$ID, dist$ID)] %>% replace(., is.na(.), 1)
+    
     drawn <- subset(drawn, select=names(drawn)[names(drawn) %in% names(dist)])
     drawn$Popup <- sRLPolyg_CreatePopup(drawn)
     dist <- dist %>% subset(., ! dist$ID %in% drawn$ID) %>% st_difference(., drawn[,"geometry"])
@@ -893,6 +896,8 @@ server <- function(input, output, session) {
     if(nrow(dist_tosave)==0){showNotification(ui=HTML("You removed all polygons from your distribution and it is now empty. We discarded your last edits to bring back your former distribution."), type="error", duration=3) ; Run_discard(Run_discard()+1) ; req(F)}
     
     # Add attributes
+    dist_tosave$binomial <- input$sci_name
+    dist_tosave$id_no <- sRL_CalcIdno(input$sci_name)
     dist_tosave$source <- input$Field_source
     dist_tosave$yrcompiled <- input$Field_yrcompiled
     dist_tosave$citation <- input$Field_citation
@@ -938,6 +943,7 @@ server <- function(input, output, session) {
     # Save Storage file
     sRL_StoreSave(input$sci_name, input$user,  Storage_SPNEW)
     Storage_SP(Storage_SPNEW)
+    sRL_saveMapDistribution(input$sci_name, Storage_SPNEW)
     
     ### Update map
     edits <- sRLPolyg_CreateLeaflet(AllowEdit())

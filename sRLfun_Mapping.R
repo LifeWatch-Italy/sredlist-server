@@ -830,20 +830,22 @@ sRL_saveMapDistribution <- function(scientific_name, Storage_SP) {
     #dir.create(filePath)
   }
   path <- paste0(filePath, upload_folder_scientific_name, ".shp")
+  Storage_SP$distSP_saved$Popup <- NULL
   st_write(Storage_SP$distSP_saved, path, append = FALSE)
   
+  if("dat_proj_saved" %in% names(Storage_SP)){
+    text <- paste0(
+      "A distribution has been stored for the species: ",
+      scientific_name,
+      ".\nIt was created with the mapping procedure from the sRedList platform. It is based on ", # nolint
+      paste(names(table(Storage_SP$dat_proj_saved$Source_type)), table(Storage_SP$dat_proj_saved$Source_type), sep=" (") %>% paste(., collapse="), ") %>% paste0(nrow(Storage_SP$dat_proj_saved), " raw geo-referenced observations from: ", ., ")"),
+      " occurrence records gathered on the ",
+      Sys.time(),
+      " CET."
+    )
+    jsonlite::write_json(list(info = text), paste0(filePath, upload_folder_scientific_name, ".json"), auto_unbox= TRUE) # nolint
+  }
   
-  print("Write metadata file")
-  text <- paste0(
-    "A distribution has been stored for the species: ",
-    scientific_name,
-    ".\nIt was created with the mapping procedure from the sRedList platform. It is based on ", # nolint
-    paste(names(table(Storage_SP$dat_proj_saved$Source_type)), table(Storage_SP$dat_proj_saved$Source_type), sep=" (") %>% paste(., collapse="), ") %>% paste0(nrow(Storage_SP$dat_proj_saved), " raw geo-referenced observations from: ", ., ")"),
-    " occurrence records gathered on the ",
-    Sys.time(),
-    " CET."
-  )
-  jsonlite::write_json(list(info = text), paste0(filePath, upload_folder_scientific_name, ".json"), auto_unbox= TRUE) # nolint
   return(upload_folder_scientific_name)
 }
 
