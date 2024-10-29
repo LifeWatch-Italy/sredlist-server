@@ -820,20 +820,15 @@ sRL_CropDistributionGBIF <- function(distGBIF, GBIF_crop){
 sRL_saveMapDistribution <- function(scientific_name, Storage_SP) {
   
   ### Create a file path
-  upload_folder_scientific_name <- R.utils::capitalize(paste0(stringr::str_replace(scientific_name, " ", "_"), format(Sys.time(), "_Created_%Y%m%d"))) # nolint
+  upload_folder_scientific_name <- R.utils::capitalize(paste0(stringr::str_replace(scientific_name, " ", "_"), ifelse("dat_proj_saved" %in% names(Storage_SP), "_Created_", "_Edited_"), format(Sys.time(), "%Y%m%d"))) # nolint
   filePath <- paste0(config$distribution_path, scientific_name, "/", upload_folder_scientific_name, "/") # nolint
-  if (dir.exists(filePath)) {
-    print("The directory exists")
-  } else {
-    # create the "my_new_folder
-    dir.create(filePath, showWarnings = TRUE, recursive = TRUE)
-    #dir.create(filePath)
-  }
+  if (dir.exists(filePath)==F) {dir.create(filePath, showWarnings = TRUE, recursive = TRUE)}
   path <- paste0(filePath, upload_folder_scientific_name, ".shp")
   Storage_SP$distSP_saved$Popup <- NULL
   st_write(Storage_SP$distSP_saved, path, append = FALSE)
   
   if("dat_proj_saved" %in% names(Storage_SP)){
+    # Basic text for 1b
     text <- paste0(
       "A distribution has been stored for the species: ",
       scientific_name,
@@ -843,8 +838,25 @@ sRL_saveMapDistribution <- function(scientific_name, Storage_SP) {
       Sys.time(),
       " CET."
     )
-    jsonlite::write_json(list(info = text), paste0(filePath, upload_folder_scientific_name, ".json"), auto_unbox= TRUE) # nolint
+    # Add a note if manually edited with EditPoly
+    if(is.na(Storage_SP$Output$Value[Storage_SP$Output$Parameter=="Gbif_EditPoly"])==F){text <- paste0(text, " It was then manually edited on sRedList.")}
+  } else{
+    # Basic text for 1a
+    text <- paste0(
+      "A distribution has been stored for the species: ",
+      scientific_name,
+      " on the ", Sys.time(),
+      ".\nIt was manually edited on the sRedList platform from a distribution ",
+      revalue(Storage_SP$Output$Value[Storage_SP$Output$Parameter=="Distribution_Source"], c("Red List"="published in the last Red List assessment.", 
+                                                                                             "Uploaded"="previously uploaded on the sRedList platform.",
+                                                                                             "StoredOnPlatform"="previously created on the sRedList platform.",
+                                                                                             "Edited"="previously edited on the sRedList platform.")
+      )
+    )
   }
+  
+  # Save JSON
+  jsonlite::write_json(list(info = text), paste0(filePath, upload_folder_scientific_name, ".json"), auto_unbox= TRUE) # nolint
   
   return(upload_folder_scientific_name)
 }

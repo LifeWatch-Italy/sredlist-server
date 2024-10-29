@@ -247,6 +247,7 @@ sRLPolyg_UpdateLeaflet <- function(distSP, dat_pts, frame, PolygRemove="", Allow
     } else {
       leafletProxy("map-map") %>% 
         addCircleMarkers(lng = dat_pts$lon, lat = dat_pts$lat, radius=5, stroke=F, fillOpacity=0.8, color=revalue(dat_pts$ValidDistri, c("In"="#fdcb25ff", "Out"="#EA5F94", "Invalid"="#440154ff")), popup=dat_pts$PopText, group="Occurrences") %>%
+        clearControls() %>%
         addLegend(position="bottomleft", colors=c('#fdcb25ff', '#EA5F94', '#440154ff'), labels=c("Inside distribution", "Outside distribution", "Invalid record")) %>%
         addLayersControl(baseGroups=c("OpenStreetMap", "Satellite", "Topography"), overlayGroups=c("Occurrences"), position="bottomleft")
     }

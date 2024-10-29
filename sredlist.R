@@ -159,7 +159,7 @@ function(scientific_name, username) {
      
      ### Save the distribution in memory
      Storage_SP$distSP_saved<-distSP
-     DisSource<-ifelse(substr(Dist_path, nchar(Dist_path)-2, nchar(Dist_path))=="_RL", "Red List", ifelse(grepl("Created", Dist_path), "StoredOnPlatform", "Uploaded"))
+     DisSource<-ifelse(substr(Dist_path, nchar(Dist_path)-2, nchar(Dist_path))=="_RL", "Red List", ifelse(grepl("Created", Dist_path), "StoredOnPlatform", ifelse(grepl("Uploaded", Dist_path), "Uploaded", "Edited")))
      Storage_SP<-sRL_OutLog(Storage_SP, "Distribution_Source", DisSource) # If Dist_path ends by _RL it comes from the RL, uploaded otherwise
      sRL_StoreSave(scientific_name, username,  Storage_SP)
      
