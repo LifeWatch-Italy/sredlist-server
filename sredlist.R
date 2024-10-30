@@ -746,6 +746,10 @@ function(scientific_name, username) {
     #GBIF STEP 3: Map distribution from GBIF
     sRL_loginfo("START - Map showcase", scientific_name)
     
+    # Record usage
+    Storage_SP <- sRL_OutLog(Storage_SP, "Mapping_showcase", "yes")
+    sRL_StoreSave(scientific_name, username,  Storage_SP)
+    
     # Get back GBIF observations
     dat_proj=Storage_SP$dat_proj_saved
     if(nrow(dat_proj)==0){no_gbif_data()}
