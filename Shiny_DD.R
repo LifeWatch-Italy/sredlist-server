@@ -112,7 +112,10 @@ ui <-fluidPage(
   ),
   
   # Create a new row for the table.
-  DT::DTOutput("table")
+  DT::DTOutput("table"),
+  
+  # Version number (just for Victor to ensure the correct version is deployed)
+  conditionalPanel(condition='input.user=="victor.cazalis"', "version 1.3_test1")
 )
 
 
@@ -130,8 +133,8 @@ server <- function(input, output, session) {
   ### EVENTS ###
   ### Read the URL parameter from session$clientData$url_search
   observe({
-    query <- parseQueryString(session$clientData$url_search)
-    updateTextInput(session, "user", value = query[['user']])
+    query <- parseQueryString(session$clientData$url_search) ; req(nchar(query)>0)
+    updateTextInput(session, "user", value = sRL_userdecode(query[['user']]))
   })
   
   ### Observe Event when the group is selected
@@ -241,6 +244,7 @@ server <- function(input, output, session) {
 
       # Load file and add new tracker
       Old_tracker <- readRDS(paste(Track_dir, Track_name, sep="/"))
+      if(! "User" %in% names(Old_tracker)){Old_tracker$User <- NA}
       isolate(New_tracker <- Tracker_df()) # Isolate is needed in a non-reactive function
       New_tracker$Group <- isolate(input$TaxoGroup)
       New_tracker$Date <- as.character(Sys.Date())

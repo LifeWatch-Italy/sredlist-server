@@ -113,7 +113,11 @@ ui <- page_fillable(
           ),
           textInput("Field_distcomm", label="Distribution comment", width="100%")
         )
-      )
+      ),
+      
+      # Version number (just for Victor to ensure the correct version is deployed)
+      conditionalPanel(condition='input.user=="victor.cazalis"', "version 1.3_test1")
+      
     ),
     
     sidebarPanel(
@@ -242,8 +246,7 @@ server <- function(input, output, session) {
 
   ### Read the URL parameter from session$clientData$url_search
   observe({
-    query <- parseQueryString(session$clientData$url_search)
-    req(length(query)>0)
+    query <- parseQueryString(session$clientData$url_search) ; req(nchar(query)>0)
     updateTextInput(session, "sci_name", value = query[['sci_name']] %>% gsub("_" , " ", .) %>% gsub("%20%" , " ", .) %>% sRL_firstup(.))
     updateTextInput(session, "user", value = sRL_userdecode(query[['user']]))
   })
