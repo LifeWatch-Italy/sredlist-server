@@ -12,7 +12,7 @@ library(plotly)
 library(sf) ; library(leaflet) ; library(leafem) ; library(rgbif)
 library(shinycssloaders) ; library(shinylogs)
 library(raster)
-
+library(urltools)
 
 ### Specify url
 options(shiny.host = '127.0.0.1')
@@ -24,6 +24,7 @@ config <- config::get(file="../config.yml")
 
 ### Source functions
 source("sRLfun_ShinyDD.R")
+source("sRLfun_FirstPage.R")
 
 ### Load files
 speciesRL<-readRDS("Species/species-all-page.rds")
