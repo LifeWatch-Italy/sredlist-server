@@ -199,7 +199,7 @@ function(scientific_name, username) {
     distSP <- Storage_SP$distSP_saved
     
     ### Download GBIF data
-    dat <- sRL_createDataGBIF(scientific_name, c(1,0,0), "", "")
+    dat <- sRL_createDataGBIF(scientific_name, c(1,0,0), Storage_SP$Output$Value[Storage_SP$Output$Parameter=="Crop_Country"], "")
     if(nrow(dat)==0){return(leaflet() %>% addControl(HTML("We did not find any GBIF record for this species"), position = "topleft", className="map-title"))}
     
     # Apply automated filters
