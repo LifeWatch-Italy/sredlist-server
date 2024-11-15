@@ -200,6 +200,7 @@ function(scientific_name, username) {
     
     ### Download GBIF data
     dat <- sRL_createDataGBIF(scientific_name, c(1,0,0), Storage_SP$Output$Value[Storage_SP$Output$Parameter=="Crop_Country"], "")
+    
     if(nrow(dat)==0){return(leaflet() %>% addControl(HTML("We did not find any GBIF record for this species"), position = "topleft", className="map-title"))}
     
     # Apply automated filters
@@ -708,7 +709,9 @@ Prom<-future({
   
   # Keep distribution in memory
   Storage_SP<-sRL_OutLog(Storage_SP, c("Mapping_Start", "Mapping_Crop", "Mapping_Buffer", "Mapping_Altitude", "Kernel_parameter", "Alpha_parameter", "Mapping_Merge"), c(Gbif_Start, Gbif_Crop, Gbif_Buffer, paste0(Gbif_Altitude, collapse=", "), ifelse(Gbif_Start=="kernel", Gbif_Param[2], NA), ifelse(Gbif_Start=="alpha", Gbif_Param[1], NA), Gbif_RLDistBin))
-  distSP$dist_comm <-sRL_DistComment(Output=Storage_SP$Output, N_dat=nrow(dat_proj))
+  DistComm <- sRL_DistComment(Output=Storage_SP$Output, N_dat=nrow(dat_proj))
+  distSP$dist_comm <- DistComm
+  distSP_BeforeCrop$dist_comm <- DistComm
   Storage_SP$distSP_saved=distSP[, names(distSP) != "alphaTEMPO"]
   Storage_SP$distSP3_BeforeCrop <- distSP_BeforeCrop
   sRL_StoreSave(scientific_name, username,  Storage_SP)

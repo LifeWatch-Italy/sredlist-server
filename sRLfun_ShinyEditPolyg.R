@@ -60,6 +60,7 @@ sRLPolyg_PrepareHydro <- function(distSP, hydro_raw, HydroLev, SRC_created){
   if(npts(hydroSP_HQ)>(50*nrow(hydroSP_HQ))){hydroSP <- ms_simplify(hydroSP, keep=(50*nrow(hydroSP))/npts(hydroSP), keep_shapes=T)}
   
   # Attributes (depends if hydrobasins from created distribution or from "Edit as hydrobasins" button)
+  if("dist_comm" %in% names(distSP)){hydroSP$dist_comm <- distSP$dist_comm[1]}
   if(SRC_created=="yes"){
     # Use hybas_id column to know which hydrobasins are in the hydrobasins
     hydroSP$InDistri <- hydroSP$hybas_id %in% distSP$hybas_id
