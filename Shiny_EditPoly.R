@@ -241,6 +241,7 @@ server <- function(input, output, session) {
   Run_discard <- reactiveVal(0) # Reactive value that calls Discard button (either from the discard button itself or from other functions, eg if users click on drag with hydrobasins)
   Suggest_hydro <- reactiveVal("no") # Reactive value that becomes T if we should add the button "Edit as hydrobasins", ie if this is a reassessment of a freshwater species
   Unsaved_changes <- reactiveVal("no") # Reactive value that becomes T when there are unsaved changes
+  Warning_drawned <- reactiveVal("no") # Reactive value that becomes T when the warning that we need to save after drawing has been shown (to avoid it to be repeated)
   
   ### Events ---------
 
@@ -267,7 +268,7 @@ server <- function(input, output, session) {
     if(length(names(Stor_tempo))<=1){loader_load$hide() ; req(F)}
     
     # Load distribution
-    if(T %in% grepl("hydro", Stor_tempo$Output$Value)){
+    if(T %in% grepl("hydro", Stor_tempo$Output$Value) & Stor_tempo$Output$Value[Stor_tempo$Output$Parameter=="Distribution_Source"]=="Created"){
       dist_loaded0 <- Stor_tempo$distSP3_BeforeCrop
       # Extract hydrobasins, will return a list with hydroSP to use and hydro_HQ with hydrobasins in the original quality
       track_storage$L$Hydro_init <- track_storage$L$Hydro_init+1
@@ -378,6 +379,7 @@ server <- function(input, output, session) {
     loader_loadhydro <- addLoader$new("EditAsHydroButt", color = "#009138ff", method = "full_screen", height = "30rem", opacity=0.4) ; loader_loadhydro$show()
     track_storage$L$Hydro_editas <- track_storage$L$Hydro_editas+1
     AllowEdit("hydro")
+    Suggest_hydro("no") # No need to see the button anymore
     
     ### Subset hydrobasins
     hydro_ready <- sRLPolyg_PrepareHydro(st_transform(distSP(), CRSMOLL), hydro_raw, "hydro8", SRC_created="no")
@@ -666,7 +668,7 @@ server <- function(input, output, session) {
     if(nrow(drawn)>0){
       print("Record and apply polygon drawing")
       
-      if(is.null(P_drawn)==F){if(nrow(P_drawn)==1){showNotification(ui=HTML("When you finished drawing new polygons, please click on save to be able to specify their attributes."), type="message", duration=2)}}
+      if(is.null(P_drawn)==F){if(Warning_drawned()=="no"){showNotification(ui=HTML("When you finished drawing new polygons, please click on save to be able to specify their attributes."), type="message", duration=2) ; Warning_drawned("yes")}}
       
       drawn$Applied <- F # Create column recording if changes were applied or not
       
