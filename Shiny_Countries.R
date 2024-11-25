@@ -64,7 +64,7 @@ ui <- fluidPage(
       div(DT::DTOutput("COO_table"), style = "font-size:80%"),
       
       # Version number (just for Victor to ensure the correct version is deployed)
-      conditionalPanel(condition='input.user=="victor.cazalis"', "version 1.3_test1"),
+      conditionalPanel(condition='input.user=="victor.cazalis"', "version 1.3_online1"),
       
       width=6
     )

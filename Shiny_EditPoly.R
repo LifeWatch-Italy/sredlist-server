@@ -116,7 +116,7 @@ ui <- page_fillable(
       ),
       
       # Version number (just for Victor to ensure the correct version is deployed)
-      conditionalPanel(condition='input.user=="victor.cazalis"', "version 1.3_test1")
+      conditionalPanel(condition='input.user=="victor.cazalis"', "version 1.3_online1")
       
     ),
     
