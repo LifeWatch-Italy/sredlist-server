@@ -13,7 +13,7 @@ sRLMan_CreateLeaflet <- function(){
       circleOptions = FALSE,
       markerOptions = drawMarkerOptions(repeatMode = TRUE),
       circleMarkerOptions = FALSE,
-      editOptions=editToolbarOptions(edit=TRUE, remove=TRUE)
+      editOptions=editToolbarOptions(edit=FALSE, remove=FALSE)
     ) %>%
     onRender("function(el, x){
                var map = this;
@@ -45,6 +45,9 @@ sRLMan_CreateLeaflet <- function(){
                     }
                  });
                });
+             document.querySelector('.leaflet-draw-draw-polygon') .setAttribute('title', 'Draw a polygon around records to exclude');
+             document.querySelector('.leaflet-draw-draw-rectangle') .setAttribute('title', 'Draw a rectangle around records to exclude');
+             document.querySelector('.leaflet-draw-draw-marker') .setAttribute('title', 'Draw new records');
              }")
   
 } 
