@@ -2994,7 +2994,7 @@ return(Prom)
 }
 
 #* Delete distribution from sRedList platform
-#* @delete species/<scientific_name>/distribution
+#* @delete species/<scientific_name>/rmdistribution
 #* @param scientific_name:string Scientific Name
 #* @param file_name:string file_name
 #* @param Dist_path:string path
