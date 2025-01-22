@@ -119,7 +119,7 @@ if(file.exists("Species/Stored_outputs") == FALSE){dir.create("Species/Stored_ou
 
 
 # Load Hydrobasins map
-hydro_raw<-st_read(config$hydrobasins_path) ; st_crs(hydro_raw)<-CRSMOLL
+#hydro_raw<-st_read(config$hydrobasins_path) ; st_crs(hydro_raw)<-CRSMOLL
 
 
 

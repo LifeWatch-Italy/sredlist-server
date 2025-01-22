@@ -2224,7 +2224,8 @@ Prom<-future({
   if(RSproduct=="Human_density"){List_trendsRS<-sRL_CalcHumandensity(scientific_name, username, distSP, GL_species)}
   if(RSproduct=="Forest_cover"){List_trendsRS<-sRL_CalcForestchange(scientific_name, username, distSP, GL_species)}
   if(RSproduct=="Human_modification"){List_trendsRS<-sRL_CalcModification(scientific_name, username, distSP)}
-
+  if(RSproduct=="Water_availability"){List_trendsRS<-sRL_CalcWater(scientific_name, username, distSP)}
+  
   # Save usage
   RS_stored<-Storage_SP$Output$Value[Storage_SP$Output$Parameter=="Usage_RS"]
   Storage_SP<-sRL_OutLog(Storage_SP, "Usage_RS", paste(RS_stored, RSproduct, sep="."))
@@ -2489,6 +2490,17 @@ function(scientific_name, username){
   return(list(Estimates=Estimates_df))
 }
 
+
+## Output content -------
+#* Choose with outputs should be offered for download
+#* @get species/<scientific_name>/assessment/OutputInfo
+#* @param scientific_name:string Scientific Name
+#* @serializer unboxedJSON
+#* @tag sRedList
+function(scientific_name, username){
+  print("LALALALALALALA")
+  return(list(Outputs_list=c("1", "2", "4")))
+}
 
 ## Assign category -------
 #* Plot Red List category
@@ -2910,7 +2922,7 @@ Prom<-future({
     edit <- TRUE
     for(fileName in list.files(paste0(config$distribution_path, directoryName))) {
       # Red list distributions cannot be deleted
-      if (grepl("_RL", fileName)) edit <- FALSE;  # nolint
+      if (grepl("_RL", fileName) & (! grepl("subpopulation", fileName))) edit <- FALSE;  # Allow to remove subpopulations manually to remove those in LifeWatch servers
       if (grepl("_Uploaded", fileName)) edit <- TRUE;  # nolint
       subDirectorySize <- 0
       subFiles <- list()
