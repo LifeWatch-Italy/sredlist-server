@@ -111,7 +111,7 @@ GL_file<-read.csv("Species/Generation_length_sRedList.csv", sep=",")
 crosswalk_to_use<- read.table("Species/Crosswalk_CCI_IUCN_Lumbierres.txt", dec="/", header=T) ; crosswalk_to_use$code<-as.character(crosswalk_to_use$code)
 
 # Load the empty output log
-output<-read.csv("Species/Output log empty.csv")
+output<-read.csv("Species/Output_log_empty.csv")
 
 # If output tracker folder does not exist, I create it
 if(file.exists("Species/Stored_outputs") == FALSE){dir.create("Species/Stored_outputs")}

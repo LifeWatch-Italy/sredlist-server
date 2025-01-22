@@ -1564,7 +1564,7 @@ Prom<-future({
     sRL_loginfo("END - AOO calculation from points", scientific_name)
   } else {pts<-NULL}
   
-  # Calculate model and point prevalence (AOH validation)
+  ### Calculate model and point prevalence (AOH validation)  -------
   if(Uncertain=="Uncertain_no"){
     Validation_Prevalence <- sRL_CalcAohPrevalence(aoh=AOH2[[1]], aoh_opt=NULL, type=AOH_type, points=pts)
   } else {
@@ -1572,7 +1572,7 @@ Prom<-future({
   }
   
   ### Save Storage_SP ----
-  Storage_SP<-sRL_OutLog(Storage_SP, "AOH_time", as.numeric(format(Sys.time(), "%s"))-as.numeric(format(TIC, "%s")))
+  Storage_SP<-sRL_OutLog(Storage_SP, c("AOH_time", "AOH_Prevalence_model", "AOH_Prevalence_points"), c(as.numeric(format(Sys.time(), "%s"))-as.numeric(format(TIC, "%s")), Validation_Prevalence$Model_prevalence, ifelse("Point_prevalence" %in% names(Validation_Prevalence), Validation_Prevalence$Point_prevalence, NA)))
   sRL_StoreSave(scientific_name, username,  Storage_SP)
   
   ### Return list of arguments + calculate population size

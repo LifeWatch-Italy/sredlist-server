@@ -65,5 +65,8 @@ When rescaled at a 2x2km grid, this provides a value of `r pretty_num(c(Storage_
 `r if("pop_size" %in% names(Storage_SP)){paste0("Based on the estimated Area of Habitat and the density value provided, we estimate the population size of your species is ", pretty_num(Storage_SP$pop_size), " mature individuals.")}`
 
 
+### Model and point prevalence
+Model prevalence (the proportion of suitable AOH grid cells within the distribution) was `r outlog$Value[outlog$Parameter=="AOH_Prevalence_model"]`.
+`r if("AOH_Prevalence_points" %in% outlog$Parameter){paste0("Point prevalence (the proportion of occurrence records that are found within the AOH) was ", outlog$Value[outlog$Parameter=="AOH_Prevalence_points"], ".")}`
 
 
