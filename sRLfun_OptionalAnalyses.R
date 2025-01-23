@@ -240,5 +240,64 @@ sRL_CalcModification<-function(scientific_name, username, distSP){
   
 }
 
+# sRL_CalcModification: calculate trends in Water Availability
+sRL_CalcWater<-function(scientific_name, username, distSP){
+  
+  ### Charge human modification layers
+  water1<-rast(gsub("XXXX", "1984_1999", config$Water_availability_path))
+  water2<-rast(gsub("XXXX", "2000_2021", config$Water_availability_path))
+  
+  ### Mask
+  distSP<-st_transform(distSP, st_crs(water1))
+  water1_crop<-crop(water1, distSP, snap="out") %>% mask(., distSP)
+  water2_crop<-crop(water2, distSP, snap="out") %>% mask(., distSP)
+  water_change<-water2_crop-water1_crop
+  
+  ### Save rasters
+  terra::writeRaster(water2_crop, paste0("resources/AOH_stored/", gsub(" ", "_", scientific_name), "_", sRL_userdecode(username), "/Water_availability_Current.tif"), overwrite=T)
+  terra::writeRaster(water_change, paste0("resources/AOH_stored/", gsub(" ", "_", scientific_name), "_", sRL_userdecode(username), "/Water_availability_Change.tif"), overwrite=T)
+  
+  ### Plots
+  RS_name="Water availability"
+  
+  GG_RS=cowplot::plot_grid(
+    
+    gplot(water2_crop)+
+      coord_fixed()+
+      geom_tile(aes(fill = value)) +
+      scale_fill_viridis_c(option="viridis", na.value = "white", name="%")+
+      ggtitle("Average 2000-2021") +
+      sRLTheme_maps,
+    
+    gplot(water_change)+
+      coord_fixed()+
+      geom_tile(aes(fill = value)) +
+      scale_fill_gradient2(low="#8c510a", mid="azure2", midpoint=0, high="#018571", name="%", na.value="white")+
+      ggtitle("Change from (1984-1999) to (2000-2021)") +
+      sRLTheme_maps
 
-
+    ,ncol=2
+  )
+  
+  ggsave(filename = paste0("resources/AOH_stored/", sub(" ", "_", scientific_name), "_", sRL_userdecode(username), "/Plots/RS_plot_water.png"), plot = GG_RS, width=10, height=6)
+  RS_plot <- base64enc::dataURI(file = paste0("resources/AOH_stored/", sub(" ", "_", scientific_name), "_", sRL_userdecode(username), "/Plots/RS_plot_water.png"), mime = "image/png", encoding = "base64") # nolint
+  
+  
+  ### Calculate outputs
+  RS_current<-exact_extract(water2_crop, distSP, "mean") 
+  RS_old<-exact_extract(water1_crop, distSP, "mean")
+  RS_timewindow<-"(1984-1999) to (2000-2021)"
+  RS_trendsABS<-RS_current-RS_old
+  RS_trendsREL<-(RS_current-RS_old)/RS_current
+  
+  ### Return
+  return(list(
+    RS_prodname=RS_name,
+    RS_plot=RS_plot,
+    RS_current=paste0(round(RS_current), " (mean)"),
+    RS_trendsABS=round(RS_trendsABS),
+    RS_trendsREL=paste0(100*round(RS_trendsREL, 3), " % change"),
+    RS_timewindow=RS_timewindow
+  ))
+  
+}
