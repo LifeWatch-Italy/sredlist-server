@@ -2691,7 +2691,12 @@ Prom<-future({
     if(scientific_name==sub("3","4",config$Name_tracker)){
       filesOut<-list.files() %>% .[grepl(".zip", .)]
       file.copy(filesOut, paste0(output_dir, "/Outputs_", filesOut))
-      }
+    }
+    # or Storage_SP files
+    if(scientific_name==sub("3","5",config$Name_tracker)){
+      filesOut<-list.files(recursive = T) %>% .[grepl("Storage_SP.rds", .)]
+      file.copy(filesOut, paste0(output_dir, "/Outputs_", gsub("/", "_" ,filesOut)))
+    }
   }
   
   # Save distribution and occurrences if from GBIF
