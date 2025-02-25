@@ -1,7 +1,7 @@
 
 For the whole process on the platform you used as polygon distribution `r revalue(outlog$Value[outlog$Parameter=="Distribution_Source"], c("Red List"="the distribution that was published with the last Red List assessment", "Uploaded"="a distribution map that was uploaded on the platform", "StoredOnPlatform"="a distribution map that was previously created on the platform from occurrence records"), warn_missing = F)`.
 
-`r ifelse(is.na(outlog$Value[outlog$Parameter=="Crop_Country"]), "", paste0("You only kept the part of the distribution that is included in ", outlog$Value[outlog$Parameter=="Crop_Country"], " (National Red Listing option)."))` 
+`r ifelse((is.na(outlog$Value[outlog$Parameter=="Crop_Country"]) | outlog$Value[outlog$Parameter=="Crop_Country"]==""), "", paste0("You only kept the part of the distribution that is included in ", outlog$Value[outlog$Parameter=="Crop_Country"], " (National Red Listing option)."))` 
 
 This distribution was the following map:
 
