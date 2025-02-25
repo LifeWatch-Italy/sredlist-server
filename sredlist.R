@@ -2680,11 +2680,13 @@ Prom<-future({
   write.csv(assessments_SIS, paste0(output_dir, "/assessments.csv"), row.names = F)
   
   # Download tracking files
+  sRL_loginfo("Track files", scientific_name)
   print(username)
+  print(config$Name_tracker)
   if(grepl("victor.cazalis", username)){
     # List files stored in Stored_outputs to add to zip and copy
     if(scientific_name==config$Name_tracker){
-      filesOut<-list.files("Species/Stored_outputs") %>% paste0("Species/Stored_outputs/", .)
+      filesOut<-list.files("Species/Stored_outputs") %>% paste0("Species/Stored_outputs/", .) ; print(filesOut)
       file.copy(filesOut, paste0(output_dir, "/Outputs_", filesOut))
       }
     # or list all zip files not removed yet
