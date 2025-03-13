@@ -2786,7 +2786,6 @@ Prom<-future({
   sRL_loginfo("Start Criteria calculation", scientific_name)
   criteria<-sRL_CriteriaCalculator(allfields[1,])
   
-  
   ### Plot
   sRL_loginfo("Start Plotting", scientific_name)
   criteria$Cat_ThresholdMIN <- criteria$Cat_ThresholdMIN %>% replace(., .=="LC", "LC/NT") %>% factor(., c("LC/NT", "VU", "EN", "CR"))
@@ -2916,7 +2915,7 @@ function(scientific_name, username) {
   if(output_species$Value[output_species$Parameter=="Distribution_Presence"]=="1,2"){output_species<-output_species[-which(output_species$Parameter=="Distribution_Presence"),]}
   if(output_species$Value[output_species$Parameter=="Distribution_Origin"]=="1,2"){output_species<-output_species[-which(output_species$Parameter=="Distribution_Origin"),]}
   if(output_species$Value[output_species$Parameter=="Distribution_Seasonal"]=="1,2"){output_species<-output_species[-which(output_species$Parameter=="Distribution_Seasonal"),]}
-  output_species$Value[output_species$Parameter=="Col_allfields"]<-paste(names(read.csv(paste0(sub(" ", "_", scientific_name), "_", sRL_userdecode(username), "_sRedList/allfields.csv"))), collapse=",")
+  tryCatch({output_species$Value[output_species$Parameter=="Col_allfields"]<-paste(names(read.csv(paste0(sub(" ", "_", scientific_name), "_", sRL_userdecode(username), "_sRedList/allfields.csv"))), collapse=",")}, error=function(e){cat("Allfields not kept")})
   output_species<-subset(output_species, is.na(output_species$Value)==F & output_species$Value != "")
   output_species$Date<-Sys.time() %>% as.character(.)
   
