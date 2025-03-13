@@ -16,4 +16,18 @@ These parameters lead to the following Red List criteria application (note thoug
 </center>
 
 
+```{r output_list, include=F}
+TEXT <- revalue(outputs_selected, c(
+  "sRL"="sRedList files (report and outlog csv file)",
+  "SIS"="general SIS files (allfields.csv, assessments.csv, references.csv, taxonomy.csv)",
+  "COO"="list of countries of occurrence for SIS (countries.csv)",
+  "Hab"="list of habitat preferences for SIS (habitats.csv)",
+  "Shp"="polygon range map shapefile (formatted as required for published assessments)",
+  "Pts"="occurrence records (formatted as required for published assessments)",
+  "Hydro"="hydrobasin range map (formatted as required for published assessments)",
+  "AOH"="AOH raster maps"
+)) %>% paste(., collapse=", ") %>% paste0(., ".")
 
+```
+
+You decided to include the following files in the final ZIP folder: `r TEXT`

@@ -14,7 +14,7 @@ knitr::opts_chunk$set(echo = FALSE, warning = FALSE, message = FALSE)
 outDir<-paste0(WD, "/resources/AOH_stored/", sub(" ", "_", sRL_decode(scientific_name)), "_", sRL_userdecode(username))
 Storage_SP<-sRL_StoreRead(scientific_name, username, MANDAT=1)
 outlog<-Storage_SP$Output %>% subset(., is.na(.$Value)==F)
-allfields<-read.csv(paste0(WD, "/", sub(" ", "_", scientific_name), "_", sRL_userdecode(username), "_sRedList/allfields.csv"))
+allfields<-read.csv(paste0(WD, "/", sub(" ", "_", scientific_name), "_", sRL_userdecode(username), "_sRedList/allfieldsTEMPORARY.csv"))
 my_comma<-scales::label_comma(accuracy = 1, big.mark = ",", decimal.mark = ".") # Function to add comma separator
 pretty_num <- function(x){x %>% as.character(.) %>% strsplit(., "-") %>% unlist(.) %>% as.numeric(.) %>% subset(., is.na(.)==F) %>% my_comma(.) %>% paste(., collapse="-")} # Function to format numbers
 NO_STEP<-"This step was not performed on the platform."

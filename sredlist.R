@@ -2491,6 +2491,36 @@ function(scientific_name, username){
 }
 
 
+## Output content -------
+#* Choose with outputs should be offered for download
+#* @get species/<scientific_name>/assessment/OutputInfo
+#* @param scientific_name:string Scientific Name
+#* @serializer unboxedJSON
+#* @tag sRedList
+function(scientific_name, username){
+  sRL_loginfo("Start Output selection", scientific_name)
+  
+  scientific_name<-sRL_decode(scientific_name)
+  Storage_SP<-sRL_StoreRead(scientific_name,  username, MANDAT=1) ; print(names(Storage_SP))
+  
+  ### Choose outputs selected by default
+  LISTout_select <- c("sRL", "SIS")
+  if("coo_occ" %in% names(Storage_SP)){LISTout_select <- c(LISTout_select, "COO")}
+  if("habitats_SIS" %in% names(Storage_SP)){LISTout_select <- c(LISTout_select, "Hab")}
+  if(is.null(Storage_SP$gbif_number_saved)==F){LISTout_select <- c(LISTout_select, "Shp", "Pts")}
+  if(is.na(Storage_SP$Output$Value[Storage_SP$Output$Parameter=="Gbif_EditPoly"])==F){LISTout_select <- unique(c(LISTout_select, "Shp"))} # In case published distribution was edited manually
+  if("hybas_id" %in% names(Storage_SP$distSP_saved)){LISTout_select <- c(LISTout_select, "Hydro")}
+  
+  ### Choose outputs disabled (sRL should always be included, those not in select are not available) + Shp always selectable
+  LISTout_disable <- c("SIS", "COO", "Pts", "Hab", "Hydro") %>% subset(., !. %in% LISTout_select) %>% c(., "sRL")
+  if(! "AOHkm2_saved" %in% names(Storage_SP)){LISTout_disable <- c(LISTout_disable, "AOH")}
+  
+  return(list(Outputs_preselected=LISTout_select,
+              Outputs_disabled=LISTout_disable)
+         )
+}
+
+
 ## Assign category -------
 #* Plot Red List category
 #* @post species/<scientific_name>/assessment/red-list-criteria
@@ -2500,6 +2530,7 @@ function(scientific_name, username){
 function(scientific_name,
          username,
          Estimates, 
+         outputs_selected,
          pastTrends_dir, pastTrends_qual, pastTrends_basis, pastTrends_reversible, pastTrends_understood, pastTrends_ceased, fragmentBin, Fragment_justif,
          Extreme_EOO, Extreme_AOO, Extreme_Pop, Extreme_NLoc, Extreme_NSub, Extreme_EOO_justif, Extreme_AOO_justif, Extreme_Pop_justif, Extreme_NLoc_justif, Extreme_NSub_justif,
          Continuing_EOO, Continuing_AOO, Continuing_Hab, Continuing_Pop, Continuing_NLoc, Continuing_NSub, Continuing_EOO_justif, Continuing_AOO_justif, Continuing_Hab_justif, Continuing_Pop_justif, Continuing_NLoc_justif, Continuing_NSub_justif,
@@ -2643,19 +2674,23 @@ Prom<-future({
   allfields$SubpopulationContinuingDecline.justification<-Continuing_NSub_justif
   
   # Remove empty columns (important to avoid overwriting data in reassessments)
-  allfields_to_save<-allfields[,which(is.na(allfields[1,])==F & allfields[1,] != "Unknown" & allfields[1,] != "NA")]
-
+  allfields_to_save <- allfields[,which(is.na(allfields[1,])==F & allfields[1,] != "Unknown" & allfields[1,] != "NA")] 
+  allfields_to_save <- replace(allfields_to_save, is.na(allfields_to_save), "")
   
   
   sRL_loginfo("Start Countries and refs", scientific_name)
   output_dir<-paste0(sub(" ", "_", scientific_name), "_", sRL_userdecode(username), "_sRedList")
+  unlink(output_dir, recursive=T)
+  unlink(paste0(output_dir, ".zip"), recursive=T)
   dir.create(output_dir)
   
   # Countries (but enabling skipping step) + prepare assessments.csv
   if("coo_occ" %in% names(Storage_SP)){
     tryCatch({
       countries_SIS<-sRL_OutputCountries(scientific_name, Storage_SP$coo_occ) %>% subset(., grepl("Absent_SIS", .$CountryOccurrence.CountryOccurrenceSubfield.CountryOccurrenceName)==F)
-      write.csv(countries_SIS, paste0(output_dir, "/countries.csv"), row.names = F)
+      if("COO" %in% outputs_selected){
+        write.csv(countries_SIS, paste0(output_dir, "/countries.csv"), row.names = F)
+      }
     }, error=function(e){"Bug in exporting countries of occurrence for SIS"})
     assessments_SIS<-sRL_OutputAssessments(scientific_name, Storage_SP$Realms_saved, Storage_SP$Output$Value[Storage_SP$Output$Parameter=="System_pref"][1], populationTrend)
   } else {assessments_SIS<-sRL_OutputAssessments(scientific_name, NA, NA, populationTrend)}
@@ -2665,7 +2700,9 @@ Prom<-future({
     habitats_SIS<-Storage_SP$habitats_SIS[,6:13]
     habitats_SIS$internal_taxon_id<-sRL_CalcIdno(scientific_name)
     habitats_SIS<-replace(habitats_SIS, is.na(habitats_SIS), "")
-    write.csv(habitats_SIS, paste0(output_dir, "/habitats.csv"), row.names = F)
+    if("Hab" %in% outputs_selected){
+      write.csv(habitats_SIS, paste0(output_dir, "/habitats.csv"), row.names = F)
+    }
   }
   
   ref_SIS<-sRL_OutputRef(scientific_name, Storage_SP) 
@@ -2673,19 +2710,45 @@ Prom<-future({
   out_save<-Storage_SP$Output[Storage_SP$Output$Definition !="Only used to track usage",] %>% subset(., select=names(.)[names(.) != "Count"])
 
   # Save csv files in a folder
-  write.csv(replace(allfields_to_save, is.na(allfields_to_save), ""), paste0(output_dir, "/allfields.csv"), row.names = F)
-  write.csv(taxo_SIS, paste0(output_dir, "/taxonomy.csv"), row.names = F)
-  write.csv(ref_SIS, paste0(output_dir, "/references.csv"), row.names = F)
   write.csv(out_save, paste0(output_dir, "/00.Output_log.csv"), row.names = F)
-  write.csv(assessments_SIS, paste0(output_dir, "/assessments.csv"), row.names = F)
+  write.csv(allfields_to_save, paste0(output_dir, "/allfieldsTEMPORARY.csv"), row.names = F) # Needed for RMD
+  if("SIS" %in% outputs_selected){
+    write.csv(allfields_to_save, paste0(output_dir, "/allfields.csv"), row.names = F)
+    write.csv(taxo_SIS, paste0(output_dir, "/taxonomy.csv"), row.names = F)
+    write.csv(ref_SIS, paste0(output_dir, "/references.csv"), row.names = F)
+    write.csv(assessments_SIS, paste0(output_dir, "/assessments.csv"), row.names = F)
+  }
+  
+  # AOH
+  if("AOH" %in% outputs_selected){
+    tryCatch({
+      
+      aoh_dir <- paste0("resources/AOH_stored/", sub(" ", "_", scientific_name), "_", sRL_userdecode(username))
+      FILES <- list.files(aoh_dir, recursive=T) %>% subset(., grepl(".tif", .)) %>% subset(., !grepl("alt_crop", .) & ! grepl("cci2_crop", .))
+      Qualif <- ifelse(TRUE %in% grepl("optimistic", FILES), "_pessimistic", "")
+      Year1 <- ifelse("Year1_saved" %in% names(Storage_SP), Storage_SP$Year1_saved, NA)
+      
+      NewNames <- ifelse(grepl("Current/", FILES), paste0("Recent_AOH(", config$YearAOH2, ")", Qualif, ".tif"), 
+                         ifelse(grepl("Current_optimistic/", FILES), paste0("Recent_AOH(", config$YearAOH2, ")_optimistic.tif"),
+                                ifelse(grepl("Initial/", FILES), paste0("Former_AOH(", Year1, ")", Qualif, ".tif"),
+                                       ifelse(grepl("Initial_optimistic/", FILES), paste0("Former_AOH(", Year1, ")_optimistic.tif"), "BUG_AOH.tif"
+                                       ))))
+      
+      file.copy(from=paste0(aoh_dir, "/", FILES), to=paste0(output_dir, "/", NewNames))
+      
+    }, error=function(e){"Bug in exporting AOH"})
+  }
   
   # Download tracking files
   sRL_loginfo("Track files", scientific_name)
   print(username)
   print(config$Name_tracker)
   if(grepl("victor.cazalis", username)){
+    print("Check1")
     # List files stored in Stored_outputs to add to zip and copy
     if(scientific_name==config$Name_tracker){
+      print("Check2")
+      print(getwd())
       filesOut<-list.files("Species/Stored_outputs") %>% paste0("Species/Stored_outputs/", .) ; print(filesOut)
       file.copy(filesOut, paste0(output_dir, "/Outputs_", filesOut))
       }
@@ -2702,19 +2765,19 @@ Prom<-future({
   }
   
   # Save distribution and occurrences if from GBIF
-  if(is.null(Storage_SP$gbif_number_saved)==F | is.na(Storage_SP$Output$Value[Storage_SP$Output$Parameter=="Gbif_EditPoly"])==F){
+  if(is.null(Storage_SP$gbif_number_saved)==F | is.na(Storage_SP$Output$Value[Storage_SP$Output$Parameter=="Gbif_EditPoly"])==F | ("Shp" %in% outputs_selected)){
     sRL_loginfo("Start saving distribution", scientific_name)
     
     distSIS<-sRL_OutputDistribution(scientific_name, Storage_SP)
-    if("hybas_id" %in% names(Storage_SP$distSP_saved)){
+    if("hybas_id" %in% names(Storage_SP$distSP_saved) & ("Hydro" %in% outputs_selected)){
       hydroSIS<-sRL_OutputHydrobasins(distSIS, Storage_SP)
       write.csv(hydroSIS, paste0(output_dir, "/sRedList_", gsub(" ", ".", scientific_name), "_Hydrobasins.csv"), row.names=F)
     }
     distSIS <- distSIS %>% dplyr::group_by(across(.cols=-"geometry")) %>% dplyr::summarise()
-   st_write(distSIS, paste0(output_dir, "/sRedList_", gsub(" ", ".", scientific_name), "_Distribution.shp"), append=F)
-   
+    if("Shp" %in% outputs_selected){st_write(distSIS, paste0(output_dir, "/sRedList_", gsub(" ", ".", scientific_name), "_Distribution.shp"), append=F)}
+    
    ### Save occurrence records
-   if(is.null(Storage_SP$gbif_number_saved)==F){
+   if(is.null(Storage_SP$gbif_number_saved)==F & ("Pts" %in% outputs_selected)){
      write.csv(sRL_OutputOccurrences(scientific_name, Storage_SP, distSIS), paste0(output_dir, "/sRedList_", gsub(" ", ".", scientific_name), "_Occurrences.csv"), row.names=F)
    }
   }
@@ -2803,6 +2866,7 @@ Prom<-future({
   # ZIP folder
   #zip(zipfile = paste0(sub(" ", "_", scientific_name), "_sRedList"), files = paste0(sub(" ", "_", scientific_name), "_sRedList"),  zip = "C:/Program Files/7-Zip/7z", flags="a -tzip")
   sRL_loginfo("Start ZIP", scientific_name)
+  unlink(paste0(output_dir, "/allfieldsTEMPORARY.csv"))
   zip(zipfile = paste0(sub(" ", "_", scientific_name), "_", sRL_userdecode(username), "_sRedList.zip"), files = paste0(sub(" ", "_", scientific_name), "_", sRL_userdecode(username), "_sRedList"), extras = '-j')
   
   
