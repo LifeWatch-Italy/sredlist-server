@@ -2774,6 +2774,7 @@ Prom<-future({
       print(getwd())
       filesOut<-list.files("Species/Stored_outputs") %>% paste0("Species/Stored_outputs/", .) ; print(filesOut)
       file.copy(filesOut, paste0(output_dir, "/Outputs_", filesOut))
+      print("Check3")
       }
     # or list all zip files not removed yet
     if(scientific_name==sub("3","4",config$Name_tracker)){
@@ -2946,12 +2947,17 @@ function(scientific_name, username) {
   tryCatch({
     print(paste0("Species_to_record (zip function): ", scientific_name, " by ", username, "_close"))
     
+    print("Check Out1")
     FileStored<-paste0("Species/Stored_outputs/Stored_", substr(Sys.Date(), 1, 7), ".rds")
+    print(FileStored)
+    print(file.exists(FileStored))
+    print(list.files("Species/Stored_outputs"))
     if(file.exists(FileStored)){
       Saved_output<-readRDS(FileStored)
       } else {Saved_output<-read.csv("Species/Output_save_empty.csv")}
     Saved_output<-rbind.fill(Saved_output, output_species)
     saveRDS(Saved_output, FileStored)
+    print("Check Out2")
   }, error=function(e){cat("TryCatch save output while zipping")})
 
   # Remove the local files
