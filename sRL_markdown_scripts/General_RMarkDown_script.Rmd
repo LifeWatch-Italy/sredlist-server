@@ -1,6 +1,6 @@
 ---
 title: "`r paste0('sRedList report - ', scientific_name)`"
-subtitle: "sRedList v1.3"
+subtitle: "sRedList v1.4"
 author: "`r paste0('Performed by ', username)`"
 date: "`r format(Sys.Date(), '%d/%m/%Y')`"
 fontsize: 24pt
