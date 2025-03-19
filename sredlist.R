@@ -1102,15 +1102,30 @@ function(scientific_name, username, CALCdensity, CALCperc_mature, CALCperc_suita
 #* @param scientific_name:string Scientific Name
 #* @serializer json
 #* @tag sRedList
-function(scientific_name) {
+function(scientific_name, username) {
+  
   #Filter param
   scientific_name <- sRL_decode(scientific_name)
-
-  # If value in GL_file we take it, otherwise default=1
-  GL_species = ifelse(scientific_name %in% GL_file$internal_taxon_name, GL_file$GL_estimate[GL_file$internal_taxon_name==scientific_name][1], 1)
+  Storage_SP <- sRL_StoreRead(sRL_decode(scientific_name), username, MANDAT=1)
+  if("SpeciesAssessment" %in% names(Storage_SP)){GL_stored <- Storage_SP$SpeciesAssessment$supplementary_info$generational_length ; if(is.na(GL_stored)){rm(GL_stored)}}
+  
+  # If value in API or GL_file we take it, otherwise default=1
+  GL_species <- ifelse(
+    exists("GL_stored"), 
+    GL_stored,
+    ifelse(scientific_name %in% GL_file$internal_taxon_name, 
+           GL_file$GL_estimate[GL_file$internal_taxon_name==scientific_name][1], 
+           1)
+  )
   
   # Get GL source
-  SRC <- ifelse(scientific_name %in% GL_file$internal_taxon_name, paste0("A generation length was found in ", GL_file$Source[GL_file$internal_taxon_name==scientific_name][1]), "default")
+  SRC <- ifelse(
+    exists("GL_stored"),
+    "A generation length was found in the last published assessment",
+    ifelse(scientific_name %in% GL_file$internal_taxon_name, 
+           paste0("A generation length was found in ", GL_file$Source[GL_file$internal_taxon_name==scientific_name][1]), 
+           "default")
+  )
   
   
   return(list(
