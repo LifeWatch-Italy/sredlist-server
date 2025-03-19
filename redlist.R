@@ -1,3 +1,4 @@
+### Search species in search bar -----
 #* Find Species
 #* @get species/search
 #* @serializer json
@@ -11,64 +12,59 @@ function(scientific_name) {
   return(speciesRL[indices, ])
 }
 
+### Extract species info from RL -----
 #* Species Object
 #* @get species/<scientific_name>
 #* @param scientific_name:str Scientific Name
 #* @serializer json
 #* @tag RedList
-function(scientific_name) {
-  
+function(scientific_name, username) {
+
 Prom<-future({
   
   # Call the RL API to get information. If it does not work, use the default
   tryCatch({
-    species <- rl_search(scientific_name, key = config$red_list_token)#$result
     scientific_name <- sRL_decode(scientific_name)
-    # Add DDapp information
-    if(scientific_name %in% speciesDDapp$scientific_name & species$result$category[1]=="DD"){
-      species$result$DD_prioritiser <- paste0("This species is available in the DD prioritiser tool, it estimates a reassessment priority of ", round(100*speciesDDapp$Prio_rank[speciesDDapp$scientific_name==scientific_name]), "%.")
-    }
+    species <- sRL_GetRLAssessment(scientific_name, key = config$red_list_token)
     
+    if(length(species)>0){
+      # Save Storage_SP
+      Storage_SP<-list(SpeciesAssessment=species, Creation=Sys.time(), Output=sRL_InitLog(scientific_name, username, DisSource = "Red List"))
+      sRL_StoreSave(scientific_name, username, Storage_SP)
+      
+      # Transform to list to export to client
+      speciesLIST <- data.frame(scientific_name=scientific_name,
+                                taxonid=ifelse("sis_id" %in% names(species$taxon), species$taxon$sis_id, ""),
+                                kingdom=ifelse("kingdom_name" %in% names(species$taxon), species$taxon$kingdom_name, ""),
+                                class=ifelse("class_name" %in% names(species$taxon), species$taxon$class_name, ""),
+                                order=ifelse("order_name" %in% names(species$taxon), species$taxon$order_name, ""),
+                                family=ifelse("family_name" %in% names(species$taxon), species$taxon$family_name, ""),
+                                main_common_name=ifelse("name" %in% names(species$taxon_common_names), species$taxon_common_names$name[species$taxon_common_names$main==T], ""),
+                                assessment_date=substr(species$assessment_date, 1, 10),
+                                category=ifelse("code" %in% names(species$red_list_category), species$red_list_category$code, ""),
+                                assessor=ifelse("assessor" %in% species$credits$credit_type_name, species$credits$value[species$credits$credit_type_name=="assessor"], ""),
+                                evaluator=ifelse("evaluator" %in% species$credits$credit_type_name, species$credits$value[species$credits$credit_type_name=="evaluator"], ""),
+                                population_trend=ifelse("description" %in% names(species$population), species$population_trend$description, ""),
+                                url=species$url$value
+      )
+      
+      # Add DDapp information
+      if(scientific_name %in% speciesDDapp$scientific_name & species$red_list_category$code=="DD"){
+        speciesLIST$DD_prioritiser <- paste0("This species is available in the DD prioritiser tool, it estimates a reassessment priority of ", round(100*speciesDDapp$Prio_rank[speciesDDapp$scientific_name==scientific_name]), "%.")
+      }
+      
+    } else {speciesLIST <- data.frame(scientific_name=scientific_name, assessment_date="The Red List API is not working, sorry!", category="We cannot provide the usual information on this page, but you can click Next")}
+
   }, error=function(e){cat("TryCatch Red List API for detail does not work")})
 
-  if(exists("species")==F){
-    species<-list(result=speciesRL[1,] %>% replace(., is.na(.)==F, NA))
-    species$result$scientific_name<-scientific_name
-    species$result$assessment_date<-"The Red List API is not working, sorry!"
-    species$result$category<-"We cannot provide the usual information on this page, but you can click Next"
-  }
-  
-  return(species)
+  return(list(result=speciesLIST))
   
 }, gc=T, seed=T)
 
 return(Prom)
 }
 
-
-#* Citation Link (link to assessment)
-#* @get species/<scientific_name>/citation
-#* @serializer unboxedJSON
-#* @param scientific_name:str Scientific Name
-#* @tag RedList
-function(scientific_name) {
-
-PromCit<-future({
-  
-  tryCatch({
-    # Get link to current assessment (this link could go where I wrote "link to assessment" in the PNG file) # nolint
-    cite <- unlist(strsplit(as.character(rl_sp_citation(name = scientific_name, key=config$red_list_token)$result), " ")) # nolint
-  }, error=function(e){cat("TryCatch Red List API for link does not work")})
-  
-  if(exists("cite")==F){cite<-"https://www.iucnredlist.org/"}
-  
-  return(list(link = cite[substr(cite, 1, 4) == "http"]))
-  
-}, gc=T, seed=T)
-
-return(PromCit)
-}
-
+### Plot assessment history -----
 #* Plot the historic plot
 #* @get species/<scientific_name>/historic
 #* @param scientific_name:str Scientific Name
@@ -78,7 +74,7 @@ function(scientific_name) {
   Prom<-future({
     
     tryCatch({
-      HistoPlot<-sRL_PlotHistory(sciname_fun=scientific_name)
+      HistoPlot<-sRL_PlotHistory(sciname_fun=scientific_name, key = config$red_list_token)
     }, error=function(e){cat("TryCatch Red List API for historic plot does not work")})
     
     if(exists("HistoPlot")==F){HistoPlot<-ggplot()+labs(title="The Red List API is not working, sorry!", subtitle="We cannot provide the usual information on this page, but you can click Next")}
@@ -90,6 +86,7 @@ function(scientific_name) {
 }
 
 
+### Plot distribution page 0 -----
 #* Plot the distributions plot from RedList API
 #* @get species/<scientific_name>/distribution
 #* @param scientific_name:string Scientific Name
@@ -121,8 +118,6 @@ function(scientific_name, username, Dist_path = "") {
   
       # Format the countries shapefile and save it in the global memory (to avoid recalculating at every step)
       CountrySP<-sRL_PrepareCountries(1.2*extent(distSP))
-      Storage_SP<-list(CountrySP_saved=CountrySP, Creation=Sys.time(), Output=sRL_InitLog(scientific_name, username, DisSource = "Red List"))
-      sRL_StoreSave(scientific_name, username, Storage_SP)
 
       # Plot
       Plot_Dist<-ggplot() +
@@ -130,6 +125,12 @@ function(scientific_name, username, Dist_path = "") {
                   geom_sf(data = distSP, fill = distSP$cols, col=NA) +
                   theme_void() +
                   ggtitle("")
+      
+      # Save
+      Storage_SP<-sRL_StoreRead(scientific_name, username, MANDAT=1)
+      if(exists("Storage_SP")==F){Sys.sleep(3) ; Storage_SP<-sRL_StoreRead(scientific_name, username, MANDAT=1)}
+      Storage_SP$CountrySP_saved=CountrySP
+      sRL_StoreSave(scientific_name, username, Storage_SP)
       }
   
     Plot_Dist
@@ -141,6 +142,7 @@ function(scientific_name, username, Dist_path = "") {
   }
 
 
+### Extract habitats preferences -----
 #* Species habitat preferences
 #* @get species/<scientific_name>/habitat-preferences
 #* @param scientific_name:string Scientific Name
@@ -157,21 +159,22 @@ function(scientific_name, username) {
     Prom<-future({
       sRL_loginfo("START - Habitat extract", scientific_name)
       
-      # Extract habitats
-      tryCatch({hab_pref <- rl_habitats(scientific_name, key = config$red_list_token)}, error=function(e){cat("TryCatch RL API habitat")})
+      # Load habitats from Storage_SP
+      Storage_SP<-sRL_StoreRead(scientific_name, username, MANDAT=1)
       
-      if(exists("hab_pref")==FALSE){no_hab_API()}
+      tryCatch({hab_pref <- as.data.frame(Storage_SP$SpeciesAssessment$habitats)}, error=function(e){cat("TryCatch RL API habitat")})
+
+      if(exists("hab_pref")){
+        if(nrow(hab_pref)>0){
+          hab_pref <- hab_pref %>% distinct(., code, .keep_all=T) # Remove double (when habitats are used in several seasons)
+          hab_pref$code <- gsub("_", ".", hab_pref$code)
+          # Save in Storage SP
+          Storage_SP<-sRL_OutLog(Storage_SP, c("AOH_HabitatORIGINAL", "AOH_HabitatMarginalORIGINAL"), c(hab_pref$code[hab_pref$suitability=="Suitable"] %>% paste(., collapse=","), hab_pref$code[hab_pref$suitability!="Suitable"] %>% paste(., collapse=",")))
+          sRL_StoreSave(scientific_name, username, Storage_SP)
+        } else {hab_pref<-data.frame(code=NA, habitat=NA, suitability=NA, majorimportance=NA)[0,]}
+      } else {no_hab_API()}
       
-      if(is.null(nrow(hab_pref$result))==F){
-        hab_pref$result <- hab_pref$result %>% distinct(., code, .keep_all=T) # Remove double (when habitats are used in several seasons)
-        
-        # Save in Storage SP
-        Storage_SP<-sRL_StoreRead(scientific_name, username, MANDAT=1)
-        Storage_SP<-sRL_OutLog(Storage_SP, c("AOH_HabitatORIGINAL", "AOH_HabitatMarginalORIGINAL"), c(hab_pref$result$code[hab_pref$result$suitability=="Suitable"] %>% paste(., collapse=","), hab_pref$result$code[hab_pref$result$suitability!="Suitable"] %>% paste(., collapse=",")))
-        sRL_StoreSave(scientific_name, username, Storage_SP)
-      }
       sRL_loginfo("END - Habitat extract", scientific_name)
-      
       
       return(hab_pref)
       
@@ -183,7 +186,7 @@ function(scientific_name, username) {
   } else {
     
       sRL_loginfo("START - Habitat extract (not in RL)", scientific_name)
-      hab_pref<-list(name=c(scientific_name), result=list())
+      hab_pref<-data.frame(code=NA, habitat=NA, suitability=NA, majorimportance=NA)[0,]
       sRL_loginfo("END - Habitat extract (not in RL)", scientific_name)
       return(hab_pref)
   }
@@ -192,7 +195,7 @@ function(scientific_name, username) {
 }
 
 
-
+### Extract elevation preferences -----
 #* Species altitude preferences
 #* @get species/<scientific_name>/altitude-preferences
 #* @param scientific_name:string Scientific Name
@@ -210,57 +213,57 @@ Prom<-future({
 
   #Extract alt_pref
   if(scientific_name %in% speciesRL$scientific_name){
-    tryCatch({alt_pref <- rl_search(scientific_name, key = config$red_list_token)}, error=function(e){cat("TryCatch RL API altitude")})
+    tryCatch({alt_pref <- as.data.frame(Storage_SP$SpeciesAssessment$supplementary_info) %>% subset(., select=c("upper_elevation_limit", "lower_elevation_limit")) ; names(alt_pref) <- revalue(names(alt_pref), c("upper_elevation_limit"="elevation_upper", "lower_elevation_limit"="elevation_lower"))}, error=function(e){cat("TryCatch RL API altitude")})
     if(exists("alt_pref")==FALSE){no_hab_API()}
-    tryCatch({Storage_SP<-sRL_OutLog(Storage_SP, "Original_altpref", paste(alt_pref$result$elevation_lower[1], alt_pref$result$elevation_upper[1], "fromRL", sep=","))})
+    tryCatch({Storage_SP<-sRL_OutLog(Storage_SP, "Original_altpref", paste(alt_pref$elevation_lower[1], alt_pref$elevation_upper[1], "fromRL", sep=","))})
   } else {
-    alt_pref<-list(name=scientific_name, result=sRL_PrepareAltitudeFile(scientific_name, altitudes_pref=c(NA,NA)))
+    alt_pref<-sRL_PrepareAltitudeFile(scientific_name, altitudes_pref=c(NA,NA))
   }
   
   # Elevation source from Red List or calculated
-  alt_pref$result$src_lower <- ifelse(is.na(alt_pref$result$elevation_lower), "The proposed lower elevation preference was calculated as the lowest elevation within the species range", "The proposed lower elevation preference was retrieved from the last assessment")
-  alt_pref$result$src_upper <- ifelse(is.na(alt_pref$result$elevation_upper), "The proposed upper elevation preference was calculated as the highest elevation within the species range", "The proposed upper elevation preference was retrieved from the last assessment")
+  alt_pref$src_lower <- ifelse(is.na(alt_pref$elevation_lower), "The proposed lower elevation preference was calculated as the lowest elevation within the species range", "The proposed lower elevation preference was retrieved from the last assessment")
+  alt_pref$src_upper <- ifelse(is.na(alt_pref$elevation_upper), "The proposed upper elevation preference was calculated as the highest elevation within the species range", "The proposed upper elevation preference was retrieved from the last assessment")
   
   # If no altitude preference, take from raster
-  if(is.na(alt_pref$result$elevation_lower+alt_pref$result$elevation_upper)){
+  if(is.na(alt_pref$elevation_lower+alt_pref$elevation_upper)){
     
-    CALCU<-ifelse((is.na(alt_pref$result$elevation_lower) & is.na(alt_pref$result$elevation_upper)), "Calculated", "Half_Calculated")
+    CALCU<-ifelse((is.na(alt_pref$elevation_lower) & is.na(alt_pref$elevation_upper)), "Calculated", "Half_Calculated")
     ### Small ranges
     Range_size<-as.numeric(sum(st_area(Storage_SP$distSP_selected)))/(10^6)
     
     if(Range_size < 10000){
       sRL_loginfo("Run altitude extract (Small range)", scientific_name)
       EXTR<-round(exactextractr::exact_extract(sRL_ChargeAltRaster(), Storage_SP$distSP_selected, c("min", "max")))
-      if(is.na(alt_pref$result$elevation_lower)==T){alt_pref$result$elevation_lower<-min(EXTR$min, na.rm=T)}
-      if(is.na(alt_pref$result$elevation_upper)==T){alt_pref$result$elevation_upper<-max(EXTR$max, na.rm=T)}
+      if(is.na(alt_pref$elevation_lower)==T){alt_pref$elevation_lower<-min(EXTR$min, na.rm=T)}
+      if(is.na(alt_pref$elevation_upper)==T){alt_pref$elevation_upper<-max(EXTR$max, na.rm=T)}
     }
     
     ### Large range
     if(Range_size >= 10000){
       sRL_loginfo("Run altitude extract (Large range)", scientific_name)
 
-      if(is.na(alt_pref$result$elevation_lower)==T){
+      if(is.na(alt_pref$elevation_lower)==T){
         Alt1010_min<-raster(paste0(config$cciStack2_path, "/ElevationAgg30_MINIMUM.tif"))
         EXTR_min<-exactextractr::exact_extract(Alt1010_min, Storage_SP$distSP_saved, "min")
-        alt_pref$result$elevation_lower<-trunc(min(EXTR_min, na.rm=T))
+        alt_pref$elevation_lower<-trunc(min(EXTR_min, na.rm=T))
         }
-      if(is.na(alt_pref$result$elevation_upper)==T){
+      if(is.na(alt_pref$elevation_upper)==T){
         Alt1010_max<-raster(paste0(config$cciStack2_path, "/ElevationAgg30_MAXIMUM.tif"))
         EXTR_max<-exactextractr::exact_extract(Alt1010_max, Storage_SP$distSP_saved, "max")
-        alt_pref$result$elevation_upper<-ceiling(max(EXTR_max, na.rm=T))
+        alt_pref$elevation_upper<-ceiling(max(EXTR_max, na.rm=T))
         }
     }
-    tryCatch({Storage_SP<-sRL_OutLog(Storage_SP, "Original_altpref", paste(alt_pref$result$elevation_lower[1], alt_pref$result$elevation_upper[1], CALCU, sep=","))})
+    tryCatch({Storage_SP<-sRL_OutLog(Storage_SP, "Original_altpref", paste(alt_pref$elevation_lower[1], alt_pref$elevation_upper[1], CALCU, sep=","))})
   }
 
   # If something remains NA -> 0, 9000
-  if(is.na(alt_pref$result$elevation_lower)==T){alt_pref$result$elevation_lower<-0 ; alt_pref$result$src_lower<-"default"}
-  if(is.na(alt_pref$result$elevation_upper)==T){alt_pref$result$elevation_upper<-9000 ; alt_pref$result$src_upper<-"default"}
+  if(is.na(alt_pref$elevation_lower)==T){alt_pref$elevation_lower<-0 ; alt_pref$src_lower<-"default"}
+  if(is.na(alt_pref$elevation_upper)==T){alt_pref$elevation_upper<-9000 ; alt_pref$src_upper<-"default"}
   
   sRL_loginfo("END - Altitude extract", scientific_name)
   sRL_StoreSave(scientific_name, username, Storage_SP)
-  print(alt_pref)
-  return(alt_pref)
+  
+  return(as.list(alt_pref))
   
 }, gc=T, seed=T)
 

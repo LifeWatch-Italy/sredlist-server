@@ -83,22 +83,53 @@ sRL_CalcIdno <- function(scientific_name){
 }
 
 
+### Function to download assessment info from RL with iucnredlist R package
+sRL_GetRLAssessment <- function(scientific_name, key){
+  
+  api_v4 <- init_api(key) # Token API v4
+  
+  tryCatch({
+    # Prepare species name
+    SP_name_vec <- sRL_decode(scientific_name) %>% strsplit(., " ") %>% unlist(.)
+    # Download list of assessments
+    assessment_list <- assessments_by_name(api_v4, genus=SP_name_vec[1], species=SP_name_vec[2]) %>% subset(., .$scopes_description_en=="Global")
+    # Get last assessment
+    last_assessment <- assessment_data(api_v4, assessment_id=assessment_list$assessment_id[assessment_list$latest==T][1]) %>% parse_assessment_data(.)
+  }, error=function(e){cat("Fail getting Red List API data")})
+  
+  if(exists("last_assessment")==F){last_assessment <- list()}
+  
+  return(last_assessment)
+  
+}
+
+
 ### Function to plot the history of assessments ###
-sRL_PlotHistory <- function(sciname_fun){
-  historic <- rl_history(sciname_fun, key = config$red_list_token)$result
+sRL_PlotHistory <- function(sciname_fun, key){
+  
+  api_v4 <- init_api(key) # Token API v4
+  
+  # Prepare species name
+  SP_name_vec <- sRL_decode(sciname_fun) %>% strsplit(., " ") %>% unlist(.)
+  # Get assessment list
+  assessment_list <- assessments_by_name(api_v4, genus=SP_name_vec[1], species=SP_name_vec[2]) %>% subset(., .$scopes_description_en=="Global")
+  # Get assessments
+  all_assessments <- assessment_data_many(api_v4, assessment_ids=assessment_list$assessment_id, wait_time=0.1)
+  historic <- lapply(all_assessments, function(x){
+    cbind(assessment_id=x$assessment_id$value, assessment_date=x$assessment_date$value, assessment_year=format(as.Date(x$assessment_date$value), "%Y"), year_published=x$year_published$value, category=x$red_list_category$code)
+  }) %>% do.call(rbind, .) %>% as.data.frame(.)
   
   if(nrow(historic) == 0){ # nolint
     not_found("Scientific name not found.")
   } else{
-    historic$Cat<-revalue(historic$category, c("Least Concern"="LC", "Near Threatened"="NT", "Vulnerable"="VU", "Endangered"="EN", "Critically Endangered"="CR", "Extinct in the Wild"="EW", "Extinct"="EX", "Data Deficient"="DD")) # nolint
-    historic$Cat[historic$Cat %not in% c("LC", "NT", "DD", "VU", "EN", "CR", "EW", "EX")]<-"Former" # nolint
-    historic$Cat <- factor(historic$Cat, c("Former", "DD", "LC", "NT", "VU", "EN", "CR", "EW", "EX")) # nolint
-    historic$year <- as.numeric(historic$year)
+    historic$category[historic$category %not in% c("LC", "NT", "DD", "VU", "EN", "CR", "EW", "EX")]<-"Former" # nolint
+    historic$category <- factor(historic$category, c("Former", "DD", "LC", "NT", "VU", "EN", "CR", "EW", "EX")) # nolint
+    historic$year <- as.numeric(historic$assessment_year)
     
     Gplot <- ggplot()+
-      geom_point(data=historic, aes(x = year, col = Cat, y = Cat), size = 6, show.legend = F) + # nolint
+      geom_point(data=historic, aes(x = year, col = category, y = category), size = 6, show.legend = F) + # nolint
       scale_colour_manual(values=rev(c("#000000ff", "#542344ff", "#d81e05ff", "#fc7f3fff", "#f9e814ff", "#cce226ff", "#60c659ff", "#d1d1c6ff", "#bcbddc")), name="", drop=FALSE) + # nolint
-      scale_y_discrete(rev(levels(historic$Cat)), drop=FALSE, name="Extinction risk") + # nolint
+      scale_y_discrete(rev(levels(historic$category)), drop=FALSE, name="Extinction risk") + # nolint
       scale_x_continuous(limits=c(NA, as.numeric(format(Sys.Date(), "%Y"))))+
       theme_minimal() %+replace% theme(axis.text=element_text(size=15), axis.title=element_text(size=20)) +
       xlab("") +

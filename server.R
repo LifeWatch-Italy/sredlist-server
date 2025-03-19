@@ -22,7 +22,7 @@ library(logger)
 library(glue)
 library(urltools)
 library(R.utils)
-library(Rook) ; library(ggplot2) ; library(gridExtra) ; library(raster) ; library(plyr) ;library(dplyr) ; library(tidyr) ; library(sf) ; library(ncdf4) ; library(ggalluvial) ; library(rredlist) ;  library(tools) # nolint
+library(Rook) ; library(ggplot2) ; library(gridExtra) ; library(raster) ; library(plyr) ;library(dplyr) ; library(tidyr) ; library(sf) ; library(ncdf4) ; library(ggalluvial) ; library(iucnredlist) ;  library(tools) # nolint
 library(TAF)
 
 ### GBIF mapping

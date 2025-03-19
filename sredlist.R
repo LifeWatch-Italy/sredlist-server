@@ -106,7 +106,11 @@ function(scientific_name, username) {
      sRL_loginfo("START - Prepare distribution 1a", scientific_name)
      scientific_name <- sRL_decode(scientific_name)
      Storage_SP=sRL_StoreRead(scientific_name,  username, MANDAT=0) ; print(names(Storage_SP))
-     Storage_SP<-subset(Storage_SP, names(Storage_SP) %in% c("CountrySP_saved", "Creation", "Output")) # Remove other elements from Storage_SP which could come from a previous process on the platform
+     Storage_SP<-subset(Storage_SP, names(Storage_SP) %in% c("CountrySP_saved", "Creation", "Output", "SpeciesAssessment")) # Remove other elements from Storage_SP which could come from a previous process on the platform
+     if(! "SpeciesAssessment" %in% names(Storage_SP)){
+       speciesAss <- sRL_GetRLAssessment(scientific_name, key = config$red_list_token)
+       if(length(speciesAss)>0){Storage_SP$SpeciesAssessment <- speciesAss}
+     }
      if(Crop_Country=="Keep all countries"){Crop_Country<-""}
      print(Crop_Country)
      Dist_path <- ifelse(Dist_path == "", paste0(R.utils::capitalize(trim(gsub(" ", "_", scientific_name))), '_RL'), Dist_path ) # nolint
@@ -427,7 +431,11 @@ Prom<-future({
   output_to_save<-sRL_InitLog(scientific_name, username, DisSource = "Created") ; output_to_save$Value[output_to_save$Parameter=="Gbif_Source"]<-c(ifelse(Gbif_Source[1]==1, "GBIF", ""), ifelse(Gbif_Source[2]==1, "OBIS", ""), ifelse(Gbif_Source[3]==1, "Red_List", ""), ifelse(is.null(nrow(Uploaded_Records)), "", "Uploaded")) %>% .[.!=""] %>% paste(., collapse=" + ")
   output_to_save$Count[output_to_save$Parameter=="Gbif_Source"]<-ifelse(file.exists(paste0("resources/AOH_stored/", gsub(" ", "_", sRL_decode(scientific_name)), "_", sRL_userdecode(username), "/Storage_SP.rds")), (sRL_StoreRead(scientific_name,  username, 1)$Output$Count[2]+1), 1)
   output_to_save$Value[output_to_save$Parameter=="Gbif_Synonyms"]<-ifelse(Gbif_Synonym=="", NA, paste(Gbif_Synonym, collapse="+"))
+  
+  # Create and save Storage_SP + SpeciesAssessment
   Storage_SP<-list(flags_raw_saved=flags_raw, Creation=Sys.time(), Output=output_to_save)
+  speciesAss <- sRL_GetRLAssessment(scientific_name, key = config$red_list_token)
+  if(length(speciesAss)>0){Storage_SP$SpeciesAssessment <- speciesAss}
   Storage_SP<-sRL_OutLog(Storage_SP, "Crop_Country", Gbif_Country)
   sRL_StoreSave(scientific_name, username,  Storage_SP)
   sRL_loginfo("END - Save gbif output files", scientific_name)
@@ -2329,9 +2337,9 @@ function(scientific_name, username){
   kingdom<-phylum<-classname<-ordername<-family<-taxonomicAuthority<-NA
   
   ### Extract existing taxonomy
-  if(scientific_name %in% speciesRL$scientific_name){
+  if("SpeciesAssessment" %in% names(Storage_SP)){
     # If species already in the Red List, we use its information
-    Official<-speciesRL[speciesRL$scientific_name == scientific_name,][1,]
+    Official <- as.data.frame(Storage_SP$SpeciesAssessment$taxon)
     sRL_loginfo("Using RL from same species", scientific_name)
     } else {
     # Otherwise we look if there is another species of the same genus (except for authority)
