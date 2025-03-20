@@ -294,8 +294,8 @@ sRL_CalcWater<-function(scientific_name, username, distSP){
   return(list(
     RS_prodname=RS_name,
     RS_plot=RS_plot,
-    RS_current=paste0(round(RS_current), " (mean)"),
-    RS_trendsABS=round(RS_trendsABS),
+    RS_current=paste0(round(RS_current,2), " (mean)"),
+    RS_trendsABS=round(RS_trendsABS,2),
     RS_trendsREL=paste0(100*round(RS_trendsREL, 3), " % change"),
     RS_timewindow=RS_timewindow
   ))

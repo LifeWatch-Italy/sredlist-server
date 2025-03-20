@@ -37,9 +37,10 @@ NA,NA,NA,Estimated_AOO_raw,0,This is the original AOO value calculated by the pl
 NA,NA,NA,Estimated_PopSize_raw,0,This is the original Population Size value calculated by the platform (it might differ from the value in allfields.csv if you manually edited this value),NA
 NA,NA,NA,Estimated_PopTrends_raw,0,This is the original Population Trends value calculated by the platform (it might differ from the value in allfields.csv if you manually edited this value),NA
 NA,NA,NA,Estimated_PopTrendsDir_raw,0,This is the original direction of Population Trends calculated by the platform (it might differ from the value in allfields.csv if you manually edited this value),NA
-NA,NA,NA,RS_result_Forest_cover,0,Result of trends in Remote-sensing products (step 6b) for Forest Cover. It includes the current coverage / the absolute trends / the relative trends / the time-window.,NA
-NA,NA,NA,RS_result_Human_modification,0,Result of trends in Remote-sensing products (step 6b) for Human modification index. It includes the current value / the absolute trends / the relative trends / the time-window.,NA
-NA,NA,NA,RS_result_Human_density,0,Result of trends in Remote-sensing products (step 6b) for Human population density. It includes the current value / the absolute trends / the relative trends / the time-window.,NA
+NA,NA,NA,RS_result_Forest_cover,0,Result of trends in Remote-sensing products (step 7) for Forest Cover. It includes the current coverage / the absolute trends / the relative trends / the time-window.,NA
+NA,NA,NA,RS_result_Human_modification,0,Result of trends in Remote-sensing products (step 7) for Human modification index. It includes the current value / the absolute trends / the relative trends / the time-window.,NA
+NA,NA,NA,RS_result_Human_density,0,Result of trends in Remote-sensing products (step 7) for Human population density. It includes the current value / the absolute trends / the relative trends / the time-window.,NA
+NA,NA,NA,RS_result_Water_availability,0,Result of trends in Remote-sensing products (step 7) for Water availability. It includes the current value / the absolute trends / the relative trends / the time-window.,NA
 NA,NA,NA,Original_density,0,Original density estimate suggested by the platform,NA
 NA,NA,NA,Original_GL,0,Original generation length estimate suggested by the platform,NA
 NA,NA,NA,Original_altpref,0,Only used to track usage,NA

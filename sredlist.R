@@ -2300,7 +2300,7 @@ function(scientific_name, username, RSproduct) { # nolint
     ### Color palette
     LIM<-max(abs(summary(RSPROJ_trends)[1]), abs(summary(RSPROJ_trends)[5]))
     
-    if(RSproduct=="Forest_cover"){
+    if(RSproduct %in% c("Forest_cover", "Water_availability")){
       ColPal1<-colorNumeric("viridis", c(0,100), na.color = NA)
       ColPal2<-colorNumeric(c("#8c510a", "azure2", "#018571"), domain=c(-LIM, 0, LIM), na.color = NA)
     } else {
@@ -2747,7 +2747,7 @@ Prom<-future({
     tryCatch({
       
       aoh_dir <- paste0("resources/AOH_stored/", sub(" ", "_", scientific_name), "_", sRL_userdecode(username))
-      FILES <- list.files(aoh_dir, recursive=T) %>% subset(., grepl(".tif", .)) %>% subset(., !grepl("alt_crop", .) & ! grepl("cci2_crop", .))
+      FILES <- list.files(aoh_dir, recursive=T) %>% subset(., grepl(".tif", .)) %>% subset(., !grepl("alt_crop", .) & ! grepl("cci2_crop", .)  & ! grepl("_Change", .) & ! grepl("_Current", .))
       Qualif <- ifelse(TRUE %in% grepl("optimistic", FILES), "_pessimistic", "")
       Year1 <- ifelse("Year1_saved" %in% names(Storage_SP), Storage_SP$Year1_saved, NA)
       

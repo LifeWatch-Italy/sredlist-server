@@ -54,3 +54,19 @@ if("RS_leaflet_Human_density" %in% names(Storage_SP)){Storage_SP$RS_leaflet_Huma
 ```
 
 
+
+`r if(grepl("Water_availability", outlog$Value[outlog$Parameter=="Usage_RS"])){"You mapped and calculated trends in inland water availability using the Global Surface Water dataset."}`
+
+```{r trends_water, out.width='100%'}
+if(grepl("Water_availability", outlog$Value[outlog$Parameter=="Usage_RS"])){
+  png::readPNG(paste0(outDir, "/Plots/RS_plot_water.png")) %>% grid::rasterGrob() %>% gridExtra::grid.arrange()
+  DF_water<-data.frame(Calc=c("Current value", "Absolute trends", "Relative trends", "Time-window"), Value=unlist(strsplit(outlog$Value[outlog$Parameter=="RS_result_Water_availability"], " & ")))
+  knitr::kable(DF_water, "simple", col.names = c("", "Value"))
+}
+```
+
+```{r leaflet_water, fig.align = "center", out.width = '100%'}
+if("RS_leaflet_Water_availability" %in% names(Storage_SP)){Storage_SP$RS_leaflet_Water_availability}
+```
+
+
