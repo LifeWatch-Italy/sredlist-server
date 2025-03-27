@@ -1125,8 +1125,10 @@ function(scientific_name, username) {
     ifelse(scientific_name %in% GL_file$internal_taxon_name, 
            paste0("A generation length was found in ", GL_file$Source[GL_file$internal_taxon_name==scientific_name][1]), 
            "default")
-  )
+  ) %>% paste0(., "; value: ", as.character(GL_species))
   
+  # If range of GL, transform to mean value
+  if(grepl("-", GL_species)){GL_species <- GL_species %>% strsplit(., "-") %>% unlist(.) %>% gsub(" ", "", .) %>% as.numeric(.) %>% mean(., na.rm=T)}
   
   return(list(
     GL_species = as.character(GL_species),
