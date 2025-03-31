@@ -89,7 +89,7 @@ convert_empty <- function(string) {
 ### Charge the files that will remain unaltered
 
 # Charge species information from RL
-speciesRL <- readRDS("Species/species-all-page.rds") # nolint
+speciesRL <- readRDS("Species/species-all-page.rds") ; speciesRL$taxonid <- speciesRL$sis_taxon_id
 speciesDDapp <- readRDS("resources/resources_Shiny_DD/DD_prepared_for_ShinyREALMS.rds")
 
 # Load Map countries
