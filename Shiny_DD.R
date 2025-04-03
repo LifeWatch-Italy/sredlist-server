@@ -27,7 +27,7 @@ source("sRLfun_ShinyDD.R")
 source("sRLfun_FirstPage.R")
 
 ### Load files
-speciesRL<-readRDS("Species/species-all-page.rds")
+speciesRL<-readRDS("Species/species-all-page.rds") ; speciesRL$taxonid <- speciesRL$sis_taxon_id
 
 DD<-readRDS("resources/resources_Shiny_DD/DD_prepared_for_ShinyREALMS.rds")
 DD$PrioDS_raw<-DD$PrioDS
