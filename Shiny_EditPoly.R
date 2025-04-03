@@ -324,7 +324,7 @@ server <- function(input, output, session) {
     
     # Edit Suggest_hydro to determine if we display the 'Edit as hydrobasins' button
     speciesRL_sub <- subset(speciesRL, scientific_name == input$sci_name)
-    if(AllowEdit()!="hydro" & nrow(speciesRL_sub)>0 & speciesRL_sub$freshwater_system[1]==T & Stor_tempo$Output$Value[Stor_tempo$Output$Parameter=="Distribution_Source"] != "Created"){Suggest_hydro("yes")}
+    if(AllowEdit()!="hydro" & nrow(speciesRL_sub)>0 & TRUE %in% grepl("Freshwater", Stor_tempo$SpeciesAssessment$systems$description) & Stor_tempo$Output$Value[Stor_tempo$Output$Parameter=="Distribution_Source"] != "Created"){Suggest_hydro("yes")}
     
     ### Reload edits and storages (needed to make sure we start from zero; bugs otherwise)
     edits <- sRLPolyg_CreateLeaflet(AllowEdit())
