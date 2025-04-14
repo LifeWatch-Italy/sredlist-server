@@ -1,0 +1,33 @@
+
+After the summary step, these are the parameters that are included in the final output allfields.csv:
+
+```{r table_output}
+all_DF<-data.frame(Variable=as.vector(names(allfields)), Value=as.vector(unlist(allfields[1,])))
+knitr::kable(all_DF, "simple")
+```
+
+
+<br><br>
+These parameters lead to the following Red List criteria application (note though that this is just for visualisation and will not be pushed to SIS):
+
+<br>
+<center>
+![](`r paste0(outDir, '/Plots/Plot_assign.png')`){width=1000px}
+</center>
+
+
+```{r output_list, include=F}
+TEXT <- revalue(outputs_selected, c(
+  "sRL"="sRedList files (report and outlog csv file)",
+  "SIS"="general SIS files (allfields.csv, assessments.csv, references.csv, taxonomy.csv)",
+  "COO"="list of countries of occurrence for SIS (countries.csv)",
+  "Hab"="list of habitat preferences for SIS (habitats.csv)",
+  "Shp"="polygon range map shapefile (formatted as required for published assessments)",
+  "Pts"="occurrence records (formatted as required for published assessments)",
+  "Hydro"="hydrobasin range map (formatted as required for published assessments)",
+  "AOH"="AOH raster maps"
+)) %>% paste(., collapse=", ") %>% paste0(., ".")
+
+```
+
+You decided to include the following files in the final ZIP folder: `r TEXT`

@@ -1,33 +1,72 @@
 
-After the summary step, these are the parameters that are included in the final output allfields.csv:
 
-```{r table_output}
-all_DF<-data.frame(Variable=as.vector(names(allfields)), Value=as.vector(unlist(allfields[1,])))
-knitr::kable(all_DF, "simple")
-```
-
-
-<br><br>
-These parameters lead to the following Red List criteria application (note though that this is just for visualisation and will not be pushed to SIS):
+Trends in some remote-sensing products have been calculated. You can check the sRedList documentation to know more on the products we map.
 
 <br>
-<center>
-![](`r paste0(outDir, '/Plots/Plot_assign.png')`){width=1000px}
-</center>
 
 
-```{r output_list, include=F}
-TEXT <- revalue(outputs_selected, c(
-  "sRL"="sRedList files (report and outlog csv file)",
-  "SIS"="general SIS files (allfields.csv, assessments.csv, references.csv, taxonomy.csv)",
-  "COO"="list of countries of occurrence for SIS (countries.csv)",
-  "Hab"="list of habitat preferences for SIS (habitats.csv)",
-  "Shp"="polygon range map shapefile (formatted as required for published assessments)",
-  "Pts"="occurrence records (formatted as required for published assessments)",
-  "Hydro"="hydrobasin range map (formatted as required for published assessments)",
-  "AOH"="AOH raster maps"
-)) %>% paste(., collapse=", ") %>% paste0(., ".")
+`r if(grepl("Forest_cover", outlog$Value[outlog$Parameter=="Usage_RS"])){"You mapped and calculated trends in Forest Cover using Global Forest Change rasters."}`
 
+```{r trends_forest, out.width='100%'}
+if(grepl("Forest_cover", outlog$Value[outlog$Parameter=="Usage_RS"])){
+  png::readPNG(paste0(outDir, "/Plots/RS_plot_forest.png")) %>% grid::rasterGrob() %>% gridExtra::grid.arrange()
+  DF_forest<-data.frame(Calc=c("Current value", "Absolute trends", "Relative trends", "Time-window"), Value=unlist(strsplit(outlog$Value[outlog$Parameter=="RS_result_Forest_cover"], " & ")))
+  knitr::kable(DF_forest, "simple", col.names = c("", "Value"))
+}
 ```
 
-You decided to include the following files in the final ZIP folder: `r TEXT`
+```{r leaflet_forest, fig.align = "center", out.width = '100%'}
+if("RS_leaflet_Forest_cover" %in% names(Storage_SP)){Storage_SP$RS_leaflet_Forest_cover}
+```
+
+
+<br>
+
+`r if(grepl("Human_modification", outlog$Value[outlog$Parameter=="Usage_RS"])){"You mapped and calculated trends in human modification using Theobald et al. (2020) data."}`
+
+```{r trends_modification, out.width='100%'}
+if(grepl("Human_modification", outlog$Value[outlog$Parameter=="Usage_RS"])){
+  png::readPNG(paste0(outDir, "/Plots/RS_plot_modif.png")) %>% grid::rasterGrob() %>% gridExtra::grid.arrange()
+  DF_modif<-data.frame(Calc=c("Current value", "Absolute trends", "Relative trends", "Time-window"), Value=unlist(strsplit(outlog$Value[outlog$Parameter=="RS_result_Human_modification"], " & ")))
+  knitr::kable(DF_modif, "simple", col.names = c("", "Value"))
+}
+```
+
+```{r leaflet_modif, fig.align = "center", out.width = '100%'}
+if("RS_leaflet_Human_modification" %in% names(Storage_SP)){Storage_SP$RS_leaflet_Human_modification}
+```
+
+
+<br>
+
+`r if(grepl("Human_density", outlog$Value[outlog$Parameter=="Usage_RS"])){"You mapped and calculated trends in human population density using the Global Human Settlement dataset."}`
+
+```{r trends_density, out.width='100%'}
+if(grepl("Human_density", outlog$Value[outlog$Parameter=="Usage_RS"])){
+  png::readPNG(paste0(outDir, "/Plots/RS_plot_humandensity.png")) %>% grid::rasterGrob() %>% gridExtra::grid.arrange()
+  DF_density<-data.frame(Calc=c("Current value", "Absolute trends", "Relative trends", "Time-window"), Value=unlist(strsplit(outlog$Value[outlog$Parameter=="RS_result_Human_density"], " & ")))
+  knitr::kable(DF_density, "simple", col.names = c("", "Value"))
+}
+```
+
+```{r leaflet_density, fig.align = "center", out.width = '100%'}
+if("RS_leaflet_Human_density" %in% names(Storage_SP)){Storage_SP$RS_leaflet_Human_density}
+```
+
+
+
+`r if(grepl("Water_availability", outlog$Value[outlog$Parameter=="Usage_RS"])){"You mapped and calculated trends in inland water availability using the Global Surface Water dataset."}`
+
+```{r trends_water, out.width='100%'}
+if(grepl("Water_availability", outlog$Value[outlog$Parameter=="Usage_RS"])){
+  png::readPNG(paste0(outDir, "/Plots/RS_plot_water.png")) %>% grid::rasterGrob() %>% gridExtra::grid.arrange()
+  DF_water<-data.frame(Calc=c("Current value", "Absolute trends", "Relative trends", "Time-window"), Value=unlist(strsplit(outlog$Value[outlog$Parameter=="RS_result_Water_availability"], " & ")))
+  knitr::kable(DF_water, "simple", col.names = c("", "Value"))
+}
+```
+
+```{r leaflet_water, fig.align = "center", out.width = '100%'}
+if("RS_leaflet_Water_availability" %in% names(Storage_SP)){Storage_SP$RS_leaflet_Water_availability}
+```
+
+
