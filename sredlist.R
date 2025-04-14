@@ -450,28 +450,6 @@ return(Prom)
 
 
 ## 2: Filter ----------------------------------------------------------------
-#* GBIF year
-#* @get species/<scientific_name>/gbif-year
-#* @param scientific_name:string Scientific Name
-#* @serializer json
-#* @tag sRedList
-function(scientific_name) {return(list(Gbif_Year = 1900))}
-
-#* GBIF uncertainty
-#* @get species/<scientific_name>/gbif-uncertainty
-#* @param scientific_name:string Scientific Name
-#* @serializer json
-#* @tag sRedList
-function(scientific_name) {return(list(Gbif_Uncertainty = 10))}
-
-#* GBIF Extent
-#* @get species/<scientific_name>/gbif-extent
-#* @param scientific_name:[string] Scientific Name
-#* @serializer json
-#* @tag sRedList
-function(scientific_name) {
-  Gbif_Extent = data.frame(xmin=-180, xmax=180, ymin=-90, ymax=90)
-  return(Gbif_Extent)}
 
 #* Global Biodiversity Information Facility Step 2
 #* @get species/<scientific_name>/gbif2
@@ -586,30 +564,6 @@ function(scientific_name, username) {
 
 
 ## 3: Map ----------------------------------------------------------------
-### Data APIs ------ 
-#* GBIF start
-#* @get species/<scientific_name>/gbif-start
-#* @param scientific_name:string Scientific Name
-#* @serializer json
-#* @tag sRedList
-function(scientific_name) {return(list(Gbif_Start = ""))}
-
-#* GBIF buffer
-#* @get species/<scientific_name>/gbif-buffer
-#* @param scientific_name:string Scientific Name
-#* @serializer json
-#* @tag sRedList
-function(scientific_name) {return(list(Gbif_Buffer = 0))}
-
-#* GBIF Altitude
-#* @get species/<scientific_name>/gbif-altitude
-#* @param scientific_name:[string] Scientific Name
-#* @serializer json
-#* @tag sRedList
-function(scientific_name) {
-  Gbif_Altitude = data.frame(AltMIN=0, AltMAX=4000)
-  return(Gbif_Altitude)}
-
 
 ### Map API ----
 #* Global Biodiversity Information Facility step 3
@@ -930,13 +884,9 @@ return(Prom)
 #* Estimate the Extent of Occurrence (EOO) from range
 #* @get species/<scientific_name>/analysis/eoo
 #* @param scientific_name:string Scientific Name
-#* @param presences:[int] presences (1, 2)
-#* @param seasons:[int] seasons (1, 2)
-#* @param origins:[int] origins (1, 2)
-#* @param Dist_path:string Distribution Folder default RedList
 #* @serializer unboxedJSON
 #* @tag sRedList
-function(scientific_name, username, presences = list(), seasons = list() , origins = list(), Dist_path = "") { # nolint
+function(scientific_name, username) { # nolint
 
 Prom<-future({
   sf::sf_use_s2(FALSE)
@@ -1230,11 +1180,9 @@ function(scientific_name, username) {
 #* @param habitats_pref_MARGINAL:[str] habitats_pref_MARGINAL
 #* @param altitudes_pref:[int] altitudes_pref
 #* @param density_pref:string density_pref
-#* @param isGbifDistribution:boolean isGbifDistribution
-#* @param Dist_path:string Distribution Folder default RedList
 #* @serializer unboxedJSON
 #* @tag sRedList
-function(scientific_name, username, habitats_pref= list(), habitats_pref_MARGINAL=list(), altitudes_pref= c("0","9000"), density_pref= '-1', isGbifDistribution = FALSE, Dist_path = "") { # nolint    
+function(scientific_name, username, habitats_pref= list(), habitats_pref_MARGINAL=list(), altitudes_pref= c("0","9000"), density_pref= '-1') { # nolint    
 
 # If no habitat preference or habitats not in crosswalk, return error
 if(length(habitats_pref)==0){no_habitat_pref()}
@@ -2066,19 +2014,6 @@ function(scientific_name, username) { # nolint
 
 
 # Step 6: Fragmentation ----------------------------------------------------------------
-
-#* Species dispersion preferences
-#* @get species/<scientific_name>/dispersion-preferences
-#* @param scientific_name:string Scientific Name
-#* @serializer json
-#* @tag sRedList
-function(scientific_name) {
-  
-  return(list(
-    dispersion=10
-  ));
-}
-
 
 #* Plot fragmentation
 #* @get species/<scientific_name>/analysis/fragmentation
