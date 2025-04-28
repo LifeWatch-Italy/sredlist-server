@@ -1414,6 +1414,7 @@ Prom<-future({
   grid22<-sRL_ChargeGrid22Raster()
   grid22_crop<-crop(grid22, AOH2[[1]], snap="out")
   aoh_22<-terra::resample(AOH2[[1]], grid22_crop, method="max")>0
+  writeRaster(aoh_22, paste0("resources/AOH_stored/", gsub(" ", "_", scientific_name), "_", sRL_userdecode(username), ifelse(Uncertain=="Uncertain_no", "/Upper_AOO_from_AOH.tif", "/Upper_AOO_from_pessimistic_AOH.tif")), overwrite=T)
   sRL_loginfo("END - Calculate Upper AOO", scientific_name)
 
   if(Uncertain=="Uncertain_no"){
@@ -1428,7 +1429,8 @@ Prom<-future({
 
   if(Uncertain=="Uncertain_yes"){
     aoh_22_opt<-terra::resample(AOH2_opt[[1]], grid22_crop, method="max")>0
-
+    writeRaster(aoh_22_opt, paste0("resources/AOH_stored/", gsub(" ", "_", scientific_name), "_", sRL_userdecode(username), "/Upper_AOO_from_optimistic_AOH.tif"), overwrite=T)
+    
     # Plot on a single plot if small range, on two if large range
     if(AOH_type=="Small"){
       plot2<-gplot((aoh_22[[1]]>0)+(aoh_22_opt[[1]]>0))+
@@ -1503,7 +1505,7 @@ Prom<-future({
     # Map AOO
     pts<-dat_proj %>% as_Spatial() %>% as(., 'SpatialPoints')
     AOO_pts <- terra::rasterize(pts, grid_crop, fun='count')>=1
-    writeRaster(AOO_pts, paste0("resources/AOH_stored/", gsub(" ", "_", scientific_name), "_", sRL_userdecode(username), "/AOO_known.tif"), overwrite=T)
+    writeRaster(AOO_pts, paste0("resources/AOH_stored/", gsub(" ", "_", scientific_name), "_", sRL_userdecode(username), "/Lower_AOO_from_occurrences.tif"), overwrite=T)
     
     # Calculate AOO
     aoo_pts_km2<-sum(as.vector(AOO_pts), na.rm=T)*4
@@ -1675,7 +1677,7 @@ function(scientific_name, username) { # nolint
     dat_proj<-Storage_SP$dat_proj_saved %>% st_transform(., st_crs(4326))
     COORDS<-st_coordinates(dat_proj)
     dat_proj$lon<-COORDS[,1] ; dat_proj$lat<-COORDS[,2]
-    aoo<-rast(paste0("resources/AOH_stored/", gsub(" ", "_", scientific_name), "_", sRL_userdecode(username), "/AOO_known.tif")) %>% as.polygons(.) %>% st_as_sf(.) %>% st_transform(., st_crs(4326))
+    aoo<-rast(paste0("resources/AOH_stored/", gsub(" ", "_", scientific_name), "_", sRL_userdecode(username), "/Lower_AOO_from_occurrences.tif")) %>% as.polygons(.) %>% st_as_sf(.) %>% st_transform(., st_crs(4326))
     distPROJ<-st_transform(Storage_SP$distSP_selected, st_crs(4326))
     
     ### Plot AOO
@@ -2473,7 +2475,7 @@ function(scientific_name, username){
   
   ### Choose outputs disabled (sRL should always be included, those not in select are not available) + Shp always selectable
   LISTout_disable <- c("SIS", "COO", "Pts", "Hab", "Hydro") %>% subset(., !. %in% LISTout_select) %>% c(., "sRL")
-  if(! "AOHkm2_saved" %in% names(Storage_SP)){LISTout_disable <- c(LISTout_disable, "AOH")}
+  if(! "AOHkm2_saved" %in% names(Storage_SP)){LISTout_disable <- c(LISTout_disable, "AOH", "AOO")}
   
   return(list(Outputs_preselected=LISTout_select,
               Outputs_disabled=LISTout_disable)
@@ -2680,11 +2682,11 @@ Prom<-future({
   }
   
   # AOH
+  aoh_dir <- paste0("resources/AOH_stored/", sub(" ", "_", scientific_name), "_", sRL_userdecode(username))
+  
   if("AOH" %in% outputs_selected){
     tryCatch({
-      
-      aoh_dir <- paste0("resources/AOH_stored/", sub(" ", "_", scientific_name), "_", sRL_userdecode(username))
-      FILES <- list.files(aoh_dir, recursive=T) %>% subset(., grepl(".tif", .)) %>% subset(., !grepl("alt_crop", .) & ! grepl("cci2_crop", .)  & ! grepl("_Change", .) & ! grepl("_Current", .))
+      FILES <- list.files(aoh_dir, recursive=T) %>% subset(., grepl(".tif", .)) %>% subset(., !grepl("alt_crop", .) & ! grepl("cci2_crop", .)  & ! grepl("AOO_", .)  & ! grepl("_Change", .) & ! grepl("_Current", .))
       Qualif <- ifelse(TRUE %in% grepl("optimistic", FILES), "_pessimistic", "")
       Year1 <- ifelse("Year1_saved" %in% names(Storage_SP), Storage_SP$Year1_saved, NA)
       
@@ -2697,6 +2699,14 @@ Prom<-future({
       file.copy(from=paste0(aoh_dir, "/", FILES), to=paste0(output_dir, "/", NewNames))
       
     }, error=function(e){"Bug in exporting AOH"})
+  }
+  
+  if("AOO" %in% outputs_selected){
+    tryCatch({
+      aoo_files <- list.files(aoh_dir, recursive=F) %>% subset(., grepl("AOO_", .))
+      print(aoo_files)
+      file.copy(from=paste0(aoh_dir, "/", aoo_files), to=paste0(output_dir, "/", aoo_files))
+    }, error=function(e){"Bug in exporting AOO"})
   }
   
   # Download tracking files
