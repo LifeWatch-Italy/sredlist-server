@@ -522,7 +522,8 @@ function(scientific_name, username) {
     scientific_name <- sRL_decode(scientific_name)
     
     Storage_SP=sRL_StoreRead(scientific_name,  username, MANDAT=1)
-    flags<-Storage_SP$flags %>% subset(., is.na(Reason)==T)
+    if("flags" %in% names(Storage_SP)){flags <- Storage_SP$flags} else {flags <- Storage_SP$data_comparison}
+    flags <- flags %>% subset(., is.na(Reason)==T)
     alt_raw<-sRL_ChargeAltRaster()
     
     # Extract elevation (need to transform the CRS for it)
@@ -1103,7 +1104,8 @@ function(scientific_name, username) {
     #Filter param
     scientific_name <- sRL_decode(scientific_name)
     Storage_SP=sRL_StoreRead(scientific_name,  username, MANDAT=1) ; print(names(Storage_SP))
-    dat_proj=Storage_SP$dat_proj_saved %>% st_transform(st_crs(4326))
+    if("dat_proj_saved" %in% names(Storage_SP)){dat_proj <- Storage_SP$dat_proj_saved} else {dat_proj <- Storage_SP$data_comparison %>% subset(., is.na(Reason)==T)}
+    dat_proj <- dat_proj %>% st_transform(st_crs(4326))
     
     # Prepare Jung habitat files
     Jung_list<-list.files(config$jung_map_path) %>% subset(., grepl(".tif.aux.xml", .)==F)
@@ -1474,7 +1476,7 @@ Prom<-future({
 
   ### Save parameters and results
   density_default<-ifelse(scientific_name %in% density_data$Species, base::mean(round(as.numeric(density_data$Density[density_data$Species == scientific_name]), 2), na.rm=T), NA) ; print(density_default)
-  Storage_SP<-sRL_OutLog(Storage_SP, c("AOH_HabitatPreference", "AOH_MarginalHabitatPreference", "AOH_ElevationPreference", "AOH_Density", "Original_density", "AOH_RangeType", "Estimated_AOH22"), c(paste0(habitats_pref, collapse=","), paste0(habitats_pref_MARGINAL, collapse=","), paste0(altitudes_pref, collapse=", "), ifelse(density_pref[1]=='-1', NA, density_pref[1]), density_default, AOH_type, AOO_km2))
+  Storage_SP<-sRL_OutLog(Storage_SP, c("AOH_HabitatPreference", "AOH_MarginalHabitatPreference", "AOH_ElevationPreference", "AOH_Density", "Original_density", "AOH_RangeType", "Estimated_AOH22"), c(paste0(habitats_pref, collapse=","), paste0(habitats_pref_MARGINAL, collapse=","), paste0(altitudes_pref, collapse=". "), ifelse(density_pref[1]=='-1', NA, density_pref[1]), density_default, AOH_type, AOO_km2))
   
   terraOptions(tempdir=tempdir())
   rasterOptions(tmpdir=tempdir())

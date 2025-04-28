@@ -32,6 +32,12 @@ Elevation preferences were suggested by the platform with a lower elevation limi
 After a possibility to manually edit these values and add uncertainty in the estimates, the elevation preferences used to map Area of Habitat were `r outlog$Value[outlog$Parameter=="AOH_ElevationPreference"]`.
 
 
+`r if("Gbif_Extract_Elevation" %in% outlog$Parameter){"The elevation of occurrence records was extracted: "}`
+<center>
+![](`r if("Gbif_Extract_Elevation" %in% outlog$Parameter){paste0(outDir, '/Plots/gbifElevExtract.png')}`){width=100%}
+</center>
+
+
 
 ### Density
 `r if(exists("Dens_calc")){paste0(" You used the density calculator, inputting a value of ", Dens_calc[1], " for the density in total individuals within occupied habitat", ifelse("Original_density" %in% outlog$Parameter, paste0(" (a default value of ", outlog$Value[outlog$Parameter=="Original_density"], " mature indificuals / km2 was suggested by the platform; check the sRedList documentation for more information)"), ""), "; a value of ", Dens_calc[2], " for the percentage of mature individuals; and a value of ", Dens_calc[3], " for the percentage of suitable habitat that is occupied by the species. This resulted in a density in mature individuals within suitable habitat of ", Dens_calc[4], " mature individuals / km2.")}`
