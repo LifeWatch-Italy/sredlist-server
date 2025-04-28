@@ -12,7 +12,7 @@ The fragmentation resulting map was:
 
 <br>
 <center>
-![](`r paste0(outDir, '/Plots/fragmentation.png')`){width=1000px}
+![](`r paste0(outDir, '/Plots/fragmentation.png')`){width=90%}
 </center>
 
 Assuming that you trust the map of Area of Habitat and that mapped clusters correspond to isolated subpopulations, this plot means that you can consider the population severely fragmented if you consider that a subpopulation lower than `r pretty_num(Storage_SP$Frag_result)` mature individuals is small. You can check the sRedList documentation for interpretation. 

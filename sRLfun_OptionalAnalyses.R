@@ -84,7 +84,8 @@ sRL_CalcHumandensity<-function(scientific_name, username, distSP, GL){
     ,ncol=2
   )
   
-  ggsave(filename = paste0("resources/AOH_stored/", sub(" ", "_", scientific_name), "_", sRL_userdecode(username), "/Plots/RS_plot_humandensity.png"), plot = GG_RS, width=10, height=6)
+  EXT <- extent(distSP) ; size_scale <- (EXT[2]-EXT[1])/(EXT[4]-EXT[3])
+  ggsave(filename = paste0("resources/AOH_stored/", sub(" ", "_", scientific_name), "_", sRL_userdecode(username), "/Plots/RS_plot_humandensity.png"), plot = GG_RS, bg="white", width=12, height=6/size_scale)
   RS_plot <- base64enc::dataURI(file = paste0("resources/AOH_stored/", sub(" ", "_", scientific_name), "_", sRL_userdecode(username), "/Plots/RS_plot_humandensity.png"), mime = "image/png", encoding = "base64") # nolint
   
   
@@ -153,7 +154,8 @@ sRL_CalcForestchange<-function(scientific_name, username, distSP, GL){
     ncol=2
   )
   
-  ggsave(filename = paste0("resources/AOH_stored/", sub(" ", "_", scientific_name), "_", sRL_userdecode(username), "/Plots/RS_plot_forest.png"), plot = GG_RS, width=10, height=6)
+  EXT <- extent(distSP) ; size_scale <- (EXT[2]-EXT[1])/(EXT[4]-EXT[3])
+  ggsave(filename = paste0("resources/AOH_stored/", sub(" ", "_", scientific_name), "_", sRL_userdecode(username), "/Plots/RS_plot_forest.png"), plot = GG_RS, bg="white", width=12, height=6/size_scale)
   RS_plot <- base64enc::dataURI(file = paste0("resources/AOH_stored/", sub(" ", "_", scientific_name), "_", sRL_userdecode(username), "/Plots/RS_plot_forest.png"), mime = "image/png", encoding = "base64") # nolint
   
   
@@ -217,7 +219,8 @@ sRL_CalcModification<-function(scientific_name, username, distSP){
     ,ncol=2
   )
   
-  ggsave(filename = paste0("resources/AOH_stored/", sub(" ", "_", scientific_name), "_", sRL_userdecode(username), "/Plots/RS_plot_modif.png"), plot = GG_RS, width=10, height=6)
+  EXT <- extent(distSP) ; size_scale <- (EXT[2]-EXT[1])/(EXT[4]-EXT[3])
+  ggsave(filename = paste0("resources/AOH_stored/", sub(" ", "_", scientific_name), "_", sRL_userdecode(username), "/Plots/RS_plot_modif.png"), plot = GG_RS, bg="white", width=12, height=6/size_scale)
   RS_plot <- base64enc::dataURI(file = paste0("resources/AOH_stored/", sub(" ", "_", scientific_name), "_", sRL_userdecode(username), "/Plots/RS_plot_modif.png"), mime = "image/png", encoding = "base64") # nolint
   
   
@@ -279,7 +282,8 @@ sRL_CalcWater<-function(scientific_name, username, distSP){
     ,ncol=2
   )
   
-  ggsave(filename = paste0("resources/AOH_stored/", sub(" ", "_", scientific_name), "_", sRL_userdecode(username), "/Plots/RS_plot_water.png"), plot = GG_RS, width=10, height=6)
+  EXT <- extent(distSP) ; size_scale <- (EXT[2]-EXT[1])/(EXT[4]-EXT[3])
+  ggsave(filename = paste0("resources/AOH_stored/", sub(" ", "_", scientific_name), "_", sRL_userdecode(username), "/Plots/RS_plot_water.png"), plot = GG_RS, bg="white", width=12, height=6/size_scale)
   RS_plot <- base64enc::dataURI(file = paste0("resources/AOH_stored/", sub(" ", "_", scientific_name), "_", sRL_userdecode(username), "/Plots/RS_plot_water.png"), mime = "image/png", encoding = "base64") # nolint
   
   

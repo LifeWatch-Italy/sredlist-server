@@ -6,7 +6,7 @@ The platform found a `r paste0(revalue(outlog$Value[outlog$Parameter=="Estimated
 
 <br>
 <center>
-![](`r paste0(outDir, '/Plots/trends_aoh.png')`){width=800px}
+![](`r paste0(outDir, '/Plots/trends_aoh.png')`){width=70%}
 </center>
 
 ```{r leaflet_trends, fig.align = "center", out.width = '100%'}

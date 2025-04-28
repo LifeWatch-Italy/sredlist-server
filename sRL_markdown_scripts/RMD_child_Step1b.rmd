@@ -8,7 +8,7 @@ You gathered `r nrow(Storage_SP$flags_raw_saved)` raw occurrence records from `r
 
 <br>
 <center>
-![](`r paste0(outDir, '/Plots/plot_data.png')`){width=1200px}
+![](`r paste0(outDir, '/Plots/plot_data.png')`){width=100%}
 </center>
 
 
@@ -48,11 +48,9 @@ After applying these filters, your point range map included `r nrow(Storage_SP$d
 
 `r if("Gbif_Extract_Elevation" %in% outlog$Parameter){"The elevation of occurrence records was extracted: "}`
 
-```{r extract_elevation, out.width='100%'}
-if("Gbif_Extract_Elevation" %in% outlog$Parameter){
-  png::readPNG(paste0(outDir, "/Plots/gbifElevExtract.png")) %>% grid::rasterGrob() %>% gridExtra::grid.arrange()
-}
-```
+<center>
+![](`r if("Gbif_Extract_Elevation" %in% outlog$Parameter){paste0(outDir, '/Plots/gbifElevExtract.png')}`){width=100%}
+</center>
 
 
 ### Create range map
@@ -81,18 +79,15 @@ To create a polygon range map, you chose first to `r PRINT_starting`.
 The range map created at this step is:
 <br>
 <center>
-![](`r paste0(outDir, '/Plots/gbifStep3.png')`){width=1200px}
+![](`r paste0(outDir, '/Plots/gbifStep3.png')`){width=100%}
 </center>
 
 
 
 `r if("Gbif_EditPoly" %in% outlog$Parameter){"You finally edited the polygon range map manually on the interactive map to obtain the following map:"}`
-
-```{r edited_range_map1b, out.width='100%'}
-if("Gbif_EditPoly" %in% outlog$Parameter){
-  png::readPNG(paste0(outDir, "/Plots/plot_manually_edited.png")) %>% grid::rasterGrob() %>% gridExtra::grid.arrange()
-}
-```
+<center>
+![](`r if("Gbif_EditPoly" %in% outlog$Parameter){paste0(outDir, '/Plots/plot_manually_edited.png')}`){width=100%}
+</center>
 
 
 You then filtered the distribution, keeping only presence codes `r outlog$Value[outlog$Parameter == "Distribution_Presence"]`, origin codes `r outlog$Value[outlog$Parameter == "Distribution_Origin"]`, and seasonal codes `r outlog$Value[outlog$Parameter == "Distribution_Seasonal"]`. This distribution was used for quantitative analyses (to calculate EOO, AOO, trends in AOH, fragmentation and trends in remote-sensed products) and was:

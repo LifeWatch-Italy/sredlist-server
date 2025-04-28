@@ -6,10 +6,12 @@ Trends in some remote-sensing products have been calculated. You can check the s
 
 
 `r if(grepl("Forest_cover", outlog$Value[outlog$Parameter=="Usage_RS"])){"You mapped and calculated trends in Forest Cover using Global Forest Change rasters."}`
+<center>
+![](`r if(grepl("Forest_cover", outlog$Value[outlog$Parameter=="Usage_RS"])){paste0(outDir, '/Plots/RS_plot_forest.png')}`){width=100%}
+</center>
 
 ```{r trends_forest, out.width='100%'}
 if(grepl("Forest_cover", outlog$Value[outlog$Parameter=="Usage_RS"])){
-  png::readPNG(paste0(outDir, "/Plots/RS_plot_forest.png")) %>% grid::rasterGrob() %>% gridExtra::grid.arrange()
   DF_forest<-data.frame(Calc=c("Current value", "Absolute trends", "Relative trends", "Time-window"), Value=unlist(strsplit(outlog$Value[outlog$Parameter=="RS_result_Forest_cover"], " & ")))
   knitr::kable(DF_forest, "simple", col.names = c("", "Value"))
 }
@@ -20,13 +22,15 @@ if("RS_leaflet_Forest_cover" %in% names(Storage_SP)){Storage_SP$RS_leaflet_Fores
 ```
 
 
-<br>
 
-`r if(grepl("Human_modification", outlog$Value[outlog$Parameter=="Usage_RS"])){"You mapped and calculated trends in human modification using Theobald et al. (2020) data."}`
+
+`r if(grepl("Human_modification", outlog$Value[outlog$Parameter=="Usage_RS"])){"<br>You mapped and calculated trends in human modification using Theobald et al. (2020) data."}`
+<center>
+![](`r if(grepl("Human_modification", outlog$Value[outlog$Parameter=="Usage_RS"])){paste0(outDir, '/Plots/RS_plot_modif.png')}`){width=100%}
+</center>
 
 ```{r trends_modification, out.width='100%'}
 if(grepl("Human_modification", outlog$Value[outlog$Parameter=="Usage_RS"])){
-  png::readPNG(paste0(outDir, "/Plots/RS_plot_modif.png")) %>% grid::rasterGrob() %>% gridExtra::grid.arrange()
   DF_modif<-data.frame(Calc=c("Current value", "Absolute trends", "Relative trends", "Time-window"), Value=unlist(strsplit(outlog$Value[outlog$Parameter=="RS_result_Human_modification"], " & ")))
   knitr::kable(DF_modif, "simple", col.names = c("", "Value"))
 }
@@ -37,13 +41,15 @@ if("RS_leaflet_Human_modification" %in% names(Storage_SP)){Storage_SP$RS_leaflet
 ```
 
 
-<br>
 
-`r if(grepl("Human_density", outlog$Value[outlog$Parameter=="Usage_RS"])){"You mapped and calculated trends in human population density using the Global Human Settlement dataset."}`
+
+`r if(grepl("Human_density", outlog$Value[outlog$Parameter=="Usage_RS"])){"<br>You mapped and calculated trends in human population density using the Global Human Settlement dataset."}`
+<center>
+![](`r if(grepl("Human_density", outlog$Value[outlog$Parameter=="Usage_RS"])){paste0(outDir, '/Plots/RS_plot_humandensity.png')}`){width=100%}
+</center>
 
 ```{r trends_density, out.width='100%'}
 if(grepl("Human_density", outlog$Value[outlog$Parameter=="Usage_RS"])){
-  png::readPNG(paste0(outDir, "/Plots/RS_plot_humandensity.png")) %>% grid::rasterGrob() %>% gridExtra::grid.arrange()
   DF_density<-data.frame(Calc=c("Current value", "Absolute trends", "Relative trends", "Time-window"), Value=unlist(strsplit(outlog$Value[outlog$Parameter=="RS_result_Human_density"], " & ")))
   knitr::kable(DF_density, "simple", col.names = c("", "Value"))
 }
@@ -55,11 +61,13 @@ if("RS_leaflet_Human_density" %in% names(Storage_SP)){Storage_SP$RS_leaflet_Huma
 
 
 
-`r if(grepl("Water_availability", outlog$Value[outlog$Parameter=="Usage_RS"])){"You mapped and calculated trends in inland water availability using the Global Surface Water dataset."}`
+`r if(grepl("Water_availability", outlog$Value[outlog$Parameter=="Usage_RS"])){"<br>You mapped and calculated trends in inland water availability using the Global Surface Water dataset."}`
+<center>
+![](`r if(grepl("Water_availability", outlog$Value[outlog$Parameter=="Usage_RS"])){paste0(outDir, '/Plots/RS_plot_water.png')}`){width=100%}
+</center>
 
 ```{r trends_water, out.width='100%'}
 if(grepl("Water_availability", outlog$Value[outlog$Parameter=="Usage_RS"])){
-  png::readPNG(paste0(outDir, "/Plots/RS_plot_water.png")) %>% grid::rasterGrob() %>% gridExtra::grid.arrange()
   DF_water<-data.frame(Calc=c("Current value", "Absolute trends", "Relative trends", "Time-window"), Value=unlist(strsplit(outlog$Value[outlog$Parameter=="RS_result_Water_availability"], " & ")))
   knitr::kable(DF_water, "simple", col.names = c("", "Value"))
 }

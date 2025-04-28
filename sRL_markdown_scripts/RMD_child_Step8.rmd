@@ -12,7 +12,7 @@ These parameters lead to the following Red List criteria application (note thoug
 
 <br>
 <center>
-![](`r paste0(outDir, '/Plots/Plot_assign.png')`){width=1000px}
+![](`r paste0(outDir, '/Plots/Plot_assign.png')`){width=80%}
 </center>
 
 

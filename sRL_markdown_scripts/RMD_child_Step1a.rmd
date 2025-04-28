@@ -7,7 +7,7 @@ This distribution was the following map:
 
 <br>
 <center>
-![](`r paste0(outDir, '/Plots/plot_dist.png')`){width=800px}
+![](`r paste0(outDir, '/Plots/plot_dist.png')`){width=70%}
 </center>
 
 `r if("Leaflet_comparison" %in% names(Storage_SP)){paste0("You compared the distribution range map with the available occurrence records from GBIF (filtered out with the default filtering options from Step 1b-2) to see if the range map needs updating: ", Storage_SP$comparison_result, ".")}`
@@ -20,16 +20,14 @@ Storage_SP$Leaflet_comparison
 
 `r if("Gbif_EditPoly" %in% outlog$Parameter){"You manually edited the polygon range map on the interactive map to obtain the following map:"}`
 
-```{r edited_range_map1a, out.width='100%'}
-if("Gbif_EditPoly" %in% outlog$Parameter){
-png::readPNG(paste0(outDir, "/Plots/plot_manually_edited.png")) %>% grid::rasterGrob() %>% gridExtra::grid.arrange()
-}
-```
+<center>
+![](`r if("Gbif_EditPoly" %in% outlog$Parameter){paste0(outDir, '/Plots/plot_manually_edited.png')}`){width=100%}
+</center>
 
 You then filtered the distribution, keeping only presence codes `r outlog$Value[outlog$Parameter == "Distribution_Presence"]`, origin codes `r outlog$Value[outlog$Parameter == "Distribution_Origin"]`, and seasonal codes `r outlog$Value[outlog$Parameter == "Distribution_Seasonal"]`. This distribution was used for quantitative analyses (to calculate EOO, AOO, trends in AOH, fragmentation and trends in remote-sensed products) and was:
 
 <br>
 <center>
-![](`r paste0(outDir, '/Plots/plot_selected.png')`){width=800px}
+![](`r paste0(outDir, '/Plots/plot_selected.png')`){width=70%}
 </center>
 

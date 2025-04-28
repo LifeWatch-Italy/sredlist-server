@@ -3,7 +3,7 @@ The extent of occurrence was calculated as the area of the minimum convex polygo
 
 <br>
 <center>
-![](`r paste0(outDir, '/Plots/plot_eoo.png')`){width=800px}
+![](`r paste0(outDir, '/Plots/plot_eoo.png')`){width=70%}
 </center>
 
 ```{r leaflet_eoo, fig.align = "center", out.width = '100%'}
