@@ -824,8 +824,12 @@ sRL_saveMapDistribution <- function(scientific_name, Storage_SP) {
   filePath <- paste0(config$distribution_path, scientific_name, "/", upload_folder_scientific_name, "/") # nolint
   if (dir.exists(filePath)==F) {dir.create(filePath, showWarnings = TRUE, recursive = TRUE)}
   path <- paste0(filePath, upload_folder_scientific_name, ".shp")
-  Storage_SP$distSP_saved$Popup <- NULL
-  st_write(Storage_SP$distSP_saved, path, append = FALSE)
+  distSP_saved <- Storage_SP$distSP_saved
+  # Remove hybas columns if hydrobasins
+  distSP_saved$Popup <- distSP_saved$hybas_id <- distSP_saved$next_down <- distSP_saved$next_sink <- distSP_saved$ID <- NULL
+  
+  # Save
+  st_write(distSP_saved, path, append = FALSE)
   
   if("dat_proj_saved" %in% names(Storage_SP)){
     # Basic text for 1b

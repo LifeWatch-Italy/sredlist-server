@@ -187,9 +187,19 @@ sRLPolyg_CreatePopup <- function(distSP){
   if("no" %in% distSP$ConditionHydro){
     Popup[distSP$ConditionHydro != "hydroEmpty"] <- paste0(
       Popup[distSP$ConditionHydro != "hydroEmpty"],
-      shinyInputSmoothPolygon(distSub, "Smooth"),
-      shinyInputSmoothPolygon(distSub, "Simplify"),
+      shinyInputActionPolygon(distSub, "Smooth"),
+      shinyInputActionPolygon(distSub, "Simplify"),
       "</center><br><br>"
+    )
+  } else {
+    Popup[distSP$ConditionHydro != "hydroEmpty"] <- paste0(
+      Popup[distSP$ConditionHydro != "hydroEmpty"],
+      "<b> Complete hydrobasins: ","</b><br>",
+      "<center>",
+      shinyInputActionPolygon(distSub, "Upstream"), "    ",
+      shinyInputActionPolygon(distSub, "Downstream"), "<br>",
+      shinyInputActionPolygon(distSub, "Catchment"),
+      "</center><br>"
     )
   }
   
@@ -301,15 +311,15 @@ shinyInputRmPolygon <- function(FUN, ID, Hydro_par) {
 
 
 ### Button to smooth or simplify individual polygons
-shinyInputSmoothPolygon <- function(distSP, Action_type) {
+shinyInputActionPolygon <- function(distSP, Action_type) {
   
   # Adapt BUTT_raw with information fitting all polygons ; I'm adding TIME to allow users to click twice on the same button after changing the parameter value
   BUTT_raw <- as.character(
     tooltip(trigger=actionButton(paste0(Action_type, "Polygon_#ID_#TIME"),
                                  label=Action_type, 
                                  style="color: #fff; background-color: #009138ff; border-color: #009138ff; padding:6px",
-                                 onclick=paste0("Shiny.onInputChange( \"", ifelse(Action_type=="Smooth", "SmoothButton", "SimplifyButton"), "\" , this.id)")
-    ), ifelse(Action_type=="Smooth", "Smooth a single polygon", "Simplify a single polygon"))
+                                 onclick=paste0("Shiny.onInputChange( \"", paste0(Action_type, "Button"), "\" , this.id)")
+    ), revalue(Action_type, c("Smooth"="Smooth a single polygon", "Simplify"="Simplify a single polygon", "Downstream"="Add downstream hydrobasins", "Upstream"="Add upstream hydrobasins", "Catchment"="Add all hydrobasins within the watershed"), warn_missing=F))
   )
   
   BUTT <- BUTT_raw %>% strsplit(., "#ID") %>% unlist(.) %>% strsplit(.,"#TIME") %>% unlist(.)

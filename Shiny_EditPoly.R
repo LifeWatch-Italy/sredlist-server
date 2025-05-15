@@ -173,8 +173,9 @@ ui <- page_fillable(
       ### Panel to show when editing hydrobasins
       conditionalPanel(condition='output.AllowEdit=="hydro"',
                        
-                       titlePanel("Edit hydrobasins"),
-                       HTML("<br>"),
+                       div(align="center",
+                       HTML("<font size='6'>Edit hydrobasin attributes</font>"),
+                       tooltip(trigger=bs_icon("info-circle"), "Set up your attributes that will be applied to the hydrobasins added to the range map"),
                        fluidRow(
                          column(4,
                                 fluidRow(
@@ -196,13 +197,26 @@ ui <- page_fillable(
                                 numericInput(inputId="Seas_batch", label="", value=1, min=1, max=5, step=1, width="95%"))
                        ),
                        
-                       HTML("<br><br>"),
+                       HTML("<br><br><font size='6'>Add / remove hydrobasins</font>"),
+                       tooltip(trigger=bs_icon("info-circle"), "Set up your attributes, place markers within the hydrobasins you want to edit on the map and click on 'Remove' or 'Add/edit'"),
                        fluidRow(div(align="center",
                                     actionButton('Rm_batch', 'Remove hydrobasins', style="color: #fff; background-color: #dea218ff; border-color: #dea218ff", icon=icon("trash", lib="font-awesome"), width="30%"),
-                                    actionButton('Add_batch', 'Add / edit hydrobasins', style="color: #fff; background-color: #009138ff; border-color: #009138ff", icon=icon("plus", lib="font-awesome"), width="30%"),
-                                    tooltip(trigger=bs_icon("info-circle"), "Set up your attributes, place markers within the hydrobasins you want to edit on the map and click on 'Remove' or 'Add/edit'")
-                       ))
-      ),
+                                    actionButton('Add_batch', 'Add / edit hydrobasins', style="color: #fff; background-color: #009138ff; border-color: #009138ff", icon=icon("plus", lib="font-awesome"), width="30%")
+                       )),
+                       
+                       HTML("<br><br><font size='6'>Complete watersheds</font>"),
+                       tooltip(trigger=bs_icon("info-circle"), "Choose if you want the upstream and downstream options to add hydrobasins one by one or all upstream / downstream hydrobasins with a single click"),
+                       fluidRow(div(align="center",
+                          radioButtons('hydro_1by1', label='', choiceValues=c("basin", "1by1"), choiceNames=c(HTML("Add all upstream / downstream hydrobasins"), HTML("Add a single upstream / downstream hydrobasin")), width="80%")
+                       )),
+                       
+                       HTML("<br><br><font size='6'>Expand hydrobasin map</font>"),
+                       tooltip(trigger=bs_icon("info-circle"), "By default, we propose hydrobasins that are in 50km radius around the distribution; click here to expand that radius to 100km around the edited distribution. Note that the map will be heavier and then perhaps less reactive."),
+                       fluidRow(div(align="center",
+                                    actionButton('Expand_Hydro', 'Expand', style="color: #fff; background-color: #009138ff; border-color: #009138ff", icon=icon("expand", lib="font-awesome"), width="30%"),
+                       )),
+                       
+      )),
       
       ## Save
       HTML("<br><br>"),
@@ -235,10 +249,11 @@ server <- function(input, output, session) {
   dat_pts <- reactiveVal() # Occurrence records gathered in 1b OR in 1a by comparing distribution with GBIF
   drawn_storage <- reactiveVal() # Polygons manually drawn or edited
   lines_storage <- reactiveVal() # Lines manually drawn or edited
-  track_storage <- reactiveValues(L=list(Hydro_init=0, Hydro_editas=0, Simplify_init=0, Simplify=0, Smooth=0, Split=0, CropLand=0, CropCountry=0, ManuDrawEdit=0, Attributes=0, RmPoly=0, AddHydro=0, RmHydro=0, BatchAddHydro=0, BatchRmHydro=0)) # List of counters used for usage tracking
+  track_storage <- reactiveValues(L=list(Hydro_init=0, Hydro_editas=0, Simplify_init=0, Simplify=0, Smooth=0, Split=0, CropLand=0, CropCountry=0, ManuDrawEdit=0, Attributes=0, RmPoly=0, AddHydro=0, RmHydro=0, BatchAddHydro=0, BatchRmHydro=0, Downstream=0, Upstream=0, Catchment=0)) # List of counters used for usage tracking
   markers_storage <- reactiveVal() # Markers manually drawn or edited
   AllowEdit <- reactiveVal() # Factor used to inform if we propose the default or the hydrobasin version + if we allow editing manually (not allowed if distribution too complex and users clicked 'No' in the popup)
   Run_discard <- reactiveVal(0) # Reactive value that calls Discard button (either from the discard button itself or from other functions, eg if users click on drag with hydrobasins)
+  Run_save <- reactiveVal(0) # Reactive value that calls Save button (either from the save button itself or from other functions, eg after first loading)
   Suggest_hydro <- reactiveVal("no") # Reactive value that becomes T if we should add the button "Edit as hydrobasins", ie if this is a reassessment of a freshwater species
   Unsaved_changes <- reactiveVal("no") # Reactive value that becomes T when there are unsaved changes
   Warning_drawned <- reactiveVal("no") # Reactive value that becomes T when the warning that we need to save after drawing has been shown (to avoid it to be repeated)
@@ -254,7 +269,7 @@ server <- function(input, output, session) {
   
   
   #### Load species ------
-  observeEvent(input$sci_name, {
+  observeEvent(c(input$sci_name, input$Expand_Hydro), {
     
     req(input$sci_name) ; req(input$sci_name != "")
     
@@ -270,6 +285,7 @@ server <- function(input, output, session) {
     # Load distribution
     if(T %in% grepl("hydro", Stor_tempo$Output$Value) & Stor_tempo$Output$Value[Stor_tempo$Output$Parameter=="Distribution_Source"]=="Created"){
       dist_loaded0 <- Stor_tempo$distSP3_BeforeCrop
+      if(input$Expand_Hydro > 0){dist_loaded0 <- Stor_tempo$distSP_saved_tempoHydro %>% st_transform(., st_crs(Stor_tempo$distSP3_BeforeCrop))}
       # Extract hydrobasins, will return a list with hydroSP to use and hydro_HQ with hydrobasins in the original quality
       track_storage$L$Hydro_init <- track_storage$L$Hydro_init+1
       hydro_ready <- sRLPolyg_PrepareHydro(dist_loaded0, hydro_raw, Stor_tempo$Output$Value[Stor_tempo$Output$Parameter=="Mapping_Start"], SRC_created="yes")
@@ -293,25 +309,25 @@ server <- function(input, output, session) {
     
     # Save Storage_SP
     Storage_SP(Stor_tempo)
-    
     ### Prepare textInput initial values
     tryCatch({
-      if(! "compiler" %in% names(dist_loaded)){dist_loaded$compiler <- NA}
-      if(! "citation" %in% names(dist_loaded)){dist_loaded$citation <- NA}
-      if(! "source" %in% names(dist_loaded)){dist_loaded$source <- NA}
-      updateTextInput(session, "Field_source", value = ifelse((is.na(dist_loaded$source[1])==F), dist_loaded$source[1], "sRedList platform"))
+      Line_attributes <- dist_loaded0[order(is.na(dist_loaded0$pres)),][1,]
+      if(! "compiler" %in% names(Line_attributes)){Line_attributes$compiler <- NA}
+      if(! "citation" %in% names(Line_attributes)){Line_attributes$citation <- NA}
+      if(! "source" %in% names(Line_attributes)){Line_attributes$source <- NA}
+      updateTextInput(session, "Field_source", value = ifelse((is.na(Line_attributes$source)==F), Line_attributes$source, "sRedList platform"))
       updateNumericInput(session, "Field_yrcompiled", value = format(Sys.time(), "%Y"))
-      updateTextInput(session, "Field_citation", value = ifelse((is.na(dist_loaded$citation[1])==F), dist_loaded$citation[1], "IUCN (International Union for Conservation of Nature)"))
-      updateTextInput(session, "Field_compiler", value = ifelse((is.na(dist_loaded$compiler[1])==F), dist_loaded$compiler[1], sRL_userformatted(input$user)))
-      updateTextInput(session, "Field_island", value = ifelse(("island" %in% names(dist_loaded) & is.na(dist_loaded$island[1])==F), dist_loaded$island[1], "")) # Ideally I could automatically extract if on an island?
-      updateCheckboxInput(session, "Field_datasens", value = ifelse(("TRUE" %in% dist_loaded$data_sens | "true" %in% dist_loaded$data_sens | "1" %in% dist_loaded$data_sens), TRUE, FALSE))
-      updateTextInput(session, "Field_senscomm", value = ifelse(("sens_comm" %in% names(dist_loaded) & is.na(dist_loaded$sens_comm[1])==F), dist_loaded$sens_comm[1], ""))
+      updateTextInput(session, "Field_citation", value = ifelse((is.na(Line_attributes$citation)==F), Line_attributes$citation, "IUCN (International Union for Conservation of Nature)"))
+      updateTextInput(session, "Field_compiler", value = ifelse((is.na(Line_attributes$compiler)==F), Line_attributes$compiler, sRL_userformatted(input$user)))
+      updateTextInput(session, "Field_island", value = ifelse(("island" %in% names(Line_attributes) & is.na(Line_attributes$island)==F), Line_attributes$island, "")) # Ideally I could automatically extract if on an island?
+      updateCheckboxInput(session, "Field_datasens", value = ifelse(("TRUE" %in% Line_attributes$data_sens | "true" %in% Line_attributes$data_sens | "1" %in% Line_attributes$data_sens), TRUE, FALSE))
+      updateTextInput(session, "Field_senscomm", value = ifelse(("sens_comm" %in% names(Line_attributes) & is.na(Line_attributes$sens_comm)==F), Line_attributes$sens_comm, ""))
       # Prepare distcomm
       New_DistComm <- ifelse(Stor_tempo$Output$Value[Stor_tempo$Output$Parameter=="Distribution_Source"] == "Created", 
-                             dist_loaded$dist_comm[1], 
-                             ifelse(is.na(dist_loaded$dist_comm[1]), 
+                             Line_attributes$dist_comm, 
+                             ifelse(is.na(Line_attributes$dist_comm), 
                                     paste0("The distribution was taken from the sRedList platform (", Stor_tempo$Output$Value[Stor_tempo$Output$Parameter=="Distribution_Source"], ") and was "), 
-                                    paste0(dist_loaded$dist_comm[1], " It was ")) %>% paste0(., "manually edited on the sRedList platform on the ", Sys.Date(), ".")
+                                    paste0(Line_attributes$dist_comm, " It was ")) %>% paste0(., "manually edited on the sRedList platform on the ", Sys.Date(), ".")
       )
       updateTextInput(session, "Field_distcomm", value = substr(New_DistComm, 1, 254))
     }, error=function(e){"Error in field extraction"})
@@ -352,7 +368,7 @@ server <- function(input, output, session) {
 
     # Message if distribution loaded is too big
     if(npts(dist_loaded)>5000 & AllowEdit()!="hydro"){
-      print(npts(dist_loaded))
+      print(paste0("Number of points in loaded distribution: ", npts(dist_loaded)))
       ask_confirmation(inputId = "SimplifyLoading", 
                        type = "warning", 
                        title = "Distribution too heavy", 
@@ -363,6 +379,7 @@ server <- function(input, output, session) {
       
       ### Update leaflet map
       sRLPolyg_UpdateLeaflet(distSP(), dat_pts(), frame=1)
+      Run_save(Run_save()+1)
       Unsaved_changes("no")
     }
     
@@ -392,7 +409,7 @@ server <- function(input, output, session) {
     edits <- sRLPolyg_CreateLeaflet("hydro")
     sRLPolyg_UpdateLeaflet(distSP(), dat_pts(), frame=1, AllowEdit=AllowEdit())
     Unsaved_changes("no")
-    
+
     ### End loader
     loader_loadhydro$hide()
     
@@ -634,6 +651,121 @@ server <- function(input, output, session) {
     # End loader
     loader_cropcountry$hide()
     
+  })
+  
+  #### Downstream hydrobasins --------------
+  observeEvent(input$DownstreamButton, {
+    sRL_loginfo("START - Downstream button", input$sci_name)
+    DownstreamButtVal <- input$DownstreamButton %>% as.character(.) %>% strsplit(., "_#TIME") %>% unlist(.) %>% .[1]
+    print(DownstreamButtVal)
+    
+    ### Loader
+    loader_downstream <- addLoader$new("save", color = "white", method = "inline") ; loader_downstream$show()
+    track_storage$L$Downstream <- track_storage$L$Downstream+1
+    
+    ### Apply changes
+    dist_to_complete <- distSP()
+    hybas_ID <- DownstreamButtVal %>% sub("DownstreamPolygon_", "", .)
+    hybas_to_add <- dist_to_complete$next_down[dist_to_complete$ID==hybas_ID]
+    
+    while(hybas_to_add != 0 & hybas_to_add %in% dist_to_complete$hybas_id){
+      
+      # Apply change in pres / origin / seasonal / popup
+      if(input$Pres_batch==2){showNotification(ui=HTML("Presence 'Probably Extant' is deprecated, code 1 (extant) was used instead"), type="warning", duration=2)}
+      dist_to_complete$presence[dist_to_complete$hybas_id==hybas_to_add] <- ifelse(input$Pres_batch==2, 1, input$Pres_batch)
+      dist_to_complete$origin[dist_to_complete$hybas_id==hybas_to_add] <- input$Orig_batch
+      dist_to_complete$seasonal[dist_to_complete$hybas_id==hybas_to_add] <- input$Seas_batch
+      dist_to_complete$Popup[dist_to_complete$hybas_id==hybas_to_add] <- sRLPolyg_CreatePopup(dist_to_complete[dist_to_complete$hybas_id==hybas_to_add,])
+      
+      # Look for the next hydrobasin (if hydro_1by1 is "basin")
+      if(input$hydro_1by1!="1by1"){
+        hybas_ID <- hybas_to_add
+        hybas_to_add <- dist_to_complete$next_down[dist_to_complete$hybas_id==hybas_ID]
+      } else {hybas_to_add <- 0}
+    }
+    
+    # Save 
+    distSP(dist_to_complete)
+    sRLPolyg_UpdateLeaflet(distSP(), dat_pts(), frame=0)
+    Unsaved_changes("yes")
+    
+    ### End loader
+    loader_downstream$hide()
+  })
+  
+  
+  #### Upstream hydrobasins --------------
+  observeEvent(input$UpstreamButton, {
+    sRL_loginfo("START - Upstream button", input$sci_name)
+    UpstreamButtVal <- input$UpstreamButton %>% as.character(.) %>% strsplit(., "_#TIME") %>% unlist(.) %>% .[1]
+    print(UpstreamButtVal)
+    
+    ### Loader
+    loader_upstream <- addLoader$new("save", color = "white", method = "inline") ; loader_upstream$show()
+    track_storage$L$Upstream <- track_storage$L$Upstream+1
+    
+    ### Apply changes
+    dist_to_complete <- distSP()
+    dist_ID <- UpstreamButtVal %>% sub("UpstreamPolygon_", "", .)
+    hybas_ID <- dist_to_complete$hybas_id[dist_to_complete$ID==dist_ID]
+    hybas_to_add <- dist_to_complete$hybas_id[dist_to_complete$next_down==hybas_ID]
+    
+    while(length(hybas_to_add) > 0){
+      
+      # Apply change in pres / origin / seasonal / popup
+      if(input$Pres_batch==2){showNotification(ui=HTML("Presence 'Probably Extant' is deprecated, code 1 (extant) was used instead"), type="warning", duration=2)}
+      dist_to_complete$presence[dist_to_complete$hybas_id %in% hybas_to_add] <- ifelse(input$Pres_batch==2, 1, input$Pres_batch)
+      dist_to_complete$origin[dist_to_complete$hybas_id %in% hybas_to_add] <- input$Orig_batch
+      dist_to_complete$seasonal[dist_to_complete$hybas_id %in% hybas_to_add] <- input$Seas_batch
+      dist_to_complete$Popup[dist_to_complete$hybas_id %in% hybas_to_add] <- sRLPolyg_CreatePopup(dist_to_complete[dist_to_complete$hybas_id %in% hybas_to_add,])
+      
+      # Look for the next hydrobasin (if hydro_1by1 is "basin")
+      if(input$hydro_1by1!="1by1"){
+        hybas_ID <- hybas_to_add
+        hybas_to_add <- dist_to_complete$hybas_id[dist_to_complete$next_down %in% hybas_ID]
+      } else {hybas_to_add <- c()}
+    }
+    
+    # Save 
+    distSP(dist_to_complete)
+    sRLPolyg_UpdateLeaflet(distSP(), dat_pts(), frame=0)
+    Unsaved_changes("yes")
+    
+    ### End loader
+    loader_upstream$hide()
+  })
+  
+  #### Catchment hydrobasins --------------
+  observeEvent(input$CatchmentButton, {
+    sRL_loginfo("START - Catchment button", input$sci_name)
+    CatchmentButtVal <- input$CatchmentButton %>% as.character(.) %>% strsplit(., "_#TIME") %>% unlist(.) %>% .[1]
+    print(CatchmentButtVal)
+    
+    ### Loader
+    loader_catchment <- addLoader$new("save", color = "white", method = "inline") ; loader_catchment$show()
+    track_storage$L$Catchment <- track_storage$L$Catchment+1
+    
+    ### Apply changes
+    dist_to_complete <- distSP()
+    dist_ID <- CatchmentButtVal %>% sub("CatchmentPolygon_", "", .)
+    hybas_ID <- dist_to_complete$hybas_id[dist_to_complete$ID==dist_ID]
+    sink_ID <- dist_to_complete$next_sink[dist_to_complete$hybas_id==hybas_ID]
+    hybas_to_add <- dist_to_complete$hybas_id[dist_to_complete$next_sink == sink_ID]
+
+    # Apply change in pres / origin / seasonal / popup
+    if(input$Pres_batch==2){showNotification(ui=HTML("Presence 'Probably Extant' is deprecated, code 1 (extant) was used instead"), type="warning", duration=2)}
+    dist_to_complete$presence[dist_to_complete$hybas_id %in% hybas_to_add] <- ifelse(input$Pres_batch==2, 1, input$Pres_batch)
+    dist_to_complete$origin[dist_to_complete$hybas_id %in% hybas_to_add] <- input$Orig_batch
+    dist_to_complete$seasonal[dist_to_complete$hybas_id %in% hybas_to_add] <- input$Seas_batch
+    dist_to_complete$Popup[dist_to_complete$hybas_id %in% hybas_to_add] <- sRLPolyg_CreatePopup(dist_to_complete[dist_to_complete$hybas_id %in% hybas_to_add,])
+    
+    # Save 
+    distSP(dist_to_complete)
+    sRLPolyg_UpdateLeaflet(distSP(), dat_pts(), frame=0)
+    Unsaved_changes("yes")
+    
+    ### End loader
+    loader_catchment$hide()
   })
   
   
@@ -879,11 +1011,17 @@ server <- function(input, output, session) {
     
   })
   
-  
   #### Save polygon edits --------
+  # Trigger save function when discard button is clicked
   observeEvent(input$save, {
+    Run_save(Run_save()+1)
+  })
+  
+  # Save button
+  observeEvent(Run_save(), {
+    req(Run_save()>0)
     sRL_loginfo("START - Save manual edit polygon", input$sci_name)
-
+    
     ### Save distribution (with edited attribute fields)
     Storage_SPNEW <- Storage_SP()
     dist_tosave <- distSP()
@@ -891,14 +1029,6 @@ server <- function(input, output, session) {
     # Crop if needed
     EXT_dist <- extent(dist_tosave)
     if(EXT_dist[1]<(-180) | EXT_dist[2]>180 | EXT_dist[3]<(-90) | EXT_dist[4]>90){dist_tosave <- st_crop(dist_tosave, xmin=-179.999,xmax=179.999,ymin=-89.999,ymax=89.999) ; distSP(dist_tosave)}
-    
-    # Change for HQ geometries if hydro was simplified
-    if("hydroSP_HQ" %in% names(Storage_SPNEW)){
-      dist_tosave$geometry <- Storage_SPNEW$hydroSP_HQ$geometry[match(dist_tosave$hybas_id, Storage_SPNEW$hydroSP_HQ$hybas_id)]
-    }
-    
-    # Check at least one polygon remains
-    if(nrow(dist_tosave)==0){showNotification(ui=HTML("You removed all polygons from your distribution and it is now empty. We discarded your last edits to bring back your former distribution."), type="error", duration=3) ; Run_discard(Run_discard()+1) ; req(F)}
     
     # Add attributes
     dist_tosave$binomial <- input$sci_name
@@ -912,6 +1042,19 @@ server <- function(input, output, session) {
     dist_tosave$island <- input$Field_island
     dist_tosave$dist_comm <- input$Field_distcomm
     if(nchar(input$Field_distcomm)>254){showNotification(ui=HTML(paste0("Distribution comment cannot be longer than 254 characters (currently ", nchar(input$Field_distcomm)," characters), please reduce the text.")), type="error", duration=3) ; req(F)}
+    
+    # Save hydro with presence==NA
+    if(AllowEdit()=="hydro"){
+      Storage_SPNEW$distSP_saved_tempoHydro <- dist_tosave
+    }
+    
+    # Change for HQ geometries if hydro was simplified
+    if("hydroSP_HQ" %in% names(Storage_SPNEW)){
+      dist_tosave$geometry <- Storage_SPNEW$hydroSP_HQ$geometry[match(dist_tosave$hybas_id, Storage_SPNEW$hydroSP_HQ$hybas_id)]
+    }
+    
+    # Check at least one polygon remains
+    if(nrow(dist_tosave)==0){showNotification(ui=HTML("You removed all polygons from your distribution and it is now empty. We discarded your last edits to bring back your former distribution."), type="error", duration=3) ; Run_discard(Run_discard()+1) ; req(F)}
     
     # Subset if hydrobasins
     if(AllowEdit()=="hydro"){
@@ -974,16 +1117,22 @@ server <- function(input, output, session) {
     PolygToRemove <- distSP()$ID
     
     Storage_SP(sRL_StoreRead(input$sci_name,  input$user, MANDAT=1))
+    # Hydro
     if(T %in% grepl("hydro", Storage_SP()$Output$Value)){
-      if("distSP_saved" %in% names(Storage_SP())){
-        dist_loaded <- Storage_SP()$distSP_saved
+      if("distSP_saved_tempoHydro" %in% names(Storage_SP())){
+        print("SHORT LOADING")
+        dist_loaded <- Storage_SP()$distSP_saved_tempoHydro
       } else {
-          dist_loaded <- Storage_SP()$distSP3_BeforeCrop %>% sRLPolyg_PrepareHydro(., hydro_raw, paste0("hydro", substr(dist_saved$hybas_id[1],2,3)), SRC_created="yes")$hydroSP # SRC_created is yes even if we used "Edit as hydrobasins" for a RL distribution to avoid charging hydrobasins from the scratch
-          }
+        print("LONG LOADING")
+        dist_loaded <- Storage_SP()$distSP_saved  %>% sRLPolyg_PrepareHydro(., hydro_raw, paste0("hydro", substr(dist_saved$hybas_id[1],2,3)), SRC_created="yes")$hydroSP
+      }
+
+    # Not hydro
     } else {
       if("distSP_saved" %in% names(Storage_SP())){dist_loaded <- Storage_SP()$distSP_saved} else {dist_loaded <- Storage_SP()$distSP_saved}
       dist_loaded <- sRLPolyg_InitDistri(dist_loaded, 4326)
     }
+    # All
     distSP(dist_loaded)
     
     ### Edit storage reactive values saying everything was applied
@@ -1022,3 +1171,4 @@ server <- function(input, output, session) {
 
 ### Run app ----
 shinyApp(ui = ui, server = server)
+

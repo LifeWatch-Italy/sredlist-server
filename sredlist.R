@@ -276,6 +276,15 @@ function(scientific_name, username, presences = list(), seasons = list() , origi
     ### Colour distribution
     distSP <- sRL_ColourDistrib(distSP)
     
+    ### Expand countries if extent changed (for instance if we increase distribution manually)
+    if(length(st_covered_by(
+      st_as_sfc(st_bbox(distSP)),
+      st_transform(st_as_sfc(st_bbox(Storage_SP$CountrySP_saved)), st_crs(distSP))
+    )[[1]])==0){
+      sRL_loginfo("Extract countries again", scientific_name)
+      Storage_SP$CountrySP_saved<-sRL_PrepareCountries(1.2*extent(st_transform(distSP, CRSMOLL)))
+    }
+    
     ### Plot
     plot_dist<-ggplot() +
       geom_sf(data = Storage_SP$CountrySP_saved, fill="gray96", col="gray50") + # nolint
