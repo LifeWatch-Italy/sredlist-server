@@ -818,51 +818,55 @@ sRL_CropDistributionGBIF <- function(distGBIF, GBIF_crop){
 
 ### Save distribution mapped from the GBIF procedure
 sRL_saveMapDistribution <- function(scientific_name, Storage_SP) {
-  
-  ### Create a file path
-  upload_folder_scientific_name <- R.utils::capitalize(paste0(stringr::str_replace(scientific_name, " ", "_"), ifelse("dat_proj_saved" %in% names(Storage_SP), "_Created_", "_Edited_"), format(Sys.time(), "%Y%m%d"))) # nolint
-  filePath <- paste0(config$distribution_path, scientific_name, "/", upload_folder_scientific_name, "/") # nolint
-  if (dir.exists(filePath)==F) {dir.create(filePath, showWarnings = TRUE, recursive = TRUE)}
-  path <- paste0(filePath, upload_folder_scientific_name, ".shp")
-  distSP_saved <- Storage_SP$distSP_saved
-  # Remove hybas columns if hydrobasins
-  distSP_saved$Popup <- distSP_saved$hybas_id <- distSP_saved$next_down <- distSP_saved$next_sink <- distSP_saved$ID <- NULL
-  
-  # Save
-  st_write(distSP_saved, path, append = FALSE)
-  
-  if("dat_proj_saved" %in% names(Storage_SP)){
-    # Basic text for 1b
-    text <- paste0(
-      "A distribution has been stored for the species: ",
-      scientific_name,
-      ".\nIt was created with the mapping procedure from the sRedList platform. It is based on ", # nolint
-      paste(names(table(Storage_SP$dat_proj_saved$Source_type)), table(Storage_SP$dat_proj_saved$Source_type), sep=" (") %>% paste(., collapse="), ") %>% paste0(nrow(Storage_SP$dat_proj_saved), " raw geo-referenced observations from: ", ., ")"),
-      " occurrence records gathered on the ",
-      Sys.time(),
-      " CET."
-    )
-    # Add a note if manually edited with EditPoly
-    if(is.na(Storage_SP$Output$Value[Storage_SP$Output$Parameter=="Gbif_EditPoly"])==F){text <- paste0(text, " It was then manually edited on sRedList.")}
-  } else{
-    # Basic text for 1a
-    text <- paste0(
-      "A distribution has been stored for the species: ",
-      scientific_name,
-      " on the ", Sys.time(),
-      ".\nIt was manually edited on the sRedList platform from a distribution ",
-      revalue(Storage_SP$Output$Value[Storage_SP$Output$Parameter=="Distribution_Source"], c("Red List"="published in the last Red List assessment.", 
-                                                                                             "Uploaded"="previously uploaded on the sRedList platform.",
-                                                                                             "StoredOnPlatform"="previously created on the sRedList platform.",
-                                                                                             "Edited"="previously edited on the sRedList platform.")
+  tryCatch({
+    
+    ### Create a file path
+    upload_folder_scientific_name <- R.utils::capitalize(paste0(stringr::str_replace(scientific_name, " ", "_"), ifelse("dat_proj_saved" %in% names(Storage_SP), "_Created_", "_Edited_"), format(Sys.time(), "%Y%m%d"))) # nolint
+    filePath <- paste0(config$distribution_path, scientific_name, "/", upload_folder_scientific_name, "/") # nolint
+    if (dir.exists(filePath)==F) {dir.create(filePath, showWarnings = TRUE, recursive = TRUE)}
+    path <- paste0(filePath, upload_folder_scientific_name, ".shp")
+    distSP_saved <- Storage_SP$distSP_saved
+    
+    # Remove hybas columns if hydrobasins
+    distSP_saved$Popup <- distSP_saved$hybas_id <- distSP_saved$next_down <- distSP_saved$next_sink <- distSP_saved$ID <- NULL
+    
+    # Save
+    st_write(distSP_saved, path, append = FALSE)
+    
+    if("dat_proj_saved" %in% names(Storage_SP)){
+      # Basic text for 1b
+      text <- paste0(
+        "A distribution has been stored for the species: ",
+        scientific_name,
+        ".\nIt was created with the mapping procedure from the sRedList platform. It is based on ", # nolint
+        paste(names(table(Storage_SP$dat_proj_saved$Source_type)), table(Storage_SP$dat_proj_saved$Source_type), sep=" (") %>% paste(., collapse="), ") %>% paste0(nrow(Storage_SP$dat_proj_saved), " raw geo-referenced observations from: ", ., ")"),
+        " occurrence records gathered on the ",
+        Sys.time(),
+        " CET."
       )
-    )
-  }
-  
-  # Save JSON
-  jsonlite::write_json(list(info = text), paste0(filePath, upload_folder_scientific_name, ".json"), auto_unbox= TRUE) # nolint
-  
-  return(upload_folder_scientific_name)
+      # Add a note if manually edited with EditPoly
+      if(is.na(Storage_SP$Output$Value[Storage_SP$Output$Parameter=="Gbif_EditPoly"])==F){text <- paste0(text, " It was then manually edited on sRedList.")}
+    } else{
+      # Basic text for 1a
+      text <- paste0(
+        "A distribution has been stored for the species: ",
+        scientific_name,
+        " on the ", Sys.time(),
+        ".\nIt was manually edited on the sRedList platform from a distribution ",
+        revalue(Storage_SP$Output$Value[Storage_SP$Output$Parameter=="Distribution_Source"], c("Red List"="published in the last Red List assessment.", 
+                                                                                               "Uploaded"="previously uploaded on the sRedList platform.",
+                                                                                               "StoredOnPlatform"="previously created on the sRedList platform.",
+                                                                                               "Edited"="previously edited on the sRedList platform.")
+        )
+      )
+    }
+    
+    # Save JSON
+    jsonlite::write_json(list(info = text), paste0(filePath, upload_folder_scientific_name, ".json"), auto_unbox= TRUE) # nolint
+    
+    return(upload_folder_scientific_name)
+    
+  }, error=function(e){"Edited distribution not saved on the platform"})
 }
 
 

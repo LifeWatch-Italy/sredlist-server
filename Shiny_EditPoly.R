@@ -116,7 +116,7 @@ ui <- page_fillable(
       ),
       
       # Version number (just for Victor to ensure the correct version is deployed)
-      conditionalPanel(condition='input.user=="victor.cazalis"', "version 1.3_online1")
+      conditionalPanel(condition='input.user=="victor.cazalis"', "version 1.5_dev1")
       
     ),
     
@@ -311,7 +311,8 @@ server <- function(input, output, session) {
     Storage_SP(Stor_tempo)
     ### Prepare textInput initial values
     tryCatch({
-      Line_attributes <- dist_loaded0[order(is.na(dist_loaded0$pres)),][1,]
+      Line_attributes <- dist_loaded[order(is.na(dist_loaded$presence)),][1,]
+      names(Line_attributes) <- tolower(names(Line_attributes)) # It is in capital letter for some distributions
       if(! "compiler" %in% names(Line_attributes)){Line_attributes$compiler <- NA}
       if(! "citation" %in% names(Line_attributes)){Line_attributes$citation <- NA}
       if(! "source" %in% names(Line_attributes)){Line_attributes$source <- NA}
@@ -396,7 +397,6 @@ server <- function(input, output, session) {
     loader_loadhydro <- addLoader$new("EditAsHydroButt", color = "#009138ff", method = "full_screen", height = "30rem", opacity=0.4) ; loader_loadhydro$show()
     track_storage$L$Hydro_editas <- track_storage$L$Hydro_editas+1
     AllowEdit("hydro")
-    Suggest_hydro("no") # No need to see the button anymore
     
     ### Subset hydrobasins
     hydro_ready <- sRLPolyg_PrepareHydro(st_transform(distSP(), CRSMOLL), hydro_raw, "hydro8", SRC_created="no")
@@ -408,7 +408,7 @@ server <- function(input, output, session) {
     req(distSP())
     edits <- sRLPolyg_CreateLeaflet("hydro")
     sRLPolyg_UpdateLeaflet(distSP(), dat_pts(), frame=1, AllowEdit=AllowEdit())
-    Unsaved_changes("no")
+    Unsaved_changes("yes")
 
     ### End loader
     loader_loadhydro$hide()
@@ -1117,8 +1117,9 @@ server <- function(input, output, session) {
     PolygToRemove <- distSP()$ID
     
     Storage_SP(sRL_StoreRead(input$sci_name,  input$user, MANDAT=1))
+    
     # Hydro
-    if(T %in% grepl("hydro", Storage_SP()$Output$Value)){
+    if(AllowEdit()=="hydro"){
       if("distSP_saved_tempoHydro" %in% names(Storage_SP())){
         print("SHORT LOADING")
         dist_loaded <- Storage_SP()$distSP_saved_tempoHydro
