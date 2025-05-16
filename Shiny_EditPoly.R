@@ -197,20 +197,20 @@ ui <- page_fillable(
                                 numericInput(inputId="Seas_batch", label="", value=1, min=1, max=5, step=1, width="95%"))
                        ),
                        
-                       HTML("<br><br><font size='6'>Add / remove hydrobasins</font>"),
+                       HTML("<br><font size='6'>Add / remove hydrobasins</font>"),
                        tooltip(trigger=bs_icon("info-circle"), "Set up your attributes, place markers within the hydrobasins you want to edit on the map and click on 'Remove' or 'Add/edit'"),
                        fluidRow(div(align="center",
                                     actionButton('Rm_batch', 'Remove hydrobasins', style="color: #fff; background-color: #dea218ff; border-color: #dea218ff", icon=icon("trash", lib="font-awesome"), width="30%"),
                                     actionButton('Add_batch', 'Add / edit hydrobasins', style="color: #fff; background-color: #009138ff; border-color: #009138ff", icon=icon("plus", lib="font-awesome"), width="30%")
                        )),
                        
-                       HTML("<br><br><font size='6'>Complete watersheds</font>"),
+                       HTML("<br><font size='6'>Complete watersheds</font>"),
                        tooltip(trigger=bs_icon("info-circle"), "Choose if you want the upstream and downstream options to add hydrobasins one by one or all upstream / downstream hydrobasins with a single click"),
                        fluidRow(div(align="center",
                           radioButtons('hydro_1by1', label='', choiceValues=c("basin", "1by1"), choiceNames=c(HTML("Add all upstream / downstream hydrobasins"), HTML("Add a single upstream / downstream hydrobasin")), width="80%")
                        )),
                        
-                       HTML("<br><br><font size='6'>Expand hydrobasin map</font>"),
+                       HTML("<br><font size='6'>Expand hydrobasin map</font>"),
                        tooltip(trigger=bs_icon("info-circle"), "By default, we propose hydrobasins that are in 50km radius around the distribution; click here to expand that radius to 100km around the edited distribution. Note that the map will be heavier and then perhaps less reactive."),
                        fluidRow(div(align="center",
                                     actionButton('Expand_Hydro', 'Expand', style="color: #fff; background-color: #009138ff; border-color: #009138ff", icon=icon("expand", lib="font-awesome"), width="30%"),
@@ -1119,15 +1119,9 @@ server <- function(input, output, session) {
     Storage_SP(sRL_StoreRead(input$sci_name,  input$user, MANDAT=1))
     
     # Hydro
-    if(AllowEdit()=="hydro"){
-      if("distSP_saved_tempoHydro" %in% names(Storage_SP())){
-        print("SHORT LOADING")
-        dist_loaded <- Storage_SP()$distSP_saved_tempoHydro
-      } else {
-        print("LONG LOADING")
-        dist_loaded <- Storage_SP()$distSP_saved  %>% sRLPolyg_PrepareHydro(., hydro_raw, paste0("hydro", substr(dist_saved$hybas_id[1],2,3)), SRC_created="yes")$hydroSP
-      }
-
+    if(AllowEdit()=="hydro" & "distSP_saved_tempoHydro" %in% names(Storage_SP())){
+      print("RE-LOADING")
+      dist_loaded <- Storage_SP()$distSP_saved_tempoHydro
     # Not hydro
     } else {
       if("distSP_saved" %in% names(Storage_SP())){dist_loaded <- Storage_SP()$distSP_saved} else {dist_loaded <- Storage_SP()$distSP_saved}
