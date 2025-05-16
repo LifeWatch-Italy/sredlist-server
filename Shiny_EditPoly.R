@@ -116,7 +116,7 @@ ui <- page_fillable(
       ),
       
       # Version number (just for Victor to ensure the correct version is deployed)
-      conditionalPanel(condition='input.user=="victor.cazalis"', "version 1.5_dev1")
+      conditionalPanel(condition='input.user=="victor.cazalis"', paste0("version 1.5_dev1; deployed on the: ", as.character(Sys.Date())))
       
     ),
     
@@ -825,6 +825,11 @@ server <- function(input, output, session) {
     markers <- P_tot %>% subset(., grepl("POINT", st_geometry_type(.)) & (! .$Row %in% markers_storage()$Row))
     if(nrow(markers)>0){
       print("Record marker drawing")
+      print('T1')
+      print(markers)
+      print("T2")
+      print(markers_storage())
+      print("T3")
       markers$Applied <- F # Create column recording if changes were applied or not
       
       # Store in markers_storage
@@ -1133,7 +1138,7 @@ server <- function(input, output, session) {
     ### Edit storage reactive values saying everything was applied
     lines <- lines_storage() ; lines$Applied <- T ; lines_storage(lines)
     drawn <- drawn_storage() ; drawn$Applied <- T ; drawn_storage(drawn)
-    markers <- markers_storage() ; markers$Applied <- T ; markers_storage(markers)
+    markers <- markers_storage() ; if(is.null(nrow(markers))==F){markers$Applied <- T ; markers_storage(markers)}
     
     ### Update leaflet map
     req(distSP())
