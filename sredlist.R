@@ -2748,6 +2748,7 @@ Prom<-future({
     if("hybas_id" %in% names(Storage_SP$distSP_saved) & ("Hydro" %in% outputs_selected)){
       hydroSIS<-sRL_OutputHydrobasins(distSIS, Storage_SP)
       write.csv(hydroSIS, paste0(output_dir, "/sRedList_", gsub(" ", ".", scientific_name), "_Hydrobasins.csv"), row.names=F)
+      if("Shp" %in% outputs_selected){st_write(distSIS, paste0(output_dir, "/sRedList_", gsub(" ", ".", scientific_name), "_Distribution_NOT_DISSOLVED.shp"), append=F)}
     }
     distSIS <- distSIS %>% dplyr::group_by(across(.cols=-"geometry")) %>% dplyr::summarise()
     if("Shp" %in% outputs_selected){st_write(distSIS, paste0(output_dir, "/sRedList_", gsub(" ", ".", scientific_name), "_Distribution.shp"), append=F)}
@@ -3054,7 +3055,7 @@ Prom<-future({
   file_name <- url_decode(file_name)
   Dist_path <- url_decode(Dist_path) %>% paste0(config$distribution_path, .)
   
-  if ((scientific_name %in% list.files(config$distribution_path))) { # nolint
+  if ((tolower(scientific_name) %in% tolower(list.files(config$distribution_path)))) { # nolint
     if (file_name %in% list.files(Dist_path)) {
       sRL_loginfo(paste0("Delete distribution:", Dist_path, '/', file_name), scientific_name) # nolint
       unlink(paste0(Dist_path, '/', file_name), recursive = TRUE)

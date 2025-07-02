@@ -16,6 +16,7 @@ library(spsComps) # For addLoader in server
 
 
 source(textConnection(readLines("server.R")[15:123]))
+hydro3 <- st_read(sub("level8_", "level3_", config$hydrobasins_path))
 
 
 ### Load functions
@@ -257,6 +258,7 @@ server <- function(input, output, session) {
   Suggest_hydro <- reactiveVal("no") # Reactive value that becomes T if we should add the button "Edit as hydrobasins", ie if this is a reassessment of a freshwater species
   Unsaved_changes <- reactiveVal("no") # Reactive value that becomes T when there are unsaved changes
   Warning_drawned <- reactiveVal("no") # Reactive value that becomes T when the warning that we need to save after drawing has been shown (to avoid it to be repeated)
+  hydro3_stored <- reactiveVal(data.frame())
   
   ### Events ---------
 
@@ -285,13 +287,21 @@ server <- function(input, output, session) {
     # Load distribution
     if(T %in% grepl("hydro", Stor_tempo$Output$Value) & Stor_tempo$Output$Value[Stor_tempo$Output$Parameter=="Distribution_Source"]=="Created"){
       dist_loaded0 <- Stor_tempo$distSP3_BeforeCrop
+      if(nrow(dist_loaded0)>50){showNotification(ui=HTML("Please be patient, the preparation of hydrobasins may take a few minutes"), type="warning", duration=3)}
       if(input$Expand_Hydro > 0){dist_loaded0 <- Stor_tempo$distSP_saved_tempoHydro %>% st_transform(., st_crs(Stor_tempo$distSP3_BeforeCrop))}
+      
       # Extract hydrobasins, will return a list with hydroSP to use and hydro_HQ with hydrobasins in the original quality
       track_storage$L$Hydro_init <- track_storage$L$Hydro_init+1
       hydro_ready <- sRLPolyg_PrepareHydro(dist_loaded0, hydro_raw, Stor_tempo$Output$Value[Stor_tempo$Output$Parameter=="Mapping_Start"], SRC_created="yes")
       dist_loaded <- hydro_ready[["hydroSP"]] ; Stor_tempo$hydroSP_HQ <- hydro_ready[["hydroSP_HQ"]]
+      
+      
+      # Prepare Hydro3
+      hydro3_stored(st_filter(hydro3, st_buffer(dist_loaded, 10)))
+      
       if(nrow(dist_loaded)==0){showNotification("The distribution does not overlap with hydrobasins, we cannot load the distribution", type="error", duration=3); req(F)}
-    } else {
+    
+      } else {
       dist_loaded <- Stor_tempo$distSP_saved
       dist_loaded <- sRLPolyg_InitDistri(dist_loaded, 4326)
     }
@@ -344,7 +354,7 @@ server <- function(input, output, session) {
     if(AllowEdit()!="hydro" & nrow(speciesRL_sub)>0 & TRUE %in% grepl("Freshwater", Stor_tempo$SpeciesAssessment$systems$description) & Stor_tempo$Output$Value[Stor_tempo$Output$Parameter=="Distribution_Source"] != "Created"){Suggest_hydro("yes")}
     
     ### Reload edits and storages (needed to make sure we start from zero; bugs otherwise)
-    edits <- sRLPolyg_CreateLeaflet(AllowEdit())
+    edits <- sRLPolyg_CreateLeaflet(AllowEdit(), hydro3_stored())
     lines <- lines_storage() ; if(is.null(nrow(lines))==F){lines$Applied <- T ; lines_storage(lines)}
     drawn <- drawn_storage() ; if(is.null(nrow(drawn))==F){drawn$Applied <- T ; drawn_storage(drawn)}
     markers <- markers_storage() ; if(is.null(nrow(markers))==F){markers$Applied <- T ; markers_storage(markers)}
@@ -399,14 +409,18 @@ server <- function(input, output, session) {
     AllowEdit("hydro")
     
     ### Subset hydrobasins
+    showNotification(ui=HTML("Please be patient, the preparation of hydrobasins may take up to a few minutes"), type="warning", duration=3)
     hydro_ready <- sRLPolyg_PrepareHydro(st_transform(distSP(), CRSMOLL), hydro_raw, "hydro8", SRC_created="no")
     dist_hydro <- hydro_ready[["hydroSP"]] ; Stor_tempo <- Storage_SP() ; Stor_tempo$hydroSP_HQ <- hydro_ready[["hydroSP_HQ"]] ; Storage_SP(Stor_tempo)
     if(nrow(dist_hydro)==0){showNotification("The distribution does not overlap with hydrobasins, we cannot load the distribution", type="error", duration=3); loader_loadhydro$hide(); req(F)}
     distSP(dist_hydro)
-
+    
+    ### Prepare Hydro3
+    hydro3_stored(st_filter(hydro3, st_buffer(dist_hydro, 10)))
+    
     ### Update leaflet map (necessary to call CreateLeaflet in case no simplification was selected to have the correct text for onRender for toolbar tooltips)
     req(distSP())
-    edits <- sRLPolyg_CreateLeaflet("hydro")
+    edits <- sRLPolyg_CreateLeaflet("hydro", hydro3_stored())
     sRLPolyg_UpdateLeaflet(distSP(), dat_pts(), frame=1, AllowEdit=AllowEdit())
     Unsaved_changes("yes")
 
@@ -798,7 +812,7 @@ server <- function(input, output, session) {
     ### Polygons
     drawn <- P_tot %>% subset(., grepl("POLYGON", st_geometry_type(.)) & (! .$Row %in% drawn_storage()$Row))
     if(nrow(drawn)>0){
-      print("Record and apply polygon drawing")
+      print("Record polygon drawing")
       
       if(is.null(P_drawn)==F){if(Warning_drawned()=="no"){showNotification(ui=HTML("When you finished drawing new polygons, please click on save to be able to specify their attributes."), type="message", duration=2) ; Warning_drawned("yes")}}
       
@@ -812,12 +826,13 @@ server <- function(input, output, session) {
         drawn_storage(sRL_rbindfillSF(edited_ST, drawn))
       }
       
-      # Send error if hydrobasins are being modified (it means they were dragged) as currently I'm not able to remove that option
-      if(AllowEdit()=="hydro"){
+      # Send error if hydrobasins are being dragged (not possible to remove that option)
+      if(AllowEdit()=="hydro" & (TRUE %in% grepl("distSP", drawn$layerId))){
         showNotification(ui=HTML("You should not move polygons when using hydrobasins. Your unsaved changes have been discarded."), type="error", duration=3)
         Run_discard(Run_discard()+1)
         req(F)
       }
+
     }
     
     
@@ -825,11 +840,8 @@ server <- function(input, output, session) {
     markers <- P_tot %>% subset(., grepl("POINT", st_geometry_type(.)) & (! .$Row %in% markers_storage()$Row))
     if(nrow(markers)>0){
       print("Record marker drawing")
-      print('T1')
       print(markers)
-      print("T2")
       print(markers_storage())
-      print("T3")
       markers$Applied <- F # Create column recording if changes were applied or not
       
       # Store in markers_storage
@@ -847,6 +859,7 @@ server <- function(input, output, session) {
   observeEvent(drawn_storage(), {
     
     req(F %in% drawn_storage()$Applied)
+    req(AllowEdit() != "hydro") # Don't apply for hydrobasins, drawn_storage is then only used to intersect when we click on batch_add or batch_remove
     sRL_loginfo("START - Apply polygon drawing and editing", input$sci_name)
     track_storage$L$ManuDrawEdit <- track_storage$L$ManuDrawEdit+1
     
@@ -943,18 +956,22 @@ server <- function(input, output, session) {
     sRL_loginfo("START - Batch add hydrobasins", input$sci_name)
     track_storage$L$BatchAddHydro <- track_storage$L$BatchAddHydro+1
     
+    print(edits()$finished)
+    
     # Return error if presence 2 selected
     if(input$Pres_batch==2){showNotification(ui=HTML(Pres2_error), type="error", duration=2) ; req(FALSE)}
     
-    # Prepare markers
-    req(is.null(markers_storage())==F)
+    # Prepare markers and drawn polygons
     markers_ST <- markers_storage()
-    markers <- markers_ST %>% subset(., .$Applied==F)
-    req(nrow(markers)>0)
+    markers_SUB <- markers_ST %>% subset(., .$Applied==F)
+    drawn_ST <- drawn_storage()
+    drawn_SUB <- drawn_ST %>% subset(., .$Applied==F)
+    MarkDrawn <- sRL_rbindfillSF(markers_SUB, drawn_SUB)
+    req(nrow(MarkDrawn)>0)
 
-    # Intersect markers and distribution
+    # Intersect MarkDrawn and distribution
     dist_inter <- distSP()
-    InterMark <- st_join(dist_inter, markers, join=st_intersects) %>% subset(., is.na(.$Row)==F)
+    InterMark <- st_join(dist_inter, MarkDrawn, join=st_intersects) %>% subset(., is.na(.$Row)==F)
     dist_inter$mark_intersect <- dist_inter$ID %in% InterMark$ID
     
     # Add/edit polygons
@@ -962,15 +979,17 @@ server <- function(input, output, session) {
     dist_inter$origin[dist_inter$mark_intersect==T] <- input$Orig_batch
     dist_inter$seasonal[dist_inter$mark_intersect==T] <- input$Seas_batch
     
-    # Update markers_storage Applied column
+    # Update markers_storage and drawn_storage Applied column
     markers_ST$Applied <- T
     markers_storage(markers_ST)
+    drawn_ST$Applied <- T
+    drawn_storage(drawn_ST)
     
     # Update distribution
     dist_inter$Popup[dist_inter$mark_intersect==T] <- sRLPolyg_CreatePopup(dist_inter[dist_inter$mark_intersect==T,])
     dist_inter$mark_intersect <- NULL
     distSP(dist_inter)
-    edits <- sRLPolyg_CreateLeaflet(AllowEdit())
+    edits <- sRLPolyg_CreateLeaflet(AllowEdit(), hydro3_stored())
     sRLPolyg_UpdateLeaflet(distSP(), dat_pts(), frame=1)
     Unsaved_changes("yes")
     
@@ -984,15 +1003,17 @@ server <- function(input, output, session) {
     sRL_loginfo("START - Batch remove hydrobasins", input$sci_name)
     track_storage$L$BatchRmHydro <- track_storage$L$BatchRmHydro+1
     
-    # Prepare markers
-    req(is.null(markers_storage())==F)
+    # Prepare markers and drawn polygons
     markers_ST <- markers_storage()
-    markers <- markers_ST %>% subset(., .$Applied==F)
-    req(nrow(markers)>0)
+    markers_SUB <- markers_ST %>% subset(., .$Applied==F)
+    drawn_ST <- drawn_storage()
+    drawn_SUB <- drawn_ST %>% subset(., .$Applied==F)
+    MarkDrawn <- sRL_rbindfillSF(markers_SUB, drawn_SUB)
+    req(nrow(MarkDrawn)>0)
     
-    # Intersect markers and distribution
+    # Intersect MarkDrawn and distribution
     dist_inter <- distSP()
-    InterMark <- st_join(dist_inter, markers, join=st_intersects) %>% subset(., is.na(.$Row)==F)
+    InterMark <- st_join(dist_inter, MarkDrawn, join=st_intersects) %>% subset(., is.na(.$Row)==F)
     dist_inter$mark_intersect <- dist_inter$ID %in% InterMark$ID
     
     # Remove polygons
@@ -1000,15 +1021,17 @@ server <- function(input, output, session) {
     dist_inter$origin[dist_inter$mark_intersect==T] <- NA
     dist_inter$seasonal[dist_inter$mark_intersect==T] <- NA
     
-    # Update markers_storage Applied column
+    # Update markers_storage and drawn_storage Applied column
     markers_ST$Applied <- T
     markers_storage(markers_ST)
+    drawn_ST$Applied <- T
+    drawn_storage(drawn_ST)
     
     # Update distribution
     dist_inter$Popup[dist_inter$mark_intersect==T] <- sRLPolyg_CreatePopup(dist_inter[dist_inter$mark_intersect==T,])
     dist_inter$mark_intersect <- NULL
     distSP(dist_inter)
-    edits <- sRLPolyg_CreateLeaflet(AllowEdit())
+    edits <- sRLPolyg_CreateLeaflet(AllowEdit(), hydro3_stored())
     sRLPolyg_UpdateLeaflet(distSP(), dat_pts(), frame=1)
     Unsaved_changes("yes")
     
@@ -1099,7 +1122,7 @@ server <- function(input, output, session) {
     sRL_saveMapDistribution(input$sci_name, Storage_SPNEW)
     
     ### Update map
-    edits <- sRLPolyg_CreateLeaflet(AllowEdit())
+    edits <- sRLPolyg_CreateLeaflet(AllowEdit(), hydro3_stored())
     sRLPolyg_UpdateLeaflet(distSP(), dat_pts(), frame=1)
     Unsaved_changes("no")
     
@@ -1142,7 +1165,7 @@ server <- function(input, output, session) {
     
     ### Update leaflet map
     req(distSP())
-    edits <- sRLPolyg_CreateLeaflet(AllowEdit())
+    edits <- sRLPolyg_CreateLeaflet(AllowEdit(), hydro3_stored())
     sRLPolyg_UpdateLeaflet(distSP(), dat_pts(), frame=1, PolygToRemove)
     Unsaved_changes("no")
   })

@@ -115,7 +115,7 @@ sRLPolyg_PrepareRender <- function(param){
 }
 
 ### Create leaflet map
-sRLPolyg_CreateLeaflet <- function(AllowEdit){
+sRLPolyg_CreateLeaflet <- function(AllowEdit, hydro3_stored=data.frame()){
 
   ### Create map
   LEAF <- leaflet(options = leafletOptions(doubleClickZoom= FALSE)) %>%
@@ -126,10 +126,17 @@ sRLPolyg_CreateLeaflet <- function(AllowEdit){
     addScaleBar(position="bottomright") %>%
     addLayersControl(baseGroups=c("OpenStreetMap", "Satellite", "Topography"), position="bottomleft")
   
+  # Add hydro3 for freshwater
+  if(nrow(hydro3_stored)>0){
+    LEAF <- LEAF %>%
+      addPolygons(data=hydro3_stored, color="darkblue", stroke=T, fill=F, group="Hydrobasins-3") %>%
+      hideGroup("Hydrobasins-3")
+  }
+  
   ### Set toolbar options: if users decided not to simplify a complex distribution, keep the original distribution but remove option to edit manually; if hydrobasins then only markers
   if(AllowEdit=="yes"){OPTs_pm <- list(targetGroup="editable", toolbarOptions = pmToolbarOptions(drawMarker=F, drawPolygon=T, drawPolyline=T, drawCircle=F, drawRectangle=F, removalMode=F, cutPolygon=F)) ; Render_TXT <- sRLPolyg_PrepareRender(param=c("Polygon", "Polyline", "Edit", "Drag"))}
   if(AllowEdit=="no"){OPTs_pm <- list(targetGroup="editable", toolbarOptions = pmToolbarOptions(drawMarker=F, drawPolygon=T, drawPolyline=T, drawCircle=F, drawRectangle=F, removalMode=F, cutPolygon=F, editMode=F)) ; Render_TXT <- sRLPolyg_PrepareRender(param=c("Polygon", "Polyline", "Drag"))}
-  if(AllowEdit=="hydro"){OPTs_pm <- list(editOptions=pmEditOptions(draggable=F, snappable=F, snapDistance=1), drawOptions=pmDrawOptions(snappable=F), toolbarOptions = pmToolbarOptions(drawMarker=T, drawPolygon=F, drawPolyline=F, drawCircle=F, drawRectangle=F, removalMode=F, cutPolygon=F, editMode=F)) ; Render_TXT <- sRLPolyg_PrepareRender(param=c("Marker", "Drag"))}
+  if(AllowEdit=="hydro"){OPTs_pm <- list(editOptions=pmEditOptions(draggable=F, snappable=F, snapDistance=1), drawOptions=pmDrawOptions(snappable=F), toolbarOptions = pmToolbarOptions(drawMarker=T, drawPolygon=T, drawPolyline=F, drawCircle=F, drawRectangle=F, removalMode=F, cutPolygon=F, editMode=F)) ; Render_TXT <- sRLPolyg_PrepareRender(param=c("Marker", "Drag"))}
   
   ### Create module
   EDIT <- callModule(
@@ -253,15 +260,20 @@ sRLPolyg_UpdateLeaflet <- function(distSP, dat_pts, frame, PolygRemove="", Allow
   if(is.null(nrow(dat_pts))==F){
     if(dat_pts$Pts_type[1]=="1b"){
       leafletProxy("map-map") %>% 
-        addCircleMarkers(lng = dat_pts$lon, lat = dat_pts$lat, radius=5, stroke=F, fillOpacity=0.8, color="black", popup=dat_pts$PopText, group="Occurrences") %>%
-        addLayersControl(baseGroups=c("OpenStreetMap", "Satellite", "Topography"), overlayGroups=c("Occurrences"), position="bottomleft")
+        addCircleMarkers(lng = dat_pts$lon, lat = dat_pts$lat, radius=5, stroke=F, fillOpacity=0.8, color="black", popup=dat_pts$PopText, group="Occurrences")
     } else {
       leafletProxy("map-map") %>% 
         addCircleMarkers(lng = dat_pts$lon, lat = dat_pts$lat, radius=5, stroke=F, fillOpacity=0.8, color=revalue(dat_pts$ValidDistri, c("In"="#fdcb25ff", "Out"="#EA5F94", "Invalid"="#440154ff")), popup=dat_pts$PopText, group="Occurrences") %>%
         clearControls() %>%
-        addLegend(position="bottomleft", colors=c('#fdcb25ff', '#EA5F94', '#440154ff'), labels=c("Inside distribution", "Outside distribution", "Invalid record")) %>%
-        addLayersControl(baseGroups=c("OpenStreetMap", "Satellite", "Topography"), overlayGroups=c("Occurrences"), position="bottomleft")
-    }
+        addLegend(position="bottomleft", colors=c('#fdcb25ff', '#EA5F94', '#440154ff'), labels=c("Inside distribution", "Outside distribution", "Invalid record"))
+      }
+  }
+  
+  # Update control layer
+  CTRL_var <- c(ifelse(is.null(nrow(dat_pts)), NA, "Occurrences"), ifelse("hybas_id" %in% names(distSP), "Hydrobasins-3", NA)) %>% .[is.na(.)==F]
+  if(length(CTRL_var)>0){
+    leafletProxy("map-map") %>% 
+      addLayersControl(baseGroups=c("OpenStreetMap", "Satellite", "Topography"), overlayGroups=CTRL_var, position="bottomleft") 
   }
   
   # Update framing if frame==1
