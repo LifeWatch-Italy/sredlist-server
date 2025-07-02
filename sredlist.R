@@ -809,7 +809,34 @@ function(scientific_name, username) {
 
 # Step 2: Countries of Occurrence ----------------------------------------------------------------
 
-#* Countries of occurrence
+## System preferences -------
+#* Extract system preferences from previous assessments or options
+#* @get species/<scientific_name>/analysis/coo/SystemPref
+#* @param scientific_name:string Scientific Name
+#* @serializer unboxedJSON
+#* @tag sRedList
+function(scientific_name, username){
+  sRL_loginfo("START - System preferences", scientific_name)
+  
+  scientific_name<-sRL_decode(scientific_name)
+  Storage_SP<-sRL_StoreRead(scientific_name,  username, MANDAT=1) ; print(names(Storage_SP))
+  
+  ### Check previous published assessments OR from parameters
+  if("SpeciesAssessment" %in% names(Storage_SP)){
+    System_list <- Storage_SP$SpeciesAssessment$systems$description %>% replace(., grepl("Freshwater", .), "Freshwater") %>% tolower(.) %>% substr(., 1, 1)
+  } else {
+    System_list <- "t"
+    if(TRUE %in% grepl("hydro", Storage_SP$Output$Value)){System_list <- "f"}
+    if(TRUE %in% grepl("cropsea", Storage_SP$Output$Value)){System_list <- "m"}
+  }
+  
+  return(list(System_pref=System_list)
+  )
+}
+
+
+
+## Countries of occurrence -----
 #* @get species/<scientific_name>/analysis/coo
 #* @param scientific_name:string Scientific Name
 #* @param domain_pref:[str] domain_pref
@@ -819,13 +846,13 @@ function(scientific_name, username, domain_pref=list()) {
 
 Prom<-future({
   sf::sf_use_s2(FALSE)
-
+  
   # Filter parameters
   scientific_name<-sRL_decode(scientific_name)
   Storage_SP<-sRL_StoreRead(scientific_name,  username, MANDAT=1) ; print(names(Storage_SP))
   rownames(coo_raw)<-1:nrow(coo_raw)
   distSP<-Storage_SP$distSP_saved ; if(nrow(distSP)==0){return(leaflet() %>% addControl("<center><font size='6' color='#ad180d'><b>The distribution is empty, go back to Step 1</b></center>", position = "topleft", className="map-title"))}
-  domain_pref<-revalue(as.character(domain_pref), c("1"="Terrestrial", "2"="Marine", "3"="Freshwater"), warn_missing = F)
+  domain_pref <- domain_pref %>% as.character(.) %>% strsplit(., ",") %>% unlist(.) %>% revalue(., c("t"="Terrestrial", "m"="Marine", "f"="Freshwater"), warn_missing = F)
   print(domain_pref)
   Storage_SP<-sRL_OutLog(Storage_SP, "System_pref", paste(domain_pref, collapse="|"))
   

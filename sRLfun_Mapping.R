@@ -937,7 +937,7 @@ sRL_cooExtract<-function(distSP, domain_pref, Crop_Country){
     eez<-eez_raw
     
     # Map intersection and summarise attributes
-    inter<-st_intersection(distSP, eez) %>% as.data.frame() %>% ddply(., .(SIS_name0, SIS_name1, lookup, lookup_SIS0), function(x){data.frame(presence=paste(unique(x$presence), collapse="|"), origin=paste(unique(x$origin), collapse="|"), seasonal=paste(unique(x$seasonal), collapse="|"))})
+    inter<-st_intersection(st_make_valid(distSP), eez) %>% as.data.frame() %>% ddply(., .(SIS_name0, SIS_name1, lookup, lookup_SIS0), function(x){data.frame(presence=paste(unique(x$presence), collapse="|"), origin=paste(unique(x$origin), collapse="|"), seasonal=paste(unique(x$seasonal), collapse="|"))})
     
     # Match attributes
     eez$presence<-inter$presence[match(eez$lookup, inter$lookup)]
