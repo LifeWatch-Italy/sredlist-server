@@ -7,6 +7,10 @@ library(leaflet)
 library(mapedit)
 library(sf)
 library(htmlwidgets)
+library(bslib)
+library(rgbif)
+library(DT)
+library(spsComps) # For addLoader in server
 
 source(textConnection(readLines("server.R")[1:73]))
 
@@ -28,43 +32,58 @@ options(shiny.port = 7839)
 
 
 ### UI ----------
-ui <- fluidPage(
+ui <- page_fillable(
   
-  tags$style(type="text/css",
-             ".shiny-notification {
-    position:fixed;
-    top: calc(25%);
-    left: calc(50%);
-  }"),
+  tags$head(
+    tags$style(
+      HTML(".shiny-notification {
+             position:fixed;
+             top: calc(10%);
+             left: calc(-150%);
+             }")
+    )),
   
   # add map
-  sidebarLayout(
-    position="left",
-    mainPanel(
-      conditionalPanel('false', 
-                       textInput("sci_name",
-                                 "Scientific name:"),
-                       textInput("user",
-                                 "User name:")
+  accordion_filters <- accordion(open="Map",
+      accordion_panel("Map", icon = bsicons::bs_icon("map"),              
+                                   
+                      sidebarLayout(
+                        position="left",
+                        mainPanel(
+                          conditionalPanel('false', 
+                                           textInput("sci_name",
+                                                     "Scientific name:"),
+                                           textInput("user",
+                                                     "User name:")
+                          ),
+                          editModUI("map", height=600, width = "100%"),
+                          
+                          # Version number (just for Victor to ensure the correct version is deployed)
+                          conditionalPanel(condition='input.user=="victor.cazalis"', paste0("version 1.5_local deployed on ", as.character(Sys.Date())))
+                        ),
+                        sidebarPanel(
+                          titlePanel("Drag existing records"),
+                          actionButton('movePts', 'Allow dragging', style="color: #fff; background-color: #009138ff; border-color: #009138ff"), 
+                          
+                          titlePanel("Enter new records attributes"),
+                          numericInput("Pts_year", label="Year", value=NA),
+                          textInput("Pts_source", label="Source", value=NA),
+                          titlePanel("Save changes"),
+                          actionButton('save', 'Save from Map', style="color: #fff; background-color: #009138ff; border-color: #009138ff")
+                        )
+                      )
       ),
-      editModUI("map", height=600, width = "100%"),
       
-      # Version number (just for Victor to ensure the correct version is deployed)
-      conditionalPanel(condition='input.user=="victor.cazalis"', "version 1.3_online1")
-    ),
-    sidebarPanel(
-      titlePanel("Drag existing records"),
-      actionButton('movePts', 'Allow dragging', style="color: #fff; background-color: #009138ff; border-color: #009138ff"), 
+      accordion_panel("Explore georeferenced records", icon = bsicons::bs_icon("search"),
+                      DTOutput("Table_points")
+      ),
       
-      titlePanel("Enter new records attributes"),
-      numericInput("Pts_year", label="Year", value=NA),
-      textInput("Pts_source", label="Source", value=NA),
-      titlePanel("Save changes"),
-      actionButton('save', 'Save from Map', style="color: #fff; background-color: #009138ff; border-color: #009138ff")
+      accordion_panel("Explore non-georeferenced records", icon = bsicons::bs_icon("search"),
+                      actionButton("GetNonGeo", "Get GBIF non-georeferenced records", style="color: #fff; background-color: #009138ff; border-color: #009138ff"),
+                      DTOutput("Table_nongeoDT")
+                      )
     )
-  )
 )
-
 
 
 
@@ -88,7 +107,7 @@ server <- function(input, output, session) {
   flagsSF <- reactiveVal()
   flags <- reactiveVal()
   Storage_SP <- reactiveVal()
-  
+  Table_nongeo <- reactiveVal(data.frame())
   
   
   ### Events ---------
@@ -140,6 +159,34 @@ server <- function(input, output, session) {
   })
   
   
+  ### Explore non-georeferenced records
+  observeEvent(input$GetNonGeo, {
+    sRL_loginfo("START - Explore non-georeferenced records", input$sci_name)
+    
+    # Loader
+    loader_nongeo <- addLoader$new("sci_name", color = "#009138ff", method = "full_screen", height = "30rem", opacity=0.4) ; loader_nongeo$show()
+    
+    # Get records
+    dat_nongeo <- occ_data(scientificName=input$sci_name, 
+                                hasCoordinate = F, 
+                                limit=1000
+    )$data
+    
+    # Create table
+    if(is.null(nrow(dat_nongeo))==F){
+      Tab <- dat_nongeo %>%
+        mutate(Link=paste0("<a href='https://gbif.org/occurrence/", .$gbifID, "' target='_blank'>Link</a>")) %>%
+        .[,c("scientificName", "basisOfRecord", "eventDate", "higherGeography", "continent", "country", "locality", "institutionCode", "collectionCode", "occurrenceRemarks", "Link")]
+      
+      Table_nongeo(Tab)
+    }
+    
+    # End loader
+    loader_nongeo$hide()
+    
+  })
+  
+  
   ### Save points
   observeEvent(input$save, {
     sRL_loginfo("START - Save manual edit records", input$sci_name)
@@ -182,15 +229,54 @@ server <- function(input, output, session) {
     sRLMan_UpdateLeaflet(flagsSF(), frame=0, Drag=F)
     
   })
+  
+  
+  ### Outputs ---------
+  output$Table_points <- renderDataTable({
+    
+    flags_to_show <- flagsSF()[, ! names(flagsSF()) %in% c("geometry", "PopText", "Coords_merged", "unique", "Lon_jitt", "Lat_jitt", "_leaflet_id", "Only_for_syn")]
+    flags_to_show[,which(substr(names(flags_to_show), 1, 1)==".")] <- NULL
+    flags_to_show$geometry <- NULL
+
+    flags_to_show$Link[is.na(flags_to_show$Link)==F] <- paste0("<a href='", flags_to_show$Link[is.na(flags_to_show$Link)==F], "' target='_blank'>Link</a>")
+    flags_to_show <- dplyr::relocate(flags_to_show, "Reason", .before="countryCode")
+    
+    COL_names <- c(levels(as.factor(flags_to_show$Reason)), NA)
+    COL_values <- c(rep("#C0B2CF", nlevels(as.factor(flags_to_show$Reason))), "#FCE89C")
+    
+    req(nrow(flagsSF())>0)
+    datatable(
+      flags_to_show,
+      escape = FALSE,
+      filter="top",
+      options = list(pageLength = 50,
+                     headerCallback = DT::JS(# Needed to reduce column name font
+                       "function(thead) {",
+                       "  $(thead).css('font-size', '0.75em');",
+                       "}")
+      ),
+      rownames=FALSE) %>% 
+      DT::formatStyle(columns = c(1:ncol(flags_to_show)), fontSize = '75%') %>%
+      DT::formatStyle(columns=which(names(flags_to_show)=="Reason"), backgroundColor=styleEqual(levels=COL_names, values=COL_values))
+  })
+  
+  output$Table_nongeoDT <- renderDataTable({
+    req(input$GetNonGeo & nrow(Table_nongeo())>0)
+    datatable(
+      Table_nongeo(),
+      escape = FALSE,
+      filter="top",
+      options = list(pageLength = 50,
+                     headerCallback = DT::JS(# Needed to reduce column name font
+                       "function(thead) {",
+                       "  $(thead).css('font-size', '0.75em');",
+                       "}")
+      ),
+      rownames=FALSE) %>% DT::formatStyle(columns = c(1:ncol(Table_nongeo())), fontSize = '75%')
+  })
 }
-
-
-
 
 
 # Run the application 
 shinyApp(ui = ui, server = server)
-
-
-
 
