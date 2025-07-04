@@ -44,7 +44,7 @@ An assessment has been completed on the sRedList platform for the species *`r sR
 
 
 ## Step 4: Area of Habitat
-`r if("AOH_HabitatPreference" %in% outlog$Parameter & "Gbif_Source" %in% outlog$Parameter){tryCatch({knitr::knit_child("sRL_markdown_scripts/RMD_child_Step4occ.rmd")}, error=function(e){"!! Error in reporting step 4 !!"})}`
+`r if("aoo_points" %in% names(Storage_SP)){tryCatch({knitr::knit_child("sRL_markdown_scripts/RMD_child_Step4occ.rmd")}, error=function(e){"!! Error in reporting step 4 !!"})}`
 `r if("AOH_HabitatPreference" %in% outlog$Parameter){tryCatch({knitr::knit_child("sRL_markdown_scripts/RMD_child_Step4.rmd")}, error=function(e){"!! Error in reporting step 4 !!"})} else {NO_STEP}`
 <br><br><br>
 

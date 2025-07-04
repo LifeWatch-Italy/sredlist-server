@@ -1222,20 +1222,6 @@ function(scientific_name, username) {
 #* @tag sRedList
 function(scientific_name, username, habitats_pref= list(), habitats_pref_MARGINAL=list(), altitudes_pref= c("0","9000"), density_pref= '-1') { # nolint    
 
-# If no habitat preference or habitats not in crosswalk, return error
-if(length(habitats_pref)==0){no_habitat_pref()}
-if(!"TRUE" %in% (habitats_pref %in% crosswalk_to_use$code)){no_habitats_crosswalk()}
-
-# Check elevation
-if(length(altitudes_pref)==0){altitudes_pref<-c("0","9000")}
-TestALT1<-altitudes_pref[1] %>% strsplit(., "-") %>% unlist(.) %>% as.numeric(.)
-TestALT2<-altitudes_pref[2] %>% strsplit(., "-") %>% unlist(.) %>% as.numeric(.)
-if(is.na(sum(TestALT1)) | is.na(sum(TestALT2)) | length(TestALT1)>2 | length(TestALT2)>2){elev_not_valid()} # Could be NA if text inside, could be length > 2 if two hyphens
-if(max(TestALT1)>min(TestALT2) | is.unsorted(TestALT1) | is.unsorted(TestALT2)){elev_decreasing()}
-
-# Check density
-if(density_pref!='-1' & is.na(sum(as.numeric(unlist(strsplit(density_pref, "-")))))){wrong_density()}
-
 # Clean memory
 Prom_clean<-future({
   sRL_loginfo("START - Cleaning memory", scientific_name)
@@ -1254,282 +1240,296 @@ Prom<-future({
   scientific_name <- sRL_decode(scientific_name)
   Storage_SP=sRL_StoreRead(scientific_name,  username, MANDAT=1) ; print(names(Storage_SP))
   distSP=Storage_SP$distSP_selected ; if(nrow(distSP)==0){empty_distrib()}
-
-  # Habitat table (for aoh analysis and for SIS Connect)
-  habitats_pref_DF<-sRL_PrepareHabitatFile(scientific_name, habitats_pref, habitats_pref_MARGINAL)
-  print(habitats_pref_DF)
-  Storage_SP$habitats_SIS=habitats_pref_DF
-
-  # Altitude table (for aoh analysis and for SIS Connect)
-  altitudes_pref_DF<-sRL_PrepareAltitudeFile(scientific_name, altitudes_pref)
-  Storage_SP$AltPref_saved=altitudes_pref_DF
-  density_pref <- density_pref %>% gsub(" ", "", .) %>% gsub(",", ".", .)
-
-  # Do I need to calculate 2 aoh (yes if uncertainty in habitats or altitude)
-  Uncertain<-ifelse("Unknown" %in% habitats_pref_DF$suitability | TRUE %in% grepl("-", altitudes_pref), "Uncertain_yes", "Uncertain_no")
-  Storage_SP$Uncertain<-Uncertain
+  Range_size<-as.numeric(st_area(distSP))/10^6 ; print(Range_size)
+  run_AOH <- ifelse(is.na(Storage_SP$Output$Value[Storage_SP$Output$Parameter=="System_pref"]) | grepl("Terrestrial", Storage_SP$Output$Value[Storage_SP$Output$Parameter=="System_pref"]), T, F)
+  if(run_AOH==F & (! "dat_proj_saved" %in% names(Storage_SP))){no_aoh_calc()}
   
-  print(paste0("Habitat suitable: ", paste(habitats_pref, collapse=", "), "   ;   Habitat marginal: ", paste(habitats_pref_MARGINAL, collapse=", ")))
-  print(altitudes_pref)
-  print(density_pref)
-  print(Uncertain)
-
-  # Charge distribution
-  distSP$binomial<-as.character(distSP$binomial)
-
-  ### Prepare distribution, altitude, and preference files (i.e., part of the AOH analysis that has to be run only once)
-  # Distribution (assuming seasonal=resident after users decided what they keep)
-  distSP$seasonal=1
-  names(distSP)<-replace(names(distSP), names(distSP)=="terrestial", "terrestrial") ; distSP$terrestrial<-"true" # I have to make it manually so that it does not exclude pure freshwater species (it will be users choice in any case)
-  
-  rangeSP_clean<-create_spp_info_data(distSP,
-                                      keep_iucn_rl_presence = 1:6, # The selection has already been made, so I give fake numbers here
-                                      keep_iucn_rl_seasonal = 1:5,
-                                      keep_iucn_rl_origin = 1:6,
-                                      spp_summary_data = altitudes_pref_DF,
-                                      spp_habitat_data = habitats_pref_DF[habitats_pref_DF$suitability=="Suitable",], # Will only keep suitable habitat
-                                      key=config$red_list_token,
-                                      crs=st_crs(CRSMOLL))
-  
-  Storage_SP$RangeClean_saved=rangeSP_clean
-
-  # Remove old stored AOH
-  output_dir<-paste0("resources/AOH_stored/", sub(" ", "_", scientific_name), "_", sRL_userdecode(username))
-  dir.create(paste0(output_dir, "/Current"), recursive=T)
-  dir.create(paste0(output_dir, "/Current_optimistic"), recursive=T)
-  dir.create(paste0(output_dir, "/Temporary"))
-  do.call(file.remove, list.files(output_dir, full.names = TRUE, recursive=T) %>% .[! (grepl("Storage_SP", .) | grepl("Plots/", .))] %>% list(.)) # Remove all files but Storage_SP and plots (needed for Rmarkdown)
-  terraOptions(tempdir=paste0(output_dir, "/Temporary"), memmax=config$RAMmax_GB)
-  rasterOptions(tmpdir=paste0(output_dir, "/Temporary"), maxmemory=config$RAMmax_GB)
-
-  ### SMALL-RANGES ----- (if range is smaller than Size_LargeRange and the box around it is not more than 10 times bigger)
-  Range_size<-as.numeric(st_area(rangeSP_clean))/10^6 ; print(Range_size)
-  Range_bbox<-as.numeric(st_area(st_as_sfc(st_bbox(rangeSP_clean))))/10^6
-  AOH_type<-ifelse(((Range_size < as.numeric(config$Size_LargeRange)) & (Range_bbox < (10*as.numeric(config$Size_LargeRange)))), "Small", "Large") ; print(AOH_type)
-  if(AOH_type=="Small"){
-
-    sRL_loginfo("START - Small: Cropping rasters", scientific_name)
-    alt_raw<-sRL_ChargeAltRaster()
-    alt_crop=crop(alt_raw, extent(distSP), snap="out")
-    writeRaster(alt_crop, paste0(output_dir, "/alt_crop.tif"))
-    cci2<-sRL_ChargeCci2Raster()
-    cci2_crop<-crop(cci2, extent(distSP), snap="out")
-    writeRaster(cci2_crop, paste0(output_dir, "/cci2_crop.tif"), overwrite=T)
-
-    # Calculate AOH with "Suitable" habitats only (ie pessimistic)
-    AOH2<-sRL_calculateAOH(rangeSP_fun=rangeSP_clean,
-                           cci_fun=cci2_crop,
-                           alt_fun=alt_crop,
-                           FOLDER=paste0(output_dir, "/Current"),
-                           elevation_data_fun=altitudes_pref_DF)
-
-    # Calculate AOH with "Suitable" and "Marginal" habitats (ie optimistic)
-    if(Uncertain == "Uncertain_yes"){
-      # Include marginal habitats in the full_habitat_code cell
-      rangeSP_cleanOPT<-rangeSP_clean
-      rangeSP_cleanOPT$full_habitat_code<-paste(habitats_pref_DF$code, collapse="|")
-      Storage_SP$RangeCleanOPT_saved=rangeSP_cleanOPT
-
-      # Include extreme elevation if they exist
-      if("elevation_lowerEXTREME" %in% names(altitudes_pref_DF)){rangeSP_cleanOPT$elevation_lower<-altitudes_pref_DF$elevation_lowerEXTREME[1]}
-      if("elevation_upperEXTREME" %in% names(altitudes_pref_DF)){rangeSP_cleanOPT$elevation_upper<-altitudes_pref_DF$elevation_upperEXTREME[1]}
-
-      # Calculate optimistic AOH: but if marginal habitats all point at CCI modalities already included with habitats_pref and elevation are not different, I use AOH2 directly as there won't be any difference
-      if(length(unique(crosswalk_to_use$value[crosswalk_to_use$code %in% habitats_pref]))==length(unique(crosswalk_to_use$value[crosswalk_to_use$code %in% c(habitats_pref, habitats_pref_MARGINAL)])) & !"elevation_lowerEXTREME" %in% names(altitudes_pref_DF) & !"elevation_upperEXTREME" %in% names(altitudes_pref_DF)){
-            AOH2_opt<-AOH2; sRL_loginfo("Identical AOH, no need to calculate", scientific_name)
-            terra::writeRaster(rast(AOH2_opt), paste0("resources/AOH_stored/", gsub(" ", "_", scientific_name), "_", sRL_userdecode(username), "/Current_optimistic/Optimistic_identical.tif"))
-            } else{
-
-            AOH2_opt<-sRL_calculateAOH(rangeSP_fun=rangeSP_cleanOPT,
-                                 cci_fun=cci2_crop,
-                                 alt_fun=alt_crop,
-                                 FOLDER=paste0(output_dir, "/Current_optimistic"),
-                                 elevation_data_fun=altitudes_pref_DF)
-            sRL_loginfo("Maximum AOH calculated", scientific_name)
+  if(run_AOH==T){
+    # If no habitat preference or habitats not in crosswalk, return error
+    if(length(habitats_pref)==0){no_habitat_pref()}
+    if(!"TRUE" %in% (habitats_pref %in% crosswalk_to_use$code)){no_habitats_crosswalk()}
+    
+    # Check elevation
+    if(length(altitudes_pref)==0){altitudes_pref<-c("0","9000")}
+    TestALT1<-altitudes_pref[1] %>% strsplit(., "-") %>% unlist(.) %>% as.numeric(.)
+    TestALT2<-altitudes_pref[2] %>% strsplit(., "-") %>% unlist(.) %>% as.numeric(.)
+    if(is.na(sum(TestALT1)) | is.na(sum(TestALT2)) | length(TestALT1)>2 | length(TestALT2)>2){elev_not_valid()} # Could be NA if text inside, could be length > 2 if two hyphens
+    if(max(TestALT1)>min(TestALT2) | is.unsorted(TestALT1) | is.unsorted(TestALT2)){elev_decreasing()}
+    
+    # Check density
+    if(density_pref!='-1' & is.na(sum(as.numeric(unlist(strsplit(density_pref, "-")))))){wrong_density()}
+    
+    # Habitat table (for aoh analysis and for SIS Connect)
+    habitats_pref_DF<-sRL_PrepareHabitatFile(scientific_name, habitats_pref, habitats_pref_MARGINAL)
+    print(habitats_pref_DF)
+    Storage_SP$habitats_SIS=habitats_pref_DF
+    
+    # Altitude table (for aoh analysis and for SIS Connect)
+    altitudes_pref_DF<-sRL_PrepareAltitudeFile(scientific_name, altitudes_pref)
+    Storage_SP$AltPref_saved=altitudes_pref_DF
+    density_pref <- density_pref %>% gsub(" ", "", .) %>% gsub(",", ".", .)
+    
+    # Do I need to calculate 2 aoh (yes if uncertainty in habitats or altitude)
+    Uncertain<-ifelse("Unknown" %in% habitats_pref_DF$suitability | TRUE %in% grepl("-", altitudes_pref), "Uncertain_yes", "Uncertain_no")
+    Storage_SP$Uncertain<-Uncertain
+    
+    print(paste0("Habitat suitable: ", paste(habitats_pref, collapse=", "), "   ;   Habitat marginal: ", paste(habitats_pref_MARGINAL, collapse=", ")))
+    print(altitudes_pref)
+    print(density_pref)
+    print(Uncertain)
+    
+    ### Prepare distribution, altitude, and preference files (i.e., part of the AOH analysis that has to be run only once)
+    # Distribution (assuming seasonal=resident after users decided what they keep)
+    distSP$seasonal=1
+    names(distSP)<-replace(names(distSP), names(distSP)=="terrestial", "terrestrial") ; distSP$terrestrial<-"true" # I have to make it manually so that it does not exclude pure freshwater species (it will be users choice in any case)
+    
+    rangeSP_clean<-create_spp_info_data(distSP,
+                                        keep_iucn_rl_presence = 1:6, # The selection has already been made, so I give fake numbers here
+                                        keep_iucn_rl_seasonal = 1:5,
+                                        keep_iucn_rl_origin = 1:6,
+                                        spp_summary_data = altitudes_pref_DF,
+                                        spp_habitat_data = habitats_pref_DF[habitats_pref_DF$suitability=="Suitable",], # Will only keep suitable habitat
+                                        key=config$red_list_token,
+                                        crs=st_crs(CRSMOLL))
+    
+    Storage_SP$RangeClean_saved=rangeSP_clean
+    
+    # Remove old stored AOH
+    output_dir<-paste0("resources/AOH_stored/", sub(" ", "_", scientific_name), "_", sRL_userdecode(username))
+    dir.create(paste0(output_dir, "/Current"), recursive=T)
+    dir.create(paste0(output_dir, "/Current_optimistic"), recursive=T)
+    dir.create(paste0(output_dir, "/Temporary"))
+    do.call(file.remove, list.files(output_dir, full.names = TRUE, recursive=T) %>% .[! (grepl("Storage_SP", .) | grepl("Plots/", .))] %>% list(.)) # Remove all files but Storage_SP and plots (needed for Rmarkdown)
+    terraOptions(tempdir=paste0(output_dir, "/Temporary"), memmax=config$RAMmax_GB)
+    rasterOptions(tmpdir=paste0(output_dir, "/Temporary"), maxmemory=config$RAMmax_GB)
+    
+    ### SMALL-RANGES ----- (if range is smaller than Size_LargeRange and the box around it is not more than 10 times bigger)
+    Range_bbox<-as.numeric(st_area(st_as_sfc(st_bbox(rangeSP_clean))))/10^6
+    AOH_type<-ifelse(((Range_size < as.numeric(config$Size_LargeRange)) & (Range_bbox < (10*as.numeric(config$Size_LargeRange)))), "Small", "Large") ; print(AOH_type)
+    if(AOH_type=="Small"){
+      
+      sRL_loginfo("START - Small: Cropping rasters", scientific_name)
+      alt_raw<-sRL_ChargeAltRaster()
+      alt_crop=crop(alt_raw, extent(distSP), snap="out")
+      writeRaster(alt_crop, paste0(output_dir, "/alt_crop.tif"))
+      cci2<-sRL_ChargeCci2Raster()
+      cci2_crop<-crop(cci2, extent(distSP), snap="out")
+      writeRaster(cci2_crop, paste0(output_dir, "/cci2_crop.tif"), overwrite=T)
+      
+      # Calculate AOH with "Suitable" habitats only (ie pessimistic)
+      AOH2<-sRL_calculateAOH(rangeSP_fun=rangeSP_clean,
+                             cci_fun=cci2_crop,
+                             alt_fun=alt_crop,
+                             FOLDER=paste0(output_dir, "/Current"),
+                             elevation_data_fun=altitudes_pref_DF)
+      
+      # Calculate AOH with "Suitable" and "Marginal" habitats (ie optimistic)
+      if(Uncertain == "Uncertain_yes"){
+        # Include marginal habitats in the full_habitat_code cell
+        rangeSP_cleanOPT<-rangeSP_clean
+        rangeSP_cleanOPT$full_habitat_code<-paste(habitats_pref_DF$code, collapse="|")
+        Storage_SP$RangeCleanOPT_saved=rangeSP_cleanOPT
+        
+        # Include extreme elevation if they exist
+        if("elevation_lowerEXTREME" %in% names(altitudes_pref_DF)){rangeSP_cleanOPT$elevation_lower<-altitudes_pref_DF$elevation_lowerEXTREME[1]}
+        if("elevation_upperEXTREME" %in% names(altitudes_pref_DF)){rangeSP_cleanOPT$elevation_upper<-altitudes_pref_DF$elevation_upperEXTREME[1]}
+        
+        # Calculate optimistic AOH: but if marginal habitats all point at CCI modalities already included with habitats_pref and elevation are not different, I use AOH2 directly as there won't be any difference
+        if(length(unique(crosswalk_to_use$value[crosswalk_to_use$code %in% habitats_pref]))==length(unique(crosswalk_to_use$value[crosswalk_to_use$code %in% c(habitats_pref, habitats_pref_MARGINAL)])) & !"elevation_lowerEXTREME" %in% names(altitudes_pref_DF) & !"elevation_upperEXTREME" %in% names(altitudes_pref_DF)){
+          AOH2_opt<-AOH2; sRL_loginfo("Identical AOH, no need to calculate", scientific_name)
+          terra::writeRaster(rast(AOH2_opt), paste0("resources/AOH_stored/", gsub(" ", "_", scientific_name), "_", sRL_userdecode(username), "/Current_optimistic/Optimistic_identical.tif"))
+        } else{
+          
+          AOH2_opt<-sRL_calculateAOH(rangeSP_fun=rangeSP_cleanOPT,
+                                     cci_fun=cci2_crop,
+                                     alt_fun=alt_crop,
+                                     FOLDER=paste0(output_dir, "/Current_optimistic"),
+                                     elevation_data_fun=altitudes_pref_DF)
+          sRL_loginfo("Maximum AOH calculated", scientific_name)
         }
       }
-
-    ### PLOTS
-    # Only pessimistic scenario
-    if(Uncertain=="Uncertain_no"){
-      plot1 <- gplot(AOH2[[1]]) +
-        coord_fixed()+
-        geom_tile(aes(fill = factor(value, levels=c("0", "1")))) +
-        scale_fill_manual(values=c("#FBCB3C", "#25BC5A", NA), labels=c("Unsuitable", "Suitable", ""), name="", na.translate=F, drop=F) +
-        ggtitle("Area of Habitat in 2020") +
-        sRLTheme_maps
-    }
-
-    # Both scenario
-    if(Uncertain=="Uncertain_yes"){
-
-      plot1<-gplot(AOH2[[1]]+AOH2_opt[[1]])+
-        coord_fixed()+
-        geom_tile(aes(fill = factor(value, levels=c("0", "1", "2")))) +
-        scale_fill_manual(values=c("#FBCB3C", "#ADEFBA", "#25BC5A", NA), labels=c("Unsuitable", "Unknown", "Suitable", ""), name="", na.translate=F, drop=F) +
-        ggtitle(paste0("Area of Habitat in ", config$YearAOH2)) +
-        sRLTheme_maps
-    }
-
-
-    ### LARGE-RANGES --------
-  } else {
-
-    # Prepare altitude raster
-    sRL_loginfo("START - Large altitude crop", scientific_name)
-    alt_large<-raster(paste0(config$cciStack2_path, "/ElevationAgg30.tif"))
-    alt_crop<-crop(alt_large, extent(rangeSP_clean), snap="out")
-    writeRaster(alt_crop, paste0(output_dir, "/alt_crop.tif"), overwrite=T)
-    sRL_loginfo("END - Large altitude crop", scientific_name)
-
-    # Calculate AOH
-    AOH2<-sRL_largeAOH(alt_crop, habitats_pref, altitudes_pref_DF[, c("elevation_lower", "elevation_upper")], rangeSP_clean, config$YearAOH2, paste0(output_dir, "/Current/aoh.tif"))
-
-    if(Uncertain=="Uncertain_no"){
-      plot1 <- gplot((AOH2[[1]]/9)) + # Divide by 9 to get percents
-        coord_fixed()+
-        geom_tile(aes(fill = value)) +
-        scale_fill_gradient(low="#FBCB3C", high="#25BC5A", name="Suitability (%)", limits=c(0,100), na.value=NA)+
-        ggtitle(paste0("Area of Habitat in ", config$YearAOH2)) +
-        sRLTheme_maps
-
-    } else{
-
-      ## Calculate optimistic AOH
-      alt_pref_extreme<-c(min(c(altitudes_pref_DF$elevation_lower, altitudes_pref_DF$elevation_lowerEXTREME), na.rm=T),
-                          max(c(altitudes_pref_DF$elevation_upper, altitudes_pref_DF$elevation_upperEXTREME), na.rm=T)) ; print(alt_pref_extreme)
-
-      # If there is no need to calculate a new one (no new CCI modalities or no new elevation limits, use the last one)
-      if(length(unique(crosswalk_to_use$value[crosswalk_to_use$code %in% habitats_pref]))==length(unique(crosswalk_to_use$value[crosswalk_to_use$code %in% c(habitats_pref, habitats_pref_MARGINAL)])) & !"elevation_lowerEXTREME" %in% names(altitudes_pref_DF) & !"elevation_upperEXTREME" %in% names(altitudes_pref_DF)){
+      
+      ### PLOTS
+      # Only pessimistic scenario
+      if(Uncertain=="Uncertain_no"){
+        plot1 <- gplot(AOH2[[1]]) +
+          coord_fixed()+
+          geom_tile(aes(fill = factor(value, levels=c("0", "1")))) +
+          scale_fill_manual(values=c("#FBCB3C", "#25BC5A", NA), labels=c("Unsuitable", "Suitable", ""), name="", na.translate=F, drop=F) +
+          ggtitle("Area of Habitat in 2020") +
+          sRLTheme_maps
+      }
+      
+      # Both scenario
+      if(Uncertain=="Uncertain_yes"){
+        
+        plot1<-gplot(AOH2[[1]]+AOH2_opt[[1]])+
+          coord_fixed()+
+          geom_tile(aes(fill = factor(value, levels=c("0", "1", "2")))) +
+          scale_fill_manual(values=c("#FBCB3C", "#ADEFBA", "#25BC5A", NA), labels=c("Unsuitable", "Unknown", "Suitable", ""), name="", na.translate=F, drop=F) +
+          ggtitle(paste0("Area of Habitat in ", config$YearAOH2)) +
+          sRLTheme_maps
+      }
+      
+      
+      ### LARGE-RANGES --------
+    } else {
+      
+      # Prepare altitude raster
+      sRL_loginfo("START - Large altitude crop", scientific_name)
+      alt_large<-raster(paste0(config$cciStack2_path, "/ElevationAgg30.tif"))
+      alt_crop<-crop(alt_large, extent(rangeSP_clean), snap="out")
+      writeRaster(alt_crop, paste0(output_dir, "/alt_crop.tif"), overwrite=T)
+      sRL_loginfo("END - Large altitude crop", scientific_name)
+      
+      # Calculate AOH
+      AOH2<-sRL_largeAOH(alt_crop, habitats_pref, altitudes_pref_DF[, c("elevation_lower", "elevation_upper")], rangeSP_clean, config$YearAOH2, paste0(output_dir, "/Current/aoh.tif"))
+      
+      if(Uncertain=="Uncertain_no"){
+        plot1 <- gplot((AOH2[[1]]/9)) + # Divide by 9 to get percents
+          coord_fixed()+
+          geom_tile(aes(fill = value)) +
+          scale_fill_gradient(low="#FBCB3C", high="#25BC5A", name="Suitability (%)", limits=c(0,100), na.value=NA)+
+          ggtitle(paste0("Area of Habitat in ", config$YearAOH2)) +
+          sRLTheme_maps
+        
+      } else{
+        
+        ## Calculate optimistic AOH
+        alt_pref_extreme<-c(min(c(altitudes_pref_DF$elevation_lower, altitudes_pref_DF$elevation_lowerEXTREME), na.rm=T),
+                            max(c(altitudes_pref_DF$elevation_upper, altitudes_pref_DF$elevation_upperEXTREME), na.rm=T)) ; print(alt_pref_extreme)
+        
+        # If there is no need to calculate a new one (no new CCI modalities or no new elevation limits, use the last one)
+        if(length(unique(crosswalk_to_use$value[crosswalk_to_use$code %in% habitats_pref]))==length(unique(crosswalk_to_use$value[crosswalk_to_use$code %in% c(habitats_pref, habitats_pref_MARGINAL)])) & !"elevation_lowerEXTREME" %in% names(altitudes_pref_DF) & !"elevation_upperEXTREME" %in% names(altitudes_pref_DF)){
           sRL_loginfo("Identical AOH, no need to calculate", scientific_name)
           AOH2_opt<-AOH2
           terra::writeRaster(AOH2_opt, paste0("resources/AOH_stored/", gsub(" ", "_", scientific_name), "_", sRL_userdecode(username), "/Current_optimistic/Optimistic_identical.tif"))
           
         } else{
-
+          
           AOH2_opt<-sRL_largeAOH(alt_crop, c(habitats_pref, habitats_pref_MARGINAL), alt_pref_extreme, rangeSP_clean, config$YearAOH2, FILENAME=paste0(output_dir, "/Current_optimistic/aoh.tif"))
           sRL_loginfo("Maximum AOH calculated", scientific_name)
+        }
+        
+        plot1 <- cowplot::plot_grid(
+          gplot((AOH2[[1]]/9)) + # Divide by 9 to get percents
+            coord_fixed()+
+            geom_tile(aes(fill = value)) +
+            scale_fill_gradient(low="#FBCB3C", high="#25BC5A", name="Suitability (%)", limits=c(0,100), na.value=NA)+
+            ggtitle(paste0("Minimum AOH in ", config$YearAOH2)) +
+            labs(subtitle= "(marginal or unknown habitats / extreme elevations excluded)") +
+            sRLTheme_maps,
+          
+          gplot((AOH2_opt[[1]]/9)) + # Divide by 9 to get percents
+            coord_fixed()+
+            geom_tile(aes(fill = value)) +
+            scale_fill_gradient(low="#FBCB3C", high="#25BC5A", name="Suitability (%)", limits=c(0,100), na.value=NA)+
+            ggtitle(paste0("Maximum AOH in ", config$YearAOH2)) +
+            labs(subtitle= "(marginal or unknown habitats / extreme elevations included)") +
+            sRLTheme_maps,
+          
+          ncol=1)
       }
-
-      plot1 <- cowplot::plot_grid(
-        gplot((AOH2[[1]]/9)) + # Divide by 9 to get percents
-          coord_fixed()+
-          geom_tile(aes(fill = value)) +
-          scale_fill_gradient(low="#FBCB3C", high="#25BC5A", name="Suitability (%)", limits=c(0,100), na.value=NA)+
-          ggtitle(paste0("Minimum AOH in ", config$YearAOH2)) +
-          labs(subtitle= "(marginal or unknown habitats / extreme elevations excluded)") +
-          sRLTheme_maps,
-
-        gplot((AOH2_opt[[1]]/9)) + # Divide by 9 to get percents
-          coord_fixed()+
-          geom_tile(aes(fill = value)) +
-          scale_fill_gradient(low="#FBCB3C", high="#25BC5A", name="Suitability (%)", limits=c(0,100), na.value=NA)+
-          ggtitle(paste0("Maximum AOH in ", config$YearAOH2)) +
-          labs(subtitle= "(marginal or unknown habitats / extreme elevations included)") +
-          sRLTheme_maps,
-
-        ncol=1)
+      
     }
-
-  }
-
-  Storage_SP$AOH_type<-AOH_type
-  Storage_SP$Range_size<-Range_size
-
-  # Plot AOH and calculate area
-  sRL_loginfo("START - Plot AOH", scientific_name)
-
-  ggsave(filename = paste0("resources/AOH_stored/", sub(" ", "_", scientific_name), "_", sRL_userdecode(username), "/Plots/aoh.png"), plot = plot1, width=9, height=ifelse(Uncertain=="Uncertain_no" | AOH_type=="Small", 9, 15))
-  plot1 <- base64enc::dataURI(file = paste0("resources/AOH_stored/", sub(" ", "_", scientific_name), "_", sRL_userdecode(username), "/Plots/aoh.png"), mime = "image/png", encoding = "base64") # nolint
-  sRL_loginfo("END - Plot AOH", scientific_name)
-
-  AOH_km2 <-  sRL_areaAOH(AOH2[[1]], "cci") # Same scale in small or large AOH because the unit is always 1 cell of the fine raster
-  if(Uncertain=="Uncertain_yes"){AOH_km2_opt <-  sRL_areaAOH(AOH2_opt[[1]], "cci") ;  Storage_SP$AOHkm2OPT_saved<-AOH_km2_opt}
-  Storage_SP$AOHkm2_saved<-AOH_km2
-  
-  ### Upper AOO ----
-  sRL_loginfo("START - Calculate Upper AOO", scientific_name)
-  grid22<-sRL_ChargeGrid22Raster()
-  grid22_crop<-crop(grid22, AOH2[[1]], snap="out")
-  aoh_22<-terra::resample(AOH2[[1]], grid22_crop, method="max")>0
-  writeRaster(aoh_22, paste0("resources/AOH_stored/", gsub(" ", "_", scientific_name), "_", sRL_userdecode(username), ifelse(Uncertain=="Uncertain_no", "/Upper_AOO_from_AOH.tif", "/Upper_AOO_from_pessimistic_AOH.tif")), overwrite=T)
-  sRL_loginfo("END - Calculate Upper AOO", scientific_name)
-
-  if(Uncertain=="Uncertain_no"){
-    plot2 <- cowplot::plot_grid(gplot(aoh_22[[1]]>0) +
-      coord_fixed()+
-      geom_tile(aes(fill = factor(as.character(as.numeric(value)), levels=c("0", "1")))) +
-      scale_fill_manual(values=c("#FBCB3C", "#25BC5A"), labels=c("Unsuitable", "Suitable"), name="", na.translate=F, drop=F) +
-      labs(title="", subtitle=ifelse(AOH_type=="Large", "Likely slightly overestimated (using a 10x10km aggregate raster)", ""))+
-      sRLTheme_maps,
-      ncol=1)
-  }
-
-  if(Uncertain=="Uncertain_yes"){
-    aoh_22_opt<-terra::resample(AOH2_opt[[1]], grid22_crop, method="max")>0
-    writeRaster(aoh_22_opt, paste0("resources/AOH_stored/", gsub(" ", "_", scientific_name), "_", sRL_userdecode(username), "/Upper_AOO_from_optimistic_AOH.tif"), overwrite=T)
     
-    # Plot on a single plot if small range, on two if large range
-    if(AOH_type=="Small"){
-      plot2<-gplot((aoh_22[[1]]>0)+(aoh_22_opt[[1]]>0))+
-        coord_fixed()+
-        geom_tile(aes(fill = factor(as.character(as.numeric(value)), levels=c("0", "1", "2")))) +
-        scale_fill_manual(values=c("#FBCB3C", "#ADEFBA", "#25BC5A", NA), labels=c("Unsuitable", "Unknown", "Suitable", ""), name="", na.translate=F, drop=F) +
-        ggtitle("") +
-        sRLTheme_maps
-
-    } else{
-    plot2 <- cowplot::plot_grid(
-      gplot(aoh_22[[1]]>0) +
-        coord_fixed()+
-        geom_tile(aes(fill = factor(as.character(as.numeric(value)), c("0", "1")))) +
-        scale_fill_manual(values=c("#FBCB3C", "#25BC5A"), labels=c("Unsuitable", "Suitable"), name="", na.translate=F, drop=F) +
-        labs(title="Likely slightly overestimated (using a 10x10km aggregate raster) \n\n Minimum AOH at 2x2km scale", subtitle= "(marginal or unknown habitats / extreme elevations excluded)")+
-        sRLTheme_maps,
-
-      gplot(aoh_22_opt[[1]]>0) +
-        coord_fixed()+
-        geom_tile(aes(fill = factor(as.character(as.numeric(value)), c("0", "1")))) +
-        scale_fill_manual(values=c("#FBCB3C", "#25BC5A"), labels=c("Unsuitable", "Suitable"), name="", na.translate=F, drop=F) +
-        labs(title="Maximum AOH at 2x2km scale", subtitle= "(marginal or unknown habitats / extreme elevations included)")+
-        sRLTheme_maps,
-
-      ncol=1)
-  }
-  }
-  
-  sRL_loginfo("START - Saving plot AOO", scientific_name)
-  ggsave(filename = paste0("resources/AOH_stored/", sub(" ", "_", scientific_name), "_", sRL_userdecode(username), "/Plots/aoo.png"), plot = plot2, width=9, height=ifelse(Uncertain=="Uncertain_no" | AOH_type=="Small", 9, 15))
-
-  plot2 <- base64enc::dataURI(file = paste0("resources/AOH_stored/", sub(" ", "_", scientific_name), "_", sRL_userdecode(username), "/Plots/aoo.png"), mime = "image/png", encoding = "base64") # nolint
-
-  AOO_km2<- sRL_areaAOH(aoh_22[[1]], SCALE="2x2") ; if(AOH_km2==0){AOO_km2<-0}
-  if(Uncertain=="Uncertain_yes"){AOO_km2_opt<- sRL_areaAOH(aoh_22_opt[[1]], SCALE="2x2") ; if(AOH_km2_opt==0){AOO_km2_opt<-0} ; Storage_SP$aoo_km2_opt<-AOO_km2_opt}
-  if (density_pref[1] != '-1') {Storage_SP$density_saved<-density_pref}
-  Storage_SP$aoo_km2<-AOO_km2
-  sRL_loginfo("END - Saving plot AOO", scientific_name)
-  
-
-  ### Save parameters and results
-  density_default<-ifelse(scientific_name %in% density_data$Species, base::mean(round(as.numeric(density_data$Density[density_data$Species == scientific_name]), 2), na.rm=T), NA) ; print(density_default)
-  Storage_SP<-sRL_OutLog(Storage_SP, c("AOH_HabitatPreference", "AOH_MarginalHabitatPreference", "AOH_ElevationPreference", "AOH_Density", "Original_density", "AOH_RangeType", "Estimated_AOH22"), c(paste0(habitats_pref, collapse=","), paste0(habitats_pref_MARGINAL, collapse=","), paste0(altitudes_pref, collapse=". "), ifelse(density_pref[1]=='-1', NA, density_pref[1]), density_default, AOH_type, AOO_km2))
-  
-  terraOptions(tempdir=tempdir())
-  rasterOptions(tmpdir=tempdir())
-  gc()
-
-  ### Population size (with uncertainty to due uncertainty in AOH and in density estimate) -------
-  sRL_loginfo("START - Calcualte population size", scientific_name)
-  if (density_pref[1] != '-1') {
-    density_pref <- unlist(strsplit(as.character(density_pref), "-")) %>% as.numeric(.) ; print(density_pref) # Density_pref has one value if certain, 2 values otherwise
-
-    if(Uncertain=="Uncertain_no"){pop_size <- paste(round(AOH_km2 * density_pref), collapse="-")} # Multiplies AOH by both density estimates (or one if only one available)
-    if(Uncertain=="Uncertain_yes"){pop_size <- paste(c(round(AOH_km2 * min(density_pref)), round(AOH_km2_opt * max(density_pref))), collapse="-")} # Multiplies pessimistic aoh by pessimistic density, optimistic AOH by optimistic density (or a single density if only one provided)
-    print(pop_size)
-    Storage_SP$pop_size<-pop_size
-  }
-  sRL_loginfo("END - Calcualte population size", scientific_name)
-  
+    Storage_SP$AOH_type<-AOH_type
+    Storage_SP$Range_size<-Range_size
+    
+    # Plot AOH and calculate area
+    sRL_loginfo("START - Plot AOH", scientific_name)
+    
+    ggsave(filename = paste0("resources/AOH_stored/", sub(" ", "_", scientific_name), "_", sRL_userdecode(username), "/Plots/aoh.png"), plot = plot1, width=9, height=ifelse(Uncertain=="Uncertain_no" | AOH_type=="Small", 9, 15))
+    plot1 <- base64enc::dataURI(file = paste0("resources/AOH_stored/", sub(" ", "_", scientific_name), "_", sRL_userdecode(username), "/Plots/aoh.png"), mime = "image/png", encoding = "base64") # nolint
+    sRL_loginfo("END - Plot AOH", scientific_name)
+    
+    AOH_km2 <-  sRL_areaAOH(AOH2[[1]], "cci") # Same scale in small or large AOH because the unit is always 1 cell of the fine raster
+    if(Uncertain=="Uncertain_yes"){AOH_km2_opt <-  sRL_areaAOH(AOH2_opt[[1]], "cci") ;  Storage_SP$AOHkm2OPT_saved<-AOH_km2_opt}
+    Storage_SP$AOHkm2_saved<-AOH_km2
+    
+    ### Upper AOO ----
+    sRL_loginfo("START - Calculate Upper AOO", scientific_name)
+    grid22<-sRL_ChargeGrid22Raster()
+    grid22_crop<-crop(grid22, AOH2[[1]], snap="out")
+    aoh_22<-terra::resample(AOH2[[1]], grid22_crop, method="max")>0
+    writeRaster(aoh_22, paste0("resources/AOH_stored/", gsub(" ", "_", scientific_name), "_", sRL_userdecode(username), ifelse(Uncertain=="Uncertain_no", "/Upper_AOO_from_AOH.tif", "/Upper_AOO_from_pessimistic_AOH.tif")), overwrite=T)
+    sRL_loginfo("END - Calculate Upper AOO", scientific_name)
+    
+    if(Uncertain=="Uncertain_no"){
+      plot2 <- cowplot::plot_grid(gplot(aoh_22[[1]]>0) +
+                                    coord_fixed()+
+                                    geom_tile(aes(fill = factor(as.character(as.numeric(value)), levels=c("0", "1")))) +
+                                    scale_fill_manual(values=c("#FBCB3C", "#25BC5A"), labels=c("Unsuitable", "Suitable"), name="", na.translate=F, drop=F) +
+                                    labs(title="", subtitle=ifelse(AOH_type=="Large", "Likely slightly overestimated (using a 10x10km aggregate raster)", ""))+
+                                    sRLTheme_maps,
+                                  ncol=1)
+    }
+    
+    if(Uncertain=="Uncertain_yes"){
+      aoh_22_opt<-terra::resample(AOH2_opt[[1]], grid22_crop, method="max")>0
+      writeRaster(aoh_22_opt, paste0("resources/AOH_stored/", gsub(" ", "_", scientific_name), "_", sRL_userdecode(username), "/Upper_AOO_from_optimistic_AOH.tif"), overwrite=T)
+      
+      # Plot on a single plot if small range, on two if large range
+      if(AOH_type=="Small"){
+        plot2<-gplot((aoh_22[[1]]>0)+(aoh_22_opt[[1]]>0))+
+          coord_fixed()+
+          geom_tile(aes(fill = factor(as.character(as.numeric(value)), levels=c("0", "1", "2")))) +
+          scale_fill_manual(values=c("#FBCB3C", "#ADEFBA", "#25BC5A", NA), labels=c("Unsuitable", "Unknown", "Suitable", ""), name="", na.translate=F, drop=F) +
+          ggtitle("") +
+          sRLTheme_maps
+        
+      } else{
+        plot2 <- cowplot::plot_grid(
+          gplot(aoh_22[[1]]>0) +
+            coord_fixed()+
+            geom_tile(aes(fill = factor(as.character(as.numeric(value)), c("0", "1")))) +
+            scale_fill_manual(values=c("#FBCB3C", "#25BC5A"), labels=c("Unsuitable", "Suitable"), name="", na.translate=F, drop=F) +
+            labs(title="Likely slightly overestimated (using a 10x10km aggregate raster) \n\n Minimum AOH at 2x2km scale", subtitle= "(marginal or unknown habitats / extreme elevations excluded)")+
+            sRLTheme_maps,
+          
+          gplot(aoh_22_opt[[1]]>0) +
+            coord_fixed()+
+            geom_tile(aes(fill = factor(as.character(as.numeric(value)), c("0", "1")))) +
+            scale_fill_manual(values=c("#FBCB3C", "#25BC5A"), labels=c("Unsuitable", "Suitable"), name="", na.translate=F, drop=F) +
+            labs(title="Maximum AOH at 2x2km scale", subtitle= "(marginal or unknown habitats / extreme elevations included)")+
+            sRLTheme_maps,
+          
+          ncol=1)
+      }
+    }
+    
+    sRL_loginfo("START - Saving plot AOO", scientific_name)
+    ggsave(filename = paste0("resources/AOH_stored/", sub(" ", "_", scientific_name), "_", sRL_userdecode(username), "/Plots/aoo.png"), plot = plot2, width=9, height=ifelse(Uncertain=="Uncertain_no" | AOH_type=="Small", 9, 15))
+    
+    plot2 <- base64enc::dataURI(file = paste0("resources/AOH_stored/", sub(" ", "_", scientific_name), "_", sRL_userdecode(username), "/Plots/aoo.png"), mime = "image/png", encoding = "base64") # nolint
+    
+    AOO_km2<- sRL_areaAOH(aoh_22[[1]], SCALE="2x2") ; if(AOH_km2==0){AOO_km2<-0}
+    if(Uncertain=="Uncertain_yes"){AOO_km2_opt<- sRL_areaAOH(aoh_22_opt[[1]], SCALE="2x2") ; if(AOH_km2_opt==0){AOO_km2_opt<-0} ; Storage_SP$aoo_km2_opt<-AOO_km2_opt}
+    if (density_pref[1] != '-1') {Storage_SP$density_saved<-density_pref}
+    Storage_SP$aoo_km2<-AOO_km2
+    sRL_loginfo("END - Saving plot AOO", scientific_name)
+    
+    
+    ### Save parameters and results
+    density_default<-ifelse(scientific_name %in% density_data$Species, base::mean(round(as.numeric(density_data$Density[density_data$Species == scientific_name]), 2), na.rm=T), NA) ; print(density_default)
+    Storage_SP<-sRL_OutLog(Storage_SP, c("AOH_HabitatPreference", "AOH_MarginalHabitatPreference", "AOH_ElevationPreference", "AOH_Density", "Original_density", "AOH_RangeType", "Estimated_AOH22"), c(paste0(habitats_pref, collapse=","), paste0(habitats_pref_MARGINAL, collapse=","), paste0(altitudes_pref, collapse=". "), ifelse(density_pref[1]=='-1', NA, density_pref[1]), density_default, AOH_type, AOO_km2))
+    
+    terraOptions(tempdir=tempdir())
+    rasterOptions(tmpdir=tempdir())
+    gc()
+    
+    ### Population size (with uncertainty to due uncertainty in AOH and in density estimate) -------
+    sRL_loginfo("START - Calcualte population size", scientific_name)
+    if (density_pref[1] != '-1') {
+      density_pref <- unlist(strsplit(as.character(density_pref), "-")) %>% as.numeric(.) ; print(density_pref) # Density_pref has one value if certain, 2 values otherwise
+      
+      if(Uncertain=="Uncertain_no"){pop_size <- paste(round(AOH_km2 * density_pref), collapse="-")} # Multiplies AOH by both density estimates (or one if only one available)
+      if(Uncertain=="Uncertain_yes"){pop_size <- paste(c(round(AOH_km2 * min(density_pref)), round(AOH_km2_opt * max(density_pref))), collapse="-")} # Multiplies pessimistic aoh by pessimistic density, optimistic AOH by optimistic density (or a single density if only one provided)
+      print(pop_size)
+      Storage_SP$pop_size<-pop_size
+    }
+    sRL_loginfo("END - Calcualte population size", scientific_name)
+  } # End of run_AOH if
   
   ### AOO based on occurrence records -------
   if("dat_proj_saved" %in% names(Storage_SP)){
@@ -1578,35 +1578,35 @@ Prom<-future({
   } else {pts<-NULL}
   
   ### Calculate model and point prevalence (AOH validation)  -------
-  if(Uncertain=="Uncertain_no"){
-    Validation_Prevalence <- sRL_CalcAohPrevalence(aoh=AOH2[[1]], aoh_opt=NULL, type=AOH_type, points=pts)
-  } else {
-    Validation_Prevalence <- sRL_CalcAohPrevalence(aoh=AOH2[[1]], aoh_opt=AOH2_opt[[1]], type=AOH_type, points=pts)
+  if(run_AOH==T){
+    if(Uncertain=="Uncertain_no"){
+      Validation_Prevalence <- sRL_CalcAohPrevalence(aoh=AOH2[[1]], aoh_opt=NULL, type=AOH_type, points=pts)
+    } else {
+      Validation_Prevalence <- sRL_CalcAohPrevalence(aoh=AOH2[[1]], aoh_opt=AOH2_opt[[1]], type=AOH_type, points=pts)
+    }
+    Storage_SP<-sRL_OutLog(Storage_SP, c("AOH_time", "AOH_Prevalence_model", "AOH_Prevalence_points"), c(as.numeric(format(Sys.time(), "%s"))-as.numeric(format(TIC, "%s")), Validation_Prevalence$Model_prevalence, ifelse("Point_prevalence" %in% names(Validation_Prevalence), Validation_Prevalence$Point_prevalence, NA)))
   }
   
   ### Save Storage_SP ----
-  Storage_SP<-sRL_OutLog(Storage_SP, c("AOH_time", "AOH_Prevalence_model", "AOH_Prevalence_points"), c(as.numeric(format(Sys.time(), "%s"))-as.numeric(format(TIC, "%s")), Validation_Prevalence$Model_prevalence, ifelse("Point_prevalence" %in% names(Validation_Prevalence), Validation_Prevalence$Point_prevalence, NA)))
   sRL_StoreSave(scientific_name, username,  Storage_SP)
   
   ### Return list of arguments + calculate population size
-  LIST=list(
-    aoh_km2 = ifelse(Uncertain=="Uncertain_no", AOH_km2, paste(AOH_km2, AOH_km2_opt, sep="-")), 
-    aoo_km2 = ifelse(Uncertain=="Uncertain_no", AOO_km2, paste(AOO_km2, AOO_km2_opt, sep="-")),
-    plot_aoh = plot1,
-    plot_aoh_2x2 = plot2,
-    validation_model = Validation_Prevalence$Model_prevalence
-  )
-  
-  if("Point_prevalence" %in% names(Validation_Prevalence)){LIST$validation_points <- Validation_Prevalence$Point_prevalence}
+  LIST=list()
+  if(run_AOH==T){
+    LIST$aoh_km2 = ifelse(Uncertain=="Uncertain_no", AOH_km2, paste(AOH_km2, AOH_km2_opt, sep="-"))
+    LIST$aoo_km2 = ifelse(Uncertain=="Uncertain_no", AOO_km2, paste(AOO_km2, AOO_km2_opt, sep="-"))
+    LIST$plot_aoh = plot1
+    LIST$plot_aoh_2x2 = plot2
+    LIST$validation_model = Validation_Prevalence$Model_prevalence
+    if("Point_prevalence" %in% names(Validation_Prevalence)){LIST$validation_points <- Validation_Prevalence$Point_prevalence}
+    if (density_pref[1] != '-1'){LIST$pop_size <- pop_size}
+  }
   
   if("dat_proj_saved" %in% names(Storage_SP)){
     LIST$plot_aoopts<-plot3
     LIST$aoo_pts_km2<-aoo_pts_km2
   }
-
-  if (density_pref[1] != '-1') {
-    LIST$pop_size <- pop_size
-  }
+  
   
   return(LIST)
 }, gc=T, seed=T)
@@ -2382,7 +2382,7 @@ function(scientific_name, username){
     )
     AOO_justif <- "The area of occupancy has been estimated on the sRedList Platform by rescaling the map of Area of Habitat to a 2x2km2 grid. This estimates corresponds to the upper bound of area of occupancy, as it assumes that all suitable habitat is occupied (at a 2x2km scale)."
   }
-  
+
   # If AOO from habitat and occurrences
   if("aoo_points" %in% names(Storage_SP)){
     aooA<-round(Storage_SP$aoo_points)
@@ -2395,12 +2395,16 @@ function(scientific_name, username){
     SRC<-paste(SRCdf$paste, collapse=", ")
     
     # Extract AOO estimates from habitat
-    aoo_hab <- ifelse(Storage_SP$Uncertain=="Uncertain_no", Storage_SP$aoo_km2, paste(Storage_SP$aoo_km2, Storage_SP$aoo_km2_opt, sep="-"))%>% as.character(.) %>% strsplit(., "-") %>% unlist(.) %>% as.vector(.) %>% as.numeric(.)
-    
+    aoo_hab <- ifelse(
+      ! "aoo_km2" %in% names(Storage_SP), 0, ifelse(
+        Storage_SP$Uncertain=="Uncertain_no", Storage_SP$aoo_km2, paste(Storage_SP$aoo_km2, Storage_SP$aoo_km2_opt, sep="-")
+      )) %>% as.character(.) %>% strsplit(., "-") %>% unlist(.) %>% as.vector(.) %>% as.numeric(.)
+
     # If AOO from occurrence records is bigger, I keep only this one. Otherwise, I take the range
     if(aooA > max(aoo_hab, na.rm=T)){
       AOO_val<-aooA
-      AOO_justif<-paste0("The area of occupancy was estimated on the sRedList platform as the area of 2x2km grid cells intersecting with the ", Nrec, " occurrence records retrieved from ", SRC, ". This estimate assumes that the species range has been extensively surveyed at a 2x2km scale. The upper bound of area of occupancy estimated from suitable habitat was lower than this estimate (", paste(aoo_hab, collapse="-"), "km2) and was thus dismissed.")
+      AOO_justif<-paste0("The area of occupancy was estimated on the sRedList platform as the area of 2x2km grid cells intersecting with the ", Nrec, " occurrence records retrieved from ", SRC, ".")
+      if("aoo_km2" %in% names(Storage_SP)){AOO_justif <- paste0(AOO_justif, "This estimate assumes that the species range has been extensively surveyed at a 2x2km scale. The upper bound of area of occupancy estimated from suitable habitat was lower than this estimate (", paste(aoo_hab, collapse="-"), "km2) and was thus dismissed.")}
     } else {
       AOO_val <- paste(aooA, max(aoo_hab, na.rm=T), sep="-")
       AOO_justif <- paste0("The area of occupancy was estimated on the sRedList platform. ",
