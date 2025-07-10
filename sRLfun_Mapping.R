@@ -753,7 +753,7 @@ sRL_MapDistributionGBIF<-function(dat, scientific_name, username, First_step, Al
 
   # Additional attributes
   distGBIF$yrcompiled <- format(Sys.Date(), "%Y")
-  distGBIF$citation<-"sRedList 2024" # To fill
+  distGBIF$citation<-paste0("sRedList ", format(Sys.Date(), "%Y"))
   distGBIF$source<-"sRedList platform"
   distGBIF$compiler<-sRL_userformatted(username)
   distGBIF$data_sens<-0

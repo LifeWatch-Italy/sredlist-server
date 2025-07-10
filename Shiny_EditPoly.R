@@ -117,7 +117,7 @@ ui <- page_fillable(
       ),
       
       # Version number (just for Victor to ensure the correct version is deployed)
-      conditionalPanel(condition='input.user=="victor.cazalis"', paste0("version 1.5_dev1; deployed on the: ", as.character(Sys.Date())))
+      conditionalPanel(condition='input.user=="victor.cazalis"', paste0("version 1.5_devJuly deployed on the: ", as.character(Sys.Date())))
       
     ),
     
@@ -845,7 +845,7 @@ server <- function(input, output, session) {
       markers$Applied <- F # Create column recording if changes were applied or not
       
       # Store in markers_storage
-      if(is.null(markers_storage())){
+      if(is.null(nrow(markers_storage()))){
         markers_storage(markers)
       } else {
         markers_ST <- markers_storage() %>% subset(., ! .$layerId %in% markers$layerId) # Remove markers stored that were modified
