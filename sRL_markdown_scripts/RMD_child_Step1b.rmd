@@ -43,6 +43,26 @@ DT::datatable(Tab_ordered,
     ) %>% DT::formatStyle(columns = c(1:ncol(Tab_ordered)), fontSize = '75%')
 ```
 
+
+`r if("TableNonGeo" %in% names(Storage_SP)){"You also checked the table of non-georeferenced occurrence records from GBIF: "}`
+```{r leaflet_nongeo, fig.align = "center", out.width = '100%'}
+if("TableNonGeo" %in% names(Storage_SP)){
+  DT::datatable(Storage_SP$TableNonGeo, 
+              rownames=F,
+              filter="top",
+              escape=F,
+              options=list(
+    headerCallback = DT::JS(# Needed to reduce column name font
+      "function(thead) {",
+      "  $(thead).css('font-size', '0.75em');",
+      "}"))
+    ) %>% DT::formatStyle(columns = c(1:ncol(Storage_SP$TableNonGeo)), fontSize = '75%')
+}
+
+```
+
+
+
 After applying these filters, your point range map included `r nrow(Storage_SP$dat_proj_saved)` occurrence records.
 
 
