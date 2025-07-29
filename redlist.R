@@ -174,6 +174,22 @@ function(scientific_name, username) {
         } else {hab_pref<-data.frame(code=NA, habitat=NA, suitability=NA, majorimportance=NA)[0,]}
       } else {no_hab_API()}
       
+      # If level 0 are included (it happens that we have "5 - wetlands" as input and none of the 5.1), put all the levels 1 as unknown
+      for(Code in c(1:5,7:15)){
+        if(as.character(Code) %in% hab_pref$code){
+          print(paste0("Fix habitat - ", Code))
+          if(TRUE %in% substr(hab_pref$code,1,2)==paste0(Code, ".")){
+            hab_pref <- subset(hab_pref, code != Code) # If there is also a level 1, just ignore level 0
+          } else {
+            Codes_to_add <- paste0(Code, ".", 1:20) %>% subset(., . %in% hab_scheme$iucn_code)
+            hab_pref <- rbind.fill( # Otherwise, add all the habitats from level 0 as unknown
+              hab_pref, 
+              data.frame(code=Codes_to_add, suitability="unknown"))
+            }
+            }
+      }
+      hab_pref <- subset(hab_pref, code %in% hab_scheme$iucn_code)
+      
       sRL_loginfo("END - Habitat extract", scientific_name)
       
       return(hab_pref)
