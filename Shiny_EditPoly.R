@@ -287,7 +287,7 @@ server <- function(input, output, session) {
     # Load distribution
     if(T %in% grepl("hydro", Stor_tempo$Output$Value) & Stor_tempo$Output$Value[Stor_tempo$Output$Parameter=="Distribution_Source"]=="Created"){
       dist_loaded0 <- Stor_tempo$distSP3_BeforeCrop
-      if(nrow(dist_loaded0)>50){showNotification(ui=HTML("Please be patient, the preparation of hydrobasins may take a few minutes"), type="warning", duration=3)}
+      if(nrow(dist_loaded0)>50){showNotification(ui=HTML("Please be patient, the preparation of hydrobasins may take a few minutes"), type="warning", duration=5)}
       if(input$Expand_Hydro > 0){dist_loaded0 <- Stor_tempo$distSP_saved_tempoHydro %>% st_transform(., st_crs(Stor_tempo$distSP3_BeforeCrop))}
       
       # Extract hydrobasins, will return a list with hydroSP to use and hydro_HQ with hydrobasins in the original quality

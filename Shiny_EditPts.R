@@ -176,7 +176,7 @@ server <- function(input, output, session) {
     if(is.null(nrow(dat_nongeo))==F){
       Tab <- dat_nongeo %>%
         mutate(Link=paste0("<a href='https://gbif.org/occurrence/", .$gbifID, "' target='_blank'>Link</a>")) %>%
-        .[,c("scientificName", "basisOfRecord", "eventDate", "higherGeography", "continent", "country", "locality", "institutionCode", "collectionCode", "occurrenceRemarks", "Link")]
+        .[, names(.) %in% c("scientificName", "basisOfRecord", "eventDate", "higherGeography", "continent", "country", "locality", "institutionCode", "collectionCode", "occurrenceRemarks", "Link")]
       
       Table_nongeo(Tab)
     }

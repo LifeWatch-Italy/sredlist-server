@@ -57,7 +57,7 @@ sRLPolyg_PrepareHydro <- function(distSP, hydro_raw, HydroLev, SRC_created){
   
   # Simplify
   hydroSP <- hydroSP_HQ
-  if(npts(hydroSP_HQ)>(50*nrow(hydroSP_HQ))){hydroSP <- ms_simplify(hydroSP, keep=(50*nrow(hydroSP))/npts(hydroSP), keep_shapes=T)}
+  if(npts(hydroSP_HQ)>(50*nrow(hydroSP_HQ))){hydroSP <- ms_simplify(hydroSP, keep=ifelse(nrow(hydroSP)<1000, ((50*nrow(hydroSP))/npts(hydroSP)), 0.05), keep_shapes=T)}
   
   # Attributes (depends if hydrobasins from created distribution or from "Edit as hydrobasins" button)
   if("dist_comm" %in% names(distSP)){hydroSP$dist_comm <- distSP$dist_comm[1]}
