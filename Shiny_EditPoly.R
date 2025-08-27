@@ -117,7 +117,7 @@ ui <- page_fillable(
       ),
       
       # Version number (just for Victor to ensure the correct version is deployed)
-      conditionalPanel(condition='input.user=="victor.cazalis"', paste0("version 1.5_devJuly deployed on the: ", as.character(Sys.Date())))
+      conditionalPanel(condition='input.user=="victor.cazalis"', paste0("version 1.5_prodSept deployed on the: ", as.character(Sys.Date())))
       
     ),
     
@@ -281,6 +281,7 @@ server <- function(input, output, session) {
     loader_load <- addLoader$new("sci_name", color = "#009138ff", method = "full_screen", height = "30rem", opacity=0.4) ; loader_load$show()
     
     ### Load StorageSP and distSP
+    #if(input$Expand_Hydro>0){Run_save(Run_save()+1)} # Test to save before expanding range, did not work as it's called at the end of the Event
     Stor_tempo <- sRL_StoreRead(input$sci_name,  input$user, MANDAT=1)
     if(length(names(Stor_tempo))<=1){loader_load$hide() ; req(F)}
     
@@ -1093,7 +1094,7 @@ server <- function(input, output, session) {
     Storage_SPNEW$distSP_saved <- dist_tosave 
     
     ### Extract points attributes
-    if(is.null(nrow(dat_pts()))==F){
+    if(is.null(nrow(dat_pts()))==F & "dat_proj_saved" %in% names(Storage_SPNEW)){
       # Intersect
       pts_inter <- st_join(dat_pts(), dist_tosave, join=st_intersects)
       # Save in dat_proj_saved

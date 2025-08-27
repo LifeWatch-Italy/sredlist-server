@@ -330,7 +330,7 @@ shinyInputActionPolygon <- function(distSP, Action_type) {
     tooltip(trigger=actionButton(paste0(Action_type, "Polygon_#ID_#TIME"),
                                  label=Action_type, 
                                  style="color: #fff; background-color: #009138ff; border-color: #009138ff; padding:6px",
-                                 onclick=paste0("Shiny.onInputChange( \"", paste0(Action_type, "Button"), "\" , this.id)")
+                                 onclick=paste0("Shiny.onInputChange( \"", paste0(Action_type, "Button"), "\" , this.id, {priority: 'event'})")
     ), revalue(Action_type, c("Smooth"="Smooth a single polygon", "Simplify"="Simplify a single polygon", "Downstream"="Add downstream hydrobasins", "Upstream"="Add upstream hydrobasins", "Catchment"="Add all hydrobasins within the watershed"), warn_missing=F))
   )
   

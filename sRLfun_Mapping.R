@@ -874,8 +874,8 @@ sRL_saveMapDistribution <- function(scientific_name, Storage_SP) {
 sRL_rbindfillSF <- function(poly1, poly2){
   
   # If one of them is null, return the other one
-  if(is.null(poly1)){return(poly2)}
-  if(is.null(poly2)){return(poly1)}
+  if(is.null(poly1) | is.null(nrow(poly1))){return(poly2)}
+  if(is.null(poly2) | is.null(nrow(poly2))){return(poly1)}
   
   ### Homogenise column names
   st_geometry(poly1) <- "geometry"

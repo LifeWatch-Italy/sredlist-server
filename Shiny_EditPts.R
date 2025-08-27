@@ -59,7 +59,7 @@ ui <- page_fillable(
                           editModUI("map", height=600, width = "100%"),
                           
                           # Version number (just for Victor to ensure the correct version is deployed)
-                          conditionalPanel(condition='input.user=="victor.cazalis"', paste0("version 1.5_devJuly deployed on ", as.character(Sys.Date())))
+                          conditionalPanel(condition='input.user=="victor.cazalis"', paste0("version 1.5_prodSept deployed on ", as.character(Sys.Date())))
                         ),
                         sidebarPanel(
                           titlePanel("Drag existing records"),
