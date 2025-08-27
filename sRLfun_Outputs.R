@@ -259,6 +259,7 @@ sRL_OutputDistribution<-function(scientific_name, Storage_SP){
   
   # List of columns to include
   COL_REQ <- c("presence", "origin", "seasonal", "compiler", "yrcompiled", "citation", "spatialref", "subspecies", "subpop", "data_sens", "sens_comm", "source", "dist_comm", "island", "tax_comm", "id_no", "Shape_Leng", "Shape_Area")
+  if("hybas_id" %in% names(distSP)){COL_REQ <- c(COL_REQ, "hybas_id")} # Add hybas_id for undissolved hydrobasin shapefile
   
   # Create template
   distSIS<-distSP[, names(distSP) %in% COL_REQ]
