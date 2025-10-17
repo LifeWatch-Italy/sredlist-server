@@ -94,7 +94,7 @@ sRL_CalcHumandensity<-function(scientific_name, username, distSP, GL){
   RS_old<-exact_extract(human1_crop, distSP, "median") # Would be nice to give an absolute number of individuals instead
   RS_timewindow<-paste(Year1, Year2, sep="-")
   RS_trendsABS<-RS_current-RS_old
-  RS_trendsREL<-(RS_current-RS_old)/RS_current
+  RS_trendsREL<-(RS_current-RS_old)/RS_old
   
   ### Return
   return(list(
@@ -115,7 +115,7 @@ sRL_CalcHumandensity<-function(scientific_name, username, distSP, GL){
 sRL_CalcForestchange<-function(scientific_name, username, distSP, GL){
 
   ### Calculate year for forest 1
-  Year2=2022
+  Year2=2024
   Year1<-min(round(Year2 - 3*GL), Year2-10) %>% max(., 2000) # Takes the year that is 3 GL or 10 years before, not before 2000
 
   ### Charge forest layers
@@ -161,9 +161,11 @@ sRL_CalcForestchange<-function(scientific_name, username, distSP, GL){
   
   ### Calculate outputs
   RS_current<-exact_extract(forest2_crop, distSP, "mean") 
-  RS_old<-exact_extract(forest1_crop, distSP, "mean")
-  RS_trendsABS<-(RS_current-RS_old)
-  RS_trendsREL<-(RS_current-RS_old)/RS_old
+  rast_area <- cellSize(forest2_crop) / 10^6 # go from m2 to km2
+  RS_currentArea<-exact_extract(0.01*rast_area*forest2_crop, distSP, "sum") 
+  RS_oldArea<-exact_extract(0.01*rast_area*forest1_crop, distSP, "sum") 
+  RS_trendsABS<-(RS_currentArea-RS_oldArea)
+  RS_trendsREL<-(RS_currentArea-RS_oldArea)/RS_oldArea
   RS_timewindow<-paste0(Year1, "-", Year2)
   
   
@@ -171,8 +173,8 @@ sRL_CalcForestchange<-function(scientific_name, username, distSP, GL){
   return(list(
     RS_prodname=RS_name,
     RS_plot=RS_plot,
-    RS_current=paste0(round(RS_current,1), "%"),
-    RS_trendsABS=paste0(round(RS_trendsABS,1), " %"),
+    RS_current=paste0(round(RS_current), " % (", round(RS_currentArea), " km2)"),
+    RS_trendsABS=paste0(round(RS_trendsABS,1), " km2"),
     RS_trendsREL=paste0(100*round(RS_trendsREL,3), " %"),
     RS_timewindow=RS_timewindow
   ))
@@ -229,7 +231,7 @@ sRL_CalcModification<-function(scientific_name, username, distSP){
   RS_old<-exact_extract(human1_crop, distSP, "mean")
   RS_timewindow<-"1990-2015"
   RS_trendsABS<-RS_current-RS_old
-  RS_trendsREL<-(RS_current-RS_old)/RS_current
+  RS_trendsREL<-(RS_current-RS_old)/RS_old
   
   ### Return
   return(list(
@@ -289,17 +291,19 @@ sRL_CalcWater<-function(scientific_name, username, distSP){
   
   ### Calculate outputs
   RS_current<-exact_extract(water2_crop, distSP, "mean") 
-  RS_old<-exact_extract(water1_crop, distSP, "mean")
+  rast_area <- cellSize(water2_crop) / 10^6 # go from m2 to km2
+  RS_currentArea<-exact_extract(0.01*rast_area*water2_crop, distSP, "sum") 
+  RS_oldArea<-exact_extract(0.01*water1_crop*rast_area, distSP, "sum")
   RS_timewindow<-"(1984-1999) to (2000-2021)"
-  RS_trendsABS<-RS_current-RS_old
-  RS_trendsREL<-(RS_current-RS_old)/RS_current
-  
+  RS_trendsABS<-RS_currentArea-RS_oldArea
+  RS_trendsREL<-(RS_currentArea-RS_oldArea)/RS_oldArea
+
   ### Return
   return(list(
     RS_prodname=RS_name,
     RS_plot=RS_plot,
-    RS_current=paste0(round(RS_current,2), " (mean)"),
-    RS_trendsABS=round(RS_trendsABS,2),
+    RS_current=paste0(round(RS_current), " % (", round(RS_currentArea), " km2)"),
+    RS_trendsABS=paste0(round(RS_trendsABS,1), " km2"),
     RS_trendsREL=paste0(100*round(RS_trendsREL, 3), " % change"),
     RS_timewindow=RS_timewindow
   ))
