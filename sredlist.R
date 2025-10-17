@@ -276,24 +276,31 @@ function(scientific_name, username, presences = list(), seasons = list() , origi
     ### Colour distribution
     distSP <- sRL_ColourDistrib(distSP)
     
-    ### Expand countries if extent changed (for instance if we increase distribution manually)
-    if(length(st_covered_by(
-      st_as_sfc(st_bbox(distSP)),
-      st_transform(st_as_sfc(st_bbox(Storage_SP$CountrySP_saved)), st_crs(distSP))
-    )[[1]])==0){
-      sRL_loginfo("Extract countries again", scientific_name)
-      Storage_SP$CountrySP_saved<-sRL_PrepareCountries(1.2*extent(st_transform(distSP, CRSMOLL)))
-    }
-    
-    ### Plot
+    ### Empty plot (needed if no distribution left with these attributes)
     plot_dist<-ggplot() +
       geom_sf(data = Storage_SP$CountrySP_saved, fill="gray96", col="gray50") + # nolint
-      geom_sf(data = distSP, fill = distSP$cols) +
       theme_void() +
       ggtitle("")
+    if(nrow(distSP)==0){warning_dist = "The distribution is empty, you need to edit the attributes selection to go further"}
+    
+    ### Expand countries if extent changed (for instance if we increase distribution manually)
+    if(nrow(distSP)>0){
+      if(length(st_covered_by(
+        st_as_sfc(st_bbox(distSP)),
+        st_transform(st_as_sfc(st_bbox(Storage_SP$CountrySP_saved)), st_crs(distSP))
+      )[[1]])==0){
+        sRL_loginfo("Extract countries again", scientific_name)
+        Storage_SP$CountrySP_saved<-sRL_PrepareCountries(1.2*extent(st_transform(distSP, CRSMOLL)))
+      }
+      
+      ### Plot
+      plot_dist <- plot_dist +
+        geom_sf(data = distSP, fill = distSP$cols)
 
     ### Save the distribution in memory (after merging it)
-    Storage_SP$distSP_selected <- sRL_MergeDistri(distSP) %>% st_transform(., CRSMOLL)
+      distSP <- sRL_MergeDistri(distSP) %>% st_transform(., CRSMOLL)
+    }
+    Storage_SP$distSP_selected <- distSP
     Storage_SP<-sRL_OutLog(Storage_SP, c("Distribution_Presence", "Distribution_Seasonal", "Distribution_Origin"), c(paste0(presences, collapse=","), paste0(seasons, collapse=","), paste0(origins, collapse=",")))
     sRL_StoreSave(scientific_name, username,  Storage_SP)
 
@@ -304,7 +311,7 @@ function(scientific_name, username, presences = list(), seasons = list() , origi
     sRL_loginfo("END - Prepare attributes", scientific_name)
     
     # Return
-    return(list(plot_selected=plot_distENC))
+    return(list(plot_selected=plot_distENC, warning_dist=ifelse(nrow(distSP)==0, 1, 0)))
     
   }, gc=T, seed=T)
   
