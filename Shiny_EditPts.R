@@ -80,7 +80,12 @@ ui <- page_fillable(
       
       accordion_panel("Explore non-georeferenced records", icon = bsicons::bs_icon("search"),
                       actionButton("GetNonGeo", "Get GBIF non-georeferenced records", style="color: #fff; background-color: #009138ff; border-color: #009138ff"),
-                      DTOutput("Table_nongeoDT")
+                      conditionalPanel(condition='input.GetNonGeo', 
+                                       h2("Summary per country"),
+                                       DTOutput("Table_nongeoDT_SUMMARY", width="50%"),
+                                       h2("Individual records"),
+                                       DTOutput("Table_nongeoDT")
+                                       )
                       )
     )
 )
@@ -107,7 +112,7 @@ server <- function(input, output, session) {
   flagsSF <- reactiveVal()
   flags <- reactiveVal()
   Storage_SP <- reactiveVal()
-  Table_nongeo <- reactiveVal(data.frame())
+  Table_nongeo <- reactiveVal(list())
   
   
   ### Events ---------
@@ -174,11 +179,22 @@ server <- function(input, output, session) {
     
     # Create table
     if(is.null(nrow(dat_nongeo))==F){
+      # Raw table
       Tab <- dat_nongeo %>%
         mutate(Link=paste0("<a href='https://gbif.org/occurrence/", .$gbifID, "' target='_blank'>Link</a>")) %>%
-        .[, names(.) %in% c("scientificName", "basisOfRecord", "eventDate", "higherGeography", "continent", "country", "locality", "institutionCode", "collectionCode", "occurrenceRemarks", "Link")]
+        .[, names(.) %in% c("scientificName", "basisOfRecord", "eventDate", "higherGeography", "continent", "country", "locality", "institutionCode", "collectionCode", "occurrenceRemarks", "identifiedBy", "Link")]
       
-      Table_nongeo(Tab)
+      # Summary table
+      if(! "country" %in% names(dat_nongeo)){dat_nongeo$country <- NA}
+      if(! "locality" %in% names(dat_nongeo)){dat_nongeo$locality <- NA}
+      Tab_summ <- dat_nongeo %>% 
+        group_by(country) %>% 
+        summarise(Localities=locality %>% unique() %>% na.omit() %>% paste0(collapse="<br>"), 
+                  Number_records=n()
+                  )
+      
+      # Update tables
+      Table_nongeo(list(Raw=Tab, Summary=Tab_summ))
     }
     
     # End loader
@@ -264,9 +280,9 @@ server <- function(input, output, session) {
   })
   
   output$Table_nongeoDT <- renderDataTable({
-    req(input$GetNonGeo & nrow(Table_nongeo())>0)
+    req(input$GetNonGeo & nrow(Table_nongeo()$Raw)>0)
     datatable(
-      Table_nongeo(),
+      Table_nongeo()$Raw,
       escape = FALSE,
       filter="top",
       options = list(pageLength = 50,
@@ -275,7 +291,18 @@ server <- function(input, output, session) {
                        "  $(thead).css('font-size', '0.75em');",
                        "}")
       ),
-      rownames=FALSE) %>% DT::formatStyle(columns = c(1:ncol(Table_nongeo())), fontSize = '75%')
+      rownames=FALSE) %>% DT::formatStyle(columns = c(1:ncol(Table_nongeo()$Raw)), fontSize = '75%')
+  })
+  
+  output$Table_nongeoDT_SUMMARY <- renderDataTable({
+    req(input$GetNonGeo & nrow(Table_nongeo()$Summary)>0)
+    datatable(
+      Table_nongeo()$Summary,
+      escape = FALSE,
+      filter="none",
+      options = list(pageLength = 200, 
+                     dom="t"),
+      rownames=FALSE) %>% DT::formatStyle(columns = 2, fontSize = '70%')
   })
 }
 
