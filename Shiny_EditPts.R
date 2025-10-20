@@ -80,9 +80,11 @@ ui <- page_fillable(
       
       accordion_panel("Explore non-georeferenced records", icon = bsicons::bs_icon("search"),
                       actionButton("GetNonGeo", "Get GBIF non-georeferenced records", style="color: #fff; background-color: #009138ff; border-color: #009138ff"),
+                      conditionalPanel(condition='Warn_LimitNonGeo', htmlOutput("Warn_LimitNonGeo")),
                       conditionalPanel(condition='input.GetNonGeo', 
                                        h2("Summary per country"),
                                        DTOutput("Table_nongeoDT_SUMMARY", width="50%"),
+                                       HTML("<br>"),
                                        h2("Individual records"),
                                        DTOutput("Table_nongeoDT")
                                        )
@@ -113,7 +115,7 @@ server <- function(input, output, session) {
   flags <- reactiveVal()
   Storage_SP <- reactiveVal()
   Table_nongeo <- reactiveVal(list())
-  
+  Warn_LimitNonGeo <- reactiveVal(F)
   
   ### Events ---------
 
@@ -176,6 +178,7 @@ server <- function(input, output, session) {
                                 hasCoordinate = F, 
                                 limit=1000
     )$data
+    if(nrow(dat_nongeo)==1000){Warn_LimitNonGeo(T)}
     
     # Create table
     if(is.null(nrow(dat_nongeo))==F){
@@ -304,6 +307,8 @@ server <- function(input, output, session) {
                      dom="t"),
       rownames=FALSE) %>% DT::formatStyle(columns = 2, fontSize = '70%')
   })
+  
+  output$Warn_LimitNonGeo <- renderText({ifelse(Warn_LimitNonGeo(), "<br><i>Warning: More than 1000 non-georeferenced records are available in GBIF, we only show the last 1000.</i><br><br>", "")})
 }
 
 
