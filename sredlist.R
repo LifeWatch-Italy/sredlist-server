@@ -2339,6 +2339,7 @@ function(scientific_name, username){
   if("SpeciesAssessment" %in% names(Storage_SP)){
     # If species already in the Red List, we use its information
     Official <- as.data.frame(Storage_SP$SpeciesAssessment$taxon)
+    Official$authority <- speciesRL$authority[speciesRL$scientific_name==scientific_name][1]
     sRL_loginfo("Using RL from same species", scientific_name)
     } else {
     # Otherwise we look if there is another species of the same genus (except for authority)
