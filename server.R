@@ -1,5 +1,5 @@
 # Set working directory (Victor path if we are on his laptop, LifeWatch path otherwise)
-setwd(dir=ifelse(file.exists("C:/Users/Victor"),"C:/Users/Victor/Documents/sRedList/Platform/InProgress/sredlist-server-develop", "/media/docker/sRedList/sredlist-server"))
+setwd(dir=ifelse(file.exists("C:/Users/TERRA"),"C:/Users/TERRA/Documents/InProgress/sredlist-server", "/media/docker/sRedList/sredlist-server"))
 
 
 ### Set the asynchronous coding

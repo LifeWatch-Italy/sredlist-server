@@ -122,6 +122,7 @@ sRL_FormatUploadedRecords <- function(Uploaded_Records, scientific_name, Gbif_Sy
   Uploaded_Records$dec_lat<-Uploaded_Records$dec_lat %>% sub(",", ".", .) %>% as.numeric()
   
   # Check they are within -180:180 and -90:90
+  Uploaded_Records <- subset(Uploaded_Records, is.na(dec_long)==F & is.na(dec_lat)==F)
   if(min(Uploaded_Records$dec_long)<(-180) |
      max(Uploaded_Records$dec_long)>(180) |
      min(Uploaded_Records$dec_lat)<(-90) |
@@ -131,7 +132,7 @@ sRL_FormatUploadedRecords <- function(Uploaded_Records, scientific_name, Gbif_Sy
   names(Uploaded_Records)<-replace(names(Uploaded_Records), tolower(names(Uploaded_Records)) %in% c("year", "event_year", "year_event"), "year")
   if(! "year" %in% names(Uploaded_Records)){Uploaded_Records$year<-NA}
   Uploaded_Records$year<-as.numeric(as.character(Uploaded_Records$year))
-
+  
   # Return
   return(Uploaded_Records)
 }
