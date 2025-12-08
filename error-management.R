@@ -132,16 +132,16 @@ too_few_occurrences <- function() {
   api_error(message = "There are not enough occurrence records to create the distribution with mcp, alpha hull, or kernel. Please add some occurrence records or choose another starting point", status = 400)
 }
 
-coords_outofbound <- function() {
-  api_error(message = "Coordinates should be in decimal with longitude (dec_long) between -180 and 180 and latitude (dec_lat) between -90 and 90. Make sure you used dots and not commas to write decimals in your csv file, this may cause issues.", status = 400)
+coords_outofbound <- function(LINES) {
+  api_error(message = paste0("Coordinates should be in decimal with longitude (dec_long) between -180 and 180 and latitude (dec_lat) between -90 and 90 (see lines: ", paste0(LINES[1:min(c(50, length(LINES)))], collapse=", "), ifelse(length(LINES)>50, ", ...)", ")"), ". Make sure you used dots and not commas to write decimals in your csv file, this may cause issues."), status = 400)
 }
 
 hydro_modified <- function() {
   api_error(message = "Hydrobasins should not be modified. Please set buffer and crop parameters to default.", status = 400)
 }
 
-wrong_species_upload <- function() {
-  api_error(message = "At least one of the uploaded observations has a different species name (sci_name) than the name of the species you are assessing. Please edit your csv file before uploading again", status = 400)
+wrong_species_upload <- function(LINES=c()) {
+  api_error(message = paste0("At least one of the uploaded observations has a different species name (sci_name) than the name of the species you are assessing (see lines: ", paste0(LINES[1:min(c(50, length(LINES)))], collapse=", "), ifelse(length(LINES)>50, ", ...)", ")"), ". Please edit your csv file before uploading again"), status = 400)
 }
 
 no_storage <- function() {

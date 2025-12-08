@@ -203,7 +203,7 @@ function(scientific_name, username) {
     distSP <- Storage_SP$distSP_saved
     
     ### Download GBIF data
-    dat <- sRL_createDataGBIF(scientific_name, c(1,0,0), Storage_SP$Output$Value[Storage_SP$Output$Parameter=="Crop_Country"], "")
+    dat <- sRL_createDataGBIF(scientific_name, c(1,0,0), Storage_SP$Output$Value[Storage_SP$Output$Parameter=="Crop_Country"], "")$dat
     
     if(nrow(dat)==0){return(leaflet() %>% addControl(HTML("We did not find any GBIF record for this species"), position = "topleft", className="map-title"))}
     
@@ -357,12 +357,13 @@ Prom<-future({
   # Uploaded Records if we uploaded data (it's a list with 1 element being the title of the uploaded csv file); I edit the csv if separator not good
   if(Uploaded_Records != ""){
     Uploaded_Records<-sRL_FormatUploadedRecords(Uploaded_Records, scientific_name, Gbif_Synonym)
-    print(head(Uploaded_Records))
+    print(head(Uploaded_Records$Uploaded_Records))
   }
 
   ### GBIF procedure
   sRL_loginfo("START - Create data", scientific_name)
-  dat <- sRL_createDataGBIF(scientific_name, Gbif_Source, Gbif_Country, Uploaded_Records)
+  Created_Data <- sRL_createDataGBIF(scientific_name, Gbif_Source, Gbif_Country, Uploaded_Records)
+  dat <- Created_Data$dat
   
   
   ## If there are synonyms
@@ -375,7 +376,7 @@ Prom<-future({
     # Run again the data collection (in a tryCatch to avoid errors if the name does not exist)
     for(SY in 1:length(Gbif_Synonym)){
       tryCatch({
-        dat_syn<-sRL_createDataGBIF(Gbif_Synonym[SY], Gbif_Source, Gbif_Country, "") # Same Source options as it can be useful for GBIF, OBIS but also Red List (eg species name was changed)
+        dat_syn<-sRL_createDataGBIF(Gbif_Synonym[SY], Gbif_Source, Gbif_Country, "")$dat # Same Source options as it can be useful for GBIF, OBIS but also Red List (eg species name was changed)
         dat_syn$species<-scientific_name
         dat_syn$Source_type=paste0("Synonyms_", dat_syn$Source_type)
         dat_syn<-subset(dat_syn, ! paste0(dat_syn$decimalLongitude, dat_syn$decimalLatitude) %in% paste0(dat$decimalLongitude, dat$decimalLatitude)) # Remove the synonym observations that are already at location of the focal species (to avoid duplicated observations, see for instance Cheilosia hercyniae and C. means)
@@ -456,7 +457,10 @@ Prom<-future({
   sRL_StoreSave(scientific_name, username,  Storage_SP)
   sRL_loginfo("END - Save gbif output files", scientific_name)
   
-  return(list(plot_data=plot1))
+  return(list(
+    plot_data=plot1,
+    Warning_CreateGbif = Created_Data$Warning_Create
+    ))
   
 }, gc=T, seed=T)
   

@@ -93,7 +93,7 @@ sRL_FormatUploadedRecords <- function(Uploaded_Records, scientific_name, Gbif_Sy
   if(ncol(Uploaded_Records)==1){print("CSV with wrong separator with ; separator"); Uploaded_Records<-Uploaded_Records %>% separate(col=names(Uploaded_Records)[1], into=unlist(strsplit(names(Uploaded_Records), ";")), sep=";")}
   if(ncol(Uploaded_Records)==1){print("CSV with wrong separator with tab separator"); Uploaded_Records<-Uploaded_Records %>% separate(col=names(Uploaded_Records)[1], into=unlist(strsplit(names(Uploaded_Records), "\t")), sep="\t")}
   if(ncol(Uploaded_Records)==1){wrong_csv_upload()}
-  
+
   # Check sci_name is provided (otherwise use scientific_name) and rename column + if only NA or empty, use scientific_name too
   if(!"sci_name" %in% names(Uploaded_Records)){
     names(Uploaded_Records)<-replace(names(Uploaded_Records), tolower(names(Uploaded_Records)) %in% c("sci_name", "binomial", "species", "scientific_name", "species_name"), "sci_name")
@@ -103,7 +103,10 @@ sRL_FormatUploadedRecords <- function(Uploaded_Records, scientific_name, Gbif_Sy
   if(as.logical(table(factor(is.na(replace(Uploaded_Records$sci_name, Uploaded_Records$sci_name=="", NA)), c("TRUE", "FALSE")))["FALSE"]==0)){Uploaded_Records$sci_name<-scientific_name}
   
   # If another species name than scientific_name, return an error (I could deal with it but this might introduce errors that users won't see)
-  if(as.logical(table(factor(Uploaded_Records$sci_name %in% c(scientific_name, Gbif_Synonym, NA, ""), c("TRUE", "FALSE")))["FALSE"] >0)){wrong_species_upload()}
+  NChar <- nchar(Uploaded_Records$sci_name)
+  Uploaded_Records$sci_name <- ifelse(substr(Uploaded_Records$sci_name, NChar, NChar)==" ", substr(Uploaded_Records$sci_name, 1, NChar-1), Uploaded_Records$sci_name) 
+  Wrong_SpName <- which(! Uploaded_Records$sci_name == scientific_name)
+  if(length(Wrong_SpName)>0){wrong_species_upload(Wrong_SpName)}
   
   # Assign Source to Upload (and Synonyms_Upload if synonym)
   Uploaded_Records$Source_type<-"Uploaded"
@@ -115,26 +118,38 @@ sRL_FormatUploadedRecords <- function(Uploaded_Records, scientific_name, Gbif_Sy
   if(! "dec_lat" %in% names(Uploaded_Records)){names(Uploaded_Records)<-replace(names(Uploaded_Records), tolower(names(Uploaded_Records)) %in% c("y", "dec_lat", "latitude", "lat"), "dec_lat")}
   if(! "dec_long" %in% names(Uploaded_Records)){names(Uploaded_Records)<-replace(names(Uploaded_Records), tolower(names(Uploaded_Records)) %in% c("x", "dec_long", "dec_lon", "longitude", "lon", "long"), "dec_long")}
   if((! "dec_long" %in% names(Uploaded_Records)) | (! "dec_lat" %in% names(Uploaded_Records))){no_coords_update()}
-  Uploaded_Records<-subset(Uploaded_Records, is.na(Uploaded_Records$dec_long)==F & is.na(Uploaded_Records$dec_lat)==F)
 
   # Make longitude and latitude numeric (includes a comma to point transformation for decimals)
   Uploaded_Records$dec_long<-Uploaded_Records$dec_long %>% sub(",", ".", .) %>% as.numeric()
   Uploaded_Records$dec_lat<-Uploaded_Records$dec_lat %>% sub(",", ".", .) %>% as.numeric()
   
   # Check they are within -180:180 and -90:90
-  Uploaded_Records <- subset(Uploaded_Records, is.na(dec_long)==F & is.na(dec_lat)==F)
-  if(min(Uploaded_Records$dec_long)<(-180) |
-     max(Uploaded_Records$dec_long)>(180) |
-     min(Uploaded_Records$dec_lat)<(-90) |
-     max(Uploaded_Records$dec_lat)>(90)){coords_outofbound()}
+  Wrong_lines <- c(
+    which(Uploaded_Records$dec_long<(-180)),
+    which(Uploaded_Records$dec_long>(180)),
+    which(Uploaded_Records$dec_lat<(-90)),
+    which(Uploaded_Records$dec_lat>(90))
+  ) %>% unique() %>% sort()
+  if(length(Wrong_lines)>0){coords_outofbound(LINES=Wrong_lines)}
+
+  # Subset and warning if missing lon / lat
+  Lines_NA <- c(which(is.na(Uploaded_Records$dec_long)), which(is.na(Uploaded_Records$dec_lat))) %>% unique() %>% sort()
+  if(length(Lines_NA)>0){
+    Uploaded_Records <- subset(Uploaded_Records, is.na(dec_long)==F & is.na(dec_lat)==F)
+    Warning_Upload <- paste0("Some coordinates were missing from uploaded records (lines: ", paste0(Lines_NA[1:min(c(50, length(Lines_NA)))], collapse=", "), ifelse(length(Lines_NA)>50, ", ...)", ")"), "; they have been removed from the Uploaded data.\n")
+  } else{Warning_Upload <- ""}
   
   # Transform column name of year and make it numeric (if no column, I make it all NA)
   names(Uploaded_Records)<-replace(names(Uploaded_Records), tolower(names(Uploaded_Records)) %in% c("year", "event_year", "year_event"), "year")
   if(! "year" %in% names(Uploaded_Records)){Uploaded_Records$year<-NA}
   Uploaded_Records$year<-as.numeric(as.character(Uploaded_Records$year))
   
+  
   # Return
-  return(Uploaded_Records)
+  return(list(
+    Uploaded_Records=Uploaded_Records,
+    Warning_Upload=Warning_Upload
+  ))
 }
 
 
@@ -178,6 +193,9 @@ sRL_ShapeCountryNRL <- function(Country_name, scientific_name){
 ### Function to create occurrence records 
 sRL_createDataGBIF <- function(scientific_name, GBIF_SRC, Gbif_Country, Uploaded_Records) { # nolint
   
+  ### Reuse Warning from upload if it exists (otherwise start from empty string); used to warn if number of records above limit or if some uploaded lines were removed
+  Warning_Create <- ifelse("Warning_Upload" %in% names(Uploaded_Records), Uploaded_Records$Warning_Upload, "")
+  
   ### If Gbif_Country, prepare countries file
   if(Gbif_Country != ""){
     
@@ -204,6 +222,7 @@ sRL_createDataGBIF <- function(scientific_name, GBIF_SRC, Gbif_Country, Uploaded
       dat_gbif <- sRL_SimpleGBIF(scientific_name, co_EXT)
     } else{
       dat_gbif <- sRL_StructureGBIF(scientificName = scientific_name, co_EXT, co_tot)
+      Warning_Create <- paste0(Warning_Create, "The number of records available on GBIF was >2000, we downloaded a representative sample.\n")
     }
     
     dat_gbif$ID<-paste0(dat_gbif$decimalLongitude, dat_gbif$decimalLatitude, dat_gbif$year)
@@ -241,6 +260,7 @@ sRL_createDataGBIF <- function(scientific_name, GBIF_SRC, Gbif_Country, Uploaded
       dat_obis_sub$Source_type<-"OBIS sample"
       dat_obis_sub<-dat_obis_sub[order(dat_obis_sub$year, decreasing=T),]
       dat_obis_sub<-dat_obis_sub[1:config$LIM_GBIF,]
+      Warning_Create <- paste0(Warning_Create, "The number of records available on OBIS was >2000, we downloaded only a subset.\n")
     }
   } else {dat_obis_sub<-data.frame()}
   
@@ -266,14 +286,15 @@ sRL_createDataGBIF <- function(scientific_name, GBIF_SRC, Gbif_Country, Uploaded
       dat_RL$Source_type<-"Red List sample"
       dat_RL<-dat_RL[order(dat_RL$year, decreasing=T),]
       dat_RL<-dat_RL[1:config$LIM_GBIF,]
+      Warning_Create <- paste0(Warning_Create, "The number of records available on the Red List was >2000, we kept only a subset.\n")
     }
   } else {dat_RL<-data.frame()}
   
   
   # From uploaded data
-  if(!is.null(nrow(Uploaded_Records))){
+  if("Uploaded_Records" %in% names(Uploaded_Records)){if(!is.null(nrow(Uploaded_Records$Uploaded_Records))){
     sRL_loginfo("Download Uploaded Records", scientific_name)
-    dat_upload<-Uploaded_Records
+    dat_upload<-Uploaded_Records$Uploaded_Records
     dat_upload$decimalLongitude<-dat_upload$dec_long
     dat_upload$decimalLatitude<-dat_upload$dec_lat
     dat_upload$species<-dat_upload$sci_name
@@ -289,8 +310,9 @@ sRL_createDataGBIF <- function(scientific_name, GBIF_SRC, Gbif_Country, Uploaded
     if(nrow(dat_upload) > 3*config$LIM_GBIF){
       dat_upload$Source_type<-"Uploaded sample"
       dat_upload<-dat_upload[1:(3*config$LIM_GBIF),]
+      Warning_Create <- paste0(Warning_Create, "The number of records uploaded was >6000, we kept only a subset.\n")
     }
-  } else {dat_upload<-data.frame()}
+  } else {dat_upload<-data.frame()}} else {dat_upload<-data.frame()}
 
   
   # Return empty df if no records
@@ -326,7 +348,11 @@ sRL_createDataGBIF <- function(scientific_name, GBIF_SRC, Gbif_Country, Uploaded
     }
   }
   
-  return(dat)
+  return(list(
+    dat=dat,
+    Warning_Create=Warning_Create
+    )
+  )
 }
 
 
