@@ -181,6 +181,67 @@ sRL_CalcForestchange<-function(scientific_name, username, distSP, GL){
   
 }
 
+# sRL_CalcForestIntegrity
+sRL_CalcForestIntegrity<-function(scientific_name, username, distSP){
+  
+  ### Charge recent human layer
+  flii <- rast(config$ForestIntegrity_path)
+  
+  ### Mask
+  distSP <- st_transform(distSP, st_crs(flii))
+  flii_crop <- crop(flii, distSP, snap="out") %>% mask(., distSP)/1000
+  
+  ### Save rasters
+  terra::writeRaster(flii_crop, paste0("resources/AOH_stored/", gsub(" ", "_", scientific_name), "_", sRL_userdecode(username), "/Forest_integrity.tif"), overwrite=T)
+  
+  ### Categorise
+  flii_cat <- classify(flii_crop, rcl=c(0,6,9.6,10), include.lowest=TRUE)
+  COL_rast <- levels(droplevels(flii_cat))[[1]]$flii_earth %>% revalue(., c("[0 - 6]"="#8c510a", "(6 - 9.6]"="lightgreen", "(9.6 - 10]"="darkgreen"), warn_missing=F) %>% c(., "white")
+  CAT_rast <- levels(droplevels(flii_cat))[[1]]$flii_earth %>% revalue(., c("[0 - 6]"="Low", "(6 - 9.6]"="Medium", "(9.6 - 10]"="High"), warn_missing=F) %>% c(., "")
+  
+  ### Plots
+  RS_name="Forest Landscape Integrity Index"
+  
+  GG_RS=cowplot::plot_grid(
+    
+    gplot(flii_crop)+
+      coord_fixed()+
+      geom_tile(aes(fill = value)) +
+      scale_fill_viridis_c(option="viridis", na.value = "white", name="FLII", limits = c(0, 10))+
+      ggtitle("In 2019 (continuous)") +
+      sRLTheme_maps,
+    
+    gplot(flii_cat)+
+      coord_fixed()+
+      geom_tile(aes(fill = factor(value))) +
+      scale_fill_manual(values=COL_rast, label=CAT_rast, name="Integrity")+
+      ggtitle("In 2019 (categorised)") +
+      sRLTheme_maps
+    
+    ,ncol=2
+  )
+  
+  EXT <- extent(distSP) ; size_scale <- (EXT[2]-EXT[1])/(EXT[4]-EXT[3])
+  ggsave(filename = paste0("resources/AOH_stored/", sub(" ", "_", scientific_name), "_", sRL_userdecode(username), "/Plots/RS_plot_forestintegrity.png"), plot = GG_RS, bg="white", width=12, height=6/size_scale)
+  RS_plot <- base64enc::dataURI(file = paste0("resources/AOH_stored/", sub(" ", "_", scientific_name), "_", sRL_userdecode(username), "/Plots/RS_plot_forestintegrity.png"), mime = "image/png", encoding = "base64") # nolint
+  
+  ### Calculate outputs
+  RS_current <- exact_extract(flii_crop, distSP, "mean") 
+  RS_prop <- summary(flii_cat, size=10^7) %>% as.data.frame(.) %>% mutate(Freq=gsub(" ", "", .$Freq)) %>% separate(Freq, c("Cat", "N"), sep=":") %>% subset(., .$Cat != "NA's") %>% mutate(Percent = round(100*as.numeric(N)/sum(as.numeric(N)), 1))
+  RS_detail <- paste0(RS_prop$Percent[RS_prop$Cat=="(9.6-10]"], "% of high integrity; ", RS_prop$Percent[RS_prop$Cat=="(6-9.6]"], "% of medium integrity; ", RS_prop$Percent[RS_prop$Cat=="[0-6]"], "% of low integrity")
+  RS_timewindow<-"2019 (data not temporal)"
+  
+  ### Return
+  return(list(
+    RS_prodname=RS_name,
+    RS_plot=RS_plot,
+    RS_current=paste0(round(RS_current,1), " (mean)"),
+    RS_detail=RS_detail,
+    RS_timewindow=RS_timewindow
+  ))
+  
+}
+
 
 # sRL_CalcModification
 sRL_CalcModification<-function(scientific_name, username, distSP){

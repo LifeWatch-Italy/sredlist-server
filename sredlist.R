@@ -2235,6 +2235,7 @@ Prom<-future({
   if(RSproduct=="Human_density"){List_trendsRS<-sRL_CalcHumandensity(scientific_name, username, distSP, GL_species)}
   if(RSproduct=="Forest_cover"){List_trendsRS<-sRL_CalcForestchange(scientific_name, username, distSP, GL_species)}
   if(RSproduct=="Human_modification"){List_trendsRS<-sRL_CalcModification(scientific_name, username, distSP)}
+  if(RSproduct=="Forest_Integrity"){List_trendsRS<-sRL_CalcForestIntegrity(scientific_name, username, distSP)}
   if(RSproduct=="Water_availability"){List_trendsRS<-sRL_CalcWater(scientific_name, username, distSP)}
   
   # Save usage
@@ -2271,8 +2272,12 @@ function(scientific_name, username, RSproduct) { # nolint
     #Filter param
     scientific_name <- sRL_decode(scientific_name)
     Storage_SP=sRL_StoreRead(scientific_name,  username, MANDAT=1) ; print(names(Storage_SP))
-    RSPROJ_current<-raster(paste0("resources/AOH_stored/", gsub(" ", "_", scientific_name), "_", sRL_userdecode(username), "/", RSproduct, "_Current.tif"))
-    RSPROJ_trends<-raster(paste0("resources/AOH_stored/", gsub(" ", "_", scientific_name), "_", sRL_userdecode(username), "/", RSproduct, "_Change.tif"))
+    if(RSproduct=="Forest_Integrity"){
+      RSPROJ_current <- raster(paste0("resources/AOH_stored/", gsub(" ", "_", scientific_name), "_", sRL_userdecode(username), "/Forest_integrity.tif"))
+    } else {
+      RSPROJ_current<-raster(paste0("resources/AOH_stored/", gsub(" ", "_", scientific_name), "_", sRL_userdecode(username), "/", RSproduct, "_Current.tif"))
+      RSPROJ_trends<-raster(paste0("resources/AOH_stored/", gsub(" ", "_", scientific_name), "_", sRL_userdecode(username), "/", RSproduct, "_Change.tif"))
+    }
     distSP<-Storage_SP$distSP_selected
     distPROJ<-st_transform(distSP, st_crs(4326))
 
@@ -2286,22 +2291,38 @@ function(scientific_name, username, RSproduct) { # nolint
 
     
     ### Color palette
-    LIM<-max(abs(summary(RSPROJ_trends)[1]), abs(summary(RSPROJ_trends)[5]))
     
-    if(RSproduct %in% c("Forest_cover", "Water_availability")){
-      ColPal1<-colorNumeric("viridis", c(0,100), na.color = NA)
-      ColPal2<-colorNumeric(c("#8c510a", "azure2", "#018571"), domain=c(-LIM, 0, LIM), na.color = NA)
-    } else {
-      ColPal1<-colorNumeric("viridis", c(summary(RSPROJ_current)[1],summary(RSPROJ_current)[5]), na.color = NA)
-      ColPal2<-colorNumeric(c("#018571", "azure2", "#8c510a"), domain=c(-LIM, 0, LIM), na.color = NA)
-    }
+    if(RSproduct=="Forest_Integrity"){
+      ColPal1<-colorNumeric("viridis", c(0,10), na.color = NA)
+      flii_cat <- classify(rast(RSPROJ_current), rcl=c(0,6,9.6,10), include.lowest=TRUE)
+      COL_rast <- levels(droplevels(flii_cat))[[1]]$flii_earth %>% revalue(., c("[0 - 6]"="#8c510a", "(6 - 9.6]"="lightgreen", "(9.6 - 10]"="darkgreen"), warn_missing=F)
 
-    RS_leaflet<-RS_leaflet %>%
+      RS_leaflet<-RS_leaflet %>%
+        addRasterImage(RSPROJ_current, method="ngb", group="Continuous", opacity=1, colors=ColPal1) %>%
+        addRasterImage(flii_cat, method="ngb", group="Categorised", opacity=1, colors=COL_rast) %>%
+        addLayersControl(baseGroups=c("OpenStreetMap", "Satellite", "Topography"), overlayGroups=c("Distribution", "Continuous", "Categorised"), position="topleft", options=layersControlOptions(collapsed = FALSE)) %>%
+        hideGroup("Change") # Change is hidden by default
+      
+    } else {
+      
+      LIM<-max(abs(summary(RSPROJ_trends)[1]), abs(summary(RSPROJ_trends)[5]))
+      
+      if(RSproduct %in% c("Forest_cover", "Water_availability")){
+        ColPal1<-colorNumeric("viridis", c(0,100), na.color = NA)
+        ColPal2<-colorNumeric(c("#8c510a", "azure2", "#018571"), domain=c(-LIM, 0, LIM), na.color = NA)
+      } else {
+        ColPal1<-colorNumeric("viridis", c(summary(RSPROJ_current)[1],summary(RSPROJ_current)[5]), na.color = NA)
+        ColPal2<-colorNumeric(c("#018571", "azure2", "#8c510a"), domain=c(-LIM, 0, LIM), na.color = NA)
+      }
+      
+      RS_leaflet<-RS_leaflet %>%
         addRasterImage(RSPROJ_current, method="ngb", group="Current", opacity=1, colors=ColPal1) %>%
         addRasterImage(RSPROJ_trends, method="ngb", group="Change", opacity=1, colors=ColPal2) %>%
         addLayersControl(baseGroups=c("OpenStreetMap", "Satellite", "Topography"), overlayGroups=c("Distribution", "Current", "Change"), position="topleft", options=layersControlOptions(collapsed = FALSE)) %>%
         hideGroup("Change") # Change is hidden by default
-
+      
+    }
+    
     ### Store usage
     Storage_SP<-sRL_OutLog(Storage_SP, "RS_leaflet", "Used")
     Storage_SP[which(names(Storage_SP)==paste0("RS_leaflet_", RSproduct))]<-NULL # Remove the previous leaflet of the same RSproduct
