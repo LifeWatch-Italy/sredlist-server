@@ -127,8 +127,8 @@ function(scientific_name, username, Dist_path = "") {
                   ggtitle("")
       
       # Save
-      Storage_SP<-sRL_StoreRead(scientific_name, username, MANDAT=1)
-      if(exists("Storage_SP")==F){Sys.sleep(3) ; Storage_SP<-sRL_StoreRead(scientific_name, username, MANDAT=1)}
+      Storage_SP<-sRL_StoreRead(scientific_name, username, MANDAT=0)
+      if(exists("Storage_SP")==F){Sys.sleep(3) ; Storage_SP<-sRL_StoreRead(scientific_name, username, MANDAT=0)}
       Storage_SP$CountrySP_saved=CountrySP
       sRL_StoreSave(scientific_name, username, Storage_SP)
       }
