@@ -1796,6 +1796,7 @@ Prom<-future({
   distSP$binomial<-as.character(distSP$binomial)
   
   # Output directory + options
+  unlink(paste0(output_dir, "/Initial"), recursive = T) ; unlink(paste0(output_dir, "/Initial_optimistic"), recursive = T)
   dir.create(paste0(output_dir, "/Initial"));   dir.create(paste0(output_dir, "/Initial_optimistic"))
   terraOptions(tempdir=paste0(output_dir, "/Temporary"), memmax=config$RAMmax_GB)
   rasterOptions(tmpdir=paste0(output_dir, "/Temporary"), maxmemory=config$RAMmax_GB)
