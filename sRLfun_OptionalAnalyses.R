@@ -115,7 +115,7 @@ sRL_CalcHumandensity<-function(scientific_name, username, distSP, GL){
 sRL_CalcForestchange<-function(scientific_name, username, distSP, GL){
 
   ### Calculate year for forest 1
-  Year2=2024
+  Year2=2025
   Year1<-min(round(Year2 - 3*GL), Year2-10) %>% max(., 2000) # Takes the year that is 3 GL or 10 years before, not before 2000
 
   ### Charge forest layers
