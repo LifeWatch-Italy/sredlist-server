@@ -2232,12 +2232,15 @@ Prom<-future({
   Storage_SP$GL_saved<-GL_species
   print(RSproduct)
   
+  # Get AOO if calculated
+  if("AOHkm2_saved" %in% names(Storage_SP)){AOO_path <- paste0("resources/AOH_stored/", sub(" ", "_", scientific_name), "_", sRL_userdecode(username), "/Upper_AOO_from_AOH.tif")} else {AOO_path <- NULL}
+  
   # Run functions to calculate trends
-  if(RSproduct=="Human_density"){List_trendsRS<-sRL_CalcHumandensity(scientific_name, username, distSP, GL_species)}
+  if(RSproduct=="Human_density"){List_trendsRS<-sRL_CalcHumandensity(scientific_name, username, distSP, GL_species, AOO_path)}
   if(RSproduct=="Forest_cover"){List_trendsRS<-sRL_CalcForestchange(scientific_name, username, distSP, GL_species)}
-  if(RSproduct=="Human_modification"){List_trendsRS<-sRL_CalcModification(scientific_name, username, distSP)}
-  if(RSproduct=="Forest_Integrity"){List_trendsRS<-sRL_CalcForestIntegrity(scientific_name, username, distSP)}
-  if(RSproduct=="Water_availability"){List_trendsRS<-sRL_CalcWater(scientific_name, username, distSP)}
+  if(RSproduct=="Human_modification"){List_trendsRS<-sRL_CalcModification(scientific_name, username, distSP, AOO_path)}
+  if(RSproduct=="Forest_Integrity"){List_trendsRS<-sRL_CalcForestIntegrity(scientific_name, username, distSP, AOO_path)}
+  if(RSproduct=="Water_availability"){List_trendsRS<-sRL_CalcWater(scientific_name, username, distSP, AOO_path)}
   
   # Save usage
   RS_stored<-Storage_SP$Output$Value[Storage_SP$Output$Parameter=="Usage_RS"]
