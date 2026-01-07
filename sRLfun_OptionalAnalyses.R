@@ -46,18 +46,18 @@ sRL_CalcHumandensity<-function(scientific_name, username, distSP, GL, AOO_path){
   ### Charge recent human layer
   Year2<-2020
   human2<-rast(gsub("XXXX", Year2, config$Human_density_path))
-  
+
   ### Charge old human layer
   Year1_theo<-min(Year2 - 3*GL, Year2-10) # Takes the year that is 3 GL or 10 years before
   Year1<-c(2000, 2005, 2010, 2015, 2020)[which(abs(Year1_theo-c(2000, 2005, 2010, 2015, 2020))==min(abs(Year1_theo-c(2000, 2005, 2010, 2015, 2020))))][1]
   human1<-rast(gsub("XXXX", Year1, config$Human_density_path))
-  
+
   ### Mask
   distSP<-st_transform(distSP, st_crs(human1))
   human1_crop<-crop(human1, distSP, snap="out") %>% mask(., distSP)
   human2_crop<-crop(human2, distSP, snap="out") %>% mask(., distSP)
   human_change<-human2_crop-human1_crop
-  
+
   ### Save rasters
   terra::writeRaster(human2_crop, paste0("resources/AOH_stored/", gsub(" ", "_", scientific_name), "_", sRL_userdecode(username), "/Human_density_Current.tif"), overwrite=T)
   terra::writeRaster(human_change, paste0("resources/AOH_stored/", gsub(" ", "_", scientific_name), "_", sRL_userdecode(username), "/Human_density_Change.tif"), overwrite=T)
@@ -87,7 +87,7 @@ sRL_CalcHumandensity<-function(scientific_name, username, distSP, GL, AOO_path){
   EXT <- extent(distSP) ; size_scale <- (EXT[2]-EXT[1])/(EXT[4]-EXT[3])
   ggsave(filename = paste0("resources/AOH_stored/", sub(" ", "_", scientific_name), "_", sRL_userdecode(username), "/Plots/RS_plot_humandensity.png"), plot = GG_RS, bg="white", width=12, height=6/size_scale)
   RS_plot <- base64enc::dataURI(file = paste0("resources/AOH_stored/", sub(" ", "_", scientific_name), "_", sRL_userdecode(username), "/Plots/RS_plot_humandensity.png"), mime = "image/png", encoding = "base64") # nolint
-  
+
   ### Calculate outputs
   RS_current<-exact_extract(human2_crop, distSP, "median") 
   RS_old<-exact_extract(human1_crop, distSP, "median") # Would be nice to give an absolute number of individuals instead
@@ -103,14 +103,15 @@ sRL_CalcHumandensity<-function(scientific_name, username, distSP, GL, AOO_path){
     RS_trendsREL=paste0(100*round(RS_trendsREL, 3), " % change in median"),
     RS_timewindow=RS_timewindow
   )
-  
+
   ### Add stat within AOO if calculated
   if(is.null(AOO_path)==F){
-    AOO_map <- rast(AOO_path) %>% as.polygons(.) %>% st_as_sf(.) %>% st_transform(., st_crs(human2)) %>% subset(., lyr1==1)
+    AOO_rast <- rast(AOO_path) ; names(AOO_rast)[1] <- "lyr1"
+    AOO_map <- AOO_rast %>% as.polygons(.) %>% st_as_sf(.) %>% st_transform(., st_crs(human2)) %>% subset(., lyr1==1)
     human2_aoo <- mask(human2_crop, AOO_map)
     LIST_RS$RS_currentAOO <- paste0(round(exact_extract(human2_aoo, distSP, "median")), " (median Ind/km2 within AOO)") 
   }
-  
+
   ### Return
   return(LIST_RS)
   
@@ -248,7 +249,8 @@ sRL_CalcForestIntegrity<-function(scientific_name, username, distSP, AOO_path){
   
   ### Add stat within AOO if calculated
   if(is.null(AOO_path)==F){
-    AOO_map <- rast(AOO_path) %>% as.polygons(.) %>% st_as_sf(.) %>% st_transform(., st_crs(flii)) %>% subset(., lyr1==1)
+    AOO_rast <- rast(AOO_path) ; names(AOO_rast)[1] <- "lyr1"
+    AOO_map <- AOO_rast %>% as.polygons(.) %>% st_as_sf(.) %>% st_transform(., st_crs(flii)) %>% subset(., lyr1==1)
     flii_aoo <- mask(flii_crop, AOO_map)
     flii_aoo_cat <- classify(flii_aoo, rcl=c(0,6,9.6,10), include.lowest=TRUE)
     
@@ -325,7 +327,8 @@ sRL_CalcModification<-function(scientific_name, username, distSP, AOO_path){
   
   ### Add stat within AOO if calculated
   if(is.null(AOO_path)==F){
-    AOO_map <- rast(AOO_path) %>% as.polygons(.) %>% st_as_sf(.) %>% st_transform(., st_crs(human2)) %>% subset(., lyr1==1)
+    AOO_rast <- rast(AOO_path) ; names(AOO_rast)[1] <- "lyr1"
+    AOO_map <- AOO_rast %>% as.polygons(.) %>% st_as_sf(.) %>% st_transform(., st_crs(human2)) %>% subset(., lyr1==1)
     human2_aoo <- mask(human2_crop, AOO_map)
     LIST_RS$RS_currentAOO <- paste0(round(exact_extract(human2_aoo, distSP, "mean")), " (mean within AOO)") 
   }
@@ -400,7 +403,8 @@ sRL_CalcWater<-function(scientific_name, username, distSP, AOO_path){
   
   ### Add stat within AOO if calculated
   if(is.null(AOO_path)==F){
-    AOO_map <- rast(AOO_path) %>% as.polygons(.) %>% st_as_sf(.) %>% st_transform(., st_crs(water2)) %>% subset(., lyr1==1)
+    AOO_rast <- rast(AOO_path) ; names(AOO_rast)[1] <- "lyr1"
+    AOO_map <- AOO_rast %>% as.polygons(.) %>% st_as_sf(.) %>% st_transform(., st_crs(water2)) %>% subset(., lyr1==1)
     water2_aoo <- mask(water2_area, AOO_map)
     LIST_RS$RS_currentAOO <- paste0(round(exact_extract(water2_aoo, distSP, "sum")), " (km2 within AOO)") 
   }
