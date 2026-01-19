@@ -215,8 +215,11 @@ sRL_createDataGBIF <- function(scientific_name, GBIF_SRC, Gbif_Country, Uploaded
     sRL_loginfo("Download GBIF", scientific_name)
     
     # Calculate the total number of data in GBIF
-    OCC<-occ_count(taxonKey=TaxKey, hasCoordinate = TRUE)
-    
+    OCC <- occ_count(taxonKey=TaxKey, 
+                     hasCoordinate = TRUE,
+                     decimalLongitude=paste(co_EXT[1], co_EXT[2], sep=","), 
+                     decimalLatitude=paste(co_EXT[3], co_EXT[4], sep=",")
+                     )
 
     if(OCC < config$LIM_GBIF){ # Download all data or structure download if more than LIM_GBIF
       dat_gbif <- sRL_SimpleGBIF(scientific_name, co_EXT)
@@ -382,123 +385,90 @@ sRL_StructureGBIF<-function(scientificName, co_EXT, co_tot){
   Fetch<-mvt_fetch(taxonKey = name_backbone(name=scientificName)$usageKey, srs = "EPSG:4326", format="@4x.png") 
   Fetch<-st_crop(Fetch, xmin=max(-180,(co_EXT[1]-1)), xmax=min(180,(co_EXT[2]+1)), ymin=max(-90,(co_EXT[3]-1)), ymax=min(180,(co_EXT[4]+1))) # Crop by co_Ext with 1 degree buffer (max distance between two sampling points) to ensure we don't exclude points close to the border
   if(nrow(Fetch)==0){no_records()}
-  coords<-as.data.frame(st_coordinates(Fetch))
-  coords$tot<-Fetch$total
+  
+  ### Restrict if Crop by country
+  if(is.null(co_tot)==F){
+    Fetch <- st_filter(Fetch, st_buffer(co_tot, 1), join=st_intersects)
+  }
   
   ### Extract extent to define grid size
+  coords<-as.data.frame(st_coordinates(Fetch))
   DeltaX<-max(coords$X, na.rm=T)-min(coords$X, na.rm=T)
   DeltaY<-max(coords$Y, na.rm=T)-min(coords$Y, na.rm=T)
   
-  ### Fix cell size
-  # Maximum size cell in degrees
-  Max_Cell=10 
+  ### Fix maximum size cell in degrees
+  Max_Cell=10
   
   # If extent is small, cut the grid in ca. 100 square cells
   if(max(DeltaX, DeltaY) < (10*Max_Cell)){
-    NX<- round(10*DeltaX / sqrt(DeltaX*DeltaY)) %>% min(., length(unique(coords$X))) # Calculates the number of cells to have in one row so that we end up with ca. 100 square cells; then take number of existing cells if that's lower
-    NY<- round(10*DeltaY / sqrt(DeltaX*DeltaY)) %>% min(., length(unique(coords$Y)))
-    Lon_breaks<-seq((min(coords$X, na.rm=T)-1), max(coords$X, na.rm=T)+1, length.out=(NX+1))
-    Lat_breaks<-seq((min(coords$Y, na.rm=T)-1), max(coords$Y, na.rm=T)+1, length.out=(NY+1))
-    
-    # If extent is large, cut the grid in Max_Cell square cells
+    NX <- round(10*DeltaX / sqrt(DeltaX*DeltaY)) %>% min(., length(unique(coords$X))) # Calculates the number of cells to have in one row so that we end up with ca. 100 square cells; then take number of existing cells if that's lower
+    NY <- round(10*DeltaY / sqrt(DeltaX*DeltaY)) %>% min(., length(unique(coords$Y)))
+  # If extent is large, cut the grid in Max_Cell square cells
   } else{
-    Lon_breaks<-seq((min(coords$X, na.rm=T)-1), max(coords$X, na.rm=T)+1, length.out=ceiling(DeltaX/Max_Cell))
-    Lat_breaks<-seq((min(coords$Y, na.rm=T)-1), max(coords$Y, na.rm=T)+1, length.out=ceiling(DeltaY/Max_Cell))
+    NX=ceiling(DeltaX/Max_Cell)
+    NY=ceiling(DeltaY/Max_Cell)
   }
   
-  ### Cut density lon/lat and create group names
-  coords$Lon_group<-coords$X %>% cut(., breaks=Lon_breaks, labels=paste0("X", 1:(length(Lon_breaks)-1)))
-  coords$Lat_group<-coords$Y %>% cut(., breaks=Lat_breaks, labels=paste0("Y", 1:(length(Lat_breaks)-1)))
-  coords$Group<-paste(coords$Lon_group, coords$Lat_group, sep="/")
+  ### Create download grid and filter with fetch
+  buff_Fetch <- st_union(st_buffer(Fetch, 1, endCapStyle = "SQUARE"))
+  grid_sf<-st_make_grid(buff_Fetch, n=c(NX, NY), what="polygons") %>% st_as_sf()
+  grid_sub <- st_filter(grid_sf, buff_Fetch, join=st_intersects)
   
-  
-  
-  ##### CREATE DOWNLOAD TABLE
-  TAB<-ddply(coords, .(Lon_group, Lat_group), function(x){data.frame(
-    N=sum(x$tot, na.rm=T),
-    Group=paste0(x$Lon_group[1], x$Lat_group[1])
-  )}) %>% subset(., .$N>0)
-  
-  # Extract coordinates (min and max) from Group names and cuts of lon/lat and add in TAB
-  eval(parse(text=paste("TAB$Lon_min<-revalue(TAB$Lon_group, c(", paste0("'X", 1:(length(Lon_breaks)-1), "'=Lon_breaks[", 1:(length(Lon_breaks)-1), "]", collapse=","), ")) %>% as.character(.) %>% as.numeric(.) %>% replace(., .<(-180), (-180))")))
-  eval(parse(text=paste("TAB$Lon_max<-revalue(TAB$Lon_group, c(", paste0("'X", 1:(length(Lon_breaks)-1), "'=Lon_breaks[", 2:length(Lon_breaks), "]", collapse=","), ")) %>% as.character(.) %>% as.numeric(.) %>% replace(., .>180, 180)")))
-  eval(parse(text=paste("TAB$Lat_min<-revalue(TAB$Lat_group, c(", paste0("'Y", 1:(length(Lat_breaks)-1), "'=Lat_breaks[", 1:(length(Lat_breaks)-1), "]", collapse=","), ")) %>% as.character(.) %>% as.numeric(.) %>% replace(., .<(-90), (-90))")))
-  eval(parse(text=paste("TAB$Lat_max<-revalue(TAB$Lat_group, c(", paste0("'Y", 1:(length(Lat_breaks)-1), "'=Lat_breaks[", 2:length(Lat_breaks), "]", collapse=","), ")) %>% as.character(.) %>% as.numeric(.) %>% replace(., .>90, 90)")))
-  
-  # Restrict by country
-  if(is.null(co_tot)==F){
-
-    ### Create TAB grid polygon
-    lst <- lapply(1:nrow(TAB), function(x){
-      # create a matrix of coordinates
-      res <- matrix(c(TAB[x, 'Lon_max'], TAB[x, 'Lat_min'],
-                      TAB[x, 'Lon_max'], TAB[x, 'Lat_max'],
-                      TAB[x, 'Lon_min'], TAB[x, 'Lat_max'],
-                      TAB[x, 'Lon_min'], TAB[x, 'Lat_min'],
-                      TAB[x, 'Lon_max'], TAB[x, 'Lat_min'])
-                    , ncol =2, byrow = T
-      )
-
-      st_polygon(list(res))
-    })
-    Grid_TAB <- st_sf(Group = TAB[, 'Group'], lst, crs=st_crs(4326))
-
-    # Remove grid cells that are not in the country of interest
-    Inters<-st_intersection(Grid_TAB, co_tot)
-    TAB <- subset(TAB, TAB$Group %in% Inters$Group)
-    
-    # Restrict grid cells that only partially overlap
-    for(CELL in 1:nrow(TAB)){
-      Coord_cell<-extent(Inters[CELL,])
-      TAB[CELL, c("Lon_min", "Lon_max", "Lat_min", "Lat_max")] <- as.vector(extent(Inters[Inters$Group==TAB$Group[CELL],]))
-    }
-    
-    # Adjust N based on the remaining area of each cell
-    Inters$Area <- as.numeric(st_area(Inters)) ; Areas <- ddply(Inters, .(Group), function(x){data.frame(Area_prop=sum(x$Area, na.rm=T)/max(Inters$Area, na.rm=T))})
-    TAB$N <- round(TAB$N * Areas$Area_prop[match(TAB$Group, Areas$Group)])
-    
-    if(nrow(TAB)==0){no_records()}
+  ### Calculate N available per cell
+  grid_sub$N<-NA
+  for(i in 1:nrow(grid_sub)){
+    grid_sub$N[i] <- occ_count(taxonKey=name_backbone(name=scientificName)$usageKey, hasCoordinate = TRUE, geometry=st_as_text(st_geometry(grid_sub[i,])))
   }
+  grid_sub <- subset(grid_sub, grid_sub$N>0)
 
-  # Determine number of data to download per group to sum at LIM_GBIF (increased a bit if Crop_Country)
+  ### Determine number of data to download per group to sum at LIM_GBIF (increased a bit if Crop_Country)
   LIMgbif<-ifelse(is.null(co_tot), config$LIM_GBIF, 1.25*config$LIM_GBIF)
-  TAB$N_download<-ifelse(TAB$N < (LIMgbif/nrow(TAB)), TAB$N, NA)
-  TAB$N_download[is.na(TAB$N_download)]<-round((LIMgbif-sum(TAB$N_download, na.rm=T))/nrow(TAB[is.na(TAB$N_download),]))
-  TAB$N_download<-ifelse((TAB$N_download>TAB$N), TAB$N, TAB$N_download)
+  grid_sub$N_download <- ifelse(grid_sub$N < (LIMgbif/nrow(grid_sub)), grid_sub$N, NA)
+  grid_sub$N_download[is.na(grid_sub$N_download)] <- round((LIMgbif-sum(grid_sub$N_download, na.rm=T))/nrow(grid_sub[is.na(grid_sub$N_download),]))
+  grid_sub$N_download <- ifelse((grid_sub$N_download>grid_sub$N), grid_sub$N, grid_sub$N_download)
   i=0
   while(i<LIMgbif){
-    if(sum(TAB$N_download) < sum(TAB$N)){ # If not all columns are complete I add only to those not full, otherwise to all columns (happens as Fetch only includes data with year)
-      TAB$N_download[TAB$N_download<TAB$N]<-TAB$N_download[TAB$N_download<TAB$N]+1
-    } else {TAB$N_download<-ceiling(TAB$N_download*1.05)}
-    i=sum(TAB$N_download)
+    if(sum(grid_sub$N_download) < sum(grid_sub$N)){ # If not all columns are complete I add only to those not full, otherwise to all columns (happens as Fetch only includes data with year)
+      grid_sub$N_download[grid_sub$N_download<grid_sub$N] <- grid_sub$N_download[grid_sub$N_download<grid_sub$N]+1
+    } else {grid_sub$N_download <- ceiling(grid_sub$N_download*1.05)}
+    i=sum(grid_sub$N_download)
   }
-
+  
   ##### STRUCTURE DOWNLOAD
   # Download one data (just for column names)
   dat_structured<-rgbif::occ_data(scientificName=scientificName, hasCoordinate = T, limit=1)$data[0,]
   
   # Download group per group
-  for(GR in 1:nrow(TAB)){
+  for(GR in 1:nrow(grid_sub)){
     dat_GR<-rgbif::occ_data(scientificName=scientificName,
-                              hasCoordinate = T, 
-                              limit=TAB$N_download[GR], 
-                              decimalLongitude=paste(TAB$Lon_min[GR], TAB$Lon_max[GR], sep=","), 
-                              decimalLatitude=paste(TAB$Lat_min[GR], TAB$Lat_max[GR], sep=",")
+                            hasCoordinate = T, 
+                            limit=grid_sub$N_download[GR], 
+                            geometry=st_as_text(st_geometry(grid_sub[GR,]))
     )$data %>% as.data.frame() %>% mutate(Group=GR) 
 
     if(is.null(nrow(dat_GR))==F){dat_structured<-rbind.fill(dat_structured, dat_GR)}
   }
   
-  ### If for some reason, we have few records (<500), re-run a non-representative download and save an empty file to record this happened
-  if(nrow(dat_structured) < (config$LIM_GBIF/4)){
+  ### If for some reason, we have few records (<1000), re-run a non-representative download and save an empty file to record this happened
+  if(nrow(dat_structured) < (0.5*config$LIM_GBIF)){
     dat_structured <- sRL_SimpleGBIF(scientificName, co_EXT)
     print(paste0("Non-representative sample downloaded for ", scientificName, "_", as.character(Sys.Date()), ".csv"))
-    write.csv("", paste0("Species/Stored_outputs/Non-representative sample downloaded for ", scientificName, ".csv"))
-    }
-
+    write.csv("", paste0("Species/Stored_outputs/Non-representative sample downloaded for ", scientificName,  "_", as.character(Sys.Date()), ".csv"))
+  }
+  
   dat_structured$Source_type<-"GBIF sample"
   
   print("Finished Structured GBIF download")
+  
+  # ### Plot to check the download went well (comparing with all data for that species)
+  # all_gbif <- rgbif::occ_data(scientificName=scientific_name, hasCoordinate = T, limit=20000)$data
+  # ggplot()+
+  #   geom_point(data=all_gbif, aes(x=decimalLongitude, y=decimalLatitude), col="grey")+
+  #   geom_sf(data=grid_sub, fill=NA)+
+  #   geom_point(data=dat_structured, aes(x=decimalLongitude, y=decimalLatitude), col="darkred")+
+  #   geom_sf_text(data=grid_sub, aes(label=paste0(N_download, " / ", N)))+
+  #   theme_void()+
+  #   ggtitle(scientific_name)
   
   return(dat_structured)
 }
