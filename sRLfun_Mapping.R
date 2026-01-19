@@ -475,7 +475,7 @@ sRL_StructureGBIF<-function(scientificName, co_EXT, co_tot){
 
   ##### STRUCTURE DOWNLOAD
   # Download one data (just for column names)
-  dat_structured<-rgbif::occ_data(scientificName=scientificName, hasCoordinate = T, limit=1)$data
+  dat_structured<-rgbif::occ_data(scientificName=scientificName, hasCoordinate = T, limit=1)$data[0,]
   
   # Download group per group
   for(GR in 1:nrow(TAB)){
@@ -484,21 +484,18 @@ sRL_StructureGBIF<-function(scientificName, co_EXT, co_tot){
                               limit=TAB$N_download[GR], 
                               decimalLongitude=paste(TAB$Lon_min[GR], TAB$Lon_max[GR], sep=","), 
                               decimalLatitude=paste(TAB$Lat_min[GR], TAB$Lat_max[GR], sep=",")
-    )$data 
+    )$data %>% as.data.frame() %>% mutate(Group=GR) 
 
     if(is.null(nrow(dat_GR))==F){dat_structured<-rbind.fill(dat_structured, dat_GR)}
   }
   
-  # Merge
-  dat_structured<-dat_structured[2:nrow(dat_structured),]
-  
   ### If for some reason, we have few records (<500), re-run a non-representative download and save an empty file to record this happened
   if(nrow(dat_structured) < (config$LIM_GBIF/4)){
     dat_structured <- sRL_SimpleGBIF(scientificName, co_EXT)
-    print(paste0("Non-representative sample downloaded for ", scientificName, ".csv"))
+    print(paste0("Non-representative sample downloaded for ", scientificName, "_", as.character(Sys.Date()), ".csv"))
     write.csv("", paste0("Species/Stored_outputs/Non-representative sample downloaded for ", scientificName, ".csv"))
     }
-  
+
   dat_structured$Source_type<-"GBIF sample"
   
   print("Finished Structured GBIF download")
@@ -673,12 +670,12 @@ sRL_MapDistributionGBIF<-function(dat, scientific_name, username, First_step, Al
   if(substr(First_step, 1,5)=="hydro"){
     
     # Extract level 8 in any case
-    hydro8_sub<-st_crop(hydro_raw, extent(dat))
+    hydro8_sub<-st_crop(hydro_raw, extent(st_buffer(dat,1))) # Buffer needed in case only 1 point
     interHyd<-st_join(dat, hydro8_sub, join=st_intersects) %>% subset(., is.na(.$hybas_id)==F) # Identify hydrobasins with data 
     distGBIF<-subset(hydro_raw, hydro_raw$hybas_id %in% interHyd$hybas_id) # Isolate these hydrobasins
 
     # Extract level 10 or 12 if requested and possible (i.e., small distribution)
-    if(First_step %in% c("hydro10", "hydro12")){
+    if(First_step %in% c("hydro10", "hydro12") & nrow(distGBIF)>0){
       
       # Return an error if too large distribution
       if(nrow(distGBIF)>10){hydro_too_large()}
@@ -700,7 +697,7 @@ sRL_MapDistributionGBIF<-function(dat, scientific_name, username, First_step, Al
       st_crs(hydroLEV_raw)<-CRSMOLL
       
       # Create distribution
-      hydroLEV_sub<-st_crop(hydroLEV_raw, extent(dat))
+      hydroLEV_sub<-st_crop(hydroLEV_raw, extent(st_buffer(dat,1)))
       interHyd<-st_join(dat, hydroLEV_sub, join=st_intersects) %>% subset(., is.na(.$hybas_id)==F) # Identify hydrobasins with data 
       distGBIF<-subset(hydroLEV_raw, hydroLEV_raw$hybas_id %in% interHyd$hybas_id) # Isolate these hydrobasins
       
