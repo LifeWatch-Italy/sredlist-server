@@ -1122,14 +1122,20 @@ function(scientific_name, username) {
     ifelse(scientific_name %in% GL_file$internal_taxon_name, 
            paste0("A generation length was found in ", GL_file$Source[GL_file$internal_taxon_name==scientific_name][1]), 
            "default")
-  ) %>% paste0(., "; value: ", as.character(GL_species))
+  ) 
+  ORIGINAL <- ifelse(
+    exists("GL_stored"),
+    paste0("Original value from last assessment: ", GL_species),
+    paste0("Original value by default: ", 1)
+  )
   
   # If range of GL, transform to mean value
   if(grepl("-", GL_species)){GL_species <- GL_species %>% strsplit(., "-") %>% unlist(.) %>% gsub(" ", "", .) %>% as.numeric(.) %>% mean(., na.rm=T)}
   
   return(list(
     GL_species = as.character(GL_species),
-    GL_src = SRC
+    GL_src = SRC,
+    GL_original = ORIGINAL
     ))
 }
 
@@ -1366,7 +1372,7 @@ Prom<-future({
           coord_fixed()+
           geom_tile(aes(fill = factor(value, levels=c("0", "1")))) +
           scale_fill_manual(values=c("#FBCB3C", "#25BC5A", NA), labels=c("Unsuitable", "Suitable", ""), name="", na.translate=F, drop=F) +
-          ggtitle("Area of Habitat in 2020") +
+          ggtitle(paste0("Area of Habitat in ", config$YearAOH2)) +
           sRLTheme_maps
       }
       

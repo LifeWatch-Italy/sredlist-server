@@ -276,6 +276,10 @@ Prom<-future({
   if(is.na(alt_pref$elevation_lower)==T){alt_pref$elevation_lower<-0 ; alt_pref$src_lower<-"default"}
   if(is.na(alt_pref$elevation_upper)==T){alt_pref$elevation_upper<-9000 ; alt_pref$src_upper<-"default"}
   
+  # Add original value for tooltip
+  alt_pref$original_lower <- paste0(ifelse(alt_pref$src_lower[1]=="default", "Original value by default: ", ifelse(grepl("calculated", alt_pref$src_lower[1]), "Original value calculated from range: ", "Original value retrieved from last assessment: ")), alt_pref$elevation_lower[1])
+  alt_pref$original_upper <- paste0(ifelse(alt_pref$src_upper[1]=="default", "Original value by default: ", ifelse(grepl("calculated", alt_pref$src_upper[1]), "Original value calculated from range: ", "Original value retrieved from last assessment: ")), alt_pref$elevation_upper[1])
+  
   sRL_loginfo("END - Altitude extract", scientific_name)
   sRL_StoreSave(scientific_name, username, Storage_SP)
   

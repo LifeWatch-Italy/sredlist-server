@@ -7,12 +7,6 @@ sRL_ChargeCci2Raster<-function(){cci2<-rast(config$cci2_raster_path); crs(cci2)<
 
 sRL_ChargeGrid22Raster<-function(){rast("resources/EmptyGrid2x2/Empty.grid.2x2.Mollweide.tif")}
 
-sRL_ChargeCciLargeRaster<-function(){
-  CCI_large<-stackOpen(paste0(config$cciStack2_path, "/2020/CCI_Stack_Agg30_Year2020.stk"))
-  names(CCI_large)<-read.table(paste0(config$cciStack2_path, "/2020/CCI_Stack_Agg30_Year2020.stk"))[,1] %>% gsub(config$cciStack2_path, "", .) %>% substr(., 7, (nchar(.)-4)) # I have to rename them because update in raster package made a change in the names. I checked that the order of the rasters in Stack were the same as in the .stk file
-  return(CCI_large)
-}
-
 
 
 ### Prepare habitat preference DF (compatible with SIS Connect)
@@ -146,11 +140,11 @@ sRL_areaAOH<-function(ras, SCALE){
 ### AOH calculate for large range species
 sRL_largeAOH<-function(alt_crop, habitats_pref, altitudes_pref, rangeSP_clean, YR, FILENAME){
   
+  # Charge large CCI
   sRL_loginfo("Charge CCI_Large data", scientific_name)
-  if(YR==config$YearAOH2){CCI_fun<-sRL_ChargeCciLargeRaster()} else {
-    CCI_fun<-stackOpen(paste0(config$cciStack2_path, "/", YR, "/CCI_Stack_Agg30_Year", YR, ".stk"))
-    names(CCI_fun)<-read.table(paste0(config$cciStack2_path, "/", YR, "/CCI_Stack_Agg30_Year", YR, ".stk"))[,1] %>% gsub(config$cciStack2_path, "", .) %>% substr(., 7, (nchar(.)-4)) # I have to rename them because update in raster package made a change in the names. I checked that the order of the rasters in Stack were the same as in the .stk file
-  }
+  CCI_fun<-stackOpen(paste0(config$cciStack2_path, "/", YR, "/CCI_Stack_Agg30_Year", YR, ".stk"))
+  names(CCI_fun)<-read.table(paste0(config$cciStack2_path, "/", YR, "/CCI_Stack_Agg30_Year", YR, ".stk"))[,1] %>% gsub(config$cciStack2_path, "", .) %>% substr(., 7, (nchar(.)-4)) # I have to rename them because update in raster package made a change in the names. I checked that the order of the rasters in Stack were the same as in the .stk file
+  
   sRL_loginfo("START - Large AOH function", scientific_name)
   
   # Select rasters to keep (I have to replace . by x in codes otherwise it's used as a joker in grepl; also inside the semicolumn to ensure this is the exact habitat and that 5.3 is not included in 15.3 for instance)
