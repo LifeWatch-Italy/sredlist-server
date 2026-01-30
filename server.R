@@ -22,12 +22,12 @@ library(logger)
 library(glue)
 library(urltools)
 library(R.utils)
-library(Rook) ; library(ggplot2) ; library(gridExtra) ; library(raster) ; library(plyr) ;library(dplyr) ; library(tidyr) ; library(sf) ; library(ncdf4) ; library(ggalluvial) ; library(iucnredlist) ;  library(tools) # nolint
+library(Rook) ; library(ggplot2) ; library(gridExtra) ; library(cowplot) ; library(raster) ; library(plyr) ;library(dplyr) ; library(tidyr) ; library(sf) ; library(ncdf4) ; library(ggalluvial) ; library(iucnredlist) ;  library(tools) # nolint
 library(TAF)
 
 ### GBIF mapping
 library(rgbif) ; library(CoordinateCleaner) ; library(maps) ; library(countrycode); library(rnaturalearthdata); library(robis) # nolint
-library(plotly) ; library(mapview) ; library(leaflet) ; library(leaflet.extras) ; library(htmltools) ; library(leafem) ; library(leaflet.esri)
+library(plotly) ; library(mapview) ; library(leaflet) ; library(leaflet.extras) ; library(htmltools) ; library(leafem)
 library(adehabitatHR) ; library(smoothr) ; library(spatialEco) ; library(alphahull)
 
 ### AOH analyses

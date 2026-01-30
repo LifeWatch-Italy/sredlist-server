@@ -1002,8 +1002,8 @@ function(scientific_name, username) { # nolint
     ### Plot EOO
     EOO_leaflet<-leaflet() %>%
       addTiles(group="OpenStreetMap") %>%
-      addEsriBasemapLayer(esriBasemapLayers$Imagery, group = "Satellite") %>%
-      addEsriBasemapLayer(esriBasemapLayers$Topographic, group = "Topography") %>%
+      addProviderTiles("Esri.WorldImagery", group = "Satellite") %>%
+      addProviderTiles("Esri.WorldTopoMap", group = "Topography") %>%
       addPolygons(data=distSP, color="#D69F32", fillOpacity=0.5, group="Distribution") %>% 
       addPolygons(data=EOO, color="#ef3b2c", fillOpacity=0, group="EOO") %>% 
       addLayersControl(baseGroups=c("OpenStreetMap", "Satellite", "Topography"), overlayGroups=c("Distribution", "EOO"), position="topleft") %>% 
@@ -1654,8 +1654,8 @@ function(scientific_name, username) { # nolint
     ### Plot
     AOH_leaflet<-leaflet() %>%
      addTiles(group="OpenStreetMap") %>%
-     addEsriBasemapLayer(esriBasemapLayers$Imagery, group = "Satellite") %>%
-     addEsriBasemapLayer(esriBasemapLayers$Topographic, group = "Topography") %>%
+     addProviderTiles("Esri.WorldImagery", group = "Satellite") %>%
+     addProviderTiles("Esri.WorldTopoMap", group = "Topography") %>%
      addPolygons(data=distPROJ, color="#D69F32", fillOpacity=0, group="Distribution") %>% 
      addMouseCoordinates()
     
@@ -1737,8 +1737,8 @@ function(scientific_name, username) { # nolint
     ### Plot AOO
     AOO_leaflet<-leaflet() %>%
       addTiles(group="OpenStreetMap") %>%
-      addEsriBasemapLayer(esriBasemapLayers$Imagery, group = "Satellite") %>%
-      addEsriBasemapLayer(esriBasemapLayers$Topographic, group = "Topography") %>%
+      addProviderTiles("Esri.WorldImagery", group = "Satellite") %>%
+      addProviderTiles("Esri.WorldTopoMap", group = "Topography") %>%
       addPolygons(data=aoo, group="AOO", opacity=0.7, color="#25BC5A", stroke=F) %>%
       addPolygons(data=distPROJ, color="#D69F32", fillOpacity=0, group="Distribution") %>% 
       addLayersControl(baseGroups=c("OpenStreetMap", "Satellite", "Topography"), overlayGroups=c("Distribution", "AOO"), position="topleft") %>% 
@@ -2010,8 +2010,8 @@ function(scientific_name, username) { # nolint
     ### Basic plot
     Trends_leaflet<-leaflet() %>%
       addTiles(group="OpenStreetMap") %>%
-      addEsriBasemapLayer(esriBasemapLayers$Imagery, group = "Satellite") %>%
-      addEsriBasemapLayer(esriBasemapLayers$Topographic, group = "Topography") %>%
+      addProviderTiles("Esri.WorldImagery", group = "Satellite") %>%
+      addProviderTiles("Esri.WorldTopoMap", group = "Topography") %>%
       addPolygons(data=distPROJ, color="#D69F32", fillOpacity=0, group="Distribution") %>% 
       addMouseCoordinates()
     
@@ -2293,8 +2293,8 @@ function(scientific_name, username, RSproduct) { # nolint
     ### Plot
     RS_leaflet<-leaflet() %>%
       addTiles(group="OpenStreetMap") %>%
-      addEsriBasemapLayer(esriBasemapLayers$Imagery, group = "Satellite") %>%
-      addEsriBasemapLayer(esriBasemapLayers$Topographic, group = "Topography") %>%
+      addProviderTiles("Esri.WorldImagery", group = "Satellite") %>%
+      addProviderTiles("Esri.WorldTopoMap", group = "Topography") %>%
       addPolygons(data=distPROJ, color="#D69F32", fillOpacity=0, group="Distribution") %>% 
       addMouseCoordinates()
 

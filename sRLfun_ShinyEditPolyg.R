@@ -120,8 +120,8 @@ sRLPolyg_CreateLeaflet <- function(AllowEdit, hydro3_stored=data.frame()){
   ### Create map
   LEAF <- leaflet(options = leafletOptions(doubleClickZoom= FALSE)) %>%
     addTiles()  %>%
-    addEsriBasemapLayer(esriBasemapLayers$Imagery, group = "Satellite") %>%
-    addEsriBasemapLayer(esriBasemapLayers$Topographic, group = "Topography") %>%
+    addProviderTiles("Esri.WorldImagery", group = "Satellite") %>%
+    addProviderTiles("Esri.WorldTopoMap", group = "Topography") %>%
     addMouseCoordinates() %>%
     addScaleBar(position="bottomright") %>%
     addLayersControl(baseGroups=c("OpenStreetMap", "Satellite", "Topography"), position="bottomleft")

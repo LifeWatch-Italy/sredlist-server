@@ -117,7 +117,7 @@ ui <- page_fillable(
       ),
       
       # Version number (just for Victor to ensure the correct version is deployed)
-      conditionalPanel(condition='input.user=="victor.cazalis"', paste0("version 1.5_prodSept deployed on the: ", as.character(Sys.Date())))
+      conditionalPanel(condition='input.user=="victor.cazalis"', paste0("version 1.6_devJan deployed on the: ", as.character(Sys.Date())))
       
     ),
     
