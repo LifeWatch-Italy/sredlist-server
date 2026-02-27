@@ -2238,7 +2238,10 @@ Prom<-future({
   print(RSproduct)
   
   # Get AOO if calculated
-  if("AOHkm2_saved" %in% names(Storage_SP)){AOO_path <- paste0("resources/AOH_stored/", sub(" ", "_", scientific_name), "_", sRL_userdecode(username), "/Upper_AOO_from_AOH.tif")} else {AOO_path <- NULL}
+  if("AOHkm2_saved" %in% names(Storage_SP)){
+    AOO_path <- paste0("resources/AOH_stored/", sub(" ", "_", scientific_name), "_", sRL_userdecode(username), ifelse(Storage_SP$Uncertain=="Uncertain_no", "/Upper_AOO_from_AOH.tif", "/Upper_AOO_from_optimistic_AOH.tif"))
+    if(file.exists(AOO_path)==F){AOO_path <- NULL}
+    } else {AOO_path <- NULL}
   
   # Run functions to calculate trends
   if(RSproduct=="Human_density"){List_trendsRS<-sRL_CalcHumandensity(scientific_name, username, distSP, GL_species, AOO_path)}
