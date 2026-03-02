@@ -224,8 +224,8 @@ server <- function(input, output, session) {
     Storage_SPNEW$Output$Count[Storage_SPNEW$Output$Parameter=="Gbif_EditPts"]<-Storage_SPNEW$Output$Count[Storage_SPNEW$Output$Parameter=="Gbif_EditPts"]+1
     
     # Save table nongeo
-    if(nrow(Table_nongeo())>0){Storage_SPNEW$TableNonGeo <- Table_nongeo()}
-
+    if(length(Table_nongeo())>0){if(nrow(Table_nongeo()$Raw)>0){Storage_SPNEW$TableNonGeo <- Table_nongeo()}}
+    
     # Save Storage file
     sRL_StoreSave(input$sci_name, input$user,  Storage_SPNEW)
     Storage_SP(Storage_SPNEW)
