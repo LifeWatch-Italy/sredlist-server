@@ -890,9 +890,14 @@ Prom<-future({
   
   # Create plot (first the one to export without the result - it makes the rmarkdown bug and it's not needed - and second adding the text results)
   Leaflet_COOtoexport <- sRL_LeafCountry(coo, distSP_WGS, realms_raw, Storage_SP)
+  
+  addBootStrap <- function(map) {
+    map$dependencies <- c(map$dependencies, leafletDependencies$bootstrap())
+    map
+  }
 
   Leaflet_COO<-Leaflet_COOtoexport %>%
-    leaflet.extras::addBootstrapDependency() %>% # Add Bootstrap to be able to use a modal
+    addBootStrap() %>% # Add Bootstrap to be able to use a modal (needed to add a popup with list of countries)
     addEasyButton(easyButton(
       icon = "fa fa-list-ul", 
       title = "Check out the list of countries of occurrence",
