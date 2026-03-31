@@ -59,7 +59,7 @@ Prom<-future({
 
   return(list(result=speciesLIST))
   
-}, gc=T, seed=T)
+}, seed=T)
 
 return(Prom)
 }
@@ -80,7 +80,7 @@ function(scientific_name) {
     if(exists("HistoPlot")==F){HistoPlot<-ggplot()+labs(title="The Red List API is not working, sorry!", subtitle="We cannot provide the usual information on this page, but you can click Next")}
     
     HistoPlot
-   }, gc=T, seed=T) %>% then(onRejected=function(err) {return(ggplot()+ggtitle("ERROR: we are not able to create this plot, please report that error")+labs(subtitle=err))})
+   }, seed=T) %>% then(onRejected=function(err) {return(ggplot()+ggtitle("ERROR: we are not able to create this plot, please report that error")+labs(subtitle=err))})
 
   return(Prom %...>% plot())
 }
@@ -134,7 +134,7 @@ function(scientific_name, username, Dist_path = "") {
       }
   
     Plot_Dist
-    }, gc=T, seed=T) %>% then(onRejected=function(err) {return(ggplot()+ggtitle("ERROR: we are not able to create this plot, please report that error")+labs(subtitle=err))})
+    }, seed=T) %>% then(onRejected=function(err) {return(ggplot()+ggtitle("ERROR: we are not able to create this plot, please report that error")+labs(subtitle=err))})
   
     ### Plot the distribution
     return(Prom %...>% plot())
@@ -194,7 +194,7 @@ function(scientific_name, username) {
       
       return(hab_pref)
       
-    }, gc=T, seed=T)
+    }, seed=T)
     
     return(Prom)
     
@@ -285,7 +285,7 @@ Prom<-future({
   
   return(as.list(alt_pref))
   
-}, gc=T, seed=T)
+}, seed=T)
 
 return(Prom)
 }

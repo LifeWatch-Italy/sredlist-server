@@ -178,7 +178,7 @@ function(scientific_name, username) {
   # Return
   return(list(plot_edit=plot_distENC))
 
-}, gc=T, seed=T)
+}, seed=T)
 
 return(Prom)
 }
@@ -241,7 +241,7 @@ function(scientific_name, username) {
     
     return(Leaflet_DistriComparison)
     
-  }, gc=T, seed=T)
+  }, seed=T)
   
   return(Prom)
   
@@ -313,7 +313,7 @@ function(scientific_name, username, presences = list(), seasons = list() , origi
     # Return
     return(list(plot_selected=plot_distENC, warning_dist=ifelse(nrow(distSP)==0, 1, 0)))
     
-  }, gc=T, seed=T)
+  }, seed=T)
   
   return(Prom)
 }
@@ -462,7 +462,7 @@ Prom<-future({
     Warning_CreateGbif = Created_Data$Warning_Create
     ))
   
-}, gc=T, seed=T)
+}, seed=T)
   
 return(Prom)
   
@@ -522,7 +522,7 @@ Prom<-future({
     Leaflet_Filter
   )
   
-}, gc=T, seed=T)
+}, seed=T)
 
 return(Prom)
   
@@ -578,7 +578,7 @@ function(scientific_name, username) {
       plot_extract_elevation = plot
     ))
     
-  }, gc=T, seed=T)
+  }, seed=T)
   
   return(Prom)
 }  
@@ -709,7 +709,7 @@ Prom<-future({
     gbif_path = gbif_path
   ))
   
-}, gc=T, seed=T)
+}, seed=T)
 
 return(Prom)
 }
@@ -808,7 +808,7 @@ function(scientific_name, username) {
       plot_showcase = plot3showcase
     ))
     
-  }, gc=T, seed=T)
+  }, seed=T)
   
   gc()
   return(Prom)
@@ -917,7 +917,7 @@ Prom<-future({
   # Plot
   return(Leaflet_COO)
 
-}, gc=T, seed=T)
+}, seed=T)
 
 return(Prom)
 
@@ -980,7 +980,7 @@ Prom<-future({
     plot_eoo = plot3
   ))
   
-}, gc=T, seed=T)
+}, seed=T)
 
 return(Prom)
 }
@@ -1022,7 +1022,7 @@ function(scientific_name, username) { # nolint
     
     return(EOO_leaflet)
     
-  }, gc=T, seed=T)
+  }, seed=T)
   
   return(Prom)
 }
@@ -1223,7 +1223,7 @@ function(scientific_name, username) {
       plot_extract_habitat = plot
     ))
     
-  }, gc=T, seed=T)
+  }, seed=T)
   
   return(Prom)
 }  
@@ -1249,7 +1249,7 @@ Prom_clean<-future({
   sRL_loginfo("START - Cleaning memory", scientific_name)
   sRL_cleaningMemory(Time_limit=180)
   sRL_loginfo("END - Cleaning memory", scientific_name)
-}, gc=T, seed=T)
+}, seed=T)
 Prom_clean %...>% print(.)
 
 
@@ -1631,7 +1631,7 @@ Prom<-future({
   
   
   return(LIST)
-}, gc=T, seed=T)
+}, seed=T)
 
 return(Prom)
 }
@@ -1713,7 +1713,7 @@ function(scientific_name, username) { # nolint
     
     return(AOH_leaflet)
     
-  }, gc=T, seed=T)
+  }, seed=T)
   
   return(Prom)
 }
@@ -1764,7 +1764,7 @@ function(scientific_name, username) { # nolint
     
     return(AOO_leaflet)
     
-  }, gc=T, seed=T)
+  }, seed=T)
   
   return(Prom)
 }
@@ -1979,7 +1979,7 @@ Prom<-future({
   
   return(LIST)
   
-}, gc=T, seed=T)
+}, seed=T)
 
 return(Prom)
 }
@@ -2070,7 +2070,7 @@ function(scientific_name, username) { # nolint
     
     return(Trends_leaflet)
     
-  }, gc=T, seed=T)
+  }, seed=T)
   
   return(Prom)
 }
@@ -2213,7 +2213,7 @@ Prom<-future({
     
     return(LIST)
     
-  }, gc=T, seed=T)
+  }, seed=T)
   
   ### Return list
   return(Prom)
@@ -2266,7 +2266,7 @@ Prom<-future({
   # Return
   return(List_trendsRS)
 
-}, gc=T, seed=T)
+}, seed=T)
 
 return(Prom)
 }
@@ -2350,7 +2350,7 @@ function(scientific_name, username, RSproduct) { # nolint
     
     return(RS_leaflet)
     
-  }, gc=T, seed=T)
+  }, seed=T)
   
   return(Prom)
 }
@@ -2938,7 +2938,7 @@ Prom<-future({
     )
   )
   
-}, gc=T, seed=T)
+}, seed=T)
 
 return(Prom)
 
@@ -3088,7 +3088,7 @@ Prom<-future({
   }
   return(distributions)
 
-}, gc=T, seed=T)
+}, seed=T)
 
 return(Prom)
 }
@@ -3118,7 +3118,7 @@ Prom<-future({
 
   return(species_distribution[indices, ])
 
-}, gc=T, seed=T)
+}, seed=T)
 
 return(Prom)
 }
@@ -3150,7 +3150,7 @@ Prom<-future({
     not_found("Species distribution does not exist!") # nolint
   }
   
-}, gc=T, seed=T)
+}, seed=T)
 
 return(Prom)
 }
@@ -3216,7 +3216,7 @@ Prom<-future({
     
   }else {return(list())} # nolint
   
-}, gc=T, seed=T)
+}, seed=T)
   
 return(Prom)
 }
@@ -3414,7 +3414,7 @@ Prom<-future({
   
   return(zip_to_extract)
 
-}, gc=T, seed=T)  %>% then(onRejected=function(err){
+}, seed=T)  %>% then(onRejected=function(err){
 
                               res$setHeader("Access-Control-Expose-Headers","Content-Disposition")
                               res$setHeader("Content-Disposition", "attachment; error.txt")
