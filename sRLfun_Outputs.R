@@ -115,7 +115,11 @@ sRL_OutputRef<-function(scientific_name, Storage_SP){
     # Add primary sources from occurrence data and number of records used
     citation_table<-as.data.frame(table(Storage_SP$dat_proj_saved$source))
     if(nrow(citation_table)>0){
-      citation_table$Ref_with_N <- citation_table$Var1 %>% sub("[.]$", "", .) %>% paste0(., " (", citation_table$Freq, ifelse(citation_table$Freq==1, " record was used).", " records were used)."))
+      # Improve some characters
+      citation_table$Var1 <- as.character(citation_table$Var1)
+      citation_table$Var1[validUTF8(as.character(citation_table$Var1))] <- sub("[.]$", "", citation_table$Var1[validUTF8(as.character(citation_table$Var1))]) # Not sure what this does actually... but maybe it was important when I implemented it...
+      # Summarise
+      citation_table$Ref_with_N <- citation_table$Var1 %>% paste0(., " (", citation_table$Freq, ifelse(citation_table$Freq==1, " record was used).", " records were used)."))
       citations<-unique(citation_table$Ref_with_N)
       ROW<-(nrow(ref_SIS))
       ref_SIS[(ROW+1):(ROW+length(citations)),]<-NA
@@ -190,10 +194,14 @@ sRL_OutputRef<-function(scientific_name, Storage_SP){
     
     ### Merge with original references
     ref_SIS<-rbind.fill(ref_ready, ref)
-  })
+  }, error=function(e){"Error in reference shaping"})
   
   # Transform NA in "" to match SIS
-  ref_SIS<-replace(ref_SIS, is.na(ref_SIS), "") %>% subset(., (spatialEco::is.empty(.$title)==F | spatialEco::is.empty(.$Original_reference)==F))
+  tryCatch({
+    ref_SIS<-replace(ref_SIS, is.na(ref_SIS), "") %>% subset(., (spatialEco::is.empty(.$title)==F | spatialEco::is.empty(.$Original_reference)==F))
+  }, error=function(e){"Error in reference shaping BIS"})
+  
+  # Add author if empty
   ref_SIS$author[ref_SIS$author==""]<-"AUTHOR TO ADD MANUALLY"
   
   return(ref_SIS)

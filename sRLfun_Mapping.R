@@ -120,9 +120,9 @@ sRL_FormatUploadedRecords <- function(Uploaded_Records, scientific_name, Gbif_Sy
   if((! "dec_long" %in% names(Uploaded_Records)) | (! "dec_lat" %in% names(Uploaded_Records))){no_coords_update()}
 
   # Make longitude and latitude numeric (includes a comma to point transformation for decimals)
-  Uploaded_Records$dec_long<-Uploaded_Records$dec_long %>% sub(",", ".", .) %>% as.numeric()
-  Uploaded_Records$dec_lat<-Uploaded_Records$dec_lat %>% sub(",", ".", .) %>% as.numeric()
-  
+  Uploaded_Records$dec_long<-Uploaded_Records$dec_long %>% as.character(.) %>% sub(",", ".", .) %>% as.numeric()
+  Uploaded_Records$dec_lat<-Uploaded_Records$dec_lat %>% as.character(.) %>% sub(",", ".", .) %>% as.numeric()
+
   # Check they are within -180:180 and -90:90
   Wrong_lines <- c(
     which(Uploaded_Records$dec_long<(-180)),
@@ -136,8 +136,17 @@ sRL_FormatUploadedRecords <- function(Uploaded_Records, scientific_name, Gbif_Sy
   Lines_NA <- c(which(is.na(Uploaded_Records$dec_long)), which(is.na(Uploaded_Records$dec_lat))) %>% unique() %>% sort()
   if(length(Lines_NA)>0){
     Uploaded_Records <- subset(Uploaded_Records, is.na(dec_long)==F & is.na(dec_lat)==F)
-    Warning_Upload <- paste0("Some coordinates were missing from uploaded records (lines: ", paste0(Lines_NA[1:min(c(50, length(Lines_NA)))], collapse=", "), ifelse(length(Lines_NA)>50, ", ...)", ")"), "; they have been removed from the Uploaded data.\n")
+    Warning_Upload <- paste0("Some coordinates were missing from uploaded records or incorrect (lines: ", paste0(Lines_NA[1:min(c(50, length(Lines_NA)))], collapse=", "), ifelse(length(Lines_NA)>50, ", ...)", ")"), "; they have been removed from the Uploaded data.\n")
   } else{Warning_Upload <- ""}
+  
+  # Check source is UTF8, if some are not, I report this in the warning and try to fix it with iconv
+  if("source" %in% names(Uploaded_Records)){
+    source_correct <- validUTF8(as.character(Uploaded_Records$source))
+    if(F %in% source_correct){Warning_Upload <- paste0(Warning_Upload, "The column 'source' includes some forbidden characters (lines ", paste(which(source_correct==F)[1:min(10, length(which(source_correct==F)))], collapse=","), ifelse(length(which(source_correct==F))>10, "...", ""), "). These were automatically corrected but it might create an issue when downloading references in the final step.")}
+    for(i in which(source_correct==F)){
+      Uploaded_Records$source[i] <- try(iconv(Uploaded_Records$source[i], from = "latin1", to = "UTF-8"))
+    }
+  }
   
   # Transform column name of year and make it numeric (if no column, I make it all NA)
   names(Uploaded_Records)<-replace(names(Uploaded_Records), tolower(names(Uploaded_Records)) %in% c("year", "event_year", "year_event"), "year")

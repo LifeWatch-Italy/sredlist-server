@@ -358,6 +358,7 @@ Prom<-future({
   if(Uploaded_Records != ""){
     Uploaded_Records<-sRL_FormatUploadedRecords(Uploaded_Records, scientific_name, Gbif_Synonym)
     print(head(Uploaded_Records$Uploaded_Records))
+    if(nrow(Uploaded_Records$Uploaded_Records)==0 & Uploaded_Records$Warning_Upload!=""){api_error(message = paste0(Uploaded_Records$Warning_Upload, " All records were removed."), status = 400)}
   }
 
   ### GBIF procedure
