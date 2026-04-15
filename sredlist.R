@@ -2862,6 +2862,7 @@ Prom<-future({
   
   # Prepare plot title
   TITLE<-ifelse(CAT_MAX=="LC", "The species does not seem to trigger a threatened category under any criterion; \n it could thus be LC or NT) \n", paste0("The species seems to meet the ", CAT_MAX, " category", CRIT_MAX, "\n"))
+  if(TRUE %in% grepl("0", c(criteria$Cat_ThresholdMIN,criteria$Cat_ThresholdMAX))){TITLE <- paste0(TITLE, "<br>(subcriteria need to be checked for Red List categories displayed with transparency)")}
   SUBTITLE<-ifelse(nrow(speciesRL[speciesRL$scientific_name == scientific_name,])==1, paste0("Last published category: ", speciesRL$category[speciesRL$scientific_name == scientific_name], "\n"), "")
   
   # Prepare Tag_taxo in case taxonomy not complete
