@@ -645,6 +645,14 @@ sRL_MapDistributionGBIF<-function(dat, scientific_name, username, First_step, Al
     if(is.na(extent(distGBIF)[1])){no_coastoverlap()}
   }
   
+  if(First_step=="vents"){
+    vents_shp <- st_read("resources/Hydrothermal_vents/Global_2020_HydrothermalVents_InterRidgeVentsDatabasev3.4.shp") %>% st_transform(., st_crs(dat))
+    vents_buffer <- st_buffer(vents_shp, Buffer_km*1000)
+    
+    distGBIF <- st_filter(vents_buffer, dat, .predicate = st_intersects)
+    # Return error if no vents overlap
+    if(is.na(extent(distGBIF)[1])){no_ventoverlap()}
+  }
   
   if(substr(First_step, 1,5)=="hydro"){
     

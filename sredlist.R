@@ -602,7 +602,8 @@ function(scientific_name, username, Gbif_Start="", Gbif_Param=list(), Gbif_Buffe
 # Parameter error
 if(Gbif_Start=="alpha" & Gbif_Param[1] <= 0){neg_alpha()}
 if(Gbif_Start=="kernel" & Gbif_Param[2] <= 0){neg_kernel()}
-if(Gbif_Start=="coastal" & (Gbif_Buffer==0 | Gbif_Crop=="")){no_gbif_coastal()}
+if(Gbif_Start=="coastal" & (Gbif_Buffer<=0 | Gbif_Crop=="")){no_gbif_coastal()}
+if(Gbif_Start=="vents" & (Gbif_Buffer<=0 | Gbif_Crop=="cropland")){no_gbif_vents()}
 if(grepl("hydro", Gbif_Start) & (Gbif_Buffer>0 | Gbif_Crop!="" | Gbif_Altitude[1]!="0" | Gbif_Altitude[2]!="9000" | Gbif_RLDistBin=="true")){hydro_modified()}
 
 
