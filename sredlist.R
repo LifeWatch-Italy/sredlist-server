@@ -2826,7 +2826,7 @@ Prom<-future({
   if(is.null(Storage_SP$gbif_number_saved)==F | is.na(Storage_SP$Output$Value[Storage_SP$Output$Parameter=="Gbif_EditPoly"])==F | ("Shp" %in% outputs_selected)){
     sRL_loginfo("Start saving distribution", scientific_name)
     
-    distSIS<-sRL_OutputDistribution(scientific_name, Storage_SP)
+    distSIS<-sRL_OutputDistribution(scientific_name, Storage_SP) %>% st_transform(., st_crs(4326))
     if("hybas_id" %in% names(Storage_SP$distSP_saved) & ("Hydro" %in% outputs_selected)){
       hydroSIS<-sRL_OutputHydrobasins(distSIS, Storage_SP)
       write.csv(hydroSIS, paste0(output_dir, "/sRedList_", gsub(" ", ".", scientific_name), "_Hydrobasins.csv"), row.names=F)
