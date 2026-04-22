@@ -4,6 +4,7 @@ setwd(dir=ifelse(file.exists("C:/Users/TERRA"),"C:/Users/TERRA/Documents/sRedLis
 
 library(shiny)
 library(leaflet)
+library(leaflet.extras)
 library(mapedit)
 library(sf)
 library(htmlwidgets)
@@ -59,7 +60,7 @@ ui <- page_fillable(
                           editModUI("map", height=600, width = "100%"),
                           
                           # Version number (just for Victor to ensure the correct version is deployed)
-                          conditionalPanel(condition='input.user=="victor.cazalis"', paste0("version 1.6_devJan deployed on ", as.character(Sys.Date())))
+                          conditionalPanel(condition='input.user=="victor.cazalis"', paste0("version 1.6_devFixApril deployed on ", as.character(Sys.Date())))
                         ),
                         sidebarPanel(
                           titlePanel("Drag existing records"),
@@ -102,13 +103,7 @@ server <- function(input, output, session) {
   ### Create objects ---------
 
   ### Create base map
-  edits <- callModule(
-    editMod,
-    leafmap = sRLMan_CreateLeaflet(),
-    id = "map",
-    record = FALSE,
-    sf = TRUE
-  )
+  edits <- sRLMan_CreateLeaflet()
   
   ### CREATE REACTIVE VALUES
   flagsSF <- reactiveVal()
@@ -218,7 +213,7 @@ server <- function(input, output, session) {
     Storage_SPNEW <- Storage_SP()
     Storage_SPNEW$flags <- flagsSF() %>% as.data.frame(.) %>% .[, names(.) != "geometry"]
     Storage_SPNEW$dat_proj_saved <- sRL_SubsetGbif(Storage_SPNEW$flags, input$sci_name) # I use Storage_SPNEW$flags to make sure we are not using a df with geometries
-    
+
     # Record usage
     Storage_SPNEW$Output$Value[Storage_SPNEW$Output$Parameter=="Gbif_EditPts"]<-"yes"
     Storage_SPNEW$Output$Count[Storage_SPNEW$Output$Parameter=="Gbif_EditPts"]<-Storage_SPNEW$Output$Count[Storage_SPNEW$Output$Parameter=="Gbif_EditPts"]+1
@@ -231,6 +226,7 @@ server <- function(input, output, session) {
     Storage_SP(Storage_SPNEW)
 
     ### Update map
+    edits <- sRLMan_CreateLeaflet()
     sRLMan_UpdateLeaflet(flagsSF(), frame=1, Drag=F)
 
     sRL_loginfo("END - Save manual edit records", input$sci_name)

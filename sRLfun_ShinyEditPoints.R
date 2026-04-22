@@ -2,7 +2,7 @@
 
 sRLMan_CreateLeaflet <- function(){
   
-  leaflet() %>%
+  Leaf <- leaflet() %>%
     addTiles()  %>%
     addProviderTiles("Esri.WorldImagery", group = "Satellite") %>%
     addProviderTiles("Esri.WorldTopoMap", group = "Topography") %>%
@@ -19,39 +19,20 @@ sRLMan_CreateLeaflet <- function(){
       editOptions=editToolbarOptions(edit=FALSE, remove=FALSE)
     ) %>%
     onRender("function(el, x){
-               var map = this;
-               var polygons = [];
-               map.on('layeradd', function(e) {
-                 polygons.push(e.layer);
-               });
-               $('#save').on('click', function() {
-                 var features = [];
-                 for(var polygon of polygons) {
-                   if(polygon.feature) {
-                     features.push(polygon);
-                     map.removeLayer(polygon);
-                   }
-                 }
-                 polygons = [];
-                 var group = L.layerGroup(features);
-                 var collection = group.toGeoJSON(false);
-                 var n = collection.features.length;
-                 var i = 0;
-                 var interval = setInterval(function() {
-                    if(i === n) {
-                      clearInterval(interval);
-                    } else {
-                      var f = collection.features[i];
-                      var deleted = {type: 'FeatureCollection', features: [f]};
-                      Shiny.setInputValue(el.id + '_draw_deleted_features', deleted);
-                      i = i + 1;
-                    }
-                 });
-               });
              document.querySelector('.leaflet-draw-draw-polygon') .setAttribute('title', 'Draw a polygon around records to exclude');
              document.querySelector('.leaflet-draw-draw-rectangle') .setAttribute('title', 'Draw a rectangle around records to exclude');
              document.querySelector('.leaflet-draw-draw-marker') .setAttribute('title', 'Draw new records');
              }")
+  
+  edits <- callModule(
+    editMod,
+    leafmap = Leaf,
+    id = "map",
+    record = FALSE,
+    sf = TRUE
+  )
+  
+  return(edits)
   
 } 
 
@@ -95,7 +76,6 @@ sRLMan_UpdateLeaflet <- function(flagsSF, frame, Drag){
 
 
 sRLMan_EditPoints <- function(EditsGeom, flagsSF, Pts_year, Pts_source){
-  
   
   ### Remove points overlapping with polygon
   if("rectangle" %in% EditsGeom$feature_type | "polygon" %in% EditsGeom$feature_type){
