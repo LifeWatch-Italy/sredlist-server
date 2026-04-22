@@ -1,6 +1,6 @@
 
 # Set working directory (Victor path if we are on his laptop, LifeWatch path otherwise)
-setwd(dir=ifelse(file.exists("C:/Users/Victor"),"C:/Users/Victor/Documents/sRedList/Platform/InProgress/sredlist-server-develop", "/media/docker/sRedList/sredlist-server"))
+setwd(dir=ifelse(file.exists("C:/Users/TERRA"),"C:/Users/TERRA/Documents/sRedList/InProgress/sredlist-server", "/media/docker/sRedList/sredlist-server"))
 
 
 library(shiny)
@@ -286,10 +286,11 @@ server <- function(input, output, session) {
     if(length(names(Stor_tempo))<=1){loader_load$hide() ; req(F)}
     
     # Load distribution
-    if(T %in% grepl("hydro", Stor_tempo$Output$Value) & Stor_tempo$Output$Value[Stor_tempo$Output$Parameter=="Distribution_Source"]=="Created"){
+    if((T %in% grepl("hydro", Stor_tempo$Output$Value) & Stor_tempo$Output$Value[Stor_tempo$Output$Parameter=="Distribution_Source"]=="Created") | (T %in% grepl("hydro", AllowEdit()))){
+      
       dist_loaded0 <- Stor_tempo$distSP3_BeforeCrop
-      if(nrow(dist_loaded0)>50){showNotification(ui=HTML("Please be patient, the preparation of hydrobasins may take a few minutes"), type="warning", duration=5)}
-      if(input$Expand_Hydro > 0){dist_loaded0 <- Stor_tempo$distSP_saved_tempoHydro %>% st_transform(., st_crs(Stor_tempo$distSP3_BeforeCrop))}
+      if(is.null(nrow(dist_loaded0))==F){if(nrow(dist_loaded0)>50){showNotification(ui=HTML("Please be patient, the preparation of hydrobasins may take a few minutes"), type="warning", duration=5)}}
+      if(input$Expand_Hydro > 0){dist_loaded0 <- Stor_tempo$distSP_saved_tempoHydro %>% st_transform(., st_crs(hydro_raw))}
       
       # Extract hydrobasins, will return a list with hydroSP to use and hydro_HQ with hydrobasins in the original quality
       track_storage$L$Hydro_init <- track_storage$L$Hydro_init+1
@@ -352,7 +353,8 @@ server <- function(input, output, session) {
     
     # Edit Suggest_hydro to determine if we display the 'Edit as hydrobasins' button
     speciesRL_sub <- subset(speciesRL, scientific_name == input$sci_name)
-    if(AllowEdit()!="hydro" & nrow(speciesRL_sub)>0 & TRUE %in% grepl("Freshwater", Stor_tempo$SpeciesAssessment$systems$description) & Stor_tempo$Output$Value[Stor_tempo$Output$Parameter=="Distribution_Source"] != "Created"){Suggest_hydro("yes")}
+    
+    if(AllowEdit()!="hydro" & (nrow(speciesRL_sub)==0 | TRUE %in% grepl("Freshwater", Stor_tempo$SpeciesAssessment$systems$description)) & Stor_tempo$Output$Value[Stor_tempo$Output$Parameter=="Distribution_Source"] != "Created"){Suggest_hydro("yes")}
     
     ### Reload edits and storages (needed to make sure we start from zero; bugs otherwise)
     edits <- sRLPolyg_CreateLeaflet(AllowEdit(), hydro3_stored())
@@ -408,6 +410,7 @@ server <- function(input, output, session) {
     loader_loadhydro <- addLoader$new("EditAsHydroButt", color = "#009138ff", method = "full_screen", height = "30rem", opacity=0.4) ; loader_loadhydro$show()
     track_storage$L$Hydro_editas <- track_storage$L$Hydro_editas+1
     AllowEdit("hydro")
+    Suggest_hydro("no")
     
     ### Subset hydrobasins
     showNotification(ui=HTML("Please be patient, the preparation of hydrobasins may take up to a few minutes"), type="warning", duration=3)
@@ -425,6 +428,8 @@ server <- function(input, output, session) {
     sRLPolyg_UpdateLeaflet(distSP(), dat_pts(), frame=1, AllowEdit=AllowEdit())
     Unsaved_changes("yes")
 
+    Run_save(Run_save()+1)
+    
     ### End loader
     loader_loadhydro$hide()
     
@@ -562,7 +567,7 @@ server <- function(input, output, session) {
 
       # Make valid and unique polygons
       distSmoothed <- distSmoothed %>% sRLPolyg_InitDistri(., 4326) %>% st_make_valid()
-
+      
       # Save only if a polygon remains
       if(as.numeric(st_area(distSmoothed))[1]==0){
         showNotification(ui=HTML("Please reduce the smooth parameter, it is currently too high"), type="error", duration=3)
