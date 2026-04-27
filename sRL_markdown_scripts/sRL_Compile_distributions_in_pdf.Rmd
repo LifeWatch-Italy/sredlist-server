@@ -1,0 +1,65 @@
+---
+title: "Compile distributions from sRedList"
+author: "sRedList"
+date: "`r format(Sys.Date(), '%d/%m/%Y')`"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = F)
+library(leaflet)
+library(htmltools)
+```
+
+<i>Warning: if you'd like to use this file as pdf, you can click CTRL+P to print, then select "Print to PDF".</i>
+
+
+```{r, out.width="100%", warning=F}
+
+MapList <- list()
+
+for(SP in sort(unique(dist$sci_name))){
+  
+  # Prepare distribution
+  distSP <- dist[dist$sci_name==SP,]
+  distSP$Popup <- paste0("<b>POLYGON</b><br>",
+                         "Presence: ", distSP$presence, "<br>",
+                         "Origin: ", distSP$origin, "<br>",
+                         "Seasonal: ", distSP$seasonal, "<br>")
+  
+  # Prepare points
+  ptsSP <- pts[pts$sci_name==SP,]
+  
+  # Prepare Leaflet
+  Leaf_map <- leaflet() %>%
+    addProviderTiles("Esri.WorldTopoMap", options = providerTileOptions(opacity=0.5)) %>%
+    addPolygons(data=distSP, color=distSP$cols, stroke=T, weight=2, fillOpacity=0.5, group="Range map", popup=distSP$Popup, popupOptions = popupOptions(autoPan=T, keepInView = T, closeOnClick=T))
+  
+  # Add points to leaflet
+  if(is.null(ptsSP)==F){
+    if(nrow(ptsSP)>0){
+      
+      ptsSP <-ptsSP %>% st_as_sf(., coords = c("dec_long","dec_lat"), remove = FALSE, crs=st_crs(4326))
+      
+      ptsSP$Popup <- paste0("<b>POINT RECORD</b><br>",
+                            "Presence: ", ptsSP$presence, "<br>",
+                            "Origin: ", ptsSP$origin, "<br>",
+                            "Seasonal: ", ptsSP$seasonal, "<br>")
+      
+      Leaf_map <- Leaf_map %>%
+        addCircleMarkers(data=ptsSP, fillColor=ptsSP$cols, stroke=T, color="grey", weight=2, radius=5, popup=ptsSP$Popup, group="Point records", popupOptions = popupOptions(autoPan=T, keepInView = T, closeOnClick=T)) %>%
+        addLayersControl(overlayGroups = c("Range map", "Point records"), position="topleft", options=layersControlOptions(collapsed=F))
+    }}
+  
+  # Save in list
+  MapList[[length(MapList)+1]] <- list(
+    htmltools::h2(SP), 
+    Leaf_map
+  )
+  
+}
+
+tagList(MapList)
+
+```
+
