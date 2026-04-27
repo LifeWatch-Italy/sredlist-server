@@ -3394,6 +3394,12 @@ Prom<-future({
     st_write(DistM, paste0(Zip_Path, "/sRedList_Distribution.shp"), append=F)
     write.csv(OccM, paste0(Zip_Path, "/sRedList_Occurrences.csv"), row.names=F)
     if(exists("HydroM")){write.csv(HydroM, paste0(Zip_Path, "/sRedList_Hydrobasins.csv"), row.names=F)}
+    
+    # Create an html combining the distributions
+    tryCatch({
+      if(exists("OccM")){Occ_function <- OccM} else {Occ_function <- NULL}
+      sRL_CombineMapsHTML(DistM, Occ_function, Zip_Path)
+    }, error=function(e){cat("TryCatch HTML distributions")})
   }
   
   
