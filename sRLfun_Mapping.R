@@ -577,6 +577,7 @@ sRL_LeafletFlags <- function(flags){
     addTiles(group="OpenStreetMap") %>%
     addProviderTiles("Esri.WorldImagery", group = "Satellite") %>%
     addProviderTiles("Esri.WorldTopoMap", group = "Topography") %>%
+    addProviderTiles("Esri.OceanBasemap", group = "Marine", options = list(maxZoom=10)) %>%
     addCircleMarkers(lng=flags$decimalLongitude,
                      lat=flags$decimalLatitude,
                      color=ifelse(is.na(flags$Reason)==T, "#fdcb25ff", "#440154ff"),
@@ -586,7 +587,7 @@ sRL_LeafletFlags <- function(flags){
                      radius=8,
                      group="Occurrence records") %>%
     addLegend(position="bottomleft", colors=c('#fdcb25ff', '#440154ff'), labels=c("Valid", "Not valid")) %>%
-    addLayersControl(baseGroups=c("OpenStreetMap", "Satellite", "Topography"), overlayGroups="Occurrence records", position="topleft") %>%
+    addLayersControl(baseGroups=c("OpenStreetMap", "Satellite", "Topography", "Marine"), overlayGroups="Occurrence records", position="topleft") %>%
     addMouseCoordinates() %>%
     addScaleBar(position = "bottomright") 
   

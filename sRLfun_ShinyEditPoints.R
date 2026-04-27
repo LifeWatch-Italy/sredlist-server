@@ -6,11 +6,12 @@ sRLMan_CreateLeaflet <- function(){
     addTiles()  %>%
     addProviderTiles("Esri.WorldImagery", group = "Satellite") %>%
     addProviderTiles("Esri.WorldTopoMap", group = "Topography") %>%
+    addProviderTiles("Esri.OceanBasemap", group = "Marine", options = list(maxZoom=10)) %>%
     addLegend(position="bottomleft", colors=c('#fde725ff', '#440154ff'), labels=c("Valid", "Not valid")) %>%
     addMouseCoordinates() %>%
     addScaleBar(position="bottomright") %>%
     leaflet.extras::addSearchOSM(options = searchOptions(collapsed = FALSE, position="topright")) %>%
-    addLayersControl(baseGroups=c("OpenStreetMap", "Satellite", "Topography"), position="bottomleft") %>%
+    addLayersControl(baseGroups=c("OpenStreetMap", "Satellite", "Topography", "Marine"), position="bottomleft") %>%
     addDrawToolbar(
       polylineOptions = FALSE,
       circleOptions = FALSE,
