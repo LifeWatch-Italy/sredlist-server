@@ -1008,7 +1008,7 @@ function(scientific_name, username) { # nolint
     
     ### Plot EOO
     EOO_leaflet<-leaflet() %>%
-      addTiles(group="OpenStreetMap") %>%
+      addProviderTiles("OpenStreetMap.DE", group="OpenStreetMap") %>%
       addProviderTiles("Esri.WorldImagery", group = "Satellite") %>%
       addProviderTiles("Esri.WorldTopoMap", group = "Topography") %>%
       addPolygons(data=distSP, color="#D69F32", fillOpacity=0.5, group="Distribution") %>% 
@@ -1660,7 +1660,7 @@ function(scientific_name, username) { # nolint
     
     ### Plot
     AOH_leaflet<-leaflet() %>%
-     addTiles(group="OpenStreetMap") %>%
+     addProviderTiles("OpenStreetMap.DE", group="OpenStreetMap") %>%
      addProviderTiles("Esri.WorldImagery", group = "Satellite") %>%
      addProviderTiles("Esri.WorldTopoMap", group = "Topography") %>%
      addPolygons(data=distPROJ, color="#D69F32", fillOpacity=0, group="Distribution") %>% 
@@ -1743,7 +1743,7 @@ function(scientific_name, username) { # nolint
     
     ### Plot AOO
     AOO_leaflet<-leaflet() %>%
-      addTiles(group="OpenStreetMap") %>%
+      addProviderTiles("OpenStreetMap.DE", group="OpenStreetMap") %>%
       addProviderTiles("Esri.WorldImagery", group = "Satellite") %>%
       addProviderTiles("Esri.WorldTopoMap", group = "Topography") %>%
       addPolygons(data=aoo, group="AOO", opacity=0.7, color="#25BC5A", stroke=F) %>%
@@ -2016,7 +2016,7 @@ function(scientific_name, username) { # nolint
     
     ### Basic plot
     Trends_leaflet<-leaflet() %>%
-      addTiles(group="OpenStreetMap") %>%
+      addProviderTiles("OpenStreetMap.DE", group="OpenStreetMap") %>%
       addProviderTiles("Esri.WorldImagery", group = "Satellite") %>%
       addProviderTiles("Esri.WorldTopoMap", group = "Topography") %>%
       addPolygons(data=distPROJ, color="#D69F32", fillOpacity=0, group="Distribution") %>% 
@@ -2302,7 +2302,7 @@ function(scientific_name, username, RSproduct) { # nolint
 
     ### Plot
     RS_leaflet<-leaflet() %>%
-      addTiles(group="OpenStreetMap") %>%
+      addProviderTiles("OpenStreetMap.DE", group="OpenStreetMap") %>%
       addProviderTiles("Esri.WorldImagery", group = "Satellite") %>%
       addProviderTiles("Esri.WorldTopoMap", group = "Topography") %>%
       addPolygons(data=distPROJ, color="#D69F32", fillOpacity=0, group="Distribution") %>% 

@@ -3,9 +3,9 @@
 sRLMan_CreateLeaflet <- function(){
   
   Leaf <- leaflet() %>%
-    addTiles()  %>%
+    addProviderTiles("OpenStreetMap.DE", group="OpenStreetMap")  %>%
     addProviderTiles("Esri.WorldImagery", group = "Satellite") %>%
-    addProviderTiles("Esri.WorldTopoMap", group = "Topography") %>%
+    addProviderTiles("OpenTopoMap", group = "Topography") %>%
     addProviderTiles("Esri.OceanBasemap", group = "Marine", options = list(maxZoom=10)) %>%
     addLegend(position="bottomleft", colors=c('#fde725ff', '#440154ff'), labels=c("Valid", "Not valid")) %>%
     addMouseCoordinates() %>%

@@ -44,7 +44,7 @@ sRL_LeafletComparison <- function(flags, distSP, Comparison_result){
   Leaf <- leaflet(flags) %>%
     addTiles(group="OpenStreetMap") %>%
     addProviderTiles("Esri.WorldImagery", group = "Satellite") %>%
-    addProviderTiles("Esri.WorldTopoMap", group = "Topography") %>%
+    addProviderTiles("OpenTopoMap", group = "Topography") %>%
     addPolygons(data=distSP, color=distSP$cols, fillColor=distSP$cols, stroke=F, weight=2, fillOpacity=0.7) %>%
     addCircleMarkers(lng=flags$decimalLongitude,
                      lat=flags$decimalLatitude,
@@ -576,7 +576,7 @@ sRL_LeafletFlags <- function(flags){
   Leaf <- leaflet(flags) %>%
     addTiles(group="OpenStreetMap") %>%
     addProviderTiles("Esri.WorldImagery", group = "Satellite") %>%
-    addProviderTiles("Esri.WorldTopoMap", group = "Topography") %>%
+    addProviderTiles("OpenTopoMap", group = "Topography") %>%
     addProviderTiles("Esri.OceanBasemap", group = "Marine", options = list(maxZoom=10)) %>%
     addCircleMarkers(lng=flags$decimalLongitude,
                      lat=flags$decimalLatitude,
