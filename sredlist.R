@@ -99,12 +99,18 @@ function(scientific_name, username) {
 #* @tag sRedList1
  function(scientific_name, username, Crop_Country="", Dist_path = "") { # nolint
 
+   # Check complete list of files (for shapefiles) and no duplicate shp/gpkg (does not work because of a weird interaction with the client)
+   scientific_name <- sRL_decode(scientific_name)
+   Dist_path <- ifelse(Dist_path == "", paste0(R.utils::capitalize(trim(gsub(" ", "_", scientific_name))), '_RL'), Dist_path ) # nolint
+   Extensions <- file_ext(list.files(paste0(config$distribution_path, scientific_name, "/", Dist_path)))
+   if(("shp" %in% Extensions) & ("gpkg" %in% Extensions)){bug_distribution_loadingGPKG()}
+   if(("shp" %in% Extensions) & ((! "shx" %in% Extensions) | (! "prj" %in% Extensions) | (! "dbf" %in% Extensions))){bug_distribution_loading()}
+   
    Prom<-future({
      sf::sf_use_s2(FALSE)
      
      #Filter param
      sRL_loginfo("START - Prepare distribution 1a", scientific_name)
-     scientific_name <- sRL_decode(scientific_name)
      Storage_SP=sRL_StoreRead(scientific_name,  username, MANDAT=0) ; print(names(Storage_SP))
      Storage_SP<-subset(Storage_SP, names(Storage_SP) %in% c("CountrySP_saved", "Creation", "Output", "SpeciesAssessment")) # Remove other elements from Storage_SP which could come from a previous process on the platform
      if(! "SpeciesAssessment" %in% names(Storage_SP)){
@@ -113,7 +119,6 @@ function(scientific_name, username) {
      }
      if(Crop_Country=="Keep all countries"){Crop_Country<-""}
      print(Crop_Country)
-     Dist_path <- ifelse(Dist_path == "", paste0(R.utils::capitalize(trim(gsub(" ", "_", scientific_name))), '_RL'), Dist_path ) # nolint
      
      # If outlog not present (I don't think this should happen but just in case)
      if(! "Output" %in% names(Storage_SP)){Storage_SP$Output<-sRL_InitLog(scientific_name, username, DisSource = "Unknown")}
@@ -650,8 +655,7 @@ Prom<-future({
     sRL_loginfo("Merge with Red List map", scientific_name)
     tryCatch({
       # Load distribution
-      distRL0_path <- paste0(config$distribution_path, scientific_name, "/", sub(" ", "_", scientific_name), "_RL/", scientific_name, ".shp")
-      distRL <- sRL_PrepareDistrib(st_read(distRL0_path), scientific_name) # nolint
+      distRL <- sRL_ReadDistribution(scientific_name, paste0(sub(" ", "_", scientific_name), "_RL")) %>% sRL_PrepareDistrib(., scientific_name) # nolint
       distRL <- subset(distRL, distRL$presence %in% c(1,2) & distRL$origin %in% c(1,2) & distRL$seasonal %in% c(1,2))
       
       # Merge with created range map
@@ -2563,14 +2567,14 @@ function(scientific_name, username){
   LISTout_select <- c("sRL", "SIS")
   if("coo_occ" %in% names(Storage_SP)){LISTout_select <- c(LISTout_select, "COO")}
   if("habitats_SIS" %in% names(Storage_SP)){LISTout_select <- c(LISTout_select, "Hab")}
-  if(is.null(Storage_SP$gbif_number_saved)==F){LISTout_select <- c(LISTout_select, "Shp", "Pts")}
-  if(is.na(Storage_SP$Output$Value[Storage_SP$Output$Parameter=="Gbif_EditPoly"])==F){LISTout_select <- unique(c(LISTout_select, "Shp"))} # In case published distribution was edited manually
+  if(is.null(Storage_SP$gbif_number_saved)==F){LISTout_select <- c(LISTout_select, "Poly", "Pts")}
+  if(is.na(Storage_SP$Output$Value[Storage_SP$Output$Parameter=="Gbif_EditPoly"])==F){LISTout_select <- unique(c(LISTout_select, "Poly"))} # In case published distribution was edited manually
   if("hybas_id" %in% names(Storage_SP$distSP_saved)){LISTout_select <- c(LISTout_select, "Hydro")}
   
-  ### Choose outputs disabled (sRL should always be included, those not in select are not available) + Shp always selectable
+  ### Choose outputs disabled (sRL should always be included, those not in select are not available) + Shp/GpkgPoly always selectable
   LISTout_disable <- c("SIS", "COO", "Pts", "Hab", "Hydro") %>% subset(., !. %in% LISTout_select) %>% c(., "sRL")
   if(! "AOHkm2_saved" %in% names(Storage_SP)){LISTout_disable <- c(LISTout_disable, "AOH", "AOO")}
-  
+
   return(list(Outputs_preselected=LISTout_select,
               Outputs_disabled=LISTout_disable)
          )
@@ -2587,6 +2591,7 @@ function(scientific_name,
          username,
          Estimates, 
          outputs_selected,
+         format_dist,
          pastTrends_dir, pastTrends_qual, pastTrends_basis, pastTrends_reversible, pastTrends_understood, pastTrends_ceased, fragmentBin, Fragment_justif,
          Extreme_EOO, Extreme_AOO, Extreme_Pop, Extreme_NLoc, Extreme_NSub, Extreme_EOO_justif, Extreme_AOO_justif, Extreme_Pop_justif, Extreme_NLoc_justif, Extreme_NSub_justif,
          Continuing_EOO, Continuing_AOO, Continuing_Hab, Continuing_Pop, Continuing_NLoc, Continuing_NSub, Continuing_EOO_justif, Continuing_AOO_justif, Continuing_Hab_justif, Continuing_Pop_justif, Continuing_NLoc_justif, Continuing_NSub_justif,
@@ -2598,7 +2603,7 @@ function(scientific_name,
 Prom<-future({
   
   Estimates<-replace(Estimates, Estimates %in% c("undefined", " "), NA)
-
+  
   #Filter param
   sRL_loginfo("Start Criteria calculation", scientific_name)
   scientific_name <- sRL_decode(scientific_name)
@@ -2613,7 +2618,8 @@ Prom<-future({
   allfields<-read.csv("Species/SIS_allfields_empty.csv")[1,]
   allfields$X<-NULL
   
-  # # Take data from saved prepared dataset
+  ### Questionnaire ----
+  # Take data from saved prepared dataset
   allfields$internal_taxon_name<-scientific_name
   #allfields$assessment_id<-NA
   allfields$internal_taxon_id<-sRL_CalcIdno(scientific_name)
@@ -2740,6 +2746,7 @@ Prom<-future({
   unlink(paste0(output_dir, ".zip"), recursive=T)
   dir.create(output_dir)
   
+  ### Countries ----
   # Countries (but enabling skipping step) + prepare assessments.csv
   if("coo_occ" %in% names(Storage_SP)){
     tryCatch({
@@ -2751,6 +2758,7 @@ Prom<-future({
     assessments_SIS<-sRL_OutputAssessments(scientific_name, Storage_SP$Realms_saved, Storage_SP$Output$Value[Storage_SP$Output$Parameter=="System_pref"][1], populationTrend)
   } else {assessments_SIS<-sRL_OutputAssessments(scientific_name, NA, NA, populationTrend)}
   
+  ### Habitats ----
   # Habitats (if AOH not skipped)
   if("habitats_SIS" %in% names(Storage_SP)){
     habitats_SIS<-Storage_SP$habitats_SIS[,6:13]
@@ -2761,6 +2769,7 @@ Prom<-future({
     }
   }
   
+  ### Ref, taxo, outsave ----
   ref_SIS<-sRL_OutputRef(scientific_name, Storage_SP) 
   taxo_SIS<-sRL_OutputTaxo(scientific_name, Estimates)
   out_save<-Storage_SP$Output[Storage_SP$Output$Definition !="Only used to track usage",] %>% subset(., select=names(.)[names(.) != "Count"])
@@ -2775,7 +2784,7 @@ Prom<-future({
     write.csv(assessments_SIS, paste0(output_dir, "/assessments.csv"), row.names = F)
   }
   
-  # AOH
+  ### AOH ----
   aoh_dir <- paste0("resources/AOH_stored/", sub(" ", "_", scientific_name), "_", sRL_userdecode(username))
   
   if("AOH" %in% outputs_selected){
@@ -2803,7 +2812,7 @@ Prom<-future({
     }, error=function(e){"Bug in exporting AOO"})
   }
   
-  # Download tracking files
+  ### Tracking files ----
   sRL_loginfo("Track files", scientific_name)
   if(grepl("victor.cazalis", username)){
     # List files stored in Stored_outputs to add to zip and copy
@@ -2823,31 +2832,45 @@ Prom<-future({
     }
   }
   
-  # Save distribution and occurrences if from GBIF
-  if(is.null(Storage_SP$gbif_number_saved)==F | is.na(Storage_SP$Output$Value[Storage_SP$Output$Parameter=="Gbif_EditPoly"])==F | ("Shp" %in% outputs_selected)){
-    sRL_loginfo("Start saving distribution", scientific_name)
+  ### Distributions ----
+  # Polygon range map
+  sRL_loginfo("Start saving distribution", scientific_name)
+  if(is.null(Storage_SP$gbif_number_saved)==F | is.na(Storage_SP$Output$Value[Storage_SP$Output$Parameter=="Gbif_EditPoly"])==F | ("Poly" %in% outputs_selected)){
     
     distSIS<-sRL_OutputDistribution(scientific_name, Storage_SP) %>% st_transform(., st_crs(4326))
     if("hybas_id" %in% names(Storage_SP$distSP_saved) & ("Hydro" %in% outputs_selected)){
       hydroSIS<-sRL_OutputHydrobasins(distSIS, Storage_SP)
       write.csv(hydroSIS, paste0(output_dir, "/sRedList_", gsub(" ", ".", scientific_name), "_Hydrobasins.csv"), row.names=F)
-      if("Shp" %in% outputs_selected){st_write(distSIS, paste0(output_dir, "/sRedList_", gsub(" ", ".", scientific_name), "_Distribution_NOT_DISSOLVED.shp"), append=F)}
+      distSIS_hydro <- distSIS
       distSIS$hybas_id <- NULL
     }
-    distSIS <- distSIS %>% dplyr::group_by(across(.cols=-"geometry")) %>% dplyr::summarise()
-    if("Shp" %in% outputs_selected){st_write(distSIS, paste0(output_dir, "/sRedList_", gsub(" ", ".", scientific_name), "_Distribution.shp"), append=F)}
     
-   ### Save occurrence records
-   if(is.null(Storage_SP$gbif_number_saved)==F & ("Pts" %in% outputs_selected)){
-     write.csv(sRL_OutputOccurrences(scientific_name, Storage_SP, distSIS), paste0(output_dir, "/sRedList_", gsub(" ", ".", scientific_name), "_Occurrences.csv"), row.names=F)
-   }
+    distSIS <- distSIS %>% dplyr::group_by(across(.cols=-"geometry")) %>% dplyr::summarise()
+    if("Poly" %in% outputs_selected){
+      if(format_dist=="gpkg"){
+        st_write(distSIS, paste0(output_dir, "/sRedList_", gsub(" ", ".", scientific_name), "_Distribution.gpkg"), layer="polygons", append=F)
+        if(exists("hydroSIS")){st_write(distSIS_hydro, paste0(output_dir, "/sRedList_", gsub(" ", ".", scientific_name), "_Distribution.gpkg"), layer="hydrobasins_not_dissolved", append=T)}
+      } else {
+        st_write(distSIS, paste0(output_dir, "/sRedList_", gsub(" ", ".", scientific_name), "_Distribution.shp"), append=F)
+        if(exists("hydroSIS")){st_write(distSIS_hydro, paste0(output_dir, "/sRedList_", gsub(" ", ".", scientific_name), "_Distribution_NOT_DISSOLVED.shp"), append=F)}
+      }
+    }
   }
+  
+  # Save occurrence records (in gpkg if gpkg selected, in csv in any case)
+  if(is.null(Storage_SP$gbif_number_saved)==F & ("Pts" %in% outputs_selected)){
+    pts_out <- sRL_OutputOccurrences(scientific_name, Storage_SP, distSIS)
+    write.csv(pts_out, paste0(output_dir, "/sRedList_", gsub(" ", ".", scientific_name), "_Occurrences.csv"), row.names=F)
+    pts_outSF <- pts_out %>% st_as_sf(., coords = c("dec_long","dec_lat"), remove = FALSE, crs=st_crs(4326))
+    if(format_dist=="gpkg"){st_write(pts_outSF, paste0(output_dir, "/sRedList_", gsub(" ", ".", scientific_name), "_Distribution.gpkg"), layer="points", append=ifelse("Poly" %in% outputs_selected, T, F))}
+  }
+  
 
-  ### Calculate criteria
+  ### Calculate criteria ----
   sRL_loginfo("Start Criteria calculation", scientific_name)
   criteria<-sRL_CriteriaCalculator(allfields[1,])
   
-  ### Plot
+  ### Plot ----
   sRL_loginfo("Start Plotting", scientific_name)
   criteria$Cat_ThresholdMIN <- criteria$Cat_ThresholdMIN %>% replace(., .=="LC", "LC/NT") %>% factor(., c("LC/NT", "VU", "EN", "CR"))
   criteria$Cat_ThresholdMAX <- criteria$Cat_ThresholdMAX %>% replace(., .=="LC", "LC/NT") %>% factor(., c("LC/NT", "VU", "EN", "CR"))
@@ -2912,7 +2935,7 @@ Prom<-future({
   plot_assign <- base64enc::dataURI(file = paste0("resources/AOH_stored/", sub(" ", "_", scientific_name), "_", sRL_userdecode(username), "/Plots/Plot_assign.png"), mime = "image/png") # nolint
   
   
-  # Call RMarkDown
+  ### Call RMarkDown ----
   sRL_loginfo("Start RMarkDown", scientific_name)
   WD<-getwd()
   tryCatch({
@@ -2924,7 +2947,7 @@ Prom<-future({
     )
   }, error=function(e){"Error in creating Markdown report"})
   
-  # ZIP folder
+  ### ZIP folder ----
   #zip(zipfile = paste0(sub(" ", "_", scientific_name), "_sRedList"), files = paste0(sub(" ", "_", scientific_name), "_sRedList"),  zip = "C:/Program Files/7-Zip/7z", flags="a -tzip")
   sRL_loginfo("Start ZIP", scientific_name)
   unlink(paste0(output_dir, "/allfieldsTEMPORARY.csv"))
@@ -3317,18 +3340,43 @@ Prom<-future({
   
   # Merge Distributions
   sRL_loginfo("Merge distributions", "Merge ZIP API")
+  
+  ### Shapefiles
   if(TRUE %in% grepl('_Distribution.shp', list.files(Zip_Path, recursive = T))){
     
-    Dist_files<-list.files(Zip_Path, recursive = T)[grepl('_Distribution.shp', list.files(Zip_Path, recursive = T))] %>% paste0(Zip_Path, "/", .)
+    Dist_files_shp<-list.files(Zip_Path, recursive = T)[grepl('_Distribution.shp', list.files(Zip_Path, recursive = T))] %>% paste0(Zip_Path, "/", .)
     
     eval(parse(text=
-                 paste0("DistM<-dplyr::bind_rows(",
-                        paste0("st_read(Dist_files[", 1:length(Dist_files), "])", collapse=','),")"
+                 paste0("DistM_shp<-dplyr::bind_rows(",
+                        paste0("st_read(Dist_files_shp[", 1:length(Dist_files_shp), "])", collapse=','),")"
                  )))
   }
   
-  # Merge Occurrences
+  ### Geopackages
+  if(TRUE %in% grepl('_Distribution.gpkg', list.files(Zip_Path, recursive = T))){
+    
+    Dist_files_gpkg<-list.files(Zip_Path, recursive = T)[grepl('_Distribution.gpkg', list.files(Zip_Path, recursive = T))] %>% paste0(Zip_Path, "/", .)
+    for(i in 1:length(Dist_files_gpkg)){if("polygons" %in% st_layers(Dist_files_gpkg[i])$name==F){Dist_files_gpkg[i]<-NA}}
+    Dist_files_gpkg <- Dist_files_gpkg[is.na(Dist_files_gpkg)==F]
+    
+    if(length(Dist_files_gpkg)>0){
+    eval(parse(text=
+                 paste0("DistM_gpkg<-dplyr::bind_rows(",
+                        paste0("st_read(Dist_files_gpkg[", 1:length(Dist_files_gpkg), "], layer='polygons')", collapse=','),")"
+                 )))
+    }
+  }
+  
+  ### Combine if needed
+  if(exists("DistM_shp") & exists("DistM_gpkg")){DistM <- sRL_rbindfillSF(DistM_gpkg, DistM_shp)} else {
+    if(exists("DistM_shp")){DistM <- DistM_shp}
+    if(exists("DistM_gpkg")){DistM <- DistM_gpkg}
+  }
+  
+  
+  # Merge Occurrences (ignore gpkg as we always save csv)
   sRL_loginfo("Merge occurrences", "Merge ZIP API")
+  
   if(TRUE %in% grepl('_Occurrences.csv', list.files(Zip_Path, recursive = T))){
     
     Occ_files<-list.files(Zip_Path, recursive = T)[grepl('_Occurrences.csv', list.files(Zip_Path, recursive = T))] %>% paste0(Zip_Path, "/", .)
@@ -3338,6 +3386,7 @@ Prom<-future({
                         paste0("read.csv(Occ_files[", 1:length(Occ_files), "])", collapse=','),")"
                  )))
   }
+  
   
   # Merge Hydrobasins
   sRL_loginfo("Merge hydrobasins", "Merge ZIP API")
@@ -3389,19 +3438,35 @@ Prom<-future({
   if(exists("habitatsM")){write.csv(replace(habitatsM, is.na(habitatsM), ""), paste0(Zip_Path, "/habitats.csv"), row.names = F)}
   write.csv(LogM, paste0(Zip_Path, "/00.Output_log.csv"), row.names = F)
   
-  # Save distribution and occurrences if from GBIF
+  # Save distribution and combine in HTML
   if("DistM" %in% ls()){
-    st_write(DistM, paste0(Zip_Path, "/sRedList_Distribution.shp"), append=F)
-    write.csv(OccM, paste0(Zip_Path, "/sRedList_Occurrences.csv"), row.names=F)
-    if(exists("HydroM")){write.csv(HydroM, paste0(Zip_Path, "/sRedList_Hydrobasins.csv"), row.names=F)}
+    if(exists("DistM_gpkg")){
+      st_write(DistM, paste0(Zip_Path, "/sRedList_Distribution.gpkg"), layer="polygons", append=F)
+    } else {
+      st_write(DistM, paste0(Zip_Path, "/sRedList_Distribution.shp"), append=F)
+    }
+  }
     
-    # Create an html combining the distributions
+  # Create an html combining the distributions
+  if(exists("DistM") | exists("OccM")){
     tryCatch({
+      if(exists("DistM")){Dist_function <- DistM} else {Dist_function <- NULL}
       if(exists("OccM")){Occ_function <- OccM} else {Occ_function <- NULL}
-      sRL_CombineMapsHTML(DistM, Occ_function, Zip_Path)
+      sRL_CombineMapsHTML(Dist_function, Occ_function, Zip_Path)
     }, error=function(e){cat("TryCatch HTML distributions")})
   }
   
+  # Save occurrence
+  if(exists("OccM")){
+    write.csv(OccM, paste0(Zip_Path, "/sRedList_Occurrences.csv"), row.names=F)
+    if(exists("DistM_gpkg")){
+      OccSF <- OccM %>% st_as_sf(., coords = c("dec_long","dec_lat"), remove = FALSE, crs=st_crs(4326))
+      st_write(OccSF, paste0(Zip_Path, "/sRedList_Distribution.gpkg"), layer="points", append=T)
+    }
+  }
+  
+  # Save hydrobasins
+  if(exists("HydroM")){write.csv(HydroM, paste0(Zip_Path, "/sRedList_Hydrobasins.csv"), row.names=F)}
   
   # Zip that folder and delete it
   Zip_name<-Sys.time() %>% gsub("-", "_", .) %>% gsub(" ", "_", .) %>% gsub (":", "_", .) %>% paste0(Zip_Path, "/sRedList_mergedZIP_", ., ".zip")

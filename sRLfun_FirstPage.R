@@ -147,15 +147,18 @@ sRL_PlotHistory <- function(sciname_fun, key){
 sRL_ReadDistribution <- function(scientific_name, path) {
   speciesPath <- paste0(config$distribution_path, scientific_name, "/", path) # nolint
   print(speciesPath)
-  files <- base::list.files(path = speciesPath, pattern = "\\.shp$")
-
+  files <- base::list.files(path = speciesPath, pattern = "\\.gpkg$")
+  if(length(files)==0){files <- base::list.files(path = speciesPath, pattern = "\\.shp$")}
+  
   if (length(files) == 0) {
     distributions<-"No dist"
-    print("Shapefile of the species does not exist!") # nolint
+    print("Shapefile or geopackage of the species does not exist!") # nolint
   } else {
     distributionPath <- paste0(speciesPath, "/", files[1]) # nolint
     distributions <- sf::st_read(distributionPath)
   }
+  
+  st_geometry(distributions) <- "geometry"
   
   return(distributions)
 }

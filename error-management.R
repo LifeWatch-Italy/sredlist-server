@@ -43,6 +43,10 @@ bug_distribution_loading <- function() {
   api_error(message = "The distribution could not be loaded; check if it includes the 4 files required (.shp, .shx, .prj, .dbf)", status=400)
 }
 
+bug_distribution_loadingGPKG <- function() {
+  api_error(message = "You are loading a distribution that includes both shapefiles and geopackages. Distributions should include only one of the two.", status=400)
+}
+
 upload_dist_invalid <- function() {
   api_error(message = "The uploaded distribution is not valid; maybe you uploaded points instead of polygons?", status=400)
 }

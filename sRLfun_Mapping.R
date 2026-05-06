@@ -276,14 +276,26 @@ sRL_createDataGBIF <- function(scientific_name, GBIF_SRC, Gbif_Country, Uploaded
     }
   } else {dat_obis_sub<-data.frame()}
   
-  # From Red List point
-  if(GBIF_SRC[3]==1 & paste0(scientific_name, ".csv") %in% list.files(config$POINTdistribution_path)){
+  # From Red List point (first check if available in gpkg, otherwise take from csv)
+  path_gpkg <- paste0(config$distribution_path, scientific_name, "/", sub(" ", "_", scientific_name), "_RL/", scientific_name, ".gpkg")
+  Pts_in_gpkg <- ifelse(file.exists(path_gpkg), T, F)
+  if(Pts_in_gpkg){Pts_in_gpkg <- ifelse("points" %in% st_layers(path_gpkg)$name, T, F)}
+  print(Pts_in_gpkg)
+  
+  if(GBIF_SRC[3]==1 & ((paste0(scientific_name, ".csv") %in% list.files(config$POINTdistribution_path)) | Pts_in_gpkg==T)){
     sRL_loginfo("Download Red List", scientific_name)
-    dat_RL<-read.csv(paste0(config$POINTdistribution_path, scientific_name, ".csv"))
+    if(Pts_in_gpkg==T){
+        dat_RL<-st_read(path_gpkg, layer="points")
+        dat_RL$longitude <- st_coordinates(dat_RL)[,1]
+        dat_RL$latitude <- st_coordinates(dat_RL)[,2]
+      } else {
+        dat_RL<-read.csv(paste0(config$POINTdistribution_path, scientific_name, ".csv"))
+      }
     dat_RL$Source_type<-"Red List"
     dat_RL$decimalLongitude<-dat_RL$longitude
     dat_RL$decimalLatitude<-dat_RL$latitude
     dat_RL$year<-dat_RL$event_year
+    if(! "event_year" %in% names(dat_RL)){dat_RL$year <- NA}
     dat_RL$species<-dat_RL$binomial
     dat_RL$coordinateUncertaintyInMeters<-NA
     dat_RL$gbifID<-paste0("RL_", rownames(dat_RL))
@@ -836,14 +848,14 @@ sRL_saveMapDistribution <- function(scientific_name, Storage_SP) {
     upload_folder_scientific_name <- R.utils::capitalize(paste0(stringr::str_replace(scientific_name, " ", "_"), ifelse("dat_proj_saved" %in% names(Storage_SP), "_Created_", "_Edited_"), format(Sys.time(), "%Y%m%d"))) # nolint
     filePath <- paste0(config$distribution_path, scientific_name, "/", upload_folder_scientific_name, "/") # nolint
     if (dir.exists(filePath)==F) {dir.create(filePath, showWarnings = TRUE, recursive = TRUE)}
-    path <- paste0(filePath, upload_folder_scientific_name, ".shp")
+    path <- paste0(filePath, upload_folder_scientific_name, ".gpkg")
     distSP_saved <- Storage_SP$distSP_saved
     
     # Remove hybas columns if hydrobasins
     distSP_saved$Popup <- distSP_saved$hybas_id <- distSP_saved$next_down <- distSP_saved$next_sink <- distSP_saved$ID <- NULL
     
     # Save
-    st_write(distSP_saved, path, append = FALSE)
+    st_write(distSP_saved, path, layer="polygon", append = FALSE)
     
     if("dat_proj_saved" %in% names(Storage_SP)){
       # Basic text for 1b
