@@ -609,8 +609,15 @@ sRL_MapDistributionGBIF<-function(dat, scientific_name, username, First_step, Al
     dat_subsample<-distinct(dat, as.character(geometry), .keep_all=T) 
 
     # Calculate kernels
-    kernel.ref <- kernelUD(as_Spatial(dat), h = "href")  # href = the reference bandwidth
-    distGBIF <- getverticeshr(kernel.ref, percent = 100*Gbif_Param[2]) %>% st_as_sf(.)
+    try({
+      kernel.ref <- kernelUD(as_Spatial(dat), h = "href", extent=1)  # href = the reference bandwidth
+      distGBIF <- getverticeshr(kernel.ref, percent = 100*Gbif_Param[2]) %>% st_as_sf(.)
+    }, silent=T)
+    if(exists("distGBIF")==F){
+      kernel.ref <- kernelUD(as_Spatial(dat), h = "href", extent=2)  # href = the reference bandwidth
+      distGBIF <- getverticeshr(kernel.ref, percent = 100*Gbif_Param[2]) %>% st_as_sf(.)
+    }
+    
   }
   
   if(First_step=="alpha"){
@@ -624,7 +631,7 @@ sRL_MapDistributionGBIF<-function(dat, scientific_name, username, First_step, Al
       EX<-extent(dat_subsample)
       tryCatch({
         Alpha_scaled <- (0.5*Par_alpha)^2 * sqrt((EX@xmin-EX@xmax)^2 + (EX@ymin-EX@ymax)^2) %>% as.numeric(.)
-        distGBIF<-spatialEco:::convexHull(dat_subsample, alpha = Alpha_scaled) # concaveman::concaveman function could work as well with something similar, but not proper alpha-hull
+        distGBIF<-sRL_convexHull(dat_subsample, alpha = Alpha_scaled) # concaveman::concaveman function could work as well with something similar, but not proper alpha-hull
       } ,error=function(e){bug_alpha()})
       
       st_crs(distGBIF)<-st_crs(dat_subsample)
@@ -785,6 +792,42 @@ sRL_DistComment <- function(Output, N_dat){
   }, error=function(e){cat("Bug in creating dist_comm (comment for distribution)")})
   
   return(Comm)
+}
+
+
+### Alpha hull (taken from former version of spatialEco)
+sRL_convexHull <- function(x, alpha = 250000)	{
+  if(!any(which(utils::installed.packages()[,1] %in% "alphahull")))
+    stop("please install alphahull package before running this function")
+  if(!inherits(x, c("SpatialPointsDataFrame", "SpatialPoints", "sf", "sfc", "matrix")))		
+    stop(deparse(substitute(x)), " must be a spatial (sf, sp) or matrix object")
+  if(inherits(x, c("sf", "sfc"))) { 
+    xy <- as.data.frame(sf::st_coordinates(x)) 
+  } else if(inherits(x, c("SpatialPointsDataFrame", "SpatialPoints"))) {
+    xy <- as.data.frame(sp::coordinates(x))
+  } else if(inherits(x, "matrix")) {
+    xy <- as.data.frame(x)
+  } else {
+    stop("Not a valid object")
+  }
+  xy <- xy[!duplicated(xy[c(1,2)]),]
+  a <- alphahull::ashape(as.matrix(xy), alpha = alpha)$edges[,3:6]
+  a <- apply(a, 1, function(x)  {
+    v <- as.numeric(x[c(1,3,2,4)])
+    m <- matrix(v, nrow = 2)
+    return(sf::st_sfc(sf::st_linestring(m)))
+  })
+  a <- Reduce(c, a) |>
+    sf::st_combine() |>		
+    sf::st_as_sf() |>
+    sf::st_polygonize() |>	
+    sf::st_collection_extract(type = "POLYGON")
+  sf::st_geometry(a) <- "geometry"
+  a$ID <- 1
+  if(!is.na(sf::st_crs(x))) {
+    sf::st_crs(a) <- sf::st_crs(x) 
+  }	  
+  return( a )	
 }
 
 
