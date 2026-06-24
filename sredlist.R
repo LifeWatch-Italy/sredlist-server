@@ -3319,6 +3319,15 @@ Prom<-future({
                       paste0("read.csv(Ref_files[", 1:length(Ref_files), "])", collapse=','),")"
                )))
   
+  # Merge taxonomy
+  sRL_loginfo("Merge taxonomy", "Merge ZIP API")
+  Tax_files<-list.files(Zip_Path, recursive = T)[grepl('taxonomy.csv', list.files(Zip_Path, recursive = T))] %>% paste0(Zip_Path, "/", .)
+  
+  eval(parse(text=
+               paste0("taxonomiesM<-rbind.fill(",
+                      paste0("read.csv(Tax_files[", 1:length(Tax_files), "])", collapse=','),")"
+               )))
+  
   # Merge assessments
   sRL_loginfo("Merge assessments", "Merge ZIP API")
   Ass_files<-list.files(Zip_Path, recursive = T)[grepl('assessments.csv', list.files(Zip_Path, recursive = T))] %>% paste0(Zip_Path, "/", .)
@@ -3412,6 +3421,7 @@ Prom<-future({
     referencesM$internal_taxon_id[referencesM$internal_taxon_name==Species_to_fix]<-N_it
     if(exists("habitatsM")){habitatsM$internal_taxon_id[habitatsM$internal_taxon_name==Species_to_fix]<-N_it}
     if(exists("countriesM")){countriesM$internal_taxon_id[countriesM$internal_taxon_name==Species_to_fix]<-N_it}
+    if(exists("taxonomiesM")){taxonomiesM$internal_taxon_id[taxonomiesM$species==Species_to_fix]<-N_it}
     if(exists("assessmentsM")){assessmentsM$internal_taxon_id[assessmentsM$internal_taxon_name==Species_to_fix]<-N_it}
     if(exists("DistM")){DistM$id_no[DistM$sci_name==Species_to_fix]<-N_it}
     if(exists("OccM")){OccM$id_no[OccM$sci_name==Species_to_fix]<-N_it}
@@ -3434,11 +3444,12 @@ Prom<-future({
   write.csv(replace(allfieldsM, is.na(allfieldsM), ""), paste0(Zip_Path, "/allfields.csv"), row.names = F)
   write.csv(replace(assessmentsM, is.na(assessmentsM), ""), paste0(Zip_Path, "/assessments.csv"), row.names = F)
   if(exists("countriesM")){write.csv(replace(countriesM, is.na(countriesM), ""), paste0(Zip_Path, "/countries.csv"), row.names = F)}
+  if(exists("taxonomiesM")){write.csv(replace(taxonomiesM, is.na(taxonomiesM), ""), paste0(Zip_Path, "/taxonomy.csv"), row.names = F)}
   write.csv(replace(referencesM, is.na(referencesM), ""), paste0(Zip_Path, "/references.csv"), row.names = F)
   if(exists("habitatsM")){write.csv(replace(habitatsM, is.na(habitatsM), ""), paste0(Zip_Path, "/habitats.csv"), row.names = F)}
   write.csv(LogM, paste0(Zip_Path, "/00.Output_log.csv"), row.names = F)
   
-  # Save distribution and combine in HTML
+  # Save distributions
   if("DistM" %in% ls()){
     if(exists("DistM_gpkg")){
       st_write(DistM, paste0(Zip_Path, "/sRedList_Distribution.gpkg"), layer="polygons", append=F)
