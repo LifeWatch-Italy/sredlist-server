@@ -156,9 +156,8 @@ sRL_ReadDistribution <- function(scientific_name, path) {
   } else {
     distributionPath <- paste0(speciesPath, "/", files[1]) # nolint
     distributions <- sf::st_read(distributionPath)
-  }
-  
-  st_geometry(distributions) <- "geometry"
+    st_geometry(distributions) <- "geometry"
+    }
   
   return(distributions)
 }

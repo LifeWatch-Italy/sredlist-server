@@ -743,17 +743,26 @@ sRL_MapDistributionGBIF<-function(dat, scientific_name, username, First_step, Al
       sRL_loginfo("START - Crop by elevation", scientific_name)
       mcp.spatial <- sf::as_Spatial(distGBIF)
       sp.mcp.terra <- terra::vect(distGBIF)
+      EXT <- ext(mcp.spatial)
       
       # Load elevation raster (size depends on range of points)
       if((as.numeric(st_area(st_as_sfc(st_bbox(dat))))/10^6) > (5*10^6)){
-        alt_raw<-rast(paste0(config$cciStack2_path, "/ElevationAgg30.tif"))
         print("Using large elevation raster")
+        
+        alt_rawMIN<-rast(paste0(config$cciStack2_path, "/ElevationAgg30_MINIMUM.tif")) %>% terra::crop(., EXT, snap="out") 
+        alt_rawMAX<-rast(paste0(config$cciStack2_path, "/ElevationAgg30_MAXIMUM.tif")) %>% terra::crop(., EXT, snap="out") 
+        alt_rawMOY<-rast(paste0(config$cciStack2_path, "/ElevationAgg30.tif")) %>% terra::crop(., EXT, snap="out") 
+        alt_rawMOY[alt_rawMIN<AltMIN] <- AltMIN-1
+        alt_rawMOY[alt_rawMAX>AltMAX] <- AltMAX+1
+        
+        dem.crop <- alt_rawMOY %>% replace(., is.na(.), 0)
+        
       } else {
-          alt_raw<-sRL_ChargeAltRaster()
-          print("Using small elevation raster")
-          }
-      
-      dem.crop <- terra::crop(alt_raw, ext(mcp.spatial), snap="out") %>% replace(., is.na(.), 0)
+        print("Using small elevation raster")
+        
+        alt_raw<-sRL_ChargeAltRaster()
+        dem.crop <- terra::crop(alt_raw, EXT, snap="out") %>% replace(., is.na(.), 0)
+      }
       
       sp.mcp.ras <- terra::rasterize(sp.mcp.terra, dem.crop, touches=T)
       dem.sp <- terra::mask(dem.crop, mask = sp.mcp.terra)
@@ -763,11 +772,9 @@ sRL_MapDistributionGBIF<-function(dat, scientific_name, username, First_step, Al
       rclmat <- matrix(m, ncol=3, byrow=TRUE)
       
       sp.range <- terra::classify(dem.sp, rclmat)
-      if((dim(sp.range)[1]*dim(sp.range)[2])>(10^4)){sp.range <- sp.range %>% terra::aggregate(fact = 4, fun = 'max')} # Aggregate if too big
+      if((dim(sp.range)[1]*dim(sp.range)[2])>(10^5)){sp.range <- sp.range %>% terra::aggregate(fact = 4, fun = 'max', na.rm=T)} # Aggregate if too big
       
-      sp.range[sp.range == 0] <- NA
-      
-      distGBIF <- as.polygons(sp.range) %>% st_as_sf(.)
+      distGBIF <- sRL_CropRangeElevation(distGBIF, sp.range)
       sRL_loginfo("END - Crop by elevation", scientific_name)
       
     }, error=function(e){"Bug in Crop by elevation"})
@@ -791,6 +798,90 @@ sRL_MapDistributionGBIF<-function(dat, scientific_name, username, First_step, Al
   distGBIF$spatialref<-"WGS84"
   
   return(distGBIF)
+  
+}
+
+
+
+### Crop by elevation
+sRL_CropRangeElevation <- function(distGBIF, sp.range) {
+  
+  sp.range[sp.range == 1] <- NA
+  
+  # Transform areas not suitable to points
+  data <- sp.range %>% 
+    as.points() %>% 
+    st_as_sf(.) %>% 
+    st_transform(crs=CRSMOLL)
+  
+  # dataframe of combinations - based on row index
+  dist_max <- 1.1*sqrt(res(sp.range)[1]^2 + res(sp.range)[2]^2)
+  
+  grid_points <- st_distance(data) %>% 
+    as.data.frame() %>% 
+    mutate(start=rownames(.)) %>% 
+    reshape2::melt(id.vars="start", variable.name="end", value.name = "dist") %>% 
+    mutate(start=as.numeric(start), end=as.numeric(end), dist=as.numeric(dist)) %>%
+    # no line with start & end being the same point
+    dplyr::filter(start != end) %>%  
+    # when order doesn't matter just one direction is enough
+    subset(., as.numeric(start) > as.numeric(end)) %>%
+    # remove lines with points too distant
+    subset(., dist < dist_max)
+  
+  # Add coordinates
+  data_coords <- st_coordinates(data) %>% as.data.frame()
+  
+  grid_points$x1 <- data_coords$X[grid_points$start]
+  grid_points$y1 <- data_coords$Y[grid_points$start]
+  grid_points$x2 <- data_coords$X[grid_points$end]
+  grid_points$y2 <- data_coords$Y[grid_points$end]
+  
+  # Internal functions from https://gis.stackexchange.com/questions/419232/create-sf-points-and-then-lines-from-4-columns-in-a-data-frame-while-staying-in
+  make_line <- function(xy2){
+    st_linestring(matrix(xy2, nrow=2, byrow=TRUE))
+  }
+  
+  make_lines <- function(df, names=c("x1","y1","x2","y2")){
+    m = as.matrix(df[,names])
+    lines = apply(m, 1, make_line, simplify=FALSE)
+    st_sfc(lines)
+  }
+  
+  sf_pts_to_lines <- function(df, names=c("x1","y1","x2","y2")){
+    geom = make_lines(df, names)
+    df = st_sf(df, geometry=geom)
+    df
+  }
+  
+  # Create lines
+  my_lines = sf_pts_to_lines(grid_points)
+  
+  # Transform to polygons of unsuitable elevation
+  my_polygons <- my_lines %>%
+    st_as_sf(., crs = sf::st_crs(data)) %>%
+    st_union() %>% 
+    st_polygonize() %>% 
+    st_collection_extract(., "POLYGON") %>% 
+    st_union() %>% 
+    st_combine() %>%
+    smoothr::smooth(., method="ksmooth") %>%
+    st_as_sf(., crs = sf::st_crs(data))
+  
+  # Remove unsuitable polygons that are very small
+  my_polygons <- my_polygons %>%
+    st_cast(., "POLYGON") %>%
+    mutate(Area=as.numeric(st_area(.))) %>%
+    subset(., Area>(res(sp.range)[1]*res(sp.range)[2]) )
+  
+  # Remove these polygons from distGBIF (and remove small polygons that may be created at the edge)
+  distGBIF_new <- st_difference(distGBIF, st_union(my_polygons)) %>%
+    st_cast(., "POLYGON") %>%
+    mutate(Area=as.numeric(st_area(.))) %>%
+    subset(., Area>(res(sp.range)[1]*res(sp.range)[2]) )
+  
+  
+  return(distGBIF_new)
   
 }
 
