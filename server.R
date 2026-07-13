@@ -28,7 +28,7 @@ library(TAF)
 ### GBIF mapping
 library(rgbif) ; library(CoordinateCleaner) ; library(maps) ; library(countrycode); library(rnaturalearthdata); library(robis) ; library(protolite) # nolint
 library(plotly) ; library(mapview) ; library(leaflet) ; library(htmltools) ; library(leafem)
-library(adehabitatHR) ; library(smoothr) ; library(spatialEco) ; library(alphahull)
+library(adehabitatHR) ; library(smoothr) ; library(alphahull)
 
 ### AOH analyses
 library(exactextractr)
@@ -54,7 +54,7 @@ config <- config::get(file="../config.yml")
 CRSMOLL<-"+proj=moll +lon_0=0 +x_0=0 +y_0=0 +ellps=WGS84 +units=m +no_defs"
 
 # Extensions File Distribution
-extensions <- list("shp", "shx", "prj", "dbf", "cpg")
+extensions <- list("shp", "shx", "prj", "dbf", "cpg", "gpkg")
 
 # Avoid problems with spherical geometries
 sf::sf_use_s2(FALSE)

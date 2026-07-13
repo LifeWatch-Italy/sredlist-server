@@ -147,15 +147,17 @@ sRL_PlotHistory <- function(sciname_fun, key){
 sRL_ReadDistribution <- function(scientific_name, path) {
   speciesPath <- paste0(config$distribution_path, scientific_name, "/", path) # nolint
   print(speciesPath)
-  files <- base::list.files(path = speciesPath, pattern = "\\.shp$")
-
+  files <- base::list.files(path = speciesPath, pattern = "\\.gpkg$")
+  if(length(files)==0){files <- base::list.files(path = speciesPath, pattern = "\\.shp$")}
+  
   if (length(files) == 0) {
     distributions<-"No dist"
-    print("Shapefile of the species does not exist!") # nolint
+    print("Shapefile or geopackage of the species does not exist!") # nolint
   } else {
     distributionPath <- paste0(speciesPath, "/", files[1]) # nolint
     distributions <- sf::st_read(distributionPath)
-  }
+    st_geometry(distributions) <- "geometry"
+    }
   
   return(distributions)
 }
@@ -227,15 +229,19 @@ sRL_ColourDistrib <- function(distSP){
     distSP$cols <- revalue(as.character(distSP$presence), c("1"=NA, "2"=NA, "3"=NA, "4"="#FFE4E1", "5"="#8B2323", "6"="#B3B3B3", "7"="#228B22"), warn_missing=F) # nolint    if (nrow(distSP) > 0) {
     
     for (i in which(is.na(distSP$cols) & is.na(distSP$presence)==F)) {
-      if (distSP$origin[i] == "1") {
-        if(distSP$seasonal[i] == "1"){ distSP$cols[i] <- revalue(as.character(distSP$presence[i]), c("1"="#d95f02", "2"="#fc8d62", "3"="#fc8d62"), warn_missing=F)} # nolint
-        if(distSP$seasonal[i] == "2"){ distSP$cols[i] <- revalue(as.character(distSP$presence[i]), c("1"="#1b9e77", "2"="#66c2a5", "3"="#66c2a5"), warn_missing=F)} # nolint
-        if(distSP$seasonal[i] == "3"){ distSP$cols[i] <- revalue(as.character(distSP$presence[i]), c("1"="#7570b3", "2"="#8da0cb", "3"="#8da0cb"), warn_missing=F)} # nolint
-        if(distSP$seasonal[i] == "4"){ distSP$cols[i] <- revalue(as.character(distSP$presence[i]), c("1"="#9ACD32", "2"="#EEEE00", "3"="#8B8B00"), warn_missing=F)} # nolint
-        if(distSP$seasonal[i] == "5"){ distSP$cols[i]<-"#B3B3B3"}
-      } else{
-        distSP$cols[i]<-revalue(as.character(distSP$origin[i]), c("2"="#BF3EFF", "3"="#68228B", "4"="#9BCD9B", "5"="#B3B3B3", "6"="#BF3EFF"), warn_missing=F) # nolint
-      }   # nolint
+      if(anyNA(c(distSP$presence[i], distSP$origin[i], distSP$seasonal[i]))){
+        distSP$cols[i]<-"white"
+      } else {
+        if (distSP$origin[i] == "1") {
+          if(distSP$seasonal[i] == "1"){ distSP$cols[i] <- revalue(as.character(distSP$presence[i]), c("1"="#d95f02", "2"="#fc8d62", "3"="#fc8d62"), warn_missing=F)} # nolint
+          if(distSP$seasonal[i] == "2"){ distSP$cols[i] <- revalue(as.character(distSP$presence[i]), c("1"="#1b9e77", "2"="#66c2a5", "3"="#66c2a5"), warn_missing=F)} # nolint
+          if(distSP$seasonal[i] == "3"){ distSP$cols[i] <- revalue(as.character(distSP$presence[i]), c("1"="#7570b3", "2"="#8da0cb", "3"="#8da0cb"), warn_missing=F)} # nolint
+          if(distSP$seasonal[i] == "4"){ distSP$cols[i] <- revalue(as.character(distSP$presence[i]), c("1"="#9ACD32", "2"="#EEEE00", "3"="#8B8B00"), warn_missing=F)} # nolint
+          if(distSP$seasonal[i] == "5"){ distSP$cols[i]<-"#B3B3B3"}
+        } else{
+          distSP$cols[i]<-revalue(as.character(distSP$origin[i]), c("2"="#BF3EFF", "3"="#68228B", "4"="#9BCD9B", "5"="#B3B3B3", "6"="#BF3EFF"), warn_missing=F) # nolint
+        } 
+      }
     }
   }
   

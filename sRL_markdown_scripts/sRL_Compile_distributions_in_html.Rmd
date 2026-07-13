@@ -1,0 +1,103 @@
+---
+title: "Compile distributions from sRedList"
+author: "sRedList"
+date: "`r format(Sys.Date(), '%d/%m/%Y')`"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = F, warning=F, message = FALSE)
+library(leaflet)
+library(htmltools)
+```
+
+<i>Warning: if you'd like to use this file as pdf, you can click CTRL+P to print, then select "Print to PDF".</i>
+
+
+```{r, out.width="100%", warning=F}
+
+MapList <- list()
+
+for(SP in sort(unique(c(dist$sci_name, pts$sci_name)))){
+  
+  ControlPts<-ControlPoly<-F
+  
+  # Prepare distribution
+  distSP <- dist[dist$sci_name==SP,]
+  
+  # Check if there are overlaps
+  distSP_cast <- distSP %>% st_make_valid() %>% st_cast(., "POLYGON") %>% st_make_valid()
+  L_eq <- st_equals(distSP_cast, remove_self=T) %>% unlist() %>% length()
+  L_co <- st_contains(distSP_cast, remove_self=T) %>% unlist() %>% length()
+  L_ov <- st_overlaps(distSP_cast, remove_self=T) %>% unlist() %>% length()
+  Overlap_warning <- ifelse((L_eq+L_co+L_ov)>0, "<i><span style='color:purple'>Some polygons are overlapping; check if some polygons were duplicated with the 'Intersection' layer on the interactive map</span></i>", "")
+  
+  # Prepare points
+  ptsSP <- pts[pts$sci_name==SP,]
+  
+  # Prepare Leaflet
+  Leaf_map <- leaflet() %>%
+    addProviderTiles("Esri.WorldTopoMap", options = providerTileOptions(opacity=0.5))
+  
+  # Add polygons to leaflet
+  if(is.null(distSP)==F){
+    if(nrow(distSP)>0){
+      distSP$Popup <- paste0("<b>POLYGON</b><br>",
+                             "Presence: ", distSP$presence, "<br>",
+                             "Origin: ", distSP$origin, "<br>",
+                             "Seasonal: ", distSP$seasonal, "<br>")
+      
+      Leaf_map <- Leaf_map %>% 
+        addPolygons(data=distSP, color=distSP$cols, stroke=T, weight=2, fillOpacity=0.5, group="Range map", popup=distSP$Popup, popupOptions = popupOptions(autoPan=T, keepInView = T, closeOnClick=T))
+      
+      ControlPoly<-T
+    }}
+  
+  # Add intersections
+  try({
+    if(Overlap_warning!=""){
+      inter <- st_intersection(distSP_cast) %>% subset(., n.overlaps>1 & st_geometry_type(.)!="POINT") %>% st_collection_extract(., "POLYGON") 
+      if(nrow(inter)>0){
+        Leaf_map <- Leaf_map %>%
+          addPolygons(data=inter, fillColor="black", stroke=T, color="black", group="Intersection")
+      }
+    }
+  }, silent=T)
+    
+  
+  # Add points to leaflet
+  if(is.null(ptsSP)==F){
+    if(nrow(ptsSP)>0){
+      
+      ptsSP <-ptsSP %>% st_as_sf(., coords = c("dec_long","dec_lat"), remove = FALSE, crs=st_crs(4326))
+      
+      ptsSP$Popup <- paste0("<b>POINT RECORD</b><br>",
+                            "Presence: ", ptsSP$presence, "<br>",
+                            "Origin: ", ptsSP$origin, "<br>",
+                            "Seasonal: ", ptsSP$seasonal, "<br>")
+      ControlPts<-T
+      
+      Leaf_map <- Leaf_map %>%
+        addCircleMarkers(data=ptsSP, fillColor=ptsSP$cols, stroke=T, color="grey", weight=2, radius=5, popup=ptsSP$Popup, group="Point records", popupOptions = popupOptions(autoPan=T, keepInView = T, closeOnClick=T))
+    }}
+  
+  # Add Layer control
+  CONTROL <- c(ifelse(ControlPoly==T, "Range map", NA), ifelse(ControlPts==T, "Point records", NA), ifelse(Overlap_warning!="", "Intersection", NA)) %>% subset(., is.na(.)==F)
+  
+  Leaf_map <- Leaf_map %>%
+    addLayersControl(overlayGroups = CONTROL, position="topleft", options=layersControlOptions(collapsed=F)) %>%
+    hideGroup("Intersection")
+  
+  # Save in list
+  MapList[[length(MapList)+1]] <- list(
+    htmltools::h2(SP), 
+    htmltools::h4(HTML(Overlap_warning)),
+    Leaf_map
+  )
+  
+}
+
+tagList(MapList)
+
+```
+

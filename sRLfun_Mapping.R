@@ -44,7 +44,7 @@ sRL_LeafletComparison <- function(flags, distSP, Comparison_result){
   Leaf <- leaflet(flags) %>%
     addTiles(group="OpenStreetMap") %>%
     addProviderTiles("Esri.WorldImagery", group = "Satellite") %>%
-    addProviderTiles("Esri.WorldTopoMap", group = "Topography") %>%
+    addProviderTiles("OpenTopoMap", group = "Topography") %>%
     addPolygons(data=distSP, color=distSP$cols, fillColor=distSP$cols, stroke=F, weight=2, fillOpacity=0.7) %>%
     addCircleMarkers(lng=flags$decimalLongitude,
                      lat=flags$decimalLatitude,
@@ -276,14 +276,26 @@ sRL_createDataGBIF <- function(scientific_name, GBIF_SRC, Gbif_Country, Uploaded
     }
   } else {dat_obis_sub<-data.frame()}
   
-  # From Red List point
-  if(GBIF_SRC[3]==1 & paste0(scientific_name, ".csv") %in% list.files(config$POINTdistribution_path)){
+  # From Red List point (first check if available in gpkg, otherwise take from csv)
+  path_gpkg <- paste0(config$distribution_path, scientific_name, "/", sub(" ", "_", scientific_name), "_RL/", scientific_name, ".gpkg")
+  Pts_in_gpkg <- ifelse(file.exists(path_gpkg), T, F)
+  if(Pts_in_gpkg){Pts_in_gpkg <- ifelse("points" %in% st_layers(path_gpkg)$name, T, F)}
+  print(Pts_in_gpkg)
+  
+  if(GBIF_SRC[3]==1 & ((paste0(scientific_name, ".csv") %in% list.files(config$POINTdistribution_path)) | Pts_in_gpkg==T)){
     sRL_loginfo("Download Red List", scientific_name)
-    dat_RL<-read.csv(paste0(config$POINTdistribution_path, scientific_name, ".csv"))
+    if(Pts_in_gpkg==T){
+        dat_RL<-st_read(path_gpkg, layer="points")
+        dat_RL$longitude <- st_coordinates(dat_RL)[,1]
+        dat_RL$latitude <- st_coordinates(dat_RL)[,2]
+      } else {
+        dat_RL<-read.csv(paste0(config$POINTdistribution_path, scientific_name, ".csv"))
+      }
     dat_RL$Source_type<-"Red List"
     dat_RL$decimalLongitude<-dat_RL$longitude
     dat_RL$decimalLatitude<-dat_RL$latitude
     dat_RL$year<-dat_RL$event_year
+    if(! "event_year" %in% names(dat_RL)){dat_RL$year <- NA}
     dat_RL$species<-dat_RL$binomial
     dat_RL$coordinateUncertaintyInMeters<-NA
     dat_RL$gbifID<-paste0("RL_", rownames(dat_RL))
@@ -576,7 +588,8 @@ sRL_LeafletFlags <- function(flags){
   Leaf <- leaflet(flags) %>%
     addTiles(group="OpenStreetMap") %>%
     addProviderTiles("Esri.WorldImagery", group = "Satellite") %>%
-    addProviderTiles("Esri.WorldTopoMap", group = "Topography") %>%
+    addProviderTiles("OpenTopoMap", group = "Topography") %>%
+    addProviderTiles("Esri.OceanBasemap", group = "Marine", options = list(maxZoom=10)) %>%
     addCircleMarkers(lng=flags$decimalLongitude,
                      lat=flags$decimalLatitude,
                      color=ifelse(is.na(flags$Reason)==T, "#fdcb25ff", "#440154ff"),
@@ -586,7 +599,7 @@ sRL_LeafletFlags <- function(flags){
                      radius=8,
                      group="Occurrence records") %>%
     addLegend(position="bottomleft", colors=c('#fdcb25ff', '#440154ff'), labels=c("Valid", "Not valid")) %>%
-    addLayersControl(baseGroups=c("OpenStreetMap", "Satellite", "Topography"), overlayGroups="Occurrence records", position="topleft") %>%
+    addLayersControl(baseGroups=c("OpenStreetMap", "Satellite", "Topography", "Marine"), overlayGroups="Occurrence records", position="topleft") %>%
     addMouseCoordinates() %>%
     addScaleBar(position = "bottomright") 
   
@@ -652,6 +665,14 @@ sRL_MapDistributionGBIF<-function(dat, scientific_name, username, First_step, Al
     if(is.na(extent(distGBIF)[1])){no_coastoverlap()}
   }
   
+  if(First_step=="vents"){
+    vents_shp <- st_read("resources/Hydrothermal_vents/Global_2020_HydrothermalVents_InterRidgeVentsDatabasev3.4.shp") %>% st_transform(., st_crs(dat))
+    vents_buffer <- st_buffer(vents_shp, Buffer_km*1000)
+    
+    distGBIF <- st_filter(vents_buffer, dat, .predicate = st_intersects)
+    # Return error if no vents overlap
+    if(is.na(extent(distGBIF)[1])){no_ventoverlap()}
+  }
   
   if(substr(First_step, 1,5)=="hydro"){
     
@@ -722,17 +743,26 @@ sRL_MapDistributionGBIF<-function(dat, scientific_name, username, First_step, Al
       sRL_loginfo("START - Crop by elevation", scientific_name)
       mcp.spatial <- sf::as_Spatial(distGBIF)
       sp.mcp.terra <- terra::vect(distGBIF)
+      EXT <- ext(mcp.spatial)
       
       # Load elevation raster (size depends on range of points)
       if((as.numeric(st_area(st_as_sfc(st_bbox(dat))))/10^6) > (5*10^6)){
-        alt_raw<-rast(paste0(config$cciStack2_path, "/ElevationAgg30.tif"))
         print("Using large elevation raster")
+        
+        alt_rawMIN<-rast(paste0(config$cciStack2_path, "/ElevationAgg30_MINIMUM.tif")) %>% terra::crop(., EXT, snap="out") 
+        alt_rawMAX<-rast(paste0(config$cciStack2_path, "/ElevationAgg30_MAXIMUM.tif")) %>% terra::crop(., EXT, snap="out") 
+        alt_rawMOY<-rast(paste0(config$cciStack2_path, "/ElevationAgg30.tif")) %>% terra::crop(., EXT, snap="out") 
+        alt_rawMOY[alt_rawMIN<AltMIN] <- AltMIN-1
+        alt_rawMOY[alt_rawMAX>AltMAX] <- AltMAX+1
+        
+        dem.crop <- alt_rawMOY %>% replace(., is.na(.), 0)
+        
       } else {
-          alt_raw<-sRL_ChargeAltRaster()
-          print("Using small elevation raster")
-          }
-      
-      dem.crop <- terra::crop(alt_raw, ext(mcp.spatial), snap="out") %>% replace(., is.na(.), 0)
+        print("Using small elevation raster")
+        
+        alt_raw<-sRL_ChargeAltRaster()
+        dem.crop <- terra::crop(alt_raw, EXT, snap="out") %>% replace(., is.na(.), 0)
+      }
       
       sp.mcp.ras <- terra::rasterize(sp.mcp.terra, dem.crop, touches=T)
       dem.sp <- terra::mask(dem.crop, mask = sp.mcp.terra)
@@ -742,11 +772,9 @@ sRL_MapDistributionGBIF<-function(dat, scientific_name, username, First_step, Al
       rclmat <- matrix(m, ncol=3, byrow=TRUE)
       
       sp.range <- terra::classify(dem.sp, rclmat)
-      if((dim(sp.range)[1]*dim(sp.range)[2])>(10^4)){sp.range <- sp.range %>% terra::aggregate(fact = 4, fun = 'max')} # Aggregate if too big
+      if((dim(sp.range)[1]*dim(sp.range)[2])>(10^5)){sp.range <- sp.range %>% terra::aggregate(fact = 4, fun = 'max', na.rm=T)} # Aggregate if too big
       
-      sp.range[sp.range == 0] <- NA
-      
-      distGBIF <- as.polygons(sp.range) %>% st_as_sf(.)
+      distGBIF <- sRL_CropRangeElevation(distGBIF, sp.range)
       sRL_loginfo("END - Crop by elevation", scientific_name)
       
     }, error=function(e){"Bug in Crop by elevation"})
@@ -770,6 +798,90 @@ sRL_MapDistributionGBIF<-function(dat, scientific_name, username, First_step, Al
   distGBIF$spatialref<-"WGS84"
   
   return(distGBIF)
+  
+}
+
+
+
+### Crop by elevation
+sRL_CropRangeElevation <- function(distGBIF, sp.range) {
+  
+  sp.range[sp.range == 1] <- NA
+  
+  # Transform areas not suitable to points
+  data <- sp.range %>% 
+    as.points() %>% 
+    st_as_sf(.) %>% 
+    st_transform(crs=CRSMOLL)
+  
+  # dataframe of combinations - based on row index
+  dist_max <- 1.1*sqrt(res(sp.range)[1]^2 + res(sp.range)[2]^2)
+  
+  grid_points <- st_distance(data) %>% 
+    as.data.frame() %>% 
+    mutate(start=rownames(.)) %>% 
+    reshape2::melt(id.vars="start", variable.name="end", value.name = "dist") %>% 
+    mutate(start=as.numeric(start), end=as.numeric(end), dist=as.numeric(dist)) %>%
+    # no line with start & end being the same point
+    dplyr::filter(start != end) %>%  
+    # when order doesn't matter just one direction is enough
+    subset(., as.numeric(start) > as.numeric(end)) %>%
+    # remove lines with points too distant
+    subset(., dist < dist_max)
+  
+  # Add coordinates
+  data_coords <- st_coordinates(data) %>% as.data.frame()
+  
+  grid_points$x1 <- data_coords$X[grid_points$start]
+  grid_points$y1 <- data_coords$Y[grid_points$start]
+  grid_points$x2 <- data_coords$X[grid_points$end]
+  grid_points$y2 <- data_coords$Y[grid_points$end]
+  
+  # Internal functions from https://gis.stackexchange.com/questions/419232/create-sf-points-and-then-lines-from-4-columns-in-a-data-frame-while-staying-in
+  make_line <- function(xy2){
+    st_linestring(matrix(xy2, nrow=2, byrow=TRUE))
+  }
+  
+  make_lines <- function(df, names=c("x1","y1","x2","y2")){
+    m = as.matrix(df[,names])
+    lines = apply(m, 1, make_line, simplify=FALSE)
+    st_sfc(lines)
+  }
+  
+  sf_pts_to_lines <- function(df, names=c("x1","y1","x2","y2")){
+    geom = make_lines(df, names)
+    df = st_sf(df, geometry=geom)
+    df
+  }
+  
+  # Create lines
+  my_lines = sf_pts_to_lines(grid_points)
+  
+  # Transform to polygons of unsuitable elevation
+  my_polygons <- my_lines %>%
+    st_as_sf(., crs = sf::st_crs(data)) %>%
+    st_union() %>% 
+    st_polygonize() %>% 
+    st_collection_extract(., "POLYGON") %>% 
+    st_union() %>% 
+    st_combine() %>%
+    smoothr::smooth(., method="ksmooth") %>%
+    st_as_sf(., crs = sf::st_crs(data))
+  
+  # Remove unsuitable polygons that are very small
+  my_polygons <- my_polygons %>%
+    st_cast(., "POLYGON") %>%
+    mutate(Area=as.numeric(st_area(.))) %>%
+    subset(., Area>(res(sp.range)[1]*res(sp.range)[2]) )
+  
+  # Remove these polygons from distGBIF (and remove small polygons that may be created at the edge)
+  distGBIF_new <- st_difference(distGBIF, st_union(my_polygons)) %>%
+    st_cast(., "POLYGON") %>%
+    mutate(Area=as.numeric(st_area(.))) %>%
+    subset(., Area>(res(sp.range)[1]*res(sp.range)[2]) )
+  
+  
+  return(distGBIF_new)
   
 }
 
@@ -870,14 +982,14 @@ sRL_saveMapDistribution <- function(scientific_name, Storage_SP) {
     upload_folder_scientific_name <- R.utils::capitalize(paste0(stringr::str_replace(scientific_name, " ", "_"), ifelse("dat_proj_saved" %in% names(Storage_SP), "_Created_", "_Edited_"), format(Sys.time(), "%Y%m%d"))) # nolint
     filePath <- paste0(config$distribution_path, scientific_name, "/", upload_folder_scientific_name, "/") # nolint
     if (dir.exists(filePath)==F) {dir.create(filePath, showWarnings = TRUE, recursive = TRUE)}
-    path <- paste0(filePath, upload_folder_scientific_name, ".shp")
+    path <- paste0(filePath, upload_folder_scientific_name, ".gpkg")
     distSP_saved <- Storage_SP$distSP_saved
     
     # Remove hybas columns if hydrobasins
     distSP_saved$Popup <- distSP_saved$hybas_id <- distSP_saved$next_down <- distSP_saved$next_sink <- distSP_saved$ID <- NULL
     
     # Save
-    st_write(distSP_saved, path, append = FALSE)
+    st_write(distSP_saved, path, layer="polygon", append = FALSE)
     
     if("dat_proj_saved" %in% names(Storage_SP)){
       # Basic text for 1b

@@ -119,12 +119,13 @@ sRLPolyg_CreateLeaflet <- function(AllowEdit, hydro3_stored=data.frame()){
 
   ### Create map
   LEAF <- leaflet(options = leafletOptions(doubleClickZoom= FALSE)) %>%
-    addTiles()  %>%
+    addProviderTiles("OpenStreetMap.DE", group="OpenStreetMap") %>%
     addProviderTiles("Esri.WorldImagery", group = "Satellite") %>%
-    addProviderTiles("Esri.WorldTopoMap", group = "Topography") %>%
+    addProviderTiles("OpenTopoMap", group = "Topography") %>%
+    addProviderTiles("Esri.OceanBasemap", group = "Marine", options = list(maxZoom=10)) %>%
     addMouseCoordinates() %>%
     addScaleBar(position="bottomright") %>%
-    addLayersControl(baseGroups=c("OpenStreetMap", "Satellite", "Topography"), position="bottomleft")
+    addLayersControl(baseGroups=c("OpenStreetMap", "Satellite", "Topography", "Marine"), position="bottomleft")
   
   # Add hydro3 for freshwater
   if(nrow(hydro3_stored)>0){

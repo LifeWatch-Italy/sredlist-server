@@ -315,6 +315,8 @@ sRL_CalcModification<-function(scientific_name, username, distSP, AOO_path){
   distSP<-st_transform(distSP, st_crs(human1))
   human1_crop<-crop(human1, distSP, snap="out") %>% mask(., distSP)
   human2_crop<-crop(human2, distSP, snap="out") %>% mask(., distSP)
+  human1_crop <- human1_crop / 65536 # To get back to original scale (0-1), see ZENODO repo
+  human2_crop <- human2_crop / 65536
   human_change<-human2_crop-human1_crop
   
   ### Save rasters
@@ -358,8 +360,8 @@ sRL_CalcModification<-function(scientific_name, username, distSP, AOO_path){
   LIST_RS <- list(
     RS_prodname=RS_name,
     RS_plot=RS_plot,
-    RS_current=paste0(round(RS_current), " (mean)"),
-    RS_trendsABS=round(RS_trendsABS),
+    RS_current=paste0(round(RS_current,4), " (mean)"),
+    RS_trendsABS=round(RS_trendsABS,4),
     RS_trendsREL=paste0(100*round(RS_trendsREL, 3), " % change"),
     RS_timewindow=RS_timewindow
   )

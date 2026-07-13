@@ -43,6 +43,10 @@ bug_distribution_loading <- function() {
   api_error(message = "The distribution could not be loaded; check if it includes the 4 files required (.shp, .shx, .prj, .dbf)", status=400)
 }
 
+bug_distribution_loadingGPKG <- function() {
+  api_error(message = "You are loading a distribution that includes both shapefiles and geopackages. Distributions should include only one of the two.", status=400)
+}
+
 upload_dist_invalid <- function() {
   api_error(message = "The uploaded distribution is not valid; maybe you uploaded points instead of polygons?", status=400)
 }
@@ -118,6 +122,14 @@ no_gbif_coastal <- function() {
 
 no_coastoverlap  <- function() {
   api_error(message = "The coast line is not overlapping with your distribution. Increase buffer size or change starting point", status = 400)
+}
+
+no_gbif_vents <- function() {
+  api_error(message = "To use the hydrothermal vents option you must enter a non-null buffer value and cropping by land is not allowed", status = 400)
+}
+
+no_ventoverlap <-  function() {
+  api_error(message = "The distribution of hydrothermal vents is not overlapping with your distribution. Increase buffer size or change starting point", status = 400)
 }
 
 hydro_too_large <- function() {

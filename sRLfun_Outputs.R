@@ -707,15 +707,12 @@ sRL_CriteriaCalculator <- function(allfields){
 sRL_CombineMapsHTML <- function(dist, pts, Zip_Path){
   
   ### Transform data
-  dist <- dist %>% st_transform(., st_crs(4326)) %>% sRL_ColourDistrib(.)
+  if(is.null(dist)==F){dist <- dist %>% st_transform(., st_crs(4326)) %>% sRL_ColourDistrib(.)}
   if(is.null(pts)==F){pts <- pts %>% sRL_ColourDistrib(.)}
-  
-  library(leaflet)
-  library(htmltools)
   
   ### Call RMD
   render(
-    "sRL_markdown_scripts/sRL_Compile_distributions_in_pdf.Rmd",
+    "sRL_markdown_scripts/sRL_Compile_distributions_in_html.Rmd",
     output_file="Compiled_maps_sRedList.html",
     output_dir=Zip_Path
   )
