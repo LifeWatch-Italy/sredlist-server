@@ -1138,16 +1138,23 @@ sRL_cooExtract<-function(distSP, domain_pref, Crop_Country){
 
 
 ### Function to crop a country for National Red Listing
-sRL_CropCountry<-function(distSP, Crop_Country, scientific_name){
+sRL_CropCountry<-function(distSP, Crop_Country, scientific_name, hydro=F){
   
-  country_sub <- sRL_ShapeCountryNRL(Crop_Country, scientific_name)
 
-  ### Merge countries (needed to avoid complicate distributions)
+  ### Select and merge countries (needed to avoid complicate distributions)
+  country_sub <- sRL_ShapeCountryNRL(Crop_Country, scientific_name)
   country_sub <- country_sub %>% st_transform(., CRSMOLL)
   
-  # Crop the distribution
-  distSP_crop<-st_intersection(distSP, country_sub)
+  # Crop the distribution (if regular range map)
+  if(hydro==F){
+    distSP_crop<-st_intersection(distSP, country_sub)
+  }
 
+  # Subset (if hydrobasins)
+  if(hydro==T){
+    distSP_crop <- st_filter(distSP, country_sub, .predicate = st_intersects)
+  }
+  
   # Return
   return(distSP_crop)
 }

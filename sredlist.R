@@ -131,7 +131,7 @@ function(scientific_name, username) {
      Storage_SP<-sRL_OutLog(Storage_SP, "Crop_Country", Crop_Country)
      if(Crop_Country != ""){
        sRL_loginfo("START - Crop country \n", scientific_name)
-       distSP<-sRL_CropCountry(distSP, Crop_Country, scientific_name)
+       distSP<-sRL_CropCountry(distSP, Crop_Country, scientific_name, hydro=F)
        sRL_loginfo("END - Crop country \n", scientific_name)
      }
      
@@ -670,7 +670,7 @@ Prom<-future({
   
   # Crop by country
   Crop_Country<-Storage_SP$Output$Value[Storage_SP$Output$Parameter=="Crop_Country"]
-  if(is.na(Crop_Country) == F & Crop_Country != ""){distSP <- sRL_CropCountry(distSP, Crop_Country, scientific_name)}
+  if(is.na(Crop_Country) == F & Crop_Country != ""){distSP <- sRL_CropCountry(distSP, Crop_Country, scientific_name, hydro=grepl("hydro", Gbif_Start))}
 
   # Map countries (keeping max extent between points and polygons)
   EXT_max <-  do.call(raster::bind, sapply(c(extent(distSP), extent(dat_proj)), FUN = function(x){as(x, 'SpatialPolygons')}))  %>% sp::bbox(.) %>% extent(.)
