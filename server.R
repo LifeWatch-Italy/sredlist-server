@@ -38,6 +38,7 @@ library(aoh)
 library(terra)
 library(scales)
 library(taxize)
+library(htmlwidgets) ; library(manipulateWidget) # Needed to create plot of generation length comparison
 
 ### RMarkDown
 library(knitr) ; library(rmarkdown) ; library(flextable) ; library(png) ; library(grid) ; library(magick)
@@ -108,6 +109,7 @@ density_data<-read.csv("Species/Density.table.csv", sep=",") %>% subset(., .$Den
 hab_scheme <- read.csv("Species/Habitat_classification_scheme.csv", header=T)
 crosswalkLARGE<-read.csv("Species/Lumbierres_large_crosswalk.csv")
 GL_file<-read.csv("Species/Generation_length_sRedList.csv", sep=",")
+GL_SIS_raw <- readRDS("Species/Generation_length_ready_for_comparisons.rds")
 crosswalk_to_use<- read.table("Species/Crosswalk_CCI_IUCN_Lumbierres.txt", dec="/", header=T) ; crosswalk_to_use$code<-as.character(crosswalk_to_use$code)
 
 # Load the empty output log

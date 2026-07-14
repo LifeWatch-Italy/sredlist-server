@@ -1777,6 +1777,43 @@ function(scientific_name, username) { # nolint
 
 # Step 5: Trends in AOH ----------------------------------------------------------------
 
+
+### Compare GL from species of the same order -----
+#* Compare GL
+#* @get species/<scientific_name>/analysis/compare_GL
+#* @param scientific_name:string Scientific Name
+#* @serializer htmlwidget
+#* @tag sRedList
+function(scientific_name, username) { # nolint
+
+  Prom<-future({
+    sRL_loginfo("START - Compare GL related species", scientific_name)
+
+    #Filter param
+    scientific_name <- sRL_decode(scientific_name)
+    # Storage_SP=sRL_StoreRead(scientific_name,  username, MANDAT=1) ; print(names(Storage_SP))
+
+    ### Plot
+    compare_plot <- sRL_CompareGenerationLength(scientific_name, GL_SIS_raw, GL_file)
+
+    ### Store usage
+    # Storage_SP <- sRL_OutLog(Storage_SP, "Compare_GL", "Used")
+    # Storage_SP$Compare_GL <- compare_plot
+    # sRL_StoreSave(scientific_name, username,  Storage_SP)
+
+    sRL_loginfo("END - Compare GL related species", scientific_name)
+    saveWidget(compare_plot, "test.html")
+
+    return(compare_plot)
+
+  }, seed=T)
+
+  return(Prom)
+}
+
+
+
+
 ### Calculation -----
 #* Estimate trends in AOH as a proxy of population trends (Criterion A2)
 #* @get species/<scientific_name>/analysis/trends-aoh
