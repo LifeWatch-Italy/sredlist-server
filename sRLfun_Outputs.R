@@ -198,7 +198,7 @@ sRL_OutputRef<-function(scientific_name, Storage_SP){
   
   # Transform NA in "" to match SIS
   tryCatch({
-    ref_SIS<-replace(ref_SIS, is.na(ref_SIS), "") %>% subset(., (spatialEco::is.empty(.$title)==F | spatialEco::is.empty(.$Original_reference)==F))
+    ref_SIS<-replace(ref_SIS, is.na(ref_SIS), "") %>% subset(., (.$title != "") | (.$Original_reference != ""))
   }, error=function(e){"Error in reference shaping BIS"})
   
   # Add author if empty
