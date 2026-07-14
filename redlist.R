@@ -237,8 +237,8 @@ Prom<-future({
   }
   
   # Elevation source from Red List or calculated
-  alt_pref$src_lower <- ifelse(is.na(alt_pref$elevation_lower), "The proposed lower elevation preference was calculated as the lowest elevation within the species range", "The proposed lower elevation preference was retrieved from the last assessment")
-  alt_pref$src_upper <- ifelse(is.na(alt_pref$elevation_upper), "The proposed upper elevation preference was calculated as the highest elevation within the species range", "The proposed upper elevation preference was retrieved from the last assessment")
+  alt_pref$src_lower <- ifelse(is.na(alt_pref$elevation_lower), "The proposed lower elevation preference was calculated as the lowest elevation within the species range (rounded down to nearest hundred)", "The proposed lower elevation preference was retrieved from the last assessment")
+  alt_pref$src_upper <- ifelse(is.na(alt_pref$elevation_upper), "The proposed upper elevation preference was calculated as the highest elevation within the species range (rounded up to nearest hundred)", "The proposed upper elevation preference was retrieved from the last assessment")
   
   # If no altitude preference, take from raster
   if(is.na(alt_pref$elevation_lower+alt_pref$elevation_upper)){
@@ -269,6 +269,10 @@ Prom<-future({
         alt_pref$elevation_upper<-ceiling(max(EXTR_max, na.rm=T))
         }
     }
+    
+    # Round to closest hundred
+    alt_pref$elevation_lower <- trunc(alt_pref$elevation_lower/100)*100
+    alt_pref$elevation_upper <- ceiling(alt_pref$elevation_upper/100)*100
     tryCatch({Storage_SP<-sRL_OutLog(Storage_SP, "Original_altpref", paste(alt_pref$elevation_lower[1], alt_pref$elevation_upper[1], CALCU, sep=","))})
   }
 
