@@ -453,3 +453,67 @@ sRL_CalcWater<-function(scientific_name, username, distSP, AOO_path){
   return(LIST_RS)
   
 }
+
+
+# sRL_CalcMarineImpact: calculate trends in marine impact
+sRL_CalcMarineImpact<-function(scientific_name, username, distSP){
+  
+  ### Charge human modification layers
+  marine2<-rast(sub("Change-2008-", "", config$Marine_Impact_Halpern_path))
+  marine_change<-rast(config$Marine_Impact_Halpern_path)
+  
+  ### Mask
+  distSP<-st_transform(distSP, st_crs(marine2))
+  marine2_crop<-crop(marine2, distSP, snap="out") %>% mask(., distSP)/10
+  marinechange_crop<-crop(marine_change, distSP, snap="out") %>% mask(., distSP)/10
+  
+  ### Save rasters
+  terra::writeRaster(marine2_crop, paste0("resources/AOH_stored/", gsub(" ", "_", scientific_name), "_", sRL_userdecode(username), "/Marine_Impact_Current.tif"), overwrite=T)
+  terra::writeRaster(marinechange_crop, paste0("resources/AOH_stored/", gsub(" ", "_", scientific_name), "_", sRL_userdecode(username), "/Marine_Impact_Change.tif"), overwrite=T)
+  
+  ### Plots
+  RS_name="Human impact to marine ecosystems"
+  
+  GG_RS=cowplot::plot_grid(
+    
+    gplot(marine2_crop)+
+      coord_fixed()+
+      geom_tile(aes(fill = value)) +
+      scale_fill_viridis_c(option="viridis", na.value = "white", name="")+
+      ggtitle("Cumulative impact in 2013") +
+      sRLTheme_maps,
+    
+    gplot(marinechange_crop)+
+      coord_fixed()+
+      geom_tile(aes(fill = value)) +
+      scale_fill_gradient2(low="#018571", mid="azure2", midpoint=0, high="#8c510a", name="", na.value="white")+
+      ggtitle("Change from 2008 to 2013") +
+      sRLTheme_maps
+    
+    ,ncol=2
+  )
+  
+  EXT <- extent(distSP) ; size_scale <- (EXT[2]-EXT[1])/(EXT[4]-EXT[3])
+  ggsave(filename = paste0("resources/AOH_stored/", sub(" ", "_", scientific_name), "_", sRL_userdecode(username), "/Plots/RS_plot_marineimpact.png"), plot = GG_RS, bg="white", width=12, height=6/size_scale)
+  RS_plot <- base64enc::dataURI(file = paste0("resources/AOH_stored/", sub(" ", "_", scientific_name), "_", sRL_userdecode(username), "/Plots/RS_plot_marineimpact.png"), mime = "image/png", encoding = "base64") # nolint
+  
+  
+  ### Calculate outputs
+  rast_area <- cellSize(marine2_crop) / 10^6 # go from m2 to km2
+  marine2_area <- rast_area*marine2_crop
+  RS_current<-exact_extract(marine2_crop, distSP, "mean") 
+  RS_timewindow<-"2008 to 2013"
+  RS_trendsABS<-exact_extract(marinechange_crop, distSP, "mean") 
+
+  LIST_RS <- list(
+    RS_prodname=RS_name,
+    RS_plot=RS_plot,
+    RS_current=round(RS_current,2),
+    RS_trendsABS=round(RS_trendsABS,2),
+    RS_timewindow=RS_timewindow
+  )
+  
+  ### Return
+  return(LIST_RS)
+  
+}

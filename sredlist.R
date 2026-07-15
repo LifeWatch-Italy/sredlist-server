@@ -2272,6 +2272,7 @@ Prom<-future({
   if(RSproduct=="Human_modification"){List_trendsRS<-sRL_CalcModification(scientific_name, username, distSP, AOO_path)}
   if(RSproduct=="Forest_Integrity"){List_trendsRS<-sRL_CalcForestIntegrity(scientific_name, username, distSP, AOO_path)}
   if(RSproduct=="Water_availability"){List_trendsRS<-sRL_CalcWater(scientific_name, username, distSP, AOO_path)}
+  if(RSproduct=="Marine_impact"){List_trendsRS<-sRL_CalcMarineImpact(scientific_name, username, distSP)}
   
   # Save usage
   RS_stored<-Storage_SP$Output$Value[Storage_SP$Output$Parameter=="Usage_RS"]
