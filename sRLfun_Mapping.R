@@ -609,7 +609,7 @@ sRL_LeafletFlags <- function(flags){
 
 
 # Step 3 --------------------------------
-sRL_MapDistributionGBIF<-function(dat, scientific_name, username, First_step, AltMIN, AltMAX, Buffer_km, Gbif_Param){
+sRL_MapDistributionGBIF<-function(dat, scientific_name, username, First_step, AltMIN, AltMAX, BathyMIN, BathyMAX, Buffer_km, Gbif_Param, Gbif_Crop){
 
   ### The first step can be mcp, kernel, alpha, indivsites, coastal, hydro8, hydro10, hydro12, hydroMCP
   if(First_step=="mcp" | First_step==""){
@@ -720,7 +720,6 @@ sRL_MapDistributionGBIF<-function(dat, scientific_name, username, First_step, Al
     
   }
   
-
   
   ### Merge (not if hydrobasins, we keep 1 line per hydrobasin)
   distGBIF$binomial <- scientific_name
@@ -735,49 +734,73 @@ sRL_MapDistributionGBIF<-function(dat, scientific_name, username, First_step, Al
     distGBIF$geometry<-st_intersection(distGBIF, realms_mcp)$geometry
   }
   
+  ### Apply crop by altitude or bathymetry
+  AltCrop_param <- (AltMIN>0 | AltMAX<9000)
+  BathyCrop_param <- c(BathyMIN>-11000 | BathyMAX<0)
+  print(paste0("Crop by elevation: ", AltCrop_param, " / Crop by bathymetry: ", BathyCrop_param))
   
-  ### Apply crop by altitude
-  if(AltMIN>0 | AltMAX<9000){
+  if(AltCrop_param | BathyCrop_param){
     tryCatch({
       
-      sRL_loginfo("START - Crop by elevation", scientific_name)
-      mcp.spatial <- sf::as_Spatial(distGBIF)
-      sp.mcp.terra <- terra::vect(distGBIF)
-      EXT <- ext(mcp.spatial)
+      # Prepare polygon
+      sRL_loginfo("START - Crop by elevation or bathymetry", scientific_name)
+      distGBIF_forcrop <- terra::vect(distGBIF) %>% st_as_sf(.) %>% mutate(presence=1, origin=1, seasonal=1) %>% sRL_CropDistributionGBIF(., Gbif_Crop)
+      EXT <- ext(sf::as_Spatial(distGBIF_forcrop))
       
       # Load elevation raster (size depends on range of points)
-      if((as.numeric(st_area(st_as_sfc(st_bbox(dat))))/10^6) > (5*10^6)){
-        print("Using large elevation raster")
+      if((as.numeric(st_area(st_as_sfc(st_bbox(distGBIF))))/10^6) > (10^6)){
+        print("Using large elevation / bathymetry rasters")
         
-        alt_rawMIN<-rast(paste0(config$cciStack2_path, "/ElevationAgg30_MINIMUM.tif")) %>% terra::crop(., EXT, snap="out") 
-        alt_rawMAX<-rast(paste0(config$cciStack2_path, "/ElevationAgg30_MAXIMUM.tif")) %>% terra::crop(., EXT, snap="out") 
-        alt_rawMOY<-rast(paste0(config$cciStack2_path, "/ElevationAgg30.tif")) %>% terra::crop(., EXT, snap="out") 
-        alt_rawMOY[alt_rawMIN<AltMIN] <- AltMIN-1
-        alt_rawMOY[alt_rawMAX>AltMAX] <- AltMAX+1
+        if(AltCrop_param){
+          alt_rawMIN<-rast(paste0(config$cciStack2_path, "/ElevationAgg30_MINIMUM.tif")) %>% terra::crop(., EXT, snap="out") 
+          alt_rawMAX<-rast(paste0(config$cciStack2_path, "/ElevationAgg30_MAXIMUM.tif")) %>% terra::crop(., EXT, snap="out") 
+          alt_rawMOY<-rast(paste0(config$cciStack2_path, "/ElevationAgg30.tif")) %>% terra::crop(., EXT, snap="out") 
+          alt_rawMOY[alt_rawMIN<AltMIN] <- AltMIN-1
+          alt_rawMOY[alt_rawMAX>AltMAX] <- AltMAX+1  
+          alt_crop <- alt_rawMOY
+        }
         
-        dem.crop <- alt_rawMOY %>% replace(., is.na(.), 0)
+        if(BathyCrop_param){
+          bathy_rawMIN<-rast(paste0(config$cciStack2_path, "/BathymetryAgg30_MINIMUM.tif")) %>% terra::crop(., EXT, snap="out") 
+          bathy_rawMAX<-rast(paste0(config$cciStack2_path, "/BathymetryAgg30_MAXIMUM.tif")) %>% terra::crop(., EXT, snap="out") 
+          bathy_rawMOY<-rast(paste0(config$cciStack2_path, "/BathymetryAgg30.tif")) %>% terra::crop(., EXT, snap="out") 
+          bathy_rawMOY[bathy_rawMIN<BathyMIN] <- BathyMIN-1
+          bathy_rawMOY[bathy_rawMAX>BathyMAX] <- BathyMAX+1  
+          bathy_crop <- bathy_rawMOY %>% replace(., .==0, NA)
+        }
         
       } else {
-        print("Using small elevation raster")
+        print("Using small elevation / bathymetry rasters")
         
-        alt_raw<-sRL_ChargeAltRaster()
-        dem.crop <- terra::crop(alt_raw, EXT, snap="out") %>% replace(., is.na(.), 0)
+        if(AltCrop_param){
+          alt_raw<-sRL_ChargeAltRaster()
+          alt_crop <- terra::crop(alt_raw, EXT, snap="out")
+        }
+        
+        if(BathyCrop_param){
+          bathy_raw<-sRL_ChargeBathyRaster()
+          bathy_crop <- terra::crop(bathy_raw, EXT, snap="out") %>% replace(., .==0, NA)
+        }
+        
       }
       
-      sp.mcp.ras <- terra::rasterize(sp.mcp.terra, dem.crop, touches=T)
-      dem.sp <- terra::mask(dem.crop, mask = sp.mcp.terra)
-  
-      m <- c(-Inf, (AltMIN-1), 0, (AltMIN-1), 
-         AltMAX, 1, AltMAX, Inf, 0)
-      rclmat <- matrix(m, ncol=3, byrow=TRUE)
+      # Prepare matrix
+      mat_alt <- c(-Inf, (AltMIN-1), 0, (AltMIN-1), AltMAX, 1, AltMAX, Inf, 0) %>% matrix(., ncol=3, byrow=TRUE)
+      mat_bathy <- c(-Inf, (BathyMIN-1), 0, (BathyMIN-1), BathyMAX, 1, BathyMAX, Inf, 0) %>% matrix(., ncol=3, byrow=TRUE)
       
-      sp.range <- terra::classify(dem.sp, rclmat)
+      # Combine rasters
+      if(AltCrop_param){alt_sp <- terra::mask(alt_crop, mask = distGBIF_forcrop) %>% terra::classify(., mat_alt) %>% replace(., is.na(.), 0)} else {alt_sp<-0}
+      if(BathyCrop_param){bathy_sp <- terra::mask(bathy_crop, mask = distGBIF_forcrop) %>% terra::classify(., mat_bathy) %>% replace(., is.na(.), 0)} else {bathy_sp<-0}
+      
+      sp.range <- (alt_sp+bathy_sp)>0 
+      sp.range <- terra::mask(sp.range, mask=distGBIF_forcrop)
       if((dim(sp.range)[1]*dim(sp.range)[2])>(10^5)){sp.range <- sp.range %>% terra::aggregate(fact = 4, fun = 'max', na.rm=T)} # Aggregate if too big
       
+      # Crop
       distGBIF <- sRL_CropRangeElevation(distGBIF, sp.range)
-      sRL_loginfo("END - Crop by elevation", scientific_name)
+      sRL_loginfo("END - Crop by elevation or bathymetry", scientific_name)
       
-    }, error=function(e){"Bug in Crop by elevation"})
+    }, error=function(e){"Bug in Crop by elevation / bathymetry"})
   }
   
   ### Prepare to export
@@ -817,25 +840,20 @@ sRL_CropRangeElevation <- function(distGBIF, sp.range) {
   # dataframe of combinations - based on row index
   dist_max <- 1.1*sqrt(res(sp.range)[1]^2 + res(sp.range)[2]^2)
   
-  grid_points <- st_distance(data) %>% 
+  units(dist_max)<-"m"
+  point_dist <- st_distance(data)<dist_max
+  grid_points <- which(point_dist==T,arr.ind = T) %>%
     as.data.frame() %>% 
-    mutate(start=rownames(.)) %>% 
-    reshape2::melt(id.vars="start", variable.name="end", value.name = "dist") %>% 
-    mutate(start=as.numeric(start), end=as.numeric(end), dist=as.numeric(dist)) %>%
-    # no line with start & end being the same point
-    dplyr::filter(start != end) %>%  
-    # when order doesn't matter just one direction is enough
-    subset(., as.numeric(start) > as.numeric(end)) %>%
-    # remove lines with points too distant
-    subset(., dist < dist_max)
+    filter(row != col) %>% # Remove self distance
+    subset(., row > col) # Keep only one diagonal
   
   # Add coordinates
   data_coords <- st_coordinates(data) %>% as.data.frame()
   
-  grid_points$x1 <- data_coords$X[grid_points$start]
-  grid_points$y1 <- data_coords$Y[grid_points$start]
-  grid_points$x2 <- data_coords$X[grid_points$end]
-  grid_points$y2 <- data_coords$Y[grid_points$end]
+  grid_points$x1 <- data_coords$X[grid_points$row]
+  grid_points$y1 <- data_coords$Y[grid_points$row]
+  grid_points$x2 <- data_coords$X[grid_points$col]
+  grid_points$y2 <- data_coords$Y[grid_points$col]
   
   # Internal functions from https://gis.stackexchange.com/questions/419232/create-sf-points-and-then-lines-from-4-columns-in-a-data-frame-while-staying-in
   make_line <- function(xy2){
@@ -878,7 +896,7 @@ sRL_CropRangeElevation <- function(distGBIF, sp.range) {
   distGBIF_new <- st_difference(distGBIF, st_union(my_polygons)) %>%
     st_cast(., "POLYGON") %>%
     mutate(Area=as.numeric(st_area(.))) %>%
-    subset(., Area>(res(sp.range)[1]*res(sp.range)[2]) )
+    subset(., Area>5*(res(sp.range)[1]*res(sp.range)[2]) )
   
   
   return(distGBIF_new)

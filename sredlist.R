@@ -535,12 +535,13 @@ return(Prom)
 
 
 
-#* Extract occurrence records elevation
+#* Extract occurrence records elevation or bathymetry
 #* @get species/<scientific_name>/extract-elevation
 #* @param scientific_name:string Scientific Name
+#* @param type_crop:string elev or bathy
 #* @serializer unboxedJSON
 #* @tag sRedList
-function(scientific_name, username) {
+function(scientific_name, username, type_crop) {
   
   Prom<-future({
     
@@ -549,34 +550,41 @@ function(scientific_name, username) {
     Storage_SP=sRL_StoreRead(scientific_name,  username, MANDAT=1)
     if("flags" %in% names(Storage_SP)){flags <- Storage_SP$flags} else {flags <- Storage_SP$data_comparison}
     flags <- flags %>% subset(., is.na(Reason)==T)
-    alt_raw<-sRL_ChargeAltRaster()
     
-    # Extract elevation (need to transform the CRS for it)
-    sRL_loginfo("START - Extracting elevation values", scientific_name)
+    # Load the right layer (elevation or bathymetry)
+    if(type_crop=="elev"){
+      alt_raw<-sRL_ChargeAltRaster()
+    } else {
+      alt_raw<-sRL_ChargeBathyRaster()
+    }
+    
+    # Extract elevation / bathymetry (need to transform the CRS for it)
+    sRL_loginfo("START - Extracting elevation / bathymetry values", scientific_name)
     flags_foralt<-st_geometry(st_as_sf(flags, coords = c("decimalLongitude", "decimalLatitude"), crs="+proj=longlat +datum=WGS84")) %>%
      st_transform(., st_crs(CRSMOLL)) %>%
      st_as_sf(.)
     
     flags$Alt_points=terra::extract(alt_raw, st_coordinates(flags_foralt), method="simple")$Elevation_reprojMollweide3
     flags$Alt_points<-replace(flags$Alt_points, is.nan(flags$Alt_points)==T, NA)
-    sRL_loginfo("END - Extracting elevation values", scientific_name)
+    sRL_loginfo("END - Extracting elevation / bathymetry values", scientific_name)
     
     # Plot
     SUBTT<-ifelse(length(which(!is.na(flags$Alt_points)))>0,
-                  paste0("Elevation ranges from ", trunc(min(flags$Alt_points[is.na(flags$Reason)==T], na.rm=T)), " to ", ceiling(max(flags$Alt_points[is.na(flags$Reason)==T], na.rm=T)), "m"),
-                  "We were not able to calculate elevation for any of the occurrence records (maybe they are all at sea)")
+                  paste0(ifelse(type_crop=="elev", "Elevation", "Bathymetry"), " ranges from ", trunc(min(flags$Alt_points[is.na(flags$Reason)==T], na.rm=T)), " to ", ceiling(max(flags$Alt_points[is.na(flags$Reason)==T], na.rm=T)), "m"),
+                  ifelse(type_crop=="elev", "We were not able to calculate elevation for any of the occurrence records (maybe they are all at sea)", "We were not able to calculate bathymetry for any of the occurrence records (maybe they are all at land)"))
+    
     G_elev<-ggplot(flags)+
       geom_histogram(aes(x=Alt_points))+
-      ggtitle(paste0("Elevation of valid observations (N=", nrow(flags[is.na(flags$Reason)==T,]), ")"))+
-      xlab("Elevation (m)")+ylab("N")+
+      ggtitle(paste0(ifelse(type_crop=="elev", "Elevation", "Bathymetry"), " of valid occurrence records (N=", nrow(flags[is.na(flags$Reason)==T,]), ")"))+
+      xlab(ifelse(type_crop=="elev", "Elevation (m)", "Bathymetry (m)"))+ylab("N")+
       labs(subtitle=SUBTT)+
       theme_minimal() + theme(plot.background=element_rect(fill="white"))
     
     # Save and return plot
-    ggsave(paste0("resources/AOH_stored/", sub(" ", "_", scientific_name), "_", sRL_userdecode(username), "/Plots/gbifElevExtract.png"), G_elev, width=9, height=6) # nolint
-    plot <- base64enc::dataURI(file = paste0("resources/AOH_stored/", sub(" ", "_", scientific_name), "_", sRL_userdecode(username), "/Plots/gbifElevExtract.png"), mime = "image/png") # nolint
+    ggsave(paste0("resources/AOH_stored/", sub(" ", "_", scientific_name), "_", sRL_userdecode(username), "/Plots/gbifElevExtract_", type_crop, ".png"), G_elev, width=9, height=6) # nolint
+    plot <- base64enc::dataURI(file = paste0("resources/AOH_stored/", sub(" ", "_", scientific_name), "_", sRL_userdecode(username), "/Plots/gbifElevExtract_", type_crop, ".png"), mime = "image/png") # nolint
     
-    Storage_SP<-sRL_OutLog(Storage_SP, "Gbif_Extract_Elevation", "Yes")
+    Storage_SP<-sRL_OutLog(Storage_SP, ifelse(type_crop=="elev", "Gbif_Extract_Elevation", "Gbif_Extract_Bathymetry"), "Yes")
     sRL_StoreSave(scientific_name, username,  Storage_SP)
     
     return(list(
@@ -609,7 +617,7 @@ if(Gbif_Start=="alpha" & Gbif_Param[1] <= 0){neg_alpha()}
 if(Gbif_Start=="kernel" & Gbif_Param[2] <= 0){neg_kernel()}
 if(Gbif_Start=="coastal" & (Gbif_Buffer<=0 | Gbif_Crop=="")){no_gbif_coastal()}
 if(Gbif_Start=="vents" & (Gbif_Buffer<=0 | Gbif_Crop=="cropland")){no_gbif_vents()}
-if(grepl("hydro", Gbif_Start) & (Gbif_Buffer>0 | Gbif_Crop!="" | Gbif_Altitude[1]!="0" | Gbif_Altitude[2]!="9000" | Gbif_RLDistBin=="true")){hydro_modified()}
+if(grepl("hydro", Gbif_Start) & (Gbif_Buffer>0 | Gbif_Crop!="" | Gbif_Altitude[1]!="0" | Gbif_Altitude[2]!="9000"  | Gbif_Altitude[3]!="-11000" | Gbif_Altitude[4]!="0" | Gbif_RLDistBin=="true")){hydro_modified()}
 
 
 # Check the Step 2 has been run since Step 1 was last updated  
@@ -621,6 +629,8 @@ Prom<-future({
   sf::sf_use_s2(FALSE)
 
   # Transform parameters GBIF filtering
+  dir.create(paste0("resources/AOH_stored/", sub(" ", "_", scientific_name), "_", sRL_userdecode(username), "/Temporary"))
+  terraOptions(tempdir=paste0("resources/AOH_stored/", sub(" ", "_", scientific_name), "_", sRL_userdecode(username), "/Temporary"), memmax=config$RAMmax_GB)
   Gbif_Buffer<-replace(Gbif_Buffer, Gbif_Buffer<0, 0)
   if(Gbif_Start==""){Gbif_Start<-"mcp"}
   print(Gbif_Start)
@@ -647,8 +657,10 @@ Prom<-future({
   distSP_BeforeCrop <- sRL_MapDistributionGBIF(dat_proj, scientific_name, username,
                                   First_step=Gbif_Start,
                                   AltMIN=as.numeric(Gbif_Altitude[1]), AltMAX=as.numeric(Gbif_Altitude[2]),
+                                  BathyMIN=as.numeric(Gbif_Altitude[3]), BathyMAX=as.numeric(Gbif_Altitude[4]),
                                   Buffer_km=as.numeric(Gbif_Buffer),
-                                  Gbif_Param=Gbif_Param) 
+                                  Gbif_Param=Gbif_Param,
+                                  Gbif_Crop=Gbif_Crop) 
 
   # Merge with published range map
   if(Gbif_RLDistBin==T){
