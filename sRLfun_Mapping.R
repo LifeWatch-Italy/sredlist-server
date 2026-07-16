@@ -1223,7 +1223,7 @@ sRL_cooInfoBox_format<-function(coo_occ, Storage_SP){
 }
 
 
-sRL_cooInfoBox_create<-function(RES, Realms){
+sRL_cooInfoBox_create<-function(RES, Realms, FAO_sp){
   
   # Create info box
   info.box <- HTML(paste0(
@@ -1232,6 +1232,13 @@ sRL_cooInfoBox_create<-function(RES, Realms){
     HTML(paste0('<h4>Realms: </h4>',
                 paste0(unlist(strsplit(Realms, "[|]")), collapse=", "),
                 '<br><br>',
+                
+                ifelse(length(FAO_sp)>0,
+                       paste0('<h4>FAO major fishing areas: </h4>',
+                              paste0(FAO_sp, collapse=", "),
+                              '<br><br>'),
+                       ""),
+                
                 '<h4>List of countries of occurrence:</h4> <p>',
                 RES,
                 '</p>',
@@ -1271,7 +1278,7 @@ sRL_CountriesAttributes <- function(Attributes, COL, TransDir){
 
 
 
-sRL_LeafCountry <- function(coo, distSP_WGS, realms_raw, Storage_SP){
+sRL_LeafCountry <- function(coo, distSP_WGS, realms_raw, Storage_SP, FAO_reg=data.frame()){
   
   # Prepare extent
   EXT<-1.2*extent(coo[coo$Level0_occupied==T,])
@@ -1293,8 +1300,15 @@ sRL_LeafCountry <- function(coo, distSP_WGS, realms_raw, Storage_SP){
   if(nrow(realms_raw)>0){
     Leaflet_COOtoexport<-Leaflet_COOtoexport %>%
       addLegend(position="bottomleft", colors=c(sRL_COOColours$Col[sRL_COOColours$Col %in% coo$colour], "#D69F32"), labels=c(sRL_COOColours$Label[sRL_COOColours$Col %in% coo$colour], "Distribution"), opacity=1) %>%
-      addPolygons(data=realms_raw, group="Realms", fillOpacity=0.5)
+      addPolygons(data=realms_raw, group="Realms", fillOpacity=0.4, popup=paste0("Realm: ", realms_raw$realm))
     GROUPS <- c(GROUPS, "Realms")
+  }
+  
+  # Add FAO regions if marine species
+  if(nrow(FAO_reg)>0){
+    Leaflet_COOtoexport<-Leaflet_COOtoexport %>%
+      addPolygons(data=FAO_reg, group="FAO fishing areas", fillOpacity=0.4, popup=paste0("FAO region: ", FAO_reg$Full_name))
+    GROUPS <- c(GROUPS, "FAO fishing areas")
   }
   
   # Add points if we had occurrences and add layer control
@@ -1302,19 +1316,17 @@ sRL_LeafCountry <- function(coo, distSP_WGS, realms_raw, Storage_SP){
     
     Coords<-Storage_SP$dat_proj_saved %>% st_transform(., st_crs(4326)) %>% st_coordinates(.) %>% as.data.frame()
     Leaflet_COOtoexport<-Leaflet_COOtoexport %>%
-      addCircleMarkers(lng=Coords[,1], lat=Coords[,2], color="black", fillOpacity=0.3, stroke=F, radius=2, group="Occurrence records") %>%
-      addLayersControl(overlayGroups=c("Distribution", "Occurrence records", "Realms"), position="topleft", options=layersControlOptions(collapsed = FALSE)) %>% 
-      hideGroup("Realms")
+      addCircleMarkers(lng=Coords[,1], lat=Coords[,2], color="black", fillOpacity=0.3, stroke=F, radius=2, group="Occurrence records")
     
     GROUPS <- c(GROUPS, "Occurrence records")
     
   }
   
   # Manage groups
+  HideGROUPS <- c("Realms", "FAO fishing areas") %>% .[. %in% GROUPS]
   Leaflet_COOtoexport<-Leaflet_COOtoexport %>%
-    addLayersControl(overlayGroups=sort(GROUPS), position="topleft", options=layersControlOptions(collapsed = FALSE))
-  
-  if("Realms" %in% GROUPS){Leaflet_COOtoexport<-Leaflet_COOtoexport %>% hideGroup("Realms")}
+    addLayersControl(overlayGroups=sort(GROUPS), position="topleft", options=layersControlOptions(collapsed = FALSE)) %>%
+    hideGroup(HideGROUPS)
   
   # Return leaflet
   return(Leaflet_COOtoexport)

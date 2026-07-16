@@ -7,6 +7,25 @@ Storage_SP$Leaflet_COO
 
 The list of realms is: `r paste0(unlist(strsplit(Storage_SP$Realms_saved, "[|]")), collapse=", ")`
 
+`r if("FAO_sp" %in% names(Storage_SP)){if(nrow(Storage_SP$FAO_sp)>0){"The list of FAO major fishing regions is: "}}`
+
+```{r print_fao, out.width='100%'}
+if("FAO_sp" %in% names(Storage_SP)){if(nrow(Storage_SP$FAO_sp)>0){
+  FAO_to_print <- Storage_SP$FAO_sp[, c("FAO_CODE", "Name", "presence", "origin", "seasonal")]
+  FAO_to_print <- FAO_to_print[order(FAO_to_print$FAO_CODE),]
+  FAO_to_print$geometry <- FAO_to_print$geom <- NULL
+  
+  DT::datatable(FAO_to_print, 
+                 rownames=F,
+                 options=list(
+                   pageLength = 20
+                 )
+  )
+  
+}}
+```
+
+
 The list of countries of occurrence is`r if("COO_EditShiny" %in% outlog$Parameter){" (after it was manually edited through the interactive map)"}`:
 
 ```{r print_coo, out.width='100%'}

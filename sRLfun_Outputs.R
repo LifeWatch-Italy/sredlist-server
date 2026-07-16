@@ -102,6 +102,43 @@ sRL_OutputCountries<-function(scientific_name, countries){
 }
 
 
+### Prepare fao output csv
+sRL_OutputFAO<-function(scientific_name, FAO_sp){
+  
+  # Group with best presence / origin
+  FAO_gr <- ddply(FAO_sp, .(Full_name), function(x){data.frame(
+    name=x$Name[1],
+    FAO_CODE=x$FAO_CODE[1],
+    presence=paste(unique(x$presence), collapse="|"),
+    origin=paste(unique(x$origin), collapse="|"),
+    seasonal=paste(unique(x$seasonal), collapse="|")
+  )})
+  FAO_gr$presence <- FAO_gr$presence %>% sRL_SelectUniquePres(.) %>% sRL_CountriesAttributes(., "presence", "num2char")
+  FAO_gr$origin <- FAO_gr$origin %>% sRL_SelectUniqueOrig(.) %>% sRL_CountriesAttributes(., "origin", "num2char")
+  FAO_gr$seasonal <- FAO_gr$seasonal %>% sRL_CountriesAttributes(., "seasonal", "num2char")
+  
+  # Load empty file
+  fao<-read.csv("Species/SIS_fao_empty.csv")
+  fao[1:nrow(FAO_gr),] <- NA
+  
+  # Add taxon id
+  fao$internal_taxon_id<-sRL_CalcIdno(scientific_name)
+
+  # Add fao
+  fao$FAOOccurrence.FAOOccurrenceSubfield.FAOOccurrenceLookup <- FAO_gr$FAO_CODE
+  fao$FAOOccurrence.FAOOccurrenceSubfield.origin <- FAO_gr$origin
+  fao$FAOOccurrence.FAOOccurrenceSubfield.presence <- FAO_gr$presence
+  fao$FAOOccurrence.FAOOccurrenceSubfield.seasonality <- FAO_gr$seasonal
+  
+  # Remove NAs
+  fao <- replace(fao, is.na(fao), "")
+  
+  # Return
+  return(fao)
+  
+}
+
+
 
 
 ### Prepare references output csv

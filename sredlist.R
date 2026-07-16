@@ -886,7 +886,7 @@ Prom<-future({
   
   # Prepare distribution and calculate COO
   distSP_WGS<-distSP %>% st_transform(., st_crs(coo_raw)) 
-  coo<-sRL_cooExtract(distSP_WGS, domain_pref, Storage_SP$Output$Value[Storage_SP$Output$Parameter=="Crop_Country"])
+  coo <- sRL_cooExtract(distSP_WGS, domain_pref, Storage_SP$Output$Value[Storage_SP$Output$Parameter=="Crop_Country"])
   distSP_WGS <- distSP_WGS %>% dplyr::group_by(origin, presence, seasonal) %>% dplyr::summarise(N= n())
   
   # Simplify distribution if large distribution
@@ -900,13 +900,20 @@ Prom<-future({
   Realms<-st_join(distSP_WGS, realms_raw, join=st_intersects)$realm %>% unique(.) %>% paste0(., collapse="|")
   print(Realms)
   
+  # Extract FAO major fishing areas
+  if("Marine" %in% domain_pref){
+    FAO_reg <- st_read(config$FAO_path)
+    FAO_sp <- st_intersection(FAO_reg, distSP_WGS)
+    FAO_simplif <- st_read(sub(".gpkg", "_simplified.gpkg", config$FAO_path))
+  } else {FAO_simplif <- data.frame() ; FAO_sp <- data.frame()}
+  
   # Prepare command for results button
-  coo_occ<-sRL_cooInfoBox_prepare(coo, Storage_SP)
-  coo_res<-sRL_cooInfoBox_format(coo_occ, Storage_SP)
-  info.box<-sRL_cooInfoBox_create(coo_res, Realms)
+  coo_occ <- sRL_cooInfoBox_prepare(coo, Storage_SP)
+  coo_res <- sRL_cooInfoBox_format(coo_occ, Storage_SP)
+  info.box <- sRL_cooInfoBox_create(coo_res, Realms, unique(FAO_sp$Full_name))
   
   # Create plot (first the one to export without the result - it makes the rmarkdown bug and it's not needed - and second adding the text results)
-  Leaflet_COOtoexport <- sRL_LeafCountry(coo, distSP_WGS, realms_raw, Storage_SP)
+  Leaflet_COOtoexport <- sRL_LeafCountry(coo, distSP_WGS, realms_raw, Storage_SP, FAO_simplif)
   
   addBootStrap <- function(map) {
     map$dependencies <- c(map$dependencies, leafletDependencies$bootstrap())
@@ -926,6 +933,7 @@ Prom<-future({
   # Save for SIS
   Storage_SP$Realms_saved<-Realms
   Storage_SP$coo<-coo
+  if(nrow(FAO_sp)>0){Storage_SP$FAO_sp <- FAO_sp}
   Storage_SP$coo_occ<-coo_occ
   Storage_SP$Leaflet_COO<-Leaflet_COOtoexport
   sRL_StoreSave(scientific_name, username,  Storage_SP)
@@ -2766,6 +2774,7 @@ Prom<-future({
       countries_SIS<-sRL_OutputCountries(scientific_name, Storage_SP$coo_occ) %>% subset(., grepl("Absent_SIS", .$CountryOccurrence.CountryOccurrenceSubfield.CountryOccurrenceName)==F)
       if("COO" %in% outputs_selected){
         write.csv(countries_SIS, paste0(output_dir, "/countries.csv"), row.names = F)
+        if("FAO_sp" %in% names(Storage_SP)){if(nrow(Storage_SP$FAO_sp)>0){write.csv(sRL_OutputFAO(scientific_name, Storage_SP$FAO_sp), paste0(output_dir, "/fao.csv"), row.names = F)}}
       }
     }, error=function(e){"Bug in exporting countries of occurrence for SIS"})
     assessments_SIS<-sRL_OutputAssessments(scientific_name, Storage_SP$Realms_saved, Storage_SP$Output$Value[Storage_SP$Output$Parameter=="System_pref"][1], populationTrend)
