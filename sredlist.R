@@ -281,13 +281,6 @@ function(scientific_name, username, presences = list(), seasons = list() , origi
     ### Colour distribution
     distSP <- sRL_ColourDistrib(distSP)
     
-    ### Empty plot (needed if no distribution left with these attributes)
-    plot_dist<-ggplot() +
-      geom_sf(data = Storage_SP$CountrySP_saved, fill="gray96", col="gray50") + # nolint
-      theme_void() +
-      ggtitle("")
-    if(nrow(distSP)==0){warning_dist = "The distribution is empty, you need to edit the attributes selection to go further"}
-    
     ### Expand countries if extent changed (for instance if we increase distribution manually)
     if(nrow(distSP)>0){
       if(length(st_covered_by(
@@ -295,8 +288,15 @@ function(scientific_name, username, presences = list(), seasons = list() , origi
         st_transform(st_as_sfc(st_bbox(Storage_SP$CountrySP_saved)), st_crs(distSP))
       )[[1]])==0){
         sRL_loginfo("Extract countries again", scientific_name)
-        Storage_SP$CountrySP_saved<-sRL_PrepareCountries(1.2*extent(st_transform(distSP, CRSMOLL)))
+        Storage_SP$CountrySP_saved <- sRL_PrepareCountries(1.2*extent(st_transform(distSP, CRSMOLL)))
       }
+      
+      ### Empty plot (needed if no distribution left with these attributes)
+      plot_dist<-ggplot() +
+        geom_sf(data = Storage_SP$CountrySP_saved, fill="gray96", col="gray50") + # nolint
+        theme_void() +
+        ggtitle("")
+      if(nrow(distSP)==0){warning_dist = "The distribution is empty, you need to edit the attributes selection to go further"}
       
       ### Plot
       plot_dist <- plot_dist +
