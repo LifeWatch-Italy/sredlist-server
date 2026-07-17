@@ -507,7 +507,9 @@ sRL_PopRecords <- function(flags){
                          flags$Only_for_syn,
                          "<b>","Observation ID: ","</b>", ifelse(is.na(flags$Link)==F, paste0("<a href='", flags$Link, "' target='_blank'>", flags$gbifID, "</a>"), flags$gbifID), "<br>",
                          "<b>","Year: ","</b>", flags$year, "<br>",
-                         "<b>","Uncertainty (km): ","</b>", as.numeric(as.character(flags$coordinateUncertaintyInMeters))/1000, "<br>")
+                         "<b>","Uncertainty (km): ","</b>", as.numeric(as.character(flags$coordinateUncertaintyInMeters))/1000, "<br>",
+                         "<b>","Basis of record: ","</b>", flags$basisOfRecord, "<br>"
+                         )
   flags$PopText[is.na(flags$Reason)==F]<-paste0(flags$PopText[is.na(flags$Reason)==F], "<b>","Reason flagged: ","</b>", flags$Reason[is.na(flags$Reason)==F], "<br>")
   
   # Return
@@ -516,7 +518,7 @@ sRL_PopRecords <- function(flags){
 
 
 
-sRL_cleanDataGBIF <- function(flags, year_GBIF, uncertainty_GBIF, Gbif_yearBin, Gbif_uncertainBin, sea_GBIF, GBIF_xmin, GBIF_xmax, GBIF_ymin, GBIF_ymax) { # nolint
+sRL_cleanDataGBIF <- function(flags, year_GBIF, uncertainty_GBIF, Gbif_yearBin, Gbif_uncertainBin, sea_GBIF, GBIF_xmin, GBIF_xmax, GBIF_ymin, GBIF_ymax, Gbif_BasisOfRecord) { # nolint
 
   flags$.summary<-NULL
   
@@ -539,6 +541,31 @@ sRL_cleanDataGBIF <- function(flags, year_GBIF, uncertainty_GBIF, Gbif_yearBin, 
   ### Flag points with presence 4,5,6,7 (for uploaded or RL points)
   if("presence" %in% names(flags)){flags$.pres<-as.character(! flags$presence %in% c("4", "5", "6", "7"))}
   
+  ### Flag points with basis of records to exclude
+  # Align column
+  if(! "basisOfRecord" %in% names(flags)){
+  if("basisofrec" %in% names(flags)){flags$basisOfRecord <- flags$basisofrec} 
+  else {flags$basisOfRecord <- ""}}
+  
+  # Revalue
+  flags$basisOfRecord <- revalue(as.character(flags$basisOfRecord), c(
+    "FOSSIL_SPECIMEN"="FossilSpecimen",
+    "HUMAN_OBSERVATION"="HumanObservation",
+    "MATERIAL_CITATION"="PreservedSpecimen",
+    "MATERIAL_SAMPLE"="PreservedSpecimen",
+    "MaterialSample"="PreservedSpecimen", # This one is in OBIS
+    "LIVING_SPECIMEN"="LivingSpecimen",
+    "MACHINE_OBSERVATION"="MachineObservation",
+    "OBSERVATION"="HumanObservation",
+    "PRESERVED_SPECIMEN"="PreservedSpecimen",
+    "OCCURRENCE"="HumanObservation"
+  ), warn_missing = F)
+  
+  # Flag
+  basis_tokeep <- revalue(Gbif_BasisOfRecord, c("bor_human"="HumanObservation", "bor_preserved"="PreservedSpecimen", "bor_fossil"="FossilSpecimen", "bor_machine"="MachineObservation", "bor_living"="LivingSpecimen", "bor_other"=""), warn_missing=F)
+  if("bor_other" %in% Gbif_BasisOfRecord){basis_tokeep <- c(basis_tokeep, unique(flags$basisOfRecord)[! unique(flags$basisOfRecord) %in% c("FossilSpecimen", "HumanObservation", "PreservedSpecimen", "LivingSpecimen", "MachineObservation")])}
+  flags$.basis <- flags$basisOfRecord %in% basis_tokeep
+  
   ### Add a column with pasted reasons
   flags$Reason<-apply(
     flags[, which(substr(names(flags), 1, 1)==".")], # Apply to the columns that start with a dot (i.e., the column added by clean_coordinates)
@@ -547,7 +574,7 @@ sRL_cleanDataGBIF <- function(flags, year_GBIF, uncertainty_GBIF, Gbif_yearBin, 
       Reas<-names(x)[x==F] %>% .[is.na(.)==F] # Extract all reasons, i.e., column names where valid==F
       if(length(Reas)==0){NA} else{ # If no reason, I put NA as the reason
         Reas %>% # If there is a reason I rename and paste the reasons
-          revalue(., c(".val"="Validity", ".equ"="Equal_LonLat", ".zer"="Zero_Coordinates", ".cap"="Capitals", ".cen"="Country_centroids", ".gbf"="GBIF_headquarters", ".inst"="Institutions", ".sea"="Sea", ".year"="Year", ".uncertainty"="Coordinates_uncertainty", ".limits"="Outside_extent", ".pres"="Presence_456"), warn_missing=F) %>%
+          revalue(., c(".val"="Validity", ".equ"="Equal_LonLat", ".zer"="Zero_Coordinates", ".cap"="Capitals", ".cen"="Country_centroids", ".gbf"="GBIF_headquarters", ".inst"="Institutions", ".sea"="Sea", ".year"="Year", ".uncertainty"="Coordinates_uncertainty", ".limits"="Outside_extent", ".pres"="Presence_456", ".basis"="Basis_of_Record"), warn_missing=F) %>%
           paste(collapse="; ")
       }}
   )
