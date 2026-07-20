@@ -165,8 +165,8 @@ sRL_FormatUploadedRecords <- function(Uploaded_Records, scientific_name, Gbif_Sy
 
 
 ### Prepare European cropping shapefile
-sRL_EuropeList<-c("Albania", "Andorra", "Austria", "Belarus", "Belgium", "Bosnia and Herzegovina", "Bulgaria", "Croatia", "Cyprus", "Czechia", "Denmark", "Estonia", "Finland", "France", "Germany", "Greece", "Hungary", "Iceland", "Ireland", "Italy", "Latvia", "Liechtenstein", "Lithuania", "Luxembourg", "Malta", "Moldova, Republic of", "Monaco", "Montenegro", "Netherlands", "North Macedonia", "Norway", "Poland", "Portugal", "Romania", "San Marino", "Serbia", "Slovakia", "Slovenia", "Spain", "Sweden", "Switzerland", "Ukraine", "United Kingdom of Great Britain and Northern Ireland")
-sRL_EuropeList1<-c("European Russia", "Türkiye-in-Europe") # For Europe I need to include Eastern Russia and Eastern Turkey, I list them in Crop_Country1 which is empty for non European National assessments
+sRL_EuropeList<-c("Albania", "Andorra", "Austria", "Belarus", "Belgium", "Bosnia and Herzegovina", "Bulgaria", "Croatia", "Cyprus", "Czechia", "Denmark", "Estonia", "Finland", "France", "Germany", "Greece", "Hungary", "Iceland", "Ireland", "Italy", "Latvia", "Liechtenstein", "Lithuania", "Luxembourg", "Malta", "Moldova, Republic of", "Monaco", "Montenegro", "Netherlands", "North Macedonia", "Norway", "Poland", "Portugal", "Romania", "San Marino", "Serbia", "Slovakia", "Slovenia", "Spain", "Sweden", "Switzerland", "Ukraine", "United Kingdom of Great Britain and Northern Ireland", "Svalbard and Jan Mayen", "Åland Islands")
+sRL_EuropeList1<-c("European Russia", "Türkiye-in-Europe", "Kaliningrad", "North European Russia", "Northwest European Russia", "Central European Russia", "East European Russia", "South European Russia", "") # For Europe I need to include Eastern Russia and Eastern Turkey, I list them in Crop_Country1 which is empty for non European National assessments
 sRL_EU27List<-c("Austria", "Belgium", "Bulgaria", "Croatia", "Cyprus", "Czechia", "Denmark", "Estonia", "Finland", "France", "Germany", "Greece", "Hungary", "Ireland", "Italy", "Latvia", "Lithuania", "Luxembourg", "Malta", "Netherlands", "Poland", "Portugal", "Romania", "Slovakia", "Slovenia", "Spain", "Sweden")
 
 sRL_ShapeCountryNRL <- function(Country_name, scientific_name){
@@ -176,6 +176,9 @@ sRL_ShapeCountryNRL <- function(Country_name, scientific_name){
   ### Prepare list of countries
   if(Country_name == "Europe"){
     country_sub <- distCountries_NRL %>% subset(., .$SIS_name0 %in% sRL_EuropeList | .$SIS_name1 %in% sRL_EuropeList1) %>% st_crop(., xmin=-50, xmax=180, ymin=-90, ymax=90) # Remove Clipperton
+    SER <- subset(country_sub, SIS_name1=="South European Russia")
+    SER_diff <- st_difference(SER, st_union(Area_Remove_PanEU)) %>% dplyr::group_by() %>% dplyr::summarise()
+    country_sub$geometry[country_sub$SIS_name1=="South European Russia"] <- SER_diff$geometry[1]
   }
   
   if(Country_name == "EU27"){
