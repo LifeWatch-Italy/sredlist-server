@@ -3331,6 +3331,17 @@ Prom<-future({
                )))
   }
   
+  # Merge FAO
+  sRL_loginfo("Merge FAO", "Merge ZIP API")
+  Fao_files<-list.files(Zip_Path, recursive = T)[grepl('fao.csv', list.files(Zip_Path, recursive = T))] %>% paste0(Zip_Path, "/", .) %>% subset(., .!= paste0(Zip_Path, "/"))
+  
+  if(length(Fao_files)>0){
+    eval(parse(text=
+                 paste0("faoM<-rbind.fill(",
+                        paste0("read.csv(Fao_files[", 1:length(Fao_files), "])", collapse=','),")"
+                 )))
+  }
+  
   # Merge references
   sRL_loginfo("Merge references", "Merge ZIP API")
   Ref_files<-list.files(Zip_Path, recursive = T)[grepl('references.csv', list.files(Zip_Path, recursive = T))] %>% paste0(Zip_Path, "/", .)
@@ -3442,6 +3453,7 @@ Prom<-future({
     referencesM$internal_taxon_id[referencesM$internal_taxon_name==Species_to_fix]<-N_it
     if(exists("habitatsM")){habitatsM$internal_taxon_id[habitatsM$internal_taxon_name==Species_to_fix]<-N_it}
     if(exists("countriesM")){countriesM$internal_taxon_id[countriesM$internal_taxon_name==Species_to_fix]<-N_it}
+    if(exists("faoM")){faoM$internal_taxon_id[faoM$internal_taxon_name==Species_to_fix]<-N_it}
     if(exists("taxonomiesM")){taxonomiesM$internal_taxon_id[taxonomiesM$species==Species_to_fix]<-N_it}
     if(exists("assessmentsM")){assessmentsM$internal_taxon_id[assessmentsM$internal_taxon_name==Species_to_fix]<-N_it}
     if(exists("DistM")){DistM$id_no[DistM$sci_name==Species_to_fix]<-N_it}
@@ -3465,6 +3477,7 @@ Prom<-future({
   write.csv(replace(allfieldsM, is.na(allfieldsM), ""), paste0(Zip_Path, "/allfields.csv"), row.names = F)
   write.csv(replace(assessmentsM, is.na(assessmentsM), ""), paste0(Zip_Path, "/assessments.csv"), row.names = F)
   if(exists("countriesM")){write.csv(replace(countriesM, is.na(countriesM), ""), paste0(Zip_Path, "/countries.csv"), row.names = F)}
+  if(exists("faoM")){write.csv(replace(faoM, is.na(faoM), ""), paste0(Zip_Path, "/fao.csv"), row.names = F)}
   if(exists("taxonomiesM")){write.csv(replace(taxonomiesM, is.na(taxonomiesM), ""), paste0(Zip_Path, "/taxonomy.csv"), row.names = F)}
   write.csv(replace(referencesM, is.na(referencesM), ""), paste0(Zip_Path, "/references.csv"), row.names = F)
   if(exists("habitatsM")){write.csv(replace(habitatsM, is.na(habitatsM), ""), paste0(Zip_Path, "/habitats.csv"), row.names = F)}
