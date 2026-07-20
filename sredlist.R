@@ -1173,6 +1173,40 @@ function(scientific_name, username) {
     ))
 }
 
+### Compare GL from species of the same order
+#* Compare GL
+#* @get species/<scientific_name>/analysis/compare_GL
+#* @param scientific_name:string Scientific Name
+#* @serializer unboxedJSON
+#* @tag sRedList
+function(scientific_name, username) { # nolint
+  
+  Prom<-future({
+    sRL_loginfo("START - Compare GL related species", scientific_name)
+    
+    #Filter param
+    scientific_name <- sRL_decode(scientific_name)
+    Storage_SP=sRL_StoreRead(scientific_name,  username, MANDAT=1) ; print(names(Storage_SP))
+    
+    ### Plot
+    compare_plot <- sRL_CompareGenerationLength(scientific_name, GL_SIS_raw, GL_file)
+    
+    # Save and return plot
+    ggsave(paste0("resources/AOH_stored/", sub(" ", "_", scientific_name), "_", sRL_userdecode(username), "/Plots/ComparisonPlot.png"), compare_plot, width=13, height=10) # nolint
+    plot <- base64enc::dataURI(file = paste0("resources/AOH_stored/", sub(" ", "_", scientific_name), "_", sRL_userdecode(username), "/Plots/ComparisonPlot.png"), mime = "image/png") # nolint
+    
+    ### Store usage
+    Storage_SP <- sRL_OutLog(Storage_SP, "Compare_GL", "Used")
+    sRL_StoreSave(scientific_name, username,  Storage_SP)
+    
+    sRL_loginfo("END - Compare GL related species", scientific_name)
+
+    return(list(compare_plot = plot))
+    
+  }, seed=T)
+  
+  return(Prom)
+}
 
 
 #* Extract occurrence records habitats

@@ -3,6 +3,13 @@ Trends in Area of Habitat were calculated with the same data and approach than S
 
 The platform found a `r paste0(revalue(outlog$Value[outlog$Parameter=="Estimated_PopTrendsDir_raw"], c("-"="reduction", "+"="increase")), " of ", outlog$Value[outlog$Parameter=="Estimated_PopTrends_raw"], "%")` in Area of Habitat between `r Storage_SP$Year1theo_saved` and `r config$YearAOH2` `r if(Storage_SP$Year1_saved!=Storage_SP$Year1theo_saved){"using exponential extrapolation for trends before 1992"}`.
 
+`r if("Compare_GL" %in% outlog$Parameter){"The generation length of related species was extracted: "}`
+
+<center>
+![](`r if("Compare_GL" %in% outlog$Parameter){paste0(outDir, '/Plots/ComparisonPlot.png')}`){width=100%}
+</center>
+
+
 
 <br>
 <center>

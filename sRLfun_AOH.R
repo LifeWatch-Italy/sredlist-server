@@ -226,3 +226,83 @@ sRL_CalcAohPrevalence<-function(aoh, aoh_opt, type, points){
 colour_bidirect_scale <- trans_new("logpeps",
                              function(x) {sign(x)*sqrt(abs(x))},
                              function(x) {sign(x)*(abs(x)^2)}) 
+
+
+### Function to compare GL from other species of the order
+sRL_CompareGenerationLength <- function(scientific_name, GL_SIS_raw, GL_file){
+  
+  order_SP <- GL_SIS_raw$order[GL_SIS_raw$scientific_name==scientific_name]
+  order <- subset(GL_SIS_raw, order_name==order_SP) %>% mutate(GL=NA)
+  order$level <- ifelse(order$genus==order$genus[order$scientific_name==scientific_name], "Genus", ifelse(order$family==order$family[order$scientific_name==scientific_name], "Family", "Order")) %>% factor(., levels=c("Order", "Family", "Genus"))
+  
+  ### Prep plot
+  order$popup <- paste0(
+    "<b>Species: ", order$scientific_name, "</b><br>",
+    "Order: ", order$order, "<br>",
+    "Family: ", order$family, "<br>",
+    "Generation length: ", order$GL_value, "<br>",
+    "Source: ", order$Source, "<br>",
+    ifelse(is.na(order$generation_length_quality)==F, paste0("Quality: ", order$generation_length_quality, "<br>"), "")
+  )
+  
+  ### Boxplot
+  # By family
+  families_group <- order %>% dplyr::group_by(family_name) %>% dplyr::summarise(N=n(), Mean_GL=mean(GL_valueQTT, na.rm=T), n_values=length(GL_valueQTT[is.na(GL_valueQTT)==F]))
+  families <- order %>% 
+    subset(., is.na(GL_valueQTT)==F) %>% 
+    left_join(., families_group, by="family_name") %>%
+    mutate(New_name=paste0(family_name, " (N=", n_values, "/", N, ")"))
+  families$Family <- ifelse(families$family_name==order$family_name[order$scientific_name==scientific_name], order$family_name[order$scientific_name==scientific_name], "Others") %>% factor(., levels=c(order$family_name[order$scientific_name==scientific_name], "Others"))
+  
+  G_fam <- ggplot(families)+
+    geom_boxplot(aes(y=GL_valueQTT, x=New_name, col=Family))+
+    ylab("Generation length (years)")+xlab("")+
+    coord_flip()+
+    theme_minimal()+
+    ggtitle("Generation length by family")
+  
+  #Gly_fam <- ggplotly(G_fam)
+  
+  
+  # By genus
+  FAM <- order$family_name[order$scientific_name==scientific_name]
+  genuses_group <- order %>% subset(., family_name==FAM) %>% dplyr::group_by(genus_name) %>% dplyr::summarise(N=n(), Mean_GL=mean(GL_valueQTT, na.rm=T), n_values=length(GL_valueQTT[is.na(GL_valueQTT)==F]))
+  genuses <- order %>% 
+    subset(., family_name==FAM & is.na(GL_valueQTT)==F) %>% 
+    left_join(., genuses_group, by="genus_name") %>%
+    mutate(New_name=paste0(genus_name, " (N=", n_values, "/", N, ")"))
+  genuses$Genus <- ifelse(genuses$genus_name==order$genus_name[order$scientific_name==scientific_name], order$genus_name[order$scientific_name==scientific_name], "Others") %>% factor(., levels=c(order$genus_name[order$scientific_name==scientific_name], "Others"))
+  
+  G_gen <- ggplot(genuses)+
+    geom_boxplot(aes(y=GL_valueQTT, x=New_name, col=Genus))+
+    ylab("Generation length (years)")+xlab("")+
+    coord_flip()+
+    theme_minimal()+
+    ggtitle("Generation length by genus")
+  
+  #Gly_gen <- ggplotly(G_gen)
+  
+  
+  ### Histogram
+  TAB <- table(order$level)
+  if((TAB["Genus"]+TAB["Family"])>20 & TAB["Order"]>100){order <- subset(order, level %in% c("Genus", "Family"))}
+  if(TAB["Genus"]>20 & TAB["Family"]>100){order <- subset(order, level=="Genus")}
+  order$level <- droplevels(order$level)
+  
+  G_generation <- ggplot()+
+    geom_histogram(data=order, aes(x=as.numeric(GL_valueQTT), fill=level, text=popup))+
+    xlab("Generation length (years)")+
+    ylab("Number of species")+
+    scale_fill_manual(values=revalue(levels(order$level), c("Order"="#fee8c8", "Family"="#fdbb84", "Genus"="#e34a33"), warn_missing=F))+
+    theme_minimal()
+  
+  #Gly_generation <- ggplotly(G_generation, tooltip="text")
+  
+  
+  # Combine
+  G_combined <- cowplot::plot_grid(G_fam, G_gen, nrow=1) %>% cowplot::plot_grid(., G_generation, nrow=2)
+  #Gly_combined <- combineWidgets(combineWidgets(Gly_fam, Gly_gen, nrow=1), Gly_generation, nrow=2, title=paste0("Generation length of species related with <i>", scientific_name, "</i>"))
+  
+  return(G_combined)
+}
+
