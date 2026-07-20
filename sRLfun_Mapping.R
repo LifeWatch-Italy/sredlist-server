@@ -172,6 +172,7 @@ sRL_EU27List<-c("Austria", "Belgium", "Bulgaria", "Croatia", "Cyprus", "Czechia"
 sRL_ShapeCountryNRL <- function(Country_name, scientific_name){
   
   sRL_loginfo("START - Shape Country NRL", scientific_name)
+  print(Country_name)
   
   ### Prepare list of countries
   if(Country_name == "Europe"){
@@ -190,6 +191,8 @@ sRL_ShapeCountryNRL <- function(Country_name, scientific_name){
   }
   
   if(! Country_name %in% c("Europe", "EU27", "Mediterranean")){
+    if(grepl("Irelands", Country_name)){Country_name <- "Irelands_only4NRL"}
+    if(Country_name=="Great Britain"){Country_name <- "GreatBritain_only4NRL"}
     country_sub <- distCountries_NRL %>% subset(., .$SIS_name0 == Country_name)
   }
   
