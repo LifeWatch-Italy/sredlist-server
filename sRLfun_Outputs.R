@@ -300,10 +300,10 @@ sRL_OutputAssessments<-function(scientific_name, Realms, Systems, Trends){
 ### Prepare distribution output shapefile
 sRL_OutputDistribution<-function(scientific_name, Storage_SP){
   
-  distSP<-Storage_SP$distSP_saved
-  
+  distSP <- Storage_SP$distSP_saved
+
   # List of columns to include
-  COL_REQ <- c("presence", "origin", "seasonal", "compiler", "yrcompiled", "citation", "spatialref", "subspecies", "subpop", "data_sens", "sens_comm", "source", "dist_comm", "island", "tax_comm", "id_no", "Shape_Leng", "Shape_Area")
+  COL_REQ <- c("presence", "origin", "seasonal", "compiler", "yrcompiled", "citation", "spatialref", "subspecies", "subpop", "data_sens", "sens_comm", "source", "dist_comm", "island", "tax_comm", "id_no", "Shape_Leng", "Shape_Area", "geometry")
   if("hybas_id" %in% names(distSP)){COL_REQ <- c(COL_REQ, "hybas_id")} # Add hybas_id for undissolved hydrobasin shapefile
   
   # Create template
@@ -315,8 +315,8 @@ sRL_OutputDistribution<-function(scientific_name, Storage_SP){
   if("geometry" %in% names(distSIS)){distSIS<-distSIS[, c(names(distSIS)[names(distSIS) != "geometry"], "geometry")]}
   
   # Transform NA in "" to match SIS
-  distSIS<-replace(distSIS, is.na(distSIS), "")
-  
+  distSIS <- replace(distSIS, is.na(distSIS), "")
+
   return(distSIS)
 }
 

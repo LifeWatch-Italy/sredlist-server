@@ -155,7 +155,13 @@ sRL_ReadDistribution <- function(scientific_name, path) {
     print("Shapefile or geopackage of the species does not exist!") # nolint
   } else {
     distributionPath <- paste0(speciesPath, "/", files[1]) # nolint
-    distributions <- sf::st_read(distributionPath)
+    if(grepl(".gpkg", files)){
+      layers <- st_layers(distributionPath)
+      distributions <- st_read(distributionPath, layer = layers$name[grepl("olygon", layers$geomtype)][1])
+    } else {
+      distributions <- sf::st_read(distributionPath)
+    }
+    
     st_geometry(distributions) <- "geometry"
     }
   

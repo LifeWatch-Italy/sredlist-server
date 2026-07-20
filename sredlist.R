@@ -111,6 +111,7 @@ function(scientific_name, username) {
      
      #Filter param
      sRL_loginfo("START - Prepare distribution 1a", scientific_name)
+     print(Dist_path)
      Storage_SP=sRL_StoreRead(scientific_name,  username, MANDAT=0) ; print(names(Storage_SP))
      Storage_SP<-subset(Storage_SP, names(Storage_SP) %in% c("CountrySP_saved", "Creation", "Output", "SpeciesAssessment")) # Remove other elements from Storage_SP which could come from a previous process on the platform
      if(! "SpeciesAssessment" %in% names(Storage_SP)){
@@ -283,12 +284,14 @@ function(scientific_name, username, presences = list(), seasons = list() , origi
     
     ### Expand countries if extent changed (for instance if we increase distribution manually)
     if(nrow(distSP)>0){
-      if(length(st_covered_by(
-        st_as_sfc(st_bbox(distSP)),
-        st_transform(st_as_sfc(st_bbox(Storage_SP$CountrySP_saved)), st_crs(distSP))
-      )[[1]])==0){
-        sRL_loginfo("Extract countries again", scientific_name)
-        Storage_SP$CountrySP_saved <- sRL_PrepareCountries(1.2*extent(st_transform(distSP, CRSMOLL)))
+      if(nrow(Storage_SP$CountrySP_saved)>0){
+        if(length(st_covered_by(
+          st_as_sfc(st_bbox(distSP)),
+          st_transform(st_as_sfc(st_bbox(Storage_SP$CountrySP_saved)), st_crs(distSP))
+        )[[1]])==0){
+          sRL_loginfo("Extract countries again", scientific_name)
+          Storage_SP$CountrySP_saved <- sRL_PrepareCountries(1.2*extent(st_transform(distSP, CRSMOLL)))
+        }
       }
       
       ### Empty plot (needed if no distribution left with these attributes)
@@ -711,7 +714,7 @@ Prom<-future({
   DistComm <- sRL_DistComment(Output=Storage_SP$Output, N_dat=nrow(dat_proj))
   distSP$dist_comm <- DistComm
   distSP_BeforeCrop$dist_comm <- DistComm
-  Storage_SP$distSP_saved=distSP[, names(distSP) != "alphaTEMPO"]
+  Storage_SP$distSP_saved <- distSP[, names(distSP) != "alphaTEMPO"]
   Storage_SP$distSP3_BeforeCrop <- distSP_BeforeCrop
   sRL_StoreSave(scientific_name, username,  Storage_SP)
   
@@ -854,6 +857,7 @@ function(scientific_name, username){
   } else {
     System_list <- "t"
     if(TRUE %in% grepl("hydro", Storage_SP$Output$Value)){System_list <- "f"}
+    if(TRUE %in% grepl("vents", Storage_SP$Output$Value)){System_list <- "m"}
     if(TRUE %in% grepl("cropsea", Storage_SP$Output$Value)){System_list <- "m"}
   }
   

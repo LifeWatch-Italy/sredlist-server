@@ -212,10 +212,10 @@ sRL_createDataGBIF <- function(scientific_name, GBIF_SRC, Gbif_Country, Uploaded
   if(Gbif_Country != ""){
     
     # Create shapefile to crop
-    co_tot <- sRL_ShapeCountryNRL(Gbif_Country, scientific_name) %>% st_buffer(., 0.01)
+    co_tot <- sRL_ShapeCountryNRL(Gbif_Country, scientific_name)
     
-    # Calculate extent
-    co_EXT <- extent(co_tot) %>% as.vector(.)
+    # Calculate extent (with small buffer)
+    co_EXT <- co_tot %>% st_convex_hull(.) %>% st_buffer(., 0.01) %>% extent(.) %>% as.vector(.)
     
   } else {co_EXT<-c(-180,180,-90,90) ; co_tot<-c()}
 
