@@ -5,7 +5,7 @@ RUN apt-get update && apt-get install -y libsecret-1-0
 RUN R -e "install.packages('remotes')"
 RUN R -e 'remotes::install_github("prioritizr/aoh")'
 RUN R -e 'remotes::install_github("iucn-uk/iucnredlist")'
-RUN R -e "install.packages(c('plumber', 'config', 'tictoc', 'logger', 'glue', 'urltools', 'Rook', 'ggplot2', 'gridExtra' , 'plyr', 'dplyr', 'tidyr', 'ggalluvial', 'ncdf4', 'tools', 'rgbif', 'maps', 'countrycode', 'sf', 'rnaturalearthdata', 'raster', 'exactextractr', 'rasterVis', 'readr', 'R.utils', 'CoordinateCleaner', 'terra', 'smoothr', 'adehabitatHR', 'robis', 'future', 'future.callr', 'promises', 'scales', 'plotly', 'maptools', 'mapview', 'leaflet', 'leaflet.extras', 'htmltools', 'leafem', 'protolite', 'cowplot', 'alphahull', 'taxize', 'TAF', 'knitr', 'rmarkdown', 'flextable', 'png', 'grid', 'magick'))"
+RUN R -e "install.packages(c('plumber', 'config', 'tictoc', 'logger', 'glue', 'urltools', 'Rook', 'ggplot2', 'gridExtra' , 'plyr', 'dplyr', 'tidyr', 'ggalluvial', 'ncdf4', 'tools', 'rgbif', 'maps', 'countrycode', 'sf', 'rnaturalearthdata', 'raster', 'exactextractr', 'rasterVis', 'readr', 'R.utils', 'CoordinateCleaner', 'terra', 'smoothr', 'adehabitatHR', 'robis', 'future', 'future.callr', 'promises', 'scales', 'plotly', 'maptools', 'mapview', 'leaflet', 'leaflet.extras', 'htmltools', 'leafem', 'protolite', 'cowplot', 'alphahull', 'taxize', 'TAF', 'knitr', 'rmarkdown', 'flextable', 'png', 'grid', 'magick', 'nngeo'))"
 # Not sure maptools and protolite are still useful
 
 # For Shiny apps:

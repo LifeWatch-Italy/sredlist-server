@@ -192,36 +192,23 @@ sRL_CalcForestchange<-function(scientific_name, username, distSP, GL){
 # sRL_CalcForestIntegrity
 sRL_CalcForestIntegrity<-function(scientific_name, username, distSP, AOO_path){
   
-  print("t0")
-  print(config$ForestIntegrity_path)
-  print(file.exists(config$ForestIntegrity_path))
-  
   ### Charge FLII raster
   flii <- rast(config$ForestIntegrity_path)
-  print("t1")
-  print(summary(flii))
-  
+
   ### Mask
   distSP <- st_transform(distSP, st_crs(flii))
-  print("t2")
   flii_crop <- crop(flii, distSP, snap="out") %>% mask(., distSP)/1000
-  print("t3")
-  print(summary(flii_crop))
-  
+
   ### Save rasters
   terra::writeRaster(flii_crop, paste0("resources/AOH_stored/", gsub(" ", "_", scientific_name), "_", sRL_userdecode(username), "/Forest_integrity.tif"), overwrite=T)
-  print("t4")
-  
+
   ### Categorise
   flii_cat <- terra::classify(flii_crop, rcl=c(0,6,9.6,10), include.lowest=TRUE)
-  print("t5")
-  print(summary(flii_cat))
   COL_rast <- levels(droplevels(flii_cat))[[1]]$flii_earth %>% revalue(., c("[0 - 6]"="#8c510a", "(6 - 9.6]"="lightgreen", "(9.6 - 10]"="darkgreen"), warn_missing=F) %>% c(., "white")
   CAT_rast <- levels(droplevels(flii_cat))[[1]]$flii_earth %>% revalue(., c("[0 - 6]"="Low", "(6 - 9.6]"="Medium", "(9.6 - 10]"="High"), warn_missing=F) %>% c(., "")
   
   ### Plots
   RS_name="Forest Landscape Integrity Index"
-  print("t6")
   G1 <- gplot(flii_crop)+
     coord_fixed()+
     geom_tile(aes(fill = value)) +
@@ -229,45 +216,32 @@ sRL_CalcForestIntegrity<-function(scientific_name, username, distSP, AOO_path){
     ggtitle("In 2019 (continuous)") +
     sRLTheme_maps
   
-  print("t6b")
   G2_delete <- gplot(flii_cat)+
     coord_fixed()+
     geom_tile(aes(fill = value)) +
     scale_fill_manual(values=COL_rast, label=CAT_rast, name="Integrity")+
     ggtitle("In 2019 (categorised)") +
     sRLTheme_maps
-  print("t6c")
-  
+
   G2 <- gplot(flii_cat)+
     coord_fixed()+
     geom_tile(aes(fill = factor(value))) +
     scale_fill_manual(values=COL_rast, label=CAT_rast, name="Integrity")+
     ggtitle("In 2019 (categorised)") +
     sRLTheme_maps
-  print("t6d")
-  
-  GG_RS=cowplot::plot_grid(
-    
-    G1,
-    
-    G2,
-    
-    ncol=2
-  )
-  print("t7")
-  
+
+  GG_RS=cowplot::plot_grid(G1, G2, ncol=2)
+
   EXT <- extent(distSP) ; size_scale <- (EXT[2]-EXT[1])/(EXT[4]-EXT[3])
   ggsave(filename = paste0("resources/AOH_stored/", sub(" ", "_", scientific_name), "_", sRL_userdecode(username), "/Plots/RS_plot_forestintegrity.png"), plot = GG_RS, bg="white", width=12, height=6/size_scale)
   RS_plot <- base64enc::dataURI(file = paste0("resources/AOH_stored/", sub(" ", "_", scientific_name), "_", sRL_userdecode(username), "/Plots/RS_plot_forestintegrity.png"), mime = "image/png", encoding = "base64") # nolint
-  print("t8")
-  
+
   ### Calculate outputs
   RS_current <- exact_extract(flii_crop, distSP, "mean") 
   RS_prop <- summary(flii_cat, size=10^7) %>% as.data.frame(.) %>% mutate(Freq=gsub(" ", "", .$Freq)) %>% separate(Freq, c("Cat", "N"), sep=":") %>% subset(., .$Cat != "NA's") %>% mutate(Percent = round(100*as.numeric(N)/sum(as.numeric(N)), 1))
   RS_detail <- paste0(RS_prop$Percent[RS_prop$Cat=="(9.6-10]"], "% of high integrity; ", RS_prop$Percent[RS_prop$Cat=="(6-9.6]"], "% of medium integrity; ", RS_prop$Percent[RS_prop$Cat=="[0-6]"], "% of low integrity")
   RS_timewindow<-"2019 (data not temporal)"
-  print("t9")
-  
+
   LIST_RS <- list(
     RS_prodname=RS_name,
     RS_plot=RS_plot,
@@ -277,27 +251,17 @@ sRL_CalcForestIntegrity<-function(scientific_name, username, distSP, AOO_path){
   )
   
   ### Add stat within AOO if calculated
-  print("t10a")
   if(is.null(AOO_path)==F){
-    print("t10b")
     AOO_rast <- rast(AOO_path) ; names(AOO_rast)[1] <- "lyr1"
-    print("t11")
     AOO_map <- AOO_rast %>% as.polygons(.) %>% st_as_sf(.) %>% st_transform(., st_crs(flii)) %>% subset(., lyr1==1)
-    print("t12")
     flii_aoo <- mask(flii_crop, AOO_map)
-    print("t13")
     flii_aoo_cat <- classify(flii_aoo, rcl=c(0,6,9.6,10), include.lowest=TRUE)
-    print("t14")
-    
+
     LIST_RS$RS_currentAOO <- paste0(round(exact_extract(flii_aoo, distSP, "mean") ,1), " (mean)")
-    print("t15")
     RS_prop_aoo <- summary(flii_aoo_cat, size=10^7) %>% as.data.frame(.) %>% mutate(Freq=gsub(" ", "", .$Freq)) %>% separate(Freq, c("Cat", "N"), sep=":") %>% subset(., .$Cat != "NA's") %>% mutate(Percent = round(100*as.numeric(N)/sum(as.numeric(N)), 1))
-    print("t16")
     LIST_RS$RS_detailAOO <- paste0("Within AOO, ", RS_prop_aoo$Percent[RS_prop_aoo$Cat=="(9.6-10]"], "% of high integrity; ", RS_prop_aoo$Percent[RS_prop_aoo$Cat=="(6-9.6]"], "% of medium integrity; ", RS_prop_aoo$Percent[RS_prop_aoo$Cat=="[0-6]"], "% of low integrity")
   }
-  print("t17")
-  print(LIST_RS)
-  
+
   ### Return
   return(LIST_RS)
   

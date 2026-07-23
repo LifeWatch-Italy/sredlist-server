@@ -73,6 +73,12 @@ After applying these filters, your point range map included `r nrow(Storage_SP$d
 ![](`r if("Gbif_Extract_Elevation" %in% outlog$Parameter){paste0(outDir, '/Plots/gbifElevExtract.png')}`){width=100%}
 </center>
 
+`r if("Gbif_Extract_Bathymetry" %in% outlog$Parameter){"The bathymetry of occurrence records was extracted: "}`
+
+<center>
+![](`r if("Gbif_Extract_Bathymetry" %in% outlog$Parameter){paste0(outDir, '/Plots/gbifElevExtract_bathy.png')}`){width=100%}
+</center>
+
 
 ### Create range map
 ```{r create_range_prepare}
@@ -89,14 +95,18 @@ PRINT_starting<-outlog$Value[outlog$Parameter=="Mapping_Start"] %>% plyr::revalu
   "hydroMCP"="map all hydrobasins (level 8) that overlap with the minimum convex polygon around occurrence records"
 ), warn_missing = F)
 
-ELEV<-outlog$Value[outlog$Parameter=="Mapping_Altitude"] %>% strsplit(., ",") %>% unlist(.) %>% gsub(" ", "", .)
+ELEV <- outlog$Value[outlog$Parameter=="Mapping_Altitude"] %>% strsplit(., ",") %>% unlist(.) %>% gsub(" ", "", .)
+ELEV_text <- paste0(
+  ifelse((ELEV[1]=="0" & ELEV[2]=="9000"), "", paste0("You asked to restrict the polygon to area that is between ", ELEV[1], " and ", ELEV[2], "m of elevation. ")),
+  ifelse((ELEV[3]=="-11000" & ELEV[4]=="0"), "", paste0("You asked to restrict the polygon to area that is between ", ELEV[4], " and ", ELEV[3], "m of bathymetry. "))
+  )
 
 ```
 
 To create a polygon range map, you chose first to `r PRINT_starting`. 
 `r if(outlog$Value[outlog$Parameter=="Mapping_Buffer"]>0){paste0("You then buffered that polygon by ", outlog$Value[outlog$Parameter=="Mapping_Buffer"], " km.")}` 
 `r plyr::revalue(outlog$Value[outlog$Parameter=="Mapping_Crop"], c("cropland"="You excluded all the marine area from the polygon.", "cropsea"="You excluded all the terrestrial area from the polygon."), warn_missing = F)` 
-`r if(outlog$Value[outlog$Parameter=="Mapping_Altitude"] != "0, 9000"){paste0("You asked to restrict the polygon to area that is between ", ELEV[1], " and ", ELEV[2], "m of elevation.")}`  
+`r if(outlog$Value[outlog$Parameter=="Mapping_Altitude"] != "0, 9000, -11000, 0"){ELEV_text}`  
 `r if(outlog$Value[outlog$Parameter=="Mapping_Merge"]=="TRUE"){"You asked to merge the polygon you created with the published range map of the species (if it exists)."}` 
 
 The range map created at this step is:

@@ -24,6 +24,25 @@ if("RS_leaflet_Forest_cover" %in% names(Storage_SP)){Storage_SP$RS_leaflet_Fores
 
 
 
+`r if(grepl("Forest_Integrity", outlog$Value[outlog$Parameter=="Usage_RS"])){"You mapped and calculated Forest Integrity using rasters from Grantham et al 2020."}`
+<center>
+![](`r if(grepl("Forest_Integrity", outlog$Value[outlog$Parameter=="Usage_RS"])){paste0(outDir, '/Plots/RS_plot_forestintegrity.png')}`){width=100%}
+</center>
+
+```{r forest_integrity, out.width='100%'}
+if(grepl("Forest_Integrity", outlog$Value[outlog$Parameter=="Usage_RS"])){
+  DF_integrity<-data.frame(Calc=c("Current value", "Percentages", "Time-window"), Value=unlist(strsplit(outlog$Value[outlog$Parameter=="RS_result_Forest_Integrity"], " & "))[1:3])
+  knitr::kable(DF_integrity, "simple", col.names = c("", "Value"))
+}
+```
+
+```{r leaflet_integrity, fig.align = "center", out.width = '100%'}
+if("RS_leaflet_Forest_Integrity" %in% names(Storage_SP)){Storage_SP$RS_leaflet_Forest_Integrity}
+```
+
+
+
+
 `r if(grepl("Human_modification", outlog$Value[outlog$Parameter=="Usage_RS"])){"<br>You mapped and calculated trends in human modification using Theobald et al. (2020) data."}`
 <center>
 ![](`r if(grepl("Human_modification", outlog$Value[outlog$Parameter=="Usage_RS"])){paste0(outDir, '/Plots/RS_plot_modif.png')}`){width=100%}
@@ -77,4 +96,23 @@ if(grepl("Water_availability", outlog$Value[outlog$Parameter=="Usage_RS"])){
 if("RS_leaflet_Water_availability" %in% names(Storage_SP)){Storage_SP$RS_leaflet_Water_availability}
 ```
 
+
+
+
+
+`r if(grepl("Marine_impact", outlog$Value[outlog$Parameter=="Usage_RS"])){"<br>You mapped and calculated trends in human impact on marine ecosystems using data from Halpern et al 2015."}`
+<center>
+![](`r if(grepl("Marine_impact", outlog$Value[outlog$Parameter=="Usage_RS"])){paste0(outDir, '/Plots/RS_plot_marineimpact.png')}`){width=100%}
+</center>
+
+```{r trends_MarineImpact, out.width='100%'}
+if(grepl("Marine_impact", outlog$Value[outlog$Parameter=="Usage_RS"])){
+  DF_marine<-data.frame(Calc=c("Current value", "Absolute trends", "Time-window"), Value=unlist(strsplit(outlog$Value[outlog$Parameter=="RS_result_Marine_impact"], " & "))[1:3])
+  knitr::kable(DF_marine, "simple", col.names = c("", "Value"))
+}
+```
+
+```{r leaflet_MarineImpact, fig.align = "center", out.width = '100%'}
+if("RS_leaflet_Marine_impact" %in% names(Storage_SP)){Storage_SP$RS_leaflet_Marine_impact}
+```
 

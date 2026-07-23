@@ -180,6 +180,7 @@ sRL_ShapeCountryNRL <- function(Country_name, scientific_name){
     SER <- subset(country_sub, SIS_name1=="South European Russia")
     SER_diff <- st_difference(SER, st_union(Area_Remove_PanEU)) %>% dplyr::group_by() %>% dplyr::summarise()
     country_sub$geometry[country_sub$SIS_name1=="South European Russia"] <- SER_diff$geometry[1]
+    country_sub <- country_sub %>% dplyr::group_by() %>% dplyr::summarise(N= n()) %>% nngeo::st_remove_holes(.)
   }
   
   if(Country_name == "EU27"){

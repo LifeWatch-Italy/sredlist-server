@@ -15,7 +15,7 @@ library(shinyWidgets)
 library(spsComps) # For addLoader in server
 
 
-source(textConnection(readLines("server.R")[15:123]))
+source(textConnection(readLines("server.R")[15:127]))
 hydro3 <- st_read(sub("level8_", "level3_", config$hydrobasins_path))
 
 

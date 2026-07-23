@@ -42,6 +42,8 @@ NA,NA,NA,RS_result_Forest_cover,0,Result of trends in Remote-sensing products (s
 NA,NA,NA,RS_result_Human_modification,0,Result of trends in Remote-sensing products (step 7) for Human modification index. It includes the current value / the absolute trends / the relative trends / the time-window.,NA
 NA,NA,NA,RS_result_Human_density,0,Result of trends in Remote-sensing products (step 7) for Human population density. It includes the current value / the absolute trends / the relative trends / the time-window.,NA
 NA,NA,NA,RS_result_Water_availability,0,Result of trends in Remote-sensing products (step 7) for Water availability. It includes the current value / the absolute trends / the relative trends / the time-window.,NA
+NA,NA,NA,RS_result_Forest_Integrity,0,Result of trends in Remote-sensing products (step 7) for Forest integrity. It includes the current value / the percentages between categories / the time-window.,NA
+NA,NA,NA,RS_result_Marine_impact,0,Result of trends in Remote-sensing products (step 7) for Human impact on marine ecosystems. It includes the current value / the absolute trends / the time-window.,NA
 NA,NA,NA,Original_density,0,Original density estimate suggested by the platform,NA
 NA,NA,NA,Original_GL,0,Original generation length estimate suggested by the platform,NA
 NA,NA,NA,Original_altpref,0,Only used to track usage,NA
