@@ -253,11 +253,12 @@ sRL_createDataGBIF <- function(scientific_name, GBIF_SRC, Gbif_Country, Uploaded
     dat_gbif$source<-NA
     datasets<-data.frame(Dataset=levels(as.factor(dat_gbif$datasetKey)), source=NA)
     for(i in 1:nrow(datasets)){
-      datasets$source[i]<-as.character(unlist(gbif_citation(datasets$Dataset[i]))[2])
+      data_citation <- gbif_citation(datasets$Dataset[i])
+      datasets$source[i] <- paste0(data_citation$citation$title, "; ", data_citation$citation$accessed)
     }
-    dat_gbif$source<-datasets$source[match(dat_gbif$datasetKey, datasets$Dataset)]} else {dat_gbif<-NULL}
+    dat_gbif$source<-datasets$source[match(dat_gbif$datasetKey, datasets$Dataset)]
     
-    
+    } else {dat_gbif<-NULL}
   } else {dat_gbif<-NULL}
   
   # From OBIS (removing points at same location + year)
@@ -848,8 +849,8 @@ sRL_MapDistributionGBIF<-function(dat, scientific_name, username, First_step, Al
 
   # Additional attributes
   distGBIF$yrcompiled <- format(Sys.Date(), "%Y")
-  distGBIF$citation<-paste0("sRedList ", format(Sys.Date(), "%Y"))
-  distGBIF$source<-"sRedList platform"
+  distGBIF$citation<-"IUCN (International Union for Conservation of Nature)"
+  distGBIF$source<-paste0("sRedList platform ", format(Sys.Date(), "%Y"))
   distGBIF$compiler<-sRL_userformatted(username)
   distGBIF$data_sens<-0
   distGBIF$spatialref<-"WGS84"
