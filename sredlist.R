@@ -227,7 +227,7 @@ function(scientific_name, username) {
     if(exists("flags")==F){cat("Bug in clean coordinates"); flags<-dat ; flags$.val<-flags$.equ<-flags$.zer<-flags$.cap<-flags$.sea<-flags$.gbf<-flags$.inst<-flags$.cen<-TRUE}
 
     # Prepare and subset records
-    flags <- sRL_cleanDataGBIF(flags, 1900, 10, F, F, "", -180, 180, -90, 90) %>% sRL_prepareDataComparison(., distSP)
+    flags <- sRL_cleanDataGBIF(flags, 1900, 10, F, F, "", -180, 180, -90, 90, Gbif_BasisOfRecord=c("bor_human", "bor_preserved", "bor_machine", 'bor_other')) %>% sRL_prepareDataComparison(., distSP)
 
     # Prepare result sentence
     Comparison_result <- paste0(round(100*length(which(flags$ValidDistri=="In"))/length(which(flags$ValidDistri %in% c("In", "Out")))), "% of valid GBIF occurrence records were found inside the current distribution")
@@ -768,7 +768,7 @@ function(scientific_name, username) {
 
     ### Create distributions
     # MCP
-    dist_mcp<-data.frame() ; tryCatch({dist_mcp<-sRL_MapDistributionGBIF(dat_proj, scientific_name, username, First_step="mcp", AltMIN=0, AltMAX=9000, Buffer_km=0, Gbif_Param=c(0,0))}, error=function(e){"Error in mapping showcase"})
+    dist_mcp<-data.frame() ; tryCatch({dist_mcp<-sRL_MapDistributionGBIF(dat_proj, scientific_name, username, First_step="mcp", AltMIN=0, AltMAX=9000, BathyMIN=-11000, BathyMAX=0, Buffer_km=0, Gbif_Param=c(0,0))}, error=function(e){"Error in mapping showcase"})
 
     G_mcp<-ggplot()+geom_sf(data=CountrySP, fill="gray70")+geom_sf(data=dist_mcp, fill="darkred")+geom_sf(data=dat_proj)+sRLTheme_maps+ggtitle("Minimum Convex Polygon")
 
@@ -776,7 +776,7 @@ function(scientific_name, username) {
     if(NSites<=50){
       Buff_raw<- sqrt((EXT_max[2]-EXT_max[1])^2+(EXT_max[4]-EXT_max[3])^2)/20000 # The buffer will be a 20th of the diagonal and in km
       Buff <- Buff_raw %>% round(.) %>% round(., -1*(nchar(.)-1)) %>% max(., 1)
-      dist_indiv<-data.frame() ; tryCatch({dist_indiv<-sRL_MapDistributionGBIF(dat_proj, scientific_name, username, First_step="indivsites", AltMIN=0, AltMAX=9000, Buffer_km=Buff, Gbif_Param=c(0,0))}, error=function(e){"Error in mapping showcase"})
+      dist_indiv<-data.frame() ; tryCatch({dist_indiv<-sRL_MapDistributionGBIF(dat_proj, scientific_name, username, First_step="indivsites", AltMIN=0, AltMAX=9000, BathyMIN=-11000, BathyMAX=0, Buffer_km=Buff, Gbif_Param=c(0,0))}, error=function(e){"Error in mapping showcase"})
 
       G_indiv<-ggplot()+geom_sf(data=CountrySP, fill="gray70")+geom_sf(data=dist_indiv, fill="darkred")+geom_sf(data=dat_proj)+sRLTheme_maps+ggtitle(paste0("Individual localities (buffer of ", Buff, "km)"))
     } else {G_indiv<-ggplot()+theme_void()}
@@ -786,9 +786,9 @@ function(scientific_name, username) {
     alphaB=1
     alphaC=10
 
-    dist_alphaA<-data.frame() ; tryCatch({dist_alphaA<-sRL_MapDistributionGBIF(dat_proj, scientific_name, username, First_step="alpha", AltMIN=0, AltMAX=9000, Buffer_km=0, Gbif_Param=c(alphaA,0))}, error=function(e){"Error in mapping showcase"})
-    dist_alphaB<-data.frame() ; tryCatch({dist_alphaB<-sRL_MapDistributionGBIF(dat_proj, scientific_name, username, First_step="alpha", AltMIN=0, AltMAX=9000, Buffer_km=0, Gbif_Param=c(alphaB,0))}, error=function(e){"Error in mapping showcase"})
-    dist_alphaC<-data.frame() ; tryCatch({dist_alphaC<-sRL_MapDistributionGBIF(dat_proj, scientific_name, username, First_step="alpha", AltMIN=0, AltMAX=9000, Buffer_km=0, Gbif_Param=c(alphaC,0))}, error=function(e){"Error in mapping showcase"})
+    dist_alphaA<-data.frame() ; tryCatch({dist_alphaA<-sRL_MapDistributionGBIF(dat_proj, scientific_name, username, First_step="alpha", AltMIN=0, AltMAX=9000, BathyMIN=-11000, BathyMAX=0, Buffer_km=0, Gbif_Param=c(alphaA,0))}, error=function(e){"Error in mapping showcase"})
+    dist_alphaB<-data.frame() ; tryCatch({dist_alphaB<-sRL_MapDistributionGBIF(dat_proj, scientific_name, username, First_step="alpha", AltMIN=0, AltMAX=9000, BathyMIN=-11000, BathyMAX=0, Buffer_km=0, Gbif_Param=c(alphaB,0))}, error=function(e){"Error in mapping showcase"})
+    dist_alphaC<-data.frame() ; tryCatch({dist_alphaC<-sRL_MapDistributionGBIF(dat_proj, scientific_name, username, First_step="alpha", AltMIN=0, AltMAX=9000, BathyMIN=-11000, BathyMAX=0, Buffer_km=0, Gbif_Param=c(alphaC,0))}, error=function(e){"Error in mapping showcase"})
 
     G_alphaA<-ggplot()+geom_sf(data=CountrySP, fill="gray70")+geom_sf(data=dist_alphaA, fill="darkred")+geom_sf(data=dat_proj)+sRLTheme_maps+ggtitle(paste0("Alpha hull (parameter = ", alphaA, ")"))
     G_alphaB<-ggplot()+geom_sf(data=CountrySP, fill="gray70")+geom_sf(data=dist_alphaB, fill="darkred")+geom_sf(data=dat_proj)+sRLTheme_maps+ggtitle(paste0("Alpha hull (parameter = ", alphaB, ")"))
@@ -801,9 +801,9 @@ function(scientific_name, username) {
       kernelB=0.9
       kernelC=0.99
 
-      dist_kernelA<-data.frame() ; tryCatch({dist_kernelA<-sRL_MapDistributionGBIF(dat_proj, scientific_name, username, First_step="kernel", AltMIN=0, AltMAX=9000, Buffer_km=0, Gbif_Param=c(0,kernelA))}, error=function(e){"Error in mapping showcase"})
-      dist_kernelB<-data.frame() ; tryCatch({dist_kernelB<-sRL_MapDistributionGBIF(dat_proj, scientific_name, username, First_step="kernel", AltMIN=0, AltMAX=9000, Buffer_km=0, Gbif_Param=c(0,kernelB))}, error=function(e){"Error in mapping showcase"})
-      dist_kernelC<-data.frame() ; tryCatch({dist_kernelC<-sRL_MapDistributionGBIF(dat_proj, scientific_name, username, First_step="kernel", AltMIN=0, AltMAX=9000, Buffer_km=0, Gbif_Param=c(0,kernelC))}, error=function(e){"Error in mapping showcase"})
+      dist_kernelA<-data.frame() ; tryCatch({dist_kernelA<-sRL_MapDistributionGBIF(dat_proj, scientific_name, username, First_step="kernel", AltMIN=0, AltMAX=9000, BathyMIN=-11000, BathyMAX=0, Buffer_km=0, Gbif_Param=c(0,kernelA))}, error=function(e){"Error in mapping showcase"})
+      dist_kernelB<-data.frame() ; tryCatch({dist_kernelB<-sRL_MapDistributionGBIF(dat_proj, scientific_name, username, First_step="kernel", AltMIN=0, AltMAX=9000, BathyMIN=-11000, BathyMAX=0, Buffer_km=0, Gbif_Param=c(0,kernelB))}, error=function(e){"Error in mapping showcase"})
+      dist_kernelC<-data.frame() ; tryCatch({dist_kernelC<-sRL_MapDistributionGBIF(dat_proj, scientific_name, username, First_step="kernel", AltMIN=0, AltMAX=9000, BathyMIN=-11000, BathyMAX=0, Buffer_km=0, Gbif_Param=c(0,kernelC))}, error=function(e){"Error in mapping showcase"})
 
       G_kernelA<-ggplot()+geom_sf(data=CountrySP, fill="gray70")+geom_sf(data=dist_kernelA, fill="darkred")+geom_sf(data=dat_proj)+sRLTheme_maps+ggtitle(paste0("Kernel (parameter = ", kernelA, ")"))
       G_kernelB<-ggplot()+geom_sf(data=CountrySP, fill="gray70")+geom_sf(data=dist_kernelB, fill="darkred")+geom_sf(data=dat_proj)+sRLTheme_maps+ggtitle(paste0("Kernel (parameter = ", kernelB, ")"))
@@ -1325,7 +1325,11 @@ Prom<-future({
   Storage_SP=sRL_StoreRead(scientific_name,  username, MANDAT=1) ; print(names(Storage_SP))
   distSP=Storage_SP$distSP_selected ; if(nrow(distSP)==0){empty_distrib()}
   Range_size<-as.numeric(st_area(distSP))/10^6 ; print(Range_size)
-  run_AOH <- ifelse(is.na(Storage_SP$Output$Value[Storage_SP$Output$Parameter=="System_pref"]) | grepl("Terrestrial", Storage_SP$Output$Value[Storage_SP$Output$Parameter=="System_pref"]), T, F)
+  run_AOH <- ifelse(
+    grepl("Terrestrial", Storage_SP$Output$Value[Storage_SP$Output$Parameter=="System_pref"]) | (is.na(Storage_SP$Output$Value[Storage_SP$Output$Parameter=="System_pref"]) & length(habitats_pref)>0),
+    T,
+    F
+    )
   if(run_AOH==F & (! "dat_proj_saved" %in% names(Storage_SP))){no_aoh_calc()}
 
   if(run_AOH==T){
