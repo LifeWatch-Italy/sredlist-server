@@ -620,7 +620,8 @@ if(Gbif_Start=="kernel" & Gbif_Param[2] <= 0){neg_kernel()}
 if(Gbif_Start=="coastal" & (Gbif_Buffer<=0 | Gbif_Crop=="")){no_gbif_coastal()}
 if(Gbif_Start=="vents" & (Gbif_Buffer<=0 | Gbif_Crop=="cropland")){no_gbif_vents()}
 if(grepl("hydro", Gbif_Start) & (Gbif_Buffer>0 | Gbif_Crop!="" | Gbif_Altitude[1]!="0" | Gbif_Altitude[2]!="9000"  | Gbif_Altitude[3]!="-11000" | Gbif_Altitude[4]!="0" | Gbif_RLDistBin=="true")){hydro_modified()}
-
+if(as.numeric(Gbif_Altitude[1])>as.numeric(Gbif_Altitude[2])){elevation_wrong_order("alt")}
+if(as.numeric(Gbif_Altitude[3])>as.numeric(Gbif_Altitude[4])){elevation_wrong_order("bathy")}
 
 # Check the Step 2 has been run since Step 1 was last updated
 scientific_name <- sRL_decode(scientific_name)

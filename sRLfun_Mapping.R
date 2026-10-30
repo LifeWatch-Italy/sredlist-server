@@ -913,12 +913,11 @@ sRL_CropRangeElevation <- function(distGBIF, sp.range) {
   # Transform to polygons of unsuitable elevation
   my_polygons <- my_lines %>%
     st_as_sf(., crs = sf::st_crs(data)) %>%
-    st_union() %>% 
-    st_polygonize() %>% 
-    st_collection_extract(., "POLYGON") %>% 
-    st_union() %>% 
-    st_combine() %>%
+    st_buffer(as.numeric(dist_max)/2) %>% 
+    dplyr::group_by() %>% 
+    dplyr::summarise() %>%
     smoothr::smooth(., method="ksmooth") %>%
+    st_make_valid(.) %>%
     st_as_sf(., crs = sf::st_crs(data))
   
   # Remove unsuitable polygons that are very small
@@ -926,6 +925,7 @@ sRL_CropRangeElevation <- function(distGBIF, sp.range) {
     st_cast(., "POLYGON") %>%
     mutate(Area=as.numeric(st_area(.))) %>%
     subset(., Area>(res(sp.range)[1]*res(sp.range)[2]) )
+  st_crs(my_polygons) <- CRSMOLL
   
   # Remove these polygons from distGBIF (and remove small polygons that may be created at the edge)
   distGBIF_new <- st_difference(distGBIF, st_union(my_polygons)) %>%

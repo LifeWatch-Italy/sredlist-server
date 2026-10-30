@@ -80,6 +80,10 @@ no_gbif_data <- function() {
   api_error(message = "All records have been excluded in Step 2", status = 400)
 }
 
+elevation_wrong_order <- function(type) {
+  api_error(message = ifelse(type=="alt", "Elevation values are not in the correct order, the first value should be lower than the second.", "Bathymetry values are not in the correct order, the first value should be lower than the second."), status = 400)
+}
+
 no_land_map <- function() {
   api_error(message = "The distribution does not overlap with land", status = 400)
 }
