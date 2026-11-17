@@ -126,7 +126,7 @@ function(scientific_name, username) {
 
      ### Load Distribution Species
      distributions <- sRL_ReadDistribution(scientific_name, Dist_path) %>% sRL_PrepareDistrib(., scientific_name)
-     distSP <- subset(distributions, distributions$binomial == scientific_name) # nolint
+     distSP <- subset(distributions, distributions$binomial == scientific_name & st_geometry_type(distributions) %in% c("POLYGON", "MULTIPOLYGON", "GEOMETRY", "GEOMETRYCOLLECTION")) # nolint
 
      ### Crop_Country for National RL
      Storage_SP<-sRL_OutLog(Storage_SP, "Crop_Country", Crop_Country)
