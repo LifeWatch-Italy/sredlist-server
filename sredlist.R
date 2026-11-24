@@ -343,7 +343,7 @@ function(scientific_name, username, presences = list(), seasons = list() , origi
 #* @param Uploaded_Records:file A file
 #* @serializer unboxedJSON
 #* @tag sRedList
-function(scientific_name, username, Gbif_Source=list(), Gbif_Synonym="", Gbif_Country="", Uploaded_Records="") {
+function(scientific_name, username, Gbif_Source=list(), Gbif_Synonym="", Gbif_Country="", Gbif_Lim="2000", Uploaded_Records="") {
 
 Prom<-future({
   sf::sf_use_s2(FALSE)
@@ -371,7 +371,7 @@ Prom<-future({
 
   ### GBIF procedure
   sRL_loginfo("START - Create data", scientific_name)
-  Created_Data <- sRL_createDataGBIF(scientific_name, Gbif_Source, Gbif_Country, Uploaded_Records)
+  Created_Data <- sRL_createDataGBIF(scientific_name, Gbif_Source, Gbif_Country, Uploaded_Records, as.numeric(Gbif_Lim))
   dat <- Created_Data$dat
 
 
@@ -456,7 +456,7 @@ Prom<-future({
   output_to_save<-sRL_InitLog(scientific_name, username, DisSource = "Created") ; output_to_save$Value[output_to_save$Parameter=="Gbif_Source"]<-c(ifelse(Gbif_Source[1]==1, "GBIF", ""), ifelse(Gbif_Source[2]==1, "OBIS", ""), ifelse(Gbif_Source[3]==1, "Red_List", ""), ifelse(length(Uploaded_Records)<2, "", "Uploaded")) %>% .[.!=""] %>% paste(., collapse=" + ")
   output_to_save$Count[output_to_save$Parameter=="Gbif_Source"]<-ifelse(file.exists(paste0("resources/AOH_stored/", gsub(" ", "_", sRL_decode(scientific_name)), "_", sRL_userdecode(username), "/Storage_SP.rds")), (sRL_StoreRead(scientific_name,  username, 1)$Output$Count[2]+1), 1)
   output_to_save$Value[output_to_save$Parameter=="Gbif_Synonyms"]<-ifelse(Gbif_Synonym=="", NA, paste(Gbif_Synonym, collapse="+"))
-  
+
   # Create and save Storage_SP + SpeciesAssessment
   Storage_SP<-list(flags_raw_saved=flags_raw, Creation=Sys.time(), Output=output_to_save)
   speciesAss <- sRL_GetRLAssessment(scientific_name, key = config$red_list_token)

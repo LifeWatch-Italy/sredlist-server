@@ -207,7 +207,7 @@ sRL_ShapeCountryNRL <- function(Country_name, scientific_name){
 
 
 ### Function to create occurrence records 
-sRL_createDataGBIF <- function(scientific_name, GBIF_SRC, Gbif_Country, Uploaded_Records) { # nolint
+sRL_createDataGBIF <- function(scientific_name, GBIF_SRC, Gbif_Country, Uploaded_Records, Gbif_Lim=2000) { # nolint
   
   ### Reuse Warning from upload if it exists (otherwise start from empty string); used to warn if number of records above limit or if some uploaded lines were removed
   Warning_Create <- ifelse("Warning_Upload" %in% names(Uploaded_Records), Uploaded_Records$Warning_Upload, "")
@@ -237,11 +237,11 @@ sRL_createDataGBIF <- function(scientific_name, GBIF_SRC, Gbif_Country, Uploaded
                      decimalLatitude=paste(co_EXT[3], co_EXT[4], sep=",")
                      )
 
-    if(OCC < config$LIM_GBIF){ # Download all data or structure download if more than LIM_GBIF
-      dat_gbif <- sRL_SimpleGBIF(scientific_name, co_EXT)
+    if(OCC < Gbif_Lim){ # Download all data or structure download if more than Gbif_Lim
+      dat_gbif <- sRL_SimpleGBIF(scientific_name, co_EXT, Gbif_Lim)
     } else{
-      dat_gbif <- sRL_StructureGBIF(scientificName = scientific_name, co_EXT, co_tot)
-      Warning_Create <- paste0(Warning_Create, "The number of records available on GBIF was >2000, we downloaded a representative sample.\n")
+      dat_gbif <- sRL_StructureGBIF(scientificName = scientific_name, co_EXT, co_tot, Gbif_Lim)
+      Warning_Create <- paste0(Warning_Create, "The number of records available on GBIF was >", Gbif_Lim, ", we downloaded a representative sample.\n")
     }
     
     dat_gbif$ID<-paste0(dat_gbif$decimalLongitude, dat_gbif$decimalLatitude, dat_gbif$year)
@@ -276,11 +276,11 @@ sRL_createDataGBIF <- function(scientific_name, GBIF_SRC, Gbif_Country, Uploaded
     dat_obis_sub <- subset(dat_obis_sub, decimalLongitude > co_EXT[1] & decimalLongitude < co_EXT[2] & decimalLatitude > co_EXT[3] & decimalLatitude < co_EXT[4]) # Restrict to country of interest before subsampling
     
     # If too many data, keep a sample (most recent)
-    if(nrow(dat_obis_sub) > config$LIM_GBIF){
+    if(nrow(dat_obis_sub) > Gbif_Lim){
       dat_obis_sub$Source_type<-"OBIS sample"
       dat_obis_sub<-dat_obis_sub[order(dat_obis_sub$year, decreasing=T),]
-      dat_obis_sub<-dat_obis_sub[1:config$LIM_GBIF,]
-      Warning_Create <- paste0(Warning_Create, "The number of records available on OBIS was >2000, we downloaded only a subset.\n")
+      dat_obis_sub<-dat_obis_sub[1:Gbif_Lim,]
+      Warning_Create <- paste0(Warning_Create, "The number of records available on OBIS was >", Gbif_Lim, ", we only kept the first ", Gbif_Lim, " records.\n")
     }
   } else {dat_obis_sub<-data.frame()}
   
@@ -314,11 +314,11 @@ sRL_createDataGBIF <- function(scientific_name, GBIF_SRC, Gbif_Country, Uploaded
     dat_RL <- subset(dat_RL, decimalLongitude > co_EXT[1] & decimalLongitude < co_EXT[2] & decimalLatitude > co_EXT[3] & decimalLatitude < co_EXT[4]) # Restrict to country of interest before subsampling
     
     # If too many data, keep a sample (most recent)
-    if(nrow(dat_RL) > config$LIM_GBIF){
+    if(nrow(dat_RL) > Gbif_Lim){
       dat_RL$Source_type<-"Red List sample"
       dat_RL<-dat_RL[order(dat_RL$year, decreasing=T),]
-      dat_RL<-dat_RL[1:config$LIM_GBIF,]
-      Warning_Create <- paste0(Warning_Create, "The number of records available on the Red List was >2000, we kept only a subset.\n")
+      dat_RL<-dat_RL[1:Gbif_Lim,]
+      Warning_Create <- paste0(Warning_Create, "The number of records available on the Red List was >", Gbif_Lim, ", we only kept the first ", Gbif_Lim, " records.\n")
     }
   } else {dat_RL<-data.frame()}
   
@@ -339,10 +339,10 @@ sRL_createDataGBIF <- function(scientific_name, GBIF_SRC, Gbif_Country, Uploaded
     if(!"source" %in% names(dat_upload)){dat_upload$source<-NA}
     
     # If too many data (with a higher threshold), keep a sample 
-    if(nrow(dat_upload) > 3*config$LIM_GBIF){
+    if(nrow(dat_upload) > 10000){
       dat_upload$Source_type<-"Uploaded sample"
-      dat_upload<-dat_upload[1:(3*config$LIM_GBIF),]
-      Warning_Create <- paste0(Warning_Create, "The number of records uploaded was >6000, we kept only a subset.\n")
+      dat_upload<-dat_upload[1:10000,]
+      Warning_Create <- paste0(Warning_Create, "The number of records uploaded was >10000, we only kept the first 10,000 records.\n")
     }
   } else {dat_upload<-data.frame()}} else {dat_upload<-data.frame()}
 
@@ -390,12 +390,12 @@ sRL_createDataGBIF <- function(scientific_name, GBIF_SRC, Gbif_Country, Uploaded
 
 
 ### Function to download all GBIF records
-sRL_SimpleGBIF<-function(scientific_name, co_EXT){
+sRL_SimpleGBIF<-function(scientific_name, co_EXT, Gbif_Lim){
   dat_gbif <- rgbif::occ_data(scientificName=scientific_name, 
                               hasCoordinate = T, 
                               decimalLongitude=paste(co_EXT[1], co_EXT[2], sep=","), 
                               decimalLatitude=paste(co_EXT[3], co_EXT[4], sep=","),
-                              limit=config$LIM_GBIF
+                              limit=Gbif_Lim
   )$data # occ_data is faster than occ_search because it omits some columns
   
   dat_gbif$Source_type<-"GBIF"
@@ -405,7 +405,7 @@ sRL_SimpleGBIF<-function(scientific_name, co_EXT){
 
 
 ### Function to download GBIF in a spatially structured manner (to avoid big sampling biases)
-sRL_StructureGBIF<-function(scientificName, co_EXT, co_tot){
+sRL_StructureGBIF<-function(scientificName, co_EXT, co_tot, Gbif_Lim=2000){
   
   print("Use Structured GBIF download")
 
@@ -450,8 +450,8 @@ sRL_StructureGBIF<-function(scientificName, co_EXT, co_tot){
   }
   grid_sub <- subset(grid_sub, grid_sub$N>0)
 
-  ### Determine number of data to download per group to sum at LIM_GBIF (increased a bit if Crop_Country)
-  LIMgbif<-ifelse(is.null(co_tot), config$LIM_GBIF, 1.25*config$LIM_GBIF)
+  ### Determine number of data to download per group to sum at Gbif_Lim (increased a bit if Crop_Country)
+  LIMgbif<-ifelse(is.null(co_tot), Gbif_Lim, 1.25*Gbif_Lim)
   grid_sub$N_download <- ifelse(grid_sub$N < (LIMgbif/nrow(grid_sub)), grid_sub$N, NA)
   grid_sub$N_download[is.na(grid_sub$N_download)] <- round((LIMgbif-sum(grid_sub$N_download, na.rm=T))/nrow(grid_sub[is.na(grid_sub$N_download),]))
   grid_sub$N_download <- ifelse((grid_sub$N_download>grid_sub$N), grid_sub$N, grid_sub$N_download)
@@ -479,8 +479,8 @@ sRL_StructureGBIF<-function(scientificName, co_EXT, co_tot){
   }
   
   ### If for some reason, we have few records (<1000), re-run a non-representative download and save an empty file to record this happened
-  if(nrow(dat_structured) < (0.5*config$LIM_GBIF)){
-    dat_structured <- sRL_SimpleGBIF(scientificName, co_EXT)
+  if(nrow(dat_structured) < (0.5*Gbif_Lim)){
+    dat_structured <- sRL_SimpleGBIF(scientificName, co_EXT, Gbif_Lim)
     print(paste0("Non-representative sample downloaded for ", scientificName, "_", as.character(Sys.Date()), ".csv"))
     write.csv("", paste0("Species/Stored_outputs/Non-representative sample downloaded for ", scientificName,  "_", as.character(Sys.Date()), ".csv"))
   }
