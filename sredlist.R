@@ -444,8 +444,14 @@ Prom<-future({
     if(nrow(CountrySP_WGS)==0){
       flags_raw$.sea<-FALSE
     }else{
+      # Apply binary sea/land
       dat_proj<-dat %>% st_as_sf(., coords = c("decimalLongitude", "decimalLatitude"), crs="+proj=longlat +datum=WGS84") %>%  st_transform(., st_crs(CountrySP_WGS))
       flags_raw$.sea<-st_join(dat_proj, CountrySP_WGS, join=st_intersects)$land %>% replace(., is.na(.), "FALSE") %>% as.logical(.)
+      # Calculate distance between points and coastline
+      CountrySP_WGS_line <- st_cast(CountrySP_WGS, "MULTILINESTRING") %>%
+        st_crop(., 0.999*extent(.)) %>%
+        st_combine()
+        flags_raw$coast_dist_km <- st_distance(st_transform(dat_proj, CRSMOLL), st_transform(CountrySP_WGS_line, CRSMOLL), tolerance=500) %>% as.numeric(.)/1000 # Tolerance makes it much faster as the function does not waste time on distances <500m
     }
   }, error=function(e){"Bug in clean coordinates"})
   if(exists("flags_raw")==F){cat("Bug in clean coordinates"); flags_raw<-dat ; flags_raw$.val<-flags_raw$.equ<-flags_raw$.zer<-flags_raw$.cap<-flags_raw$.sea<-flags_raw$.gbf<-flags_raw$.inst<-flags_raw$.cen<-TRUE}
@@ -488,7 +494,7 @@ return(Prom)
 #* @param Gbif_Sea:string Gbif_Sea
 #* @serializer htmlwidget
 #* @tag sRedList
-function(scientific_name, username, Gbif_Year= -1, Gbif_Uncertainty=-1, Gbif_Extent=list(), Gbif_Sea="", Gbif_automatedBin="", Gbif_yearBin="", Gbif_uncertainBin="", Gbif_BasisOfRecord=c("bor_human", "bor_preserved", "bor_machine", 'bor_other')) {
+function(scientific_name, username, Gbif_Year= -1, Gbif_Uncertainty=-1, Gbif_Extent=list(), Gbif_Sea="", Gbif_automatedBin="", Gbif_yearBin="", Gbif_uncertainBin="", Gbif_BasisOfRecord=c("bor_human", "bor_preserved", "bor_machine", 'bor_other'), Gbif_ToleranceCrop=0) {
 
 Prom<-future({
   sf::sf_use_s2(FALSE)
@@ -511,7 +517,7 @@ Prom<-future({
   if(Gbif_automatedBin != "true"){flags_raw$.val<-flags_raw$.equ<-flags_raw$.zer<-flags_raw$.cap<-flags_raw$.cen<-flags_raw$.gbf<-flags_raw$.inst<-TRUE}
 
   ### Subset the observations user wants to keep (can be run several times if users play with parameters)
-  flags <- sRL_cleanDataGBIF(flags_raw, as.numeric(Gbif_Year), as.numeric(Gbif_Uncertainty), Gbif_yearBin, Gbif_uncertainBin, Gbif_Sea, Gbif_Extent[1], Gbif_Extent[2], Gbif_Extent[3], Gbif_Extent[4], Gbif_BasisOfRecord)
+  flags <- sRL_cleanDataGBIF(flags_raw, as.numeric(Gbif_Year), as.numeric(Gbif_Uncertainty), Gbif_yearBin, Gbif_uncertainBin, Gbif_Sea, Gbif_Extent[1], Gbif_Extent[2], Gbif_Extent[3], Gbif_Extent[4], Gbif_BasisOfRecord, as.numeric(Gbif_ToleranceCrop))
   dat_proj=sRL_SubsetGbif(flags, scientific_name)
 
   ### Create Leaflet

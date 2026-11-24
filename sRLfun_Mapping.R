@@ -526,13 +526,14 @@ sRL_PopRecords <- function(flags){
 
 
 
-sRL_cleanDataGBIF <- function(flags, year_GBIF, uncertainty_GBIF, Gbif_yearBin, Gbif_uncertainBin, sea_GBIF, GBIF_xmin, GBIF_xmax, GBIF_ymin, GBIF_ymax, Gbif_BasisOfRecord) { # nolint
+sRL_cleanDataGBIF <- function(flags, year_GBIF, uncertainty_GBIF, Gbif_yearBin, Gbif_uncertainBin, sea_GBIF, GBIF_xmin, GBIF_xmax, GBIF_ymin, GBIF_ymax, Gbif_BasisOfRecord, Gbif_ToleranceCrop=0) { # nolint
 
   flags$.summary<-NULL
   
   ### Change flagging for sea
   if(sea_GBIF==""){flags$.sea<-NULL} # If Sea=0, we should not select data based on sea
   if(sea_GBIF=="excludeland"){flags$.sea<-revalue(as.character(flags$.sea), c("TRUE"="FALSE", "FALSE"="TRUE"))} %>% as.factor(.) # If Sea=2, we keep only seas (so we flag land)
+  if(F %in% flags$.sea & "coast_dist_km" %in% names(flags)){flags$.sea[flags$.sea==F & flags$coast_dist_km<Gbif_ToleranceCrop]<-T}
   
   ### Add flagging for year and uncertainty
   flags$year<-replace(flags$year, flags$year==0, NA)
